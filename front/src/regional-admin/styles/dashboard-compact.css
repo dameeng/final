@@ -1,0 +1,63 @@
+/* Dashboard only: common workspace and customer layouts retain their own sizing. */
+.routel-regional .regional-dashboard { --dashboard-map-height:650px; }
+.routel-regional .regional-dashboard .regional-page-heading { gap:16px; margin-bottom:14px; }
+.regional-heading-actions { display:flex; align-items:center; gap:16px; margin-left:auto; }
+.regional-heading-actions>div { display:flex; flex-direction:column; text-align:right; }
+.regional-heading-actions span { font-size:12px; color:var(--regional-muted); }
+.regional-heading-actions strong { font-size:14px; overflow-wrap:anywhere; }
+.regional-heading-actions>a { font-size:13px; white-space:nowrap; }
+.routel-regional .regional-dashboard .regional-stats { gap:12px; }
+.routel-regional .regional-dashboard .regional-stat { padding:10px 16px; border-radius:6px; }
+.routel-regional .regional-dashboard .regional-stat p { margin:3px 0; }
+.routel-regional .regional-dashboard .regional-stat strong { font-size:24px; }
+.routel-regional .regional-dashboard .regional-summary-note { margin:8px 0 14px; }
+.routel-regional .regional-dashboard .regional-top-grid { grid-template-columns:290px minmax(0,1fr); align-items:stretch; }
+.routel-regional .regional-dashboard .regional-timeline,
+.routel-regional .regional-dashboard .regional-map-stage { height:var(--dashboard-map-height); min-height:0; box-sizing:border-box; }
+.routel-regional .regional-dashboard .regional-timeline { max-height:none; overflow:hidden; }
+.routel-regional .regional-dashboard .regional-timeline-scroll { min-height:0; max-height:none; flex:1; }
+.routel-regional .regional-dashboard .regional-timeline>:not(.regional-timeline-scroll) { flex-shrink:0; }
+.routel-regional .regional-dashboard .regional-map-wrap { height:100%; min-height:0; }
+.routel-regional .regional-dashboard .regional-map-canvas { height:100%; min-height:0; }
+.routel-regional .regional-dashboard .regional-map-zoom { position:absolute; bottom:12px; left:50%; transform:translateX(-50%); display:flex; gap:8px; z-index:4; }
+.routel-regional .regional-dashboard .regional-facility-detail { position:absolute; top:16px; right:16px; bottom:auto; left:auto; width:300px; margin:0; max-height:calc(100% - 80px); overflow:auto; box-sizing:border-box; }
+.routel-regional .regional-dashboard .regional-map-list { max-height:none; overflow:visible; box-sizing:border-box; }
+.regional-observation-dialog { width:min(1000px,calc(100vw - 32px)); max-height:85dvh; padding:0; border:1px solid var(--regional-line); border-radius:8px; background:var(--regional-panel); color:var(--regional-ink); }
+.regional-observation-dialog::backdrop { background:rgb(0 0 0 / 45%); }
+.regional-observation-dialog .regional-observations { border:0; }
+.regional-observation-dialog .regional-observation-grid { grid-template-columns:minmax(0,1fr); }
+.regional-trend-scroll { width:100%; overflow-x:auto; margin-top:12px; }
+.regional-observation-dialog .regional-trend { display:block; max-width:none; width:auto; height:170px; max-height:none; }
+.regional-trend path { fill:none; stroke:var(--regional-accent); stroke-width:2; stroke-linejoin:round; stroke-linecap:round; }
+.regional-trend circle { fill:var(--regional-accent); }
+@media(max-width:1200px) and (min-width:801px) {
+ .routel-regional .regional-dashboard .regional-top-grid { grid-template-columns:260px minmax(0,1fr); }
+ .routel-regional .regional-dashboard .regional-map-list { width:180px; left:10px; }
+ .routel-regional .regional-dashboard .regional-facility-detail { width:min(260px,calc(100% - 208px)); right:10px; }
+}
+@media(max-width:800px) {
+ .routel-regional .regional-dashboard { --dashboard-map-height:560px; }
+ .routel-regional .regional-dashboard .regional-top-grid { grid-template-columns:minmax(0,1fr); }
+ .routel-regional .regional-dashboard .regional-timeline { height:340px; }
+ .routel-regional .regional-dashboard .regional-map-list { width:160px; left:8px; }
+ .routel-regional .regional-dashboard .regional-facility-detail { width:calc(100% - 188px); right:8px; padding:10px; }
+ .regional-heading-actions { width:100%; margin-left:0; flex-wrap:wrap; gap:12px; }
+ .regional-heading-actions>div { margin-right:auto; text-align:left; }
+}
+
+.routel-manager-shell.admin-glass[data-theme] .regional-map-stage { background:rgba(139,176,196,.08); }
+.routel-manager-shell.admin-glass[data-theme] .regional-map-canvas { background:transparent; }
+@media(max-width:600px) {
+ .routel-regional .regional-dashboard .regional-map-stage:has(.regional-facility-detail) .regional-map-list { display:none; }
+ .routel-regional .regional-dashboard .regional-facility-detail { width:calc(100% - 32px); right:16px; }
+}
+
+/* Keep one scroll area: only the facility rows scroll, never the outer panel. */
+.routel-regional .regional-dashboard .regional-map-list .regional-facility-scroll { max-height:270px; overflow-y:auto; overscroll-behavior:contain; }
+.routel-regional .regional-dashboard .regional-map-list .regional-facility-scroll button { gap:4px; padding:10px 8px; margin:0; }
+.regional-trend-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.regional-trend-heading h3 { margin:0; }
+.regional-observation-times { display:flex; flex-wrap:wrap; gap:4px 24px; margin:10px 0; font-size:12px; color:var(--regional-muted); }
+.regional-observation-times time { margin-left:6px; font-variant-numeric:tabular-nums; }
+
+.regional-observation-actions{display:flex;justify-content:flex-end;margin-top:20px}

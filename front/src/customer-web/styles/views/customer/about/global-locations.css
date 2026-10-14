@@ -1,0 +1,13 @@
+.routel-content-page section {
+  padding: 25px 0;
+  border-bottom: 1px solid var(--routel-line);
+}
+.routel-content-page section:first-child {
+  padding-top: 0;
+}
+.routel-content-page section:not(:first-child) h2 {
+  color: var(--routel-blue);
+}
+.routel-content-page section p {
+  max-width: 760px;
+}

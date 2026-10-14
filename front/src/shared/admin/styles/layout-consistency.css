@@ -1,0 +1,63 @@
+/* 브라우저 100% 기준. 정보 계층과 같은 행의 정렬을 공통으로 유지합니다. */
+.routel-manager-shell { --layout-gap:16px; --layout-pad:20px; font-size:16px; line-height:1.6; }
+.routel-manager-shell :is(.regional-workspace,.super-workspace,.super-dashboard,.regional-dashboard,.routel-admin-page) { font-size:16px; line-height:1.6; min-width:0; }
+.routel-manager-shell .routel-admin-content { padding-top:16px; }
+.routel-manager-shell :is(.su-heading,.super-heading) { margin-bottom:16px; }
+.routel-manager-shell :is(.su-heading,.super-heading,.regional-page-heading) h1,
+.routel-manager-shell .routel-admin-page>h1 { font-size:26px; line-height:1.4; margin:0 0 8px; }
+.routel-manager-shell :is(.su-card,.super-panel,.regional-panel) { padding:var(--layout-pad); border-radius:8px; min-width:0; }
+.routel-manager-shell :is(.su-card,.super-panel,.regional-panel) h2 { font-size:18px; line-height:1.45; margin-top:0; margin-bottom:12px; }
+.routel-manager-shell :is(.super-panel-head,.regional-panel-heading) { gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
+.routel-manager-shell :is(.super-panel-head,.regional-panel-heading) h2 { margin:0; }
+.routel-manager-shell :is(.su-muted,.super-note,.super-empty,.su-empty,.super-scope small,.super-timeline time,.super-timeline p,.super-legend,.super-pending-list article>span,.super-assign-list small,.super-table-scroll small,.super-top-list small,.admin-breadcrumb) { font-size:14px; line-height:1.6; }
+.routel-manager-shell :is(.su-heading,.super-heading)>div>p,
+.routel-manager-shell .su-heading>p { font-size:14px; margin:4px 0 8px; }
+.routel-manager-shell :is(.regional-workspace,.super-workspace,.super-dashboard) :is(button,input,select,textarea,.su-button,.su-tabs a) { font-size:15px; }
+.routel-manager-shell :is(.su-badge,.super-event-type) { font-size:13px; line-height:1.5; }
+.routel-manager-shell :is(.regional-workspace,.super-workspace,.super-dashboard,.routel-admin-page) table { font-size:15px; font-variant-numeric:tabular-nums; }
+.routel-manager-shell :is(.su-table-wrap,.super-table-scroll) :is(th,td) { padding:12px; line-height:1.6; }
+.routel-manager-shell :is(.super-table-scroll,.su-table-wrap) { max-width:100%; overflow:auto; }
+/* Equal summaries without forcing unrelated long panels to the same height. */
+.routel-manager-shell .rw-summary { align-items:stretch; gap:var(--layout-gap); }
+.routel-manager-shell .rw-summary>.su-card { display:grid; grid-template-rows:auto auto 1fr; gap:8px; align-content:start; }
+.routel-manager-shell .rw-summary>.su-card>span { font-size:16px; line-height:1.5; }
+.routel-manager-shell .rw-summary>.su-card>strong { font-size:34px; line-height:1.25; margin:0; font-variant-numeric:tabular-nums; }
+.routel-manager-shell .rw-summary>.su-card>strong small { font-size:15px; margin-left:6px; }
+.routel-manager-shell .rw-summary>.su-card>small { font-size:14px; line-height:1.6; margin:0; }
+.routel-manager-shell .super-kpis { gap:var(--layout-gap); align-items:stretch; }
+.routel-manager-shell .super-kpi { display:flex; flex-direction:column; gap:8px; padding:16px; min-width:0; }
+.routel-manager-shell .super-kpi h2 { font-size:15px; line-height:1.5; margin:0; }
+.routel-manager-shell .super-kpi>strong { font-size:32px; line-height:1.25; font-variant-numeric:tabular-nums; }
+.routel-manager-shell .super-kpi>small { font-size:13px; line-height:1.5; margin-top:auto; }
+.routel-manager-shell :is(.super-analysis-row,.super-threshold-row,.super-bottom-grid) { gap:var(--layout-gap); align-items:stretch; }
+.routel-manager-shell .super-bottom-grid { margin-left:0; }
+.routel-manager-shell .super-bottom-grid>.super-panel { display:flex; flex-direction:column; min-height:0; }
+.routel-manager-shell .super-bottom-grid>.super-panel>.super-scroll { flex:1; }
+.routel-manager-shell .super-bottom-grid>.super-panel>.super-action-row:last-child { margin-top:auto; padding-top:12px; }
+.routel-manager-shell .super-bottom-grid>.super-panel>.super-table-scroll { max-height:340px; }
+.routel-manager-shell :is(.su-empty,.super-empty) { padding:20px 12px; }
+.routel-manager-shell .regional-drawer nav a { font-size:16px; }
+@media(min-width:1280px) { .routel-manager-shell .super-bottom-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } .routel-manager-shell .super-bottom-grid>.super-panel:last-child { grid-column:auto; } }
+@media(max-width:1150px) { .routel-manager-shell .super-kpis { gap:12px; } }
+@media(max-width:600px) {
+ .routel-manager-shell { --layout-gap:12px; --layout-pad:16px; font-size:15px; }
+ .routel-manager-shell :is(.regional-workspace,.super-workspace,.super-dashboard,.regional-dashboard,.routel-admin-page) { font-size:15px; }
+ .routel-manager-shell :is(.su-heading,.super-heading,.regional-page-heading) h1,.routel-manager-shell .routel-admin-page>h1 { font-size:23px; }
+ .routel-manager-shell .rw-summary>.su-card>strong { font-size:28px; }
+ .routel-manager-shell .super-kpi>strong { font-size:28px; }
+ .routel-manager-shell :is(.su-table-wrap,.super-table-scroll) :is(th,td) { padding:10px; }
+}
+
+/* 하단 업무 패널도 지도/분석 열 안에서 같은 시작·끝 경계를 사용합니다. */
+.routel-manager-shell .super-analysis-column>.super-bottom-grid { margin:0; width:100%; grid-template-columns:repeat(3,minmax(0,1fr)); }
+.routel-manager-shell .super-bottom-grid>.super-panel>.super-scroll { flex:0 1 auto; }
+.routel-manager-shell .super-bottom-grid>.super-panel>.super-action-row:last-child { margin-top:12px; padding-top:0; }
+.routel-manager-shell .super-bottom-grid .super-panel-head { min-height:26px; }
+@media(max-width:1599px) {
+ .routel-manager-shell .super-analysis-column>.super-bottom-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .routel-manager-shell .super-bottom-grid>.super-panel:last-child { grid-column:1/-1; }
+}
+@media(max-width:800px) {
+ .routel-manager-shell .super-analysis-column>.super-bottom-grid { grid-template-columns:minmax(0,1fr); }
+ .routel-manager-shell .super-bottom-grid>.super-panel:last-child { grid-column:auto; }
+}

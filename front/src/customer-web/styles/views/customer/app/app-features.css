@@ -1,0 +1,5 @@
+.app-features-div { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:30px; counter-reset:feature; }
+.app-features-div section { counter-increment:feature; padding:24px 0; border-top:1px solid #dce3e9; }
+.app-features-div h2::before { content:counter(feature,decimal-leading-zero); display:block; margin-bottom:16px; font-size:13px; color:#35688d; }
+.app-features-div a { display:inline-block; margin-top:12px; padding:10px 0; color:#35688d; text-decoration:underline; text-underline-offset:4px; }
+@media(max-width:650px) { .app-features-div { grid-template-columns:minmax(0,1fr); gap:12px; } }

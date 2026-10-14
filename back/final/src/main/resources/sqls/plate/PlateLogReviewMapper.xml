@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.mbc.puf.plate.dao.PlateLogReviewDao">
+
+    <!-- 컬럼 순서가 PlateLogPendingItem의 생성자 인자 순서(id, cameraId, underpassId, detectedNum,
+         confidence, imagePath, reviewDeadline, detectedAt)와 일치해야 한다 (MyBatis 생성자 자동매핑).
+         regionId가 넘어오면(REGIONAL_ADMIN) 그 지역 소속 지하차도의 것만, null이면(SUPER_ADMIN) 전체.
+         underpassId가 넘어오면 그 지하차도 것만 추가로 더 좁힌다(둘 다 AND라 REGIONAL_ADMIN이 담당 외
+         지하차도 id를 넘겨도 region 필터에 걸려 결과가 그냥 비게 된다 — 안전) -->
+    <select id="selectPendingList" resultType="PlateLogPendingItem">
+        SELECT p.id, p.camera_id, c.underpass_id, p.detected_num, p.confidence, p.image_path,
+               p.review_deadline, p.detected_at
+          FROM plate_log p
+          JOIN underpass_camera c ON c.id = p.camera_id
+          JOIN underpass u ON u.id = c.underpass_id
+         WHERE p.review_status = 'PENDING'
+           <if test="regionId != null">
+           AND u.region_id = #{regionId}
+           </if>
+           <if test="underpassId != null">
+           AND c.underpass_id = #{underpassId}
+           </if>
+         ORDER BY p.review_deadline ASC
+    </select>
+
+    <select id="selectRowById" resultType="PlateLogRow">
+        SELECT p.id, c.underpass_id, p.camera_id
+          FROM plate_log p
+          JOIN underpass_camera c ON c.id = p.camera_id
+         WHERE p.id = #{id}
+    </select>
+
+    <update id="updateReview">
+        UPDATE plate_log
+           SET corrected_num = #{correctedNum},
+               car_id = #{carId},
+               review_status = 'CONFIRMED',
+               review_deadline = NULL,
+               reviewed_by = #{reviewedBy},
+               reviewed_at = NOW()
+         WHERE id = #{id}
+    </update>
+
+    <update id="autoProcessExpired">
+        UPDATE plate_log
+           SET review_status = 'AUTO_PROCESSED',
+               reviewed_at = NOW()
+         WHERE review_status = 'PENDING'
+           AND review_deadline &lt; NOW()
+    </update>
+
+</mapper>

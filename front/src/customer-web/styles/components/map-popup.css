@@ -1,0 +1,24 @@
+/* Kakao InfoWindow content is created outside Vue's scoped DOM. */
+.routel-map-popup { box-sizing: border-box; width: 264px; max-width: calc(100vw - 80px); padding: 16px; background: #fff; color: #152d45; font-family: 'Noto Sans KR Variable', 'Noto Sans KR', sans-serif; font-size: 14px; line-height: 1.65; white-space: normal; overflow-wrap: anywhere; }
+.routel-map-popup .routel-map-popup__title { display: block; padding: 0 18px 12px 0; margin: 0 0 12px; border-bottom: 1px solid #dce3e9; font-size: 17px; font-weight: 700; line-height: 1.5; color: #152d45; word-break: keep-all; overflow-wrap: anywhere; }
+.routel-map-popup .routel-map-popup__row { display: flex; align-items: baseline; gap: 10px; margin: 0; padding: 0; color: #334e67; font-size: 14px; line-height: 1.65; }
+.routel-map-popup .routel-map-popup__row + .routel-map-popup__row { margin-top: 10px; }
+.routel-map-popup__label { flex: 0 0 auto; color: #657588; font-size: 13px; }
+.routel-map-popup__status { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+.routel-map-popup__status::before { content: ''; flex: 0 0 6px; width: 6px; height: 6px; border-radius: 50%; background: #98a4b3; }
+.routel-map-popup__status[data-state="정상"]::before { background: #2eaa6b; }
+.routel-map-popup__status[data-state="주의"]::before { background: #e8b923; }
+.routel-map-popup__status[data-state="경고"]::before { background: #f08a24; }
+.routel-map-popup__status[data-state="위험"]::before { background: #e5484d; }
+.routel-map-popup__status[data-state="통제"] { color: #8b1e2d; }
+.routel-map-popup__status[data-state="통제"]::before { background: #8b1e2d; }
+.routel-map-popup .routel-map-popup__row--time { display: grid; gap: 2px; }
+.routel-map-popup__time { min-width: 0; font-variant-numeric: tabular-nums; }
+.routel-map-popup .routel-map-popup__error { margin: 12px 0 0; padding: 10px 0 0; border-top: 1px solid #dce3e9; color: #8b1e2d; font-size: 13px; line-height: 1.65; }
+/* 다크 모드에서도 카카오 InfoWindow 배경은 흰색이므로 페이지 다크 글자색보다 우선하도록 고정합니다. */
+html[data-routel-theme] .customer-shell .customer-page .routel-map-popup .routel-map-popup__title { color: #152d45; }
+html[data-routel-theme] .customer-shell .customer-page .routel-map-popup .routel-map-popup__row { color: #334e67; }
+html[data-routel-theme] .customer-shell .customer-page .routel-map-popup .routel-map-popup__error { color: #8b1e2d; }
+
+.routel-map-popup__status[data-state="경고"]::before { background: #e8b923; }
+.routel-map-popup__status[data-state="위험"]::before { background: #e75b36; }

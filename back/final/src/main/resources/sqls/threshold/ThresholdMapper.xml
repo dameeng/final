@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.mbc.puf.threshold.dao.ThresholdDao">
+
+    <!-- 지하차도의 임계치 3행. risk_score_min 오름차순으로 SAFE→WARNING→DANGER 순서가 나온다 -->
+    <select id="selectThresholdsByUnderpassId" resultType="Threshold">
+        SELECT id, underpass_id, level, risk_score_min, updated_by, updated_at
+          FROM threshold
+         WHERE underpass_id = #{underpassId}
+         ORDER BY risk_score_min ASC
+    </select>
+
+    <select id="selectThreshold" resultType="Threshold">
+        SELECT id, underpass_id, level, risk_score_min, updated_by, updated_at
+          FROM threshold
+         WHERE underpass_id = #{underpassId}
+           AND level = #{level}
+    </select>
+
+    <!-- 임계치 행 생성 (지하차도 등록 시 3번 호출). 생성된 id를 파라미터 객체(Threshold)의 id 에 채워준다 -->
+    <insert id="insertThreshold" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO threshold (underpass_id, level, risk_score_min, updated_by)
+        VALUES (#{underpassId}, #{level}, #{riskScoreMin}, #{updatedBy})
+    </insert>
+
+    <update id="updateThresholdValue">
+        UPDATE threshold
+           SET risk_score_min = #{riskScoreMin},
+               updated_by = #{updatedBy},
+               updated_at = NOW()
+         WHERE underpass_id = #{underpassId}
+           AND level = #{level}
+    </update>
+
+    <!-- 변경 이력 기록. changed_at은 DB 기본값(NOW())을 그대로 쓴다 -->
+    <insert id="insertThresholdHistory">
+        INSERT INTO threshold_history (threshold_id, old_risk_score_min, new_risk_score_min, changed_by)
+        VALUES (#{thresholdId}, #{oldRiskScoreMin}, #{newRiskScoreMin}, #{changedBy})
+    </insert>
+
+</mapper>

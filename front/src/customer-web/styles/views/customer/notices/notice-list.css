@@ -1,0 +1,14 @@
+.notice-list-form { display:flex; flex-wrap:wrap; align-items:end; gap:12px; padding:20px; background:#f5f7f9; margin:0 0 24px; border-block:1px solid #dce3e9; }
+.notice-list-form label { display:grid; gap:8px; flex:1 1 180px; }
+.notice-list-form input, .notice-list-form select { width:100%; }
+.notice-list-div { width:100%; min-width:0; overflow-x:auto; }
+.notice-list-table { width:100%; min-width:0; table-layout:fixed; }
+.notice-list-table th:first-child { width:auto; }
+.notice-list-table th:nth-child(2), .notice-list-table .notice-date { width:124px; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.notice-list-table th:last-child, .notice-list-table td:last-child { width:96px; white-space:nowrap; }
+.notice-title { display:flex; align-items:baseline; gap:8px; }
+.notice-title .notice-pin { align-self:flex-start; margin-top:3px; }
+.notice-title > span { min-width:0; overflow-wrap:anywhere; }
+.notice-list-table td[colspan] { padding:40px 16px; text-align:center; }
+.routel-content-page > p:has(> button) { display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:14px; margin-top:24px; }
+@media(max-width:600px) { .notice-list-form { padding:16px; } .notice-list-form label { flex-basis:100%; } }

@@ -1,0 +1,138 @@
+/* views/customer/underpass/underpass-map.vue — 배치와 크기, 구분선 */
+.underpass-map-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+  padding: 18px;
+  background: #f5f7f9;
+  margin-bottom: 16px;
+}
+.underpass-map-label {
+  display: grid;
+  gap: 6px;
+}
+.underpass-map-label-2 {
+  display: grid;
+  gap: 6px;
+}
+.underpass-map-label-3 {
+  display: grid;
+  gap: 6px;
+}
+.underpass-map-div {
+  width: 100%;
+  height: clamp(340px, 52dvh, 560px);
+}
+.underpass-map-section {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.underpass-map-div-2 {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.underpass-map-table {
+  width: 100%;
+  text-align: left;
+  border-spacing: 12px;
+}
+.map-columns {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+/* 지하차도 정보는 지도 위, 지도는 가로 전체를 사용합니다. */
+.map-canvas-column,
+.map-detail-column {
+  width: 100%;
+  min-width: 0;
+}
+@media (min-width: 721px) {
+  .map-detail-column dl {
+    grid-template-columns: repeat(3, max-content minmax(0, 1fr));
+  }
+}
+.underpass-map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+}
+.underpass-map-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.underpass-map-legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
+}
+
+.underpass-map-label, .underpass-map-label-3 { flex:1 1 140px; }
+.underpass-map-label-2 { flex:2 1 240px; }
+.underpass-map-form input, .underpass-map-form select { width:100%; }
+.underpass-map-table { min-width:600px; }
+.map-detail-column, .underpass-map-section { padding:20px; border:1px solid #dce3e9; background:#fafbfc; }
+.map-detail-column dl { margin-bottom:18px; }
+.underpass-map-legend { font-size:13px; color:#536575; }
+@media(max-width:600px) { .underpass-map-form { padding:14px; } .map-detail-column, .underpass-map-section { padding:14px; } }
+
+
+@media(max-width:1100px) { .underpass-map-div { height:clamp(300px,46dvh,430px); } }
+@media(max-width:600px) { .underpass-map-div { height:clamp(280px,42dvh,360px); } }
+.customer-underpass-page .map-columns { display:grid; grid-template-columns:minmax(0,1fr) minmax(280px,320px); grid-template-areas:"map detail"; align-items:stretch; --customer-map-height:560px; gap:16px; }
+.customer-underpass-page .map-detail-column, .customer-underpass-page .map-columns > .underpass-map-section { grid-area:detail; height:var(--customer-map-height); overflow-y:auto; align-self:stretch; box-sizing:border-box; }
+.customer-underpass-page .map-detail-column dl { grid-template-columns:112px minmax(0,1fr); }
+.customer-underpass-page .map-detail-column dt { padding:12px 8px; display:flex; align-items:center; font-size:14px; }
+.customer-underpass-page .map-detail-column dd { margin:0; padding:12px 8px; }
+.customer-underpass-page .observation-label { white-space:nowrap; }
+.customer-underpass-page .observation-value { display:flex; flex-direction:column; justify-content:center; gap:2px; font-variant-numeric:tabular-nums; }
+.customer-underpass-page .observation-value span { white-space:nowrap; }
+.customer-underpass-page .map-canvas-column { grid-area:map; position:relative; display:flex; flex-direction:column; min-width:0; height:var(--customer-map-height); }
+.customer-underpass-page .underpass-map-div { flex:1; min-height:0; height:100%; }
+.customer-underpass-page .underpass-map-legend { position:absolute; top:10px; left:10px; right:52px; z-index:2; margin:0; padding:8px 10px; background:transparent; border:0; border-radius:0; color:#243849; text-shadow:0 1px 3px #fff,0 0 5px #fff; pointer-events:none; }
+.customer-underpass-page .underpass-map-form { margin:0 0 22px; }
+.customer-underpass-page .facility-pagination { display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:12px; margin:20px 0; }
+
+.customer-underpass-page .underpass-map-legend li { color:#243849; }
+.customer-underpass-page .map-canvas-column > [role="alert"] { position:absolute; bottom:12px; left:12px; right:12px; z-index:2; padding:10px; background:var(--page-soft); }
+@media(max-width:1100px) { .customer-underpass-page .map-columns { grid-template-columns:minmax(0,1fr) 280px; } }
+@media(max-width:760px) {
+ .customer-underpass-page .map-columns { grid-template-columns:minmax(0,1fr); grid-template-areas:"map" "detail"; --customer-map-height:440px; }
+ .customer-underpass-page .map-detail-column, .customer-underpass-page .map-columns > .underpass-map-section { height:auto; overflow:visible; }
+}
+@media(max-width:600px) { .customer-underpass-page .map-columns { gap:12px; --customer-map-height:400px; } }
+
+/* 선택 안내와 시설 상세를 패널 중앙에 배치합니다. */
+.customer-underpass-page .map-detail-column,
+.customer-underpass-page .map-columns > .underpass-map-section {
+  display:flex;
+  flex-direction:column;
+  text-align:center;
+}
+.customer-underpass-page .map-detail-column > :first-child,
+.customer-underpass-page .map-columns > .underpass-map-section > :first-child { margin-top:auto; }
+.customer-underpass-page .map-detail-column > :last-child,
+.customer-underpass-page .map-columns > .underpass-map-section > :last-child { margin-bottom:auto; }
+.customer-underpass-page .map-detail-column > *,
+.customer-underpass-page .map-columns > .underpass-map-section > * { flex-shrink:0; }
+.customer-underpass-page .map-detail-column dl { width:100%; text-align:center; }
+.customer-underpass-page .map-detail-column dt { justify-content:center; }
+.customer-underpass-page .map-detail-column dd { text-align:center; }
+.customer-underpass-page .observation-value { align-items:center; }
+.customer-underpass-page .map-detail-column > button { align-self:center; }
+
+.customer-underpass-page .underpass-map-form{display:grid;grid-template-columns:minmax(100px,1fr) minmax(180px,1.8fr) minmax(100px,1fr) auto auto;align-items:end}
+.customer-underpass-page .underpass-map-form :is(label,input,select){min-width:0;width:100%;box-sizing:border-box}
+.customer-underpass-page .underpass-map-form :is(input,select,button){height:44px;min-height:44px;margin:0;box-sizing:border-box;line-height:1.4}
+.customer-shell.customer-water .customer-underpass-page .map-detail-column dl{display:grid;grid-template-columns:1fr 1fr;width:100%;max-width:440px;margin:16px auto}
+.customer-shell.customer-water .customer-underpass-page .map-detail-column :is(dt,dd){padding:12px 8px;margin:0;text-align:center;min-width:0;overflow-wrap:anywhere}
+@media(max-width:900px){.customer-underpass-page .underpass-map-form{grid-template-columns:repeat(2,minmax(0,1fr))}.customer-underpass-page .underpass-map-label-2{grid-column:1/-1;grid-row:2}}
+

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.mbc.puf.car.dao.CarDao">
+
+    <select id="countByCarNum" resultType="int">
+        SELECT COUNT(*)
+          FROM car
+         WHERE car_num = #{carNum}
+    </select>
+
+    <select id="countByCustomerId" resultType="int">
+        SELECT COUNT(*)
+          FROM car
+         WHERE customer_id = #{customerId}
+    </select>
+
+    <insert id="insertCar" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO car (customer_id, car_num)
+        VALUES (#{customerId}, #{carNum})
+    </insert>
+
+    <select id="selectCarsByCustomerId" resultType="Car">
+        SELECT id, customer_id, car_num, created_at
+          FROM car
+         WHERE customer_id = #{customerId}
+         ORDER BY created_at
+    </select>
+
+    <delete id="deleteCarByIdAndCustomerId">
+        DELETE FROM car
+         WHERE id = #{id}
+           AND customer_id = #{customerId}
+    </delete>
+
+    <select id="selectCarByCarNum" resultType="Car">
+        SELECT id, customer_id, car_num, created_at
+          FROM car
+         WHERE car_num = #{carNum}
+    </select>
+
+    <select id="selectCarByIdAndCustomerId" resultType="Car">
+        SELECT id, customer_id, car_num, created_at
+          FROM car
+         WHERE id = #{id}
+           AND customer_id = #{customerId}
+    </select>
+
+    <update id="updateCarByIdAndCustomerId">
+        UPDATE car
+           SET car_num = #{carNum}
+         WHERE id = #{id}
+           AND customer_id = #{customerId}
+    </update>
+
+    <select id="selectCarById" resultType="Car">
+        SELECT id, customer_id, car_num, created_at
+          FROM car
+         WHERE id = #{id}
+    </select>
+
+</mapper>

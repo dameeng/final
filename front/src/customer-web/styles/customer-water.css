@@ -1,0 +1,209 @@
+/* Customer web water theme; account geometry comes from the original dedicated styles. */
+html:has(.customer-shell.customer-water){scrollbar-gutter:stable;scroll-behavior:smooth}
+.customer-shell.customer-water{--routel-ink:#193e64;--routel-sub:#345974;--routel-blue:#287da2;--routel-line:#c0deeb;--routel-soft:#effaff75;--water-paper:#ffffffa6;--water-card:#ffffff8a;--water-edge:#ffffffba;color:var(--routel-ink);isolation:isolate;font-size:16px;line-height:1.8}
+html[data-routel-theme=dark] .customer-shell.customer-water{--routel-ink:#e9f2ff;--routel-sub:#d5e3f5;--routel-blue:#a9ccff;--routel-line:#7093cb70;--routel-soft:#385b892e;--water-paper:#12234e94;--water-card:#25457880;--water-edge:#96b9fb3d}
+.customer-water-world{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;background:linear-gradient(180deg,#fcfeff,#f0fbff)}
+html[data-routel-theme=dark] .customer-water-world{--water-blur:5px;background:linear-gradient(180deg,#071326,#142943)}
+.customer-water-rise{position:absolute;inset:0;height:200vh;transform:translateY(75vh)}
+.customer-water-rise :is(img,canvas){position:absolute;top:calc(var(--water-image-height,180vh) * -.35);left:50%;width:max(104vw,calc(var(--water-image-height,180vh) * 1.77778));height:var(--water-image-height,180vh);max-width:none;object-fit:fill;filter:blur(var(--water-blur,7px));transform:translateX(-50%);mask-image:linear-gradient(to bottom,transparent,#000 28%,#000);animation:customer-photo-drift 12s ease-in-out infinite alternate}
+.customer-water-rise canvas{visibility:hidden}.customer-water-rise canvas.ready{visibility:visible}
+html[data-routel-theme=dark] .customer-water-rise :is(img,canvas){top:calc(var(--water-image-height,180vh) * -.28);mask-image:linear-gradient(to bottom,transparent,#000 22%,#000)}
+@keyframes customer-photo-drift{0%{transform:translateX(calc(-50% - 7px)) translateY(4px) scale(1.012)}50%{transform:translateX(calc(-50% + 6px)) translateY(-5px) scale(1.02)}100%{transform:translateX(calc(-50% - 3px)) translateY(3px) scale(1.012)}}
+.customer-fireflies{position:absolute;inset:var(--routel-header-height,88px) 0 0;display:none}
+html[data-routel-theme=dark] .customer-fireflies{display:block}
+.customer-fireflies i{position:absolute;width:4px;height:4px;animation:customer-firefly-flight 20s ease-in-out infinite}
+.customer-fireflies span{display:block;width:100%;height:100%;border-radius:50%;background:#f6ffd0;box-shadow:0 0 6px 3px #eaffbfc9,0 0 20px 8px #d9f59b66;animation:customer-firefly-glow 6s ease-in-out infinite alternate;animation-delay:inherit}
+.customer-fireflies i:nth-child(3n) span{background:#e4f8ff;box-shadow:0 0 6px 3px #c6edffd0,0 0 20px 8px #acdfff66}
+@keyframes customer-firefly-flight{50%{transform:translate3d(30px,-45px,0)}}
+@keyframes customer-firefly-glow{from{opacity:.4;transform:scale(.85)}to{opacity:1;transform:scale(1.15)}}
+.customer-water-world.paused :is(img,canvas,i,span){animation-play-state:paused}
+.customer-shell.customer-water .customer-view-controls{position:relative;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:8px 4%;background:#f3fbff9c;backdrop-filter:blur(8px);font-size:13px}
+.customer-view-controls>div{display:flex;align-items:center;gap:18px}
+.customer-view-controls button,.customer-view-controls select{min-height:34px;padding:4px 10px;font-size:13px;border:1px solid var(--routel-line);border-radius:3px;background:var(--water-card)}
+.customer-shell.customer-water .customer-content:not(.is-home){width:min(1170px,90%);max-width:1170px;padding:44px 0 80px;margin:0 auto}
+.customer-shell.customer-water .customer-breadcrumb{margin-bottom:26px;color:var(--routel-sub);font-size:13px}
+.customer-page-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:32px}
+.customer-page-tabs a{display:flex;align-items:center;justify-content:center;min-width:100px;min-height:40px;padding:8px 15px;font-size:13px;border:1px solid var(--routel-line);border-radius:3px;background:var(--water-card);text-align:center}
+.customer-page-tabs .router-link-exact-active{color:white;background:#287da2d9;border-color:#287da2}
+.customer-shell.customer-water .customer-page-frame{height:auto;min-height:480px;padding:clamp(24px,4vw,56px);border:1px solid var(--water-edge);border-radius:5px;box-shadow:0 15px 55px #638ea60b;overflow:visible;scrollbar-gutter:auto;scroll-padding:24px;isolation:isolate}
+.customer-shell.customer-water .customer-page-frame{background:var(--water-paper);backdrop-filter:blur(12px)}
+.customer-shell.customer-water .customer-page-frame>:is(main,div){width:100%;max-width:none;margin:0;min-width:0}
+.customer-shell.customer-water:not(.customer-account-layout) .customer-page h1{font-size:38px;font-weight:500;letter-spacing:-1px;padding:0 0 24px;margin:0 0 32px;text-align:center}
+.customer-shell.customer-water:not(.customer-account-layout) .customer-page :is(header>p,header>h2){text-align:center}
+.customer-shell.customer-water .customer-page :is(h1,h2,h3){word-break:keep-all;overflow-wrap:anywhere}
+.customer-shell.customer-water .customer-page section{min-width:0}
+.customer-shell.customer-water{--field-bg:#ffffff9c;--field-ink:#193e64;--field-placeholder:#526e86;--field-line:#b9d9e8}
+html[data-routel-theme=dark] .customer-shell.customer-water{--field-bg:#15264dd9;--field-ink:#e7f1ff;--field-placeholder:#bed1ef;--field-line:#819dcb66}
+html[data-routel-theme] .customer-shell.customer-water .routel-content-page{--page-ink:var(--routel-ink);--page-sub:var(--routel-sub);--page-blue:var(--routel-blue);--page-line:var(--routel-line);--page-soft:var(--routel-soft);background:transparent;color:var(--routel-ink)}
+html[data-routel-theme] .customer-shell.customer-water .customer-page :is(section,article,form,fieldset,th,td,dt,dd){background-color:transparent;border-color:var(--routel-line)}
+html[data-routel-theme] .customer-shell.customer-water .customer-page :is(h1,h2,h3,h4,label,li,strong,dd){color:var(--routel-ink)}
+html[data-routel-theme] .customer-shell.customer-water .customer-page :is(p,dt,small){color:var(--routel-sub)}
+html[data-routel-theme] .customer-shell.customer-water .customer-page :is(th,.weather-place,.weather-rain-grid>div){background:var(--routel-soft);color:var(--routel-ink)}
+html[data-routel-theme] .customer-shell.customer-water .customer-page button:not([aria-pressed=true]){background:var(--water-card);color:var(--routel-ink);border-color:var(--routel-line);border-radius:3px}
+html[data-routel-theme] .customer-shell.customer-water .customer-page button[type=submit]{background:#287da2;color:#fff;border-color:#287da2}
+html[data-routel-theme=dark] .customer-shell.customer-water :is(.customer-header-header,.customer-header-inner){background:transparent;color:var(--routel-ink)}
+html[data-routel-theme=dark] .customer-shell.customer-water .customer-header-header{background:#0c1936ad;border-color:#7894d238}
+html[data-routel-theme=dark] .customer-shell.customer-water .customer-view-controls{background:#172a4c8c}
+html[data-routel-theme=dark] .customer-shell.customer-water .customer-dropdown{background:#152547f5;border-color:#678cc766}
+html[data-routel-theme=dark] .customer-shell.customer-water .customer-header-nav button{background:transparent;color:var(--routel-ink)}
+html[data-routel-theme] .customer-shell.customer-water .customer-footer{background:#f7fcff65;backdrop-filter:blur(8px);color:var(--routel-ink)}
+html[data-routel-theme=dark] .customer-shell.customer-water .customer-footer{background:#101e3b6e}
+.customer-shell.customer-water .footer-related details{position:relative}.customer-shell.customer-water .footer-related details>ul{position:static;width:100%;box-sizing:border-box;background:transparent;border:0;border-top:1px solid var(--routel-line);padding:8px}
+/* One grid and one height for adjacent operational panels, including empty states. */
+.customer-shell.customer-water .customer-underpass-page .map-columns,.customer-shell.customer-water .weather-overview{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;align-items:stretch;--customer-map-height:520px}
+.customer-shell.customer-water .customer-underpass-page .map-columns>section,.customer-shell.customer-water .weather-overview>section{height:520px;min-height:0;margin:0;overflow:auto;scrollbar-gutter:stable;border:1px solid var(--routel-line);border-radius:4px;padding:22px}
+.customer-shell.customer-water .customer-underpass-page .map-canvas-column{padding:0;overflow:hidden;scrollbar-gutter:auto}
+.customer-shell.customer-water .weather-overview>section:first-child{display:flex;flex-direction:column;overflow:hidden;scrollbar-gutter:auto}
+.customer-shell.customer-water .weather-map-wrap{flex:1;min-height:0}.customer-shell.customer-water .weather-map{height:100%;min-height:0}
+.customer-shell.customer-water .weather-current{display:flex;flex-direction:column;text-align:center}
+.customer-shell.customer-water .weather-current>:first-child{margin-top:auto}.customer-shell.customer-water .weather-current>:last-child{margin-bottom:auto}
+.customer-shell.customer-water .weather-current>*{flex-shrink:0}
+.customer-shell.customer-water .weather-page .weather-rain-grid{gap:8px;border:0;grid-template-columns:repeat(6,minmax(0,1fr))}
+.customer-shell.customer-water .weather-page .weather-rain-grid>div{display:flex;flex-direction:column;justify-content:center;height:84px;padding:10px 6px;border:1px solid var(--routel-line);border-radius:4px}
+.customer-shell.customer-water .weather-page .weather-rain-grid dd{margin-top:4px;font-size:17px}
+@media(max-width:800px){.customer-shell.customer-water .weather-page .weather-rain-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+/* 지하차도 목록(5건)·공지사항·FAQ(10건)는 페이지 단위로 나뉘어 있으므로 높이를 고정하지 않고 한 번에 보여줍니다. */
+/* 페이지 번호 버튼: 현재 페이지를 강조합니다. */
+.customer-shell.customer-water .routel-page-numbers{gap:6px}
+.customer-shell.customer-water .routel-page-numbers button{min-width:40px;min-height:36px;padding:6px 10px}
+.customer-shell.customer-water .routel-page-numbers button[aria-current=page]{background:#326e9a;border-color:#326e9a;color:#fff;font-weight:700}
+.customer-shell.customer-water .customer-page thead{position:sticky;top:0;z-index:1;background:var(--field-bg,#fff)}
+.customer-shell.customer-water .customer-page td[colspan]{height:180px;text-align:center;vertical-align:middle}
+/* Account controls align with the reference. Auth colours/backgrounds remain original. */
+.customer-shell.customer-water .routel-content-page>div:has(>section):not(.map-columns):not(.weather-overview):not(.faq-accordion):not(.sitemap-grid):not(.weather-place){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
+.customer-shell.customer-water .routel-content-page>div:has(>section):not(.map-columns):not(.weather-overview):not(.faq-accordion):not(.sitemap-grid)>section{height:280px;margin:0;padding:24px;overflow:auto;scrollbar-gutter:stable;border:1px solid var(--routel-line);border-radius:4px;display:flex;flex-direction:column;text-align:center}
+.customer-shell.customer-water .routel-content-page>div:has(>section):not(.map-columns):not(.weather-overview):not(.faq-accordion):not(.sitemap-grid)>section>:first-child{margin-top:auto}
+/* 오시는 길: 사무실 정보가 스크롤 없이 한 번에 보이도록 상자 높이를 내용에 맞춥니다. */
+.customer-shell.customer-water .routel-content-page.directions-page>div:has(>section):not(.map-columns):not(.weather-overview):not(.faq-accordion):not(.sitemap-grid)>section{height:auto;min-height:280px;overflow:visible}
+.customer-shell.customer-water .routel-content-page>div:has(>section):not(.map-columns):not(.weather-overview):not(.faq-accordion):not(.sitemap-grid)>section>:last-child{margin-bottom:auto}
+.customer-shell.customer-water .routel-content-page>div:has(>section)>section>*{flex-shrink:0}
+@media(max-width:800px){.customer-shell.customer-water .customer-underpass-page .map-columns,.customer-shell.customer-water .weather-overview{grid-template-columns:minmax(0,1fr);grid-template-areas:'map' 'detail';gap:16px}.customer-shell.customer-water .customer-underpass-page .map-columns>section,.customer-shell.customer-water .weather-overview>section{height:420px}.customer-shell.customer-water .weather-rain-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.customer-shell.customer-water .routel-content-page>div:has(>section):not(.map-columns):not(.weather-overview):not(.faq-accordion):not(.sitemap-grid):not(.weather-place){grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){.customer-shell.customer-water .customer-content:not(.is-home){width:92%;padding:28px 0 48px}.customer-shell.customer-water .customer-page-frame{padding:24px 16px;height:auto;min-height:480px}.customer-shell.customer-water:not(.customer-account-layout) .customer-page h1{font-size:28px;margin-bottom:24px}.customer-page-tabs{gap:6px;margin-bottom:22px}.customer-page-tabs a{min-width:0;flex:1 1 auto;padding:8px 10px}.customer-view-controls{flex-wrap:wrap}.customer-view-controls>div{gap:10px}.customer-fireflies i:nth-child(n+13){display:none}}
+@media(prefers-reduced-motion:reduce){html:has(.customer-shell.customer-water){scroll-behavior:auto}.customer-water-rise :is(img,canvas),.customer-fireflies :is(i,span){animation:none}.customer-water-rise canvas.ready{visibility:hidden}}
+/* Reference home: the water remains visible beneath the intro, services and roadmap. */
+html[data-routel-theme] .customer-shell.customer-water :is(.home-main,.routel-home-story,.routel-services,.routel-vision,.routel-vision-row){background:transparent;color:var(--routel-ink)}
+.customer-shell.customer-water .routel-home-scenery{display:none}
+.customer-shell.customer-water .routel-hero{--hero-height:calc(100svh - var(--routel-header-height,88px));height:185svh;min-height:1050px}
+.customer-shell.customer-water .routel-hero-copy{max-width:1120px;margin-inline:auto;text-align:center}
+.customer-shell.customer-water .routel-hero-copy h2{font-size:clamp(28px,3.4vw,48px);line-height:1.5;font-weight:600;letter-spacing:-.04em;text-wrap:balance}
+.customer-shell.customer-water .routel-hero-intro h1{font-size:clamp(40px,5.3vw,76px);font-weight:500}
+.customer-shell.customer-water .routel-hero-description{margin:28px auto;max-width:760px;font-size:clamp(17px,1.45vw,20px);line-height:1.9;text-wrap:balance}
+.customer-shell.customer-water .routel-hero-actions{justify-content:center}
+html[data-routel-theme] .customer-shell.customer-water :is(.routel-hero-copy,.routel-services,.routel-vision) :is(h2,h3){color:var(--routel-ink)}
+html[data-routel-theme] .customer-shell.customer-water :is(.routel-hero-copy,.routel-services,.routel-vision) p{color:var(--routel-sub)}
+html[data-routel-theme] .customer-shell.customer-water :is(.routel-hero-copy .routel-hero-eyebrow,.routel-hero-promise,.routel-services-number,.routel-vision-year){color:var(--routel-blue)}
+.customer-shell.customer-water .routel-services{width:min(1160px,88%);padding:65px 0 100px;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(28px,5vw,70px);align-items:center}
+.customer-shell.customer-water .routel-services-list{padding:0;margin:0;list-style:none}
+.customer-shell.customer-water .routel-services-item{padding:27px 0;border-top:1px solid var(--routel-line)}
+.customer-shell.customer-water .routel-services-item:last-child{border-bottom:1px solid var(--routel-line)}
+.customer-shell.customer-water .routel-services-item a{font-size:13px;color:var(--routel-blue)}
+.customer-shell.customer-water .routel-services h2,.customer-shell.customer-water .routel-vision h2{font-size:clamp(25px,2.7vw,38px);font-weight:500}
+.customer-shell.customer-water .routel-vision{padding:100px 0;width:min(1160px,88%);margin:auto}
+.customer-shell.customer-water .routel-vision-inner{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 clamp(28px,5vw,70px);padding:0;max-width:none}
+.customer-shell.customer-water .routel-vision-heading{grid-column:1;grid-row:1/3;align-self:center;text-align:left;margin:0;padding:0}
+.customer-shell.customer-water .routel-vision-roadmap{grid-column:2;margin:0;padding:0;display:block}
+.customer-shell.customer-water .routel-vision-row{display:grid;grid-template-columns:70px minmax(0,1fr);padding:26px 0;gap:20px;border:0;border-top:1px solid var(--routel-line);border-radius:0}
+.customer-shell.customer-water .routel-vision-note{grid-column:2;margin:20px 0 0;text-align:left}
+.customer-shell.customer-water .customer-photo-band{width:min(1280px,94%);height:330px;margin:20px auto 0;position:relative;display:grid;align-items:center;overflow:hidden;border-radius:5px}
+.customer-photo-band>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.customer-photo-band:after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,#154c70d9,#34658208)}
+.customer-photo-band>div{position:relative;z-index:1;padding:40px 7%;color:#fff}
+.customer-photo-band p{font-size:13px;letter-spacing:2px;color:#d8eeea}
+.customer-photo-band h2{font-size:clamp(28px,3vw,38px);margin:0 0 16px}
+.customer-shell.customer-water .customer-closing{padding:60px 6%;text-align:center;border-top:1px solid var(--routel-line);background:var(--water-card)}
+.customer-closing>p{font-size:13px;letter-spacing:3px;color:var(--routel-blue)}
+.customer-closing>h2{font-size:clamp(28px,3.5vw,44px)}
+html[data-routel-theme] .customer-shell.customer-water .routel-hero-button{background:var(--water-card);color:var(--routel-ink);border-color:var(--routel-line)}
+html[data-routel-theme] .customer-shell.customer-water .routel-hero-button-primary{background:#287da2;color:#fff;border-color:#287da2}
+html[data-routel-theme=dark] .customer-shell.customer-water .routel-hero-button-primary{background:#4279c6dd;border-color:#71a1e2}
+@media(max-width:800px){.customer-shell.customer-water .routel-services,.customer-shell.customer-water .routel-vision-inner{grid-template-columns:minmax(0,1fr);gap:28px}.customer-shell.customer-water .routel-vision-heading,.customer-shell.customer-water .routel-vision-roadmap,.customer-shell.customer-water .routel-vision-note{grid-column:1;grid-row:auto}.customer-shell.customer-water .routel-services,.customer-shell.customer-water .routel-vision{padding:60px 0}.customer-shell.customer-water .customer-photo-band{height:300px}.customer-shell.customer-water .routel-hero-copy h2{font-size:30px}}
+@media(max-width:900px),(max-height:560px),(prefers-reduced-motion:reduce){.customer-shell.customer-water .routel-hero{height:auto;min-height:0}.customer-shell.customer-water .routel-hero-stage{height:auto}.customer-shell.customer-water .routel-hero-content{padding:40px 7%}}
+/* Informational pages use the same glass frame and equal cards. */
+html[data-routel-theme] .customer-shell.customer-water :is(.routel-company,.routel-history){color:var(--routel-ink)}
+html[data-routel-theme] .customer-shell.customer-water :is(.routel-company,.routel-history) :is(h1,h2,h3){color:var(--routel-ink)}
+html[data-routel-theme] .customer-shell.customer-water :is(.routel-company,.routel-history) :is(p,figcaption){color:var(--routel-sub)}
+html[data-routel-theme] .customer-shell.customer-water :is(.routel-company-hero,.routel-company-direction){background:transparent}
+.customer-shell.customer-water .routel-company-hero::before{display:none}
+.customer-shell.customer-water .routel-company-hero{padding:16px 0 40px;text-align:center}
+.customer-shell.customer-water .routel-company-lead{margin:auto;max-width:720px}
+.customer-shell.customer-water .routel-company-context{align-items:center}
+.customer-shell.customer-water .routel-company-prose{padding:0}
+.customer-shell.customer-water .routel-company-principle-list{gap:22px}
+.customer-shell.customer-water .routel-company-principle-list li{height:300px;padding:24px;border:1px solid var(--routel-line);border-radius:4px;overflow:auto;scrollbar-gutter:stable;display:flex;flex-direction:column;text-align:center}
+.customer-shell.customer-water .routel-company-principle-list li>:first-child{margin-top:auto}.customer-shell.customer-water .routel-company-principle-list li>:last-child{margin-bottom:auto}
+.customer-shell.customer-water .routel-company-principle-list li>*{flex-shrink:0}
+.customer-shell.customer-water .app-download-section{min-height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.customer-shell.customer-water .routel-content-page:has(>p>a[target])>p{margin-inline:auto;text-align:center}
+html[data-routel-theme=dark] .customer-shell.customer-water :is(.customer-member-nav button,.customer-dropdown a){color:var(--routel-ink);background:transparent}
+html[data-routel-theme=dark] .customer-shell.customer-water select option{background:#1a2b50;color:#e7f1ff}
+.customer-shell.customer-water .customer-map-status{margin:0 0 22px;overflow-wrap:anywhere}
+.customer-shell.customer-water .customer-map-status>p{margin:0;padding:8px 12px}
+.customer-shell.customer-water .customer-feedback{height:56px;overflow:auto;scrollbar-gutter:stable;margin:0 0 16px}
+/* Keep long account rows within their panel, including narrow mobile screens. */
+
+/* Follow the document scroll; the main surface has no separate scroll container. */
+.customer-shell.customer-water .customer-content:not(.is-home){width:min(1440px,92%);max-width:1440px}
+.customer-follow-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:28px}
+.customer-follow-layout.has-sidebar{grid-template-columns:190px minmax(0,1fr)}
+.customer-follow-sidebar{position:sticky;top:calc(var(--routel-header-height,88px) + 20px);align-self:start;min-width:0;padding:22px 14px;border:1px solid var(--water-edge);border-radius:5px;background:var(--water-paper);backdrop-filter:blur(14px)}
+.customer-follow-sidebar h2{margin:0 0 16px;font-size:20px;font-weight:500;text-align:center}
+.customer-follow-links{display:grid;gap:6px}
+.customer-follow-links a{display:flex;align-items:center;min-height:44px;padding:10px 12px;border:1px solid transparent;border-radius:3px;font-size:15px}
+.customer-follow-links a:hover{background:var(--routel-soft);border-color:var(--routel-line)}
+.customer-follow-links .router-link-exact-active{background:#287da2d9;color:#fff;border-color:#287da2}
+html[data-routel-theme=dark] .customer-follow-links .router-link-exact-active{background:#4279c6dd;border-color:#71a1e2}
+.customer-shell.customer-water .customer-follow-layout:not(.has-sidebar){width:min(1170px,100%);margin-inline:auto}
+.customer-shell.customer-water .is-home .customer-follow-layout{width:100%;max-width:none}
+@media(max-width:900px){.customer-follow-layout.has-sidebar{grid-template-columns:minmax(0,1fr);gap:20px}.customer-follow-sidebar{position:static;padding:12px}.customer-follow-sidebar h2{font-size:17px;margin-bottom:10px}.customer-follow-links{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.customer-follow-links a{justify-content:center;text-align:center;font-size:13px;padding:8px 6px}}
+@media(max-width:420px){.customer-follow-links{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+html[data-routel-theme=dark] .customer-shell.customer-water .customer-hover-mega{background:#152547f5;border-color:#678cc766;color:var(--routel-ink)}
+html[data-routel-theme=dark] .customer-shell.customer-water .customer-hover-groups a{color:var(--routel-ink)}
+/* Login/signup/my-page: original widths, vertical forms and section order.
+   Only the water theme is applied; no new outer card or two-column account grid. */
+.customer-shell.customer-water.customer-account-layout{font-size:17px;line-height:1.65}
+.customer-shell.customer-water.customer-account-layout .customer-content:not(.is-home){width:100%;max-width:1440px;margin:auto;padding:60px 5% 100px}
+.customer-shell.customer-water.customer-account-layout .customer-follow-layout:not(.has-sidebar){width:100%;max-width:none;margin:0;gap:0}
+.customer-shell.customer-water.customer-account-layout .customer-breadcrumb{margin-bottom:30px}
+html[data-routel-theme] .customer-shell.customer-water.customer-account-layout .customer-main>.routel-content-page{background:var(--water-paper);backdrop-filter:blur(12px);outline:1px solid var(--water-edge);border-radius:5px}
+html[data-routel-theme] .customer-shell.customer-water.customer-account-layout .routel-content-page [role=status]:not(:empty){background:var(--water-card);color:var(--routel-ink);border-color:var(--routel-line)}
+@media(max-width:900px){.customer-shell.customer-water.customer-account-layout .customer-content:not(.is-home){padding:32px 5% 70px}.customer-shell.customer-water.customer-account-layout .customer-breadcrumb{margin-bottom:22px}}
+@media(max-width:600px){.customer-shell.customer-water.customer-account-layout{font-size:16px}}
+
+.customer-water-rise{z-index:0}.customer-fireflies{z-index:1}
+/* Light-mode water reflections: above the photo, below all interactive UI. */
+.customer-sun-glints{position:absolute;inset:0;z-index:1;pointer-events:none}
+.customer-sun-glints::before{content:"";position:absolute;inset:-5vh -12vw 38%;background:radial-gradient(ellipse at 24% 25%,#a8e8f64a,transparent 50%),radial-gradient(ellipse at 74% 49%,#b5f2dd3d,transparent 48%);filter:blur(28px);animation:customer-surface-light 19s ease-in-out infinite alternate}
+.customer-sun-glints i{position:absolute;width:30px;height:3px;border-radius:50%;background:#fffdf1;box-shadow:0 0 5px 2px #fffef6dd,0 0 15px 5px #fff0bd80;opacity:0;animation:customer-sun-glint 4.5s ease-in-out infinite}
+.customer-sun-glints i::after{content:"";position:absolute;inset:-4px 13px;background:#fffdf4;border-radius:50%;box-shadow:0 0 6px #fff7cf}
+.customer-sun-glints i:nth-child(3n){width:22px;height:2px}
+html[data-routel-theme=dark] .customer-sun-glints{display:none}
+.customer-water-world.paused .customer-sun-glints::before{animation-play-state:paused}
+@keyframes customer-sun-glint{0%,12%,60%,100%{opacity:.04;transform:translateX(-6px) scale(.65)}28%{opacity:.98;transform:translateX(2px) scale(1.3)}38%{opacity:.45;transform:translateX(4px) scale(.9)}45%{opacity:.75;transform:translateX(6px) scale(1.08)}}
+@keyframes customer-surface-light{from{transform:translate3d(-3%,1%,0) scale(1);opacity:.6}to{transform:translate3d(5%,-2%,0) scale(1.08);opacity:.9}}
+html[data-routel-theme=dark] .customer-shell.customer-water .routel-services :is(p,a,.routel-services-number){opacity:1;text-shadow:0 1px 5px #06172ecc}
+html[data-routel-theme=dark] .customer-shell.customer-water .routel-services-item{border-top:1px solid #c6d6ee99;border-bottom:0}
+html[data-routel-theme=dark] .customer-shell.customer-water .routel-services-item:last-child{border-bottom:1px solid #c6d6ee99}
+html[data-routel-theme=dark] .customer-shell.customer-water .routel-services :is(h2,h3){color:#f5f9ff;text-shadow:0 1px 6px #06172ee6}
+html[data-routel-theme=dark] .customer-shell.customer-water .routel-services :is(.routel-services-item p,.routel-services-summary){color:#e8f0fc;font-weight:500;text-shadow:0 1px 3px #06172ef2,0 0 10px #06172eb3}
+html[data-routel-theme=dark] .customer-shell.customer-water .routel-services :is(.routel-services-item a,.routel-services-number,.routel-services-eyebrow){color:#c4dcff;font-weight:600;text-shadow:0 1px 3px #06172ef2}
+html[data-routel-theme=light] .customer-shell.customer-water .routel-services-list{padding:0 28px;background:#ffffff9e;border:1px solid var(--water-edge);border-radius:6px;box-shadow:0 8px 28px #2a5d8014;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+html[data-routel-theme=light] .customer-shell.customer-water .routel-services-item:first-child{border-top:0}
+html[data-routel-theme=light] .customer-shell.customer-water .routel-services-item:last-child{border-bottom:0}
+html[data-routel-theme=light] .customer-shell.customer-water .routel-services :is(.routel-services-item p,.routel-services-summary){color:#24445f}
+html[data-routel-theme=light] .customer-shell.customer-water .routel-services-item a{font-size:14px;font-weight:500;color:#1d6688}
+html[data-routel-theme=light] .customer-shell.customer-water .routel-vision-roadmap{padding:0 28px;background:#ffffff9e;border:1px solid var(--water-edge);border-radius:6px;box-shadow:0 8px 28px #2a5d8014;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+html[data-routel-theme=light] .customer-shell.customer-water .routel-vision-row:first-child{border-top:0}
+html[data-routel-theme=light] .customer-shell.customer-water .routel-vision :is(.routel-vision-goal p,.routel-vision-description){color:#24445f}
+@media(prefers-reduced-motion:reduce){.customer-sun-glints{display:none}}
+
+
+/* History dates and planned labels need their own dark-theme contrast. */
+html[data-routel-theme=dark] .customer-shell.customer-water .routel-history .routel-history-date,
+html[data-routel-theme=dark] .customer-shell.customer-water .routel-history .routel-history-eyebrow{color:#a9d9ff;font-weight:600}
+html[data-routel-theme=dark] .customer-shell.customer-water .routel-history .routel-history-status{color:#d5e5f6;font-weight:500}
+html[data-routel-theme=dark] .customer-shell.customer-water .routel-history-step:not(:last-child)::before{border-left-color:#90aac8}
+html[data-routel-theme=dark] .customer-shell.customer-water .routel-history-step:not(:last-child)::after{border-right-color:#90aac8;border-bottom-color:#90aac8}
+html[data-routel-theme=dark] .customer-shell.customer-water :is(.routel-services-list,.routel-vision-roadmap){padding:0 28px;background:#0c1c3a99;border:1px solid #9bb8e340;border-radius:6px;box-shadow:0 10px 30px #02081866;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+html[data-routel-theme=dark] .customer-shell.customer-water .routel-services-item:first-child,html[data-routel-theme=dark] .customer-shell.customer-water .routel-vision-row:first-child{border-top:0}
+html[data-routel-theme=dark] .customer-shell.customer-water .routel-services-item:last-child{border-bottom:0}

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.mbc.puf.member.dao.ManagerDao">
+
+    <!-- 로그인: 이름·이메일은 employee 에서 조인 (비밀번호 재설정 발송 시 email도 필요) -->
+    <select id="selectManagerByLoginId" resultType="Manager">
+        SELECT m.id, m.employee_id, m.login_id, m.password, m.role, m.status, m.region_id,
+               e.name, e.email
+          FROM manager m
+          JOIN employee e ON e.id = m.employee_id
+         WHERE m.login_id = #{loginId}
+    </select>
+
+    <!-- 내 정보: 최고관리자는 region_id 가 NULL 이므로 region 은 LEFT JOIN -->
+    <select id="selectManagerProfileById" resultType="Manager">
+        SELECT m.id, m.login_id, m.role, m.status, m.region_id,
+               r.name AS region_name,
+               e.name, e.email, e.phone
+          FROM manager m
+          JOIN employee e ON e.id = m.employee_id
+          LEFT JOIN region r ON r.id = m.region_id
+         WHERE m.id = #{id}
+    </select>
+
+    <!-- 비밀번호 변경 확인용: 비밀번호 해시만 -->
+    <select id="selectManagerPasswordById" resultType="Manager">
+        SELECT id, password, status
+          FROM manager
+         WHERE id = #{id}
+    </select>
+
+    <select id="countByLoginId" resultType="int">
+        SELECT COUNT(*)
+          FROM manager
+         WHERE login_id = #{loginId}
+    </select>
+
+    <!-- DB의 부분 유니크 인덱스(uq_manager_employee_active)와 같은 조건. XML 안에서는 <> 대신 != 를 쓴다 -->
+    <select id="countActiveByEmployeeId" resultType="int">
+        SELECT COUNT(*)
+          FROM manager
+         WHERE employee_id = #{employeeId}
+           AND status != 'WITHDRAWN'
+    </select>
+
+    <!-- 가입 신청: created_at 은 DB 기본값(NOW()), region_id/approved_* 는 승인(MP-17) 때 채워진다 -->
+    <insert id="insertManager" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO manager (employee_id, login_id, password, role, status)
+        VALUES (#{employeeId}, #{loginId}, #{password}, #{role}, #{status})
+    </insert>
+
+    <update id="updatePassword">
+        UPDATE manager
+           SET password = #{newPasswordHash}
+         WHERE id = #{id}
+    </update>
+
+</mapper>

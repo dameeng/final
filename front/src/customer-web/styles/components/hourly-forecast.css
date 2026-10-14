@@ -1,0 +1,46 @@
+.hourly-line-chart { min-width: 0; margin-top: 20px; }
+.hourly-line-chart__controls { display: flex; flex-wrap: wrap; gap: 8px; }
+.hourly-line-chart__controls button { min-height: 42px; padding: 9px 18px; border: 1px solid #cbd5df; border-radius: 3px; background: var(--page-soft, #fff); color: var(--page-ink, #334e67); font: inherit; cursor: pointer; }
+.hourly-line-chart__controls button[aria-pressed="true"] { background: #152d45; border-color: #152d45; color: #fff; }
+.hourly-line-chart__controls button[aria-pressed="false"]:hover { background: #f0f4f7; }
+.hourly-line-chart__controls button:focus-visible,
+.hourly-line-chart__scroll:focus-visible,
+.hourly-line-chart__details summary:focus-visible,
+.hourly-line-chart .weather-scroll:focus-visible { outline: 2px solid #35688d; outline-offset: 3px; }
+.hourly-line-chart__caption { margin: 22px 0 8px; color: var(--page-ink, #334e67); font-size: 15px; font-weight: 600; }
+.hourly-line-chart__scroll { max-width: 100%; overflow-x: auto; overscroll-behavior-x: contain; background: var(--page-soft, #fff); }
+.hourly-line-chart__svg { display: block; max-width: none; font-family: inherit; }
+.hourly-line-chart__grid line { stroke: var(--page-line, #e0e7ed); stroke-width: 1; }
+.hourly-line-chart__grid text { fill: var(--page-sub, #657588); font-size: 13px; }
+.hourly-line-chart__line { fill: none; stroke: var(--page-blue, #35688d); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.hourly-line-chart__dot { fill: #fff; stroke: var(--page-blue, #35688d); stroke-width: 2; }
+.hourly-line-chart__value { fill: var(--page-ink, #152d45); font-size: 13px; font-weight: 600; }
+.hourly-line-chart__time { fill: var(--page-sub, #536575); font-size: 13px; }
+.hourly-line-chart__missing { fill: var(--page-sub, #657588); font-size: 13px; }
+.hourly-line-chart__hint { margin: 12px 0 20px; color: var(--page-sub, #657588); font-size: 14px; line-height: 1.7; }
+.hourly-line-chart__empty { padding: 28px 0; color: var(--page-sub, #536575); }
+.hourly-line-chart__details { border-top: 1px solid #dce3e9; }
+.hourly-line-chart__details summary { padding: 14px 0; color: var(--page-ink, #334e67); cursor: pointer; font-size: 15px; }
+.hourly-line-chart .weather-scroll { max-width: 100%; min-width:0; overflow-x: auto; overscroll-behavior-x:contain; }
+.hourly-line-chart .weather-scroll table { width: max-content; min-width:100%; table-layout:auto; border-collapse: collapse; white-space: nowrap; font-size: 15px; }
+.hourly-line-chart .weather-scroll th,
+.hourly-line-chart .weather-scroll td { min-width: 120px; padding: 14px 12px; border-bottom: 1px solid #dce3e9; text-align: center; }
+.hourly-line-chart .weather-scroll th { background: var(--page-soft, #f5f7f9); font-weight: 500; }
+.hourly-line-chart__table-caption { padding: 10px 0; text-align: left; color: var(--page-sub, #536575); }
+@media (max-width: 600px) {
+  .hourly-line-chart__controls button { flex: 1 1 0; padding: 9px 8px; font-size: 15px; }
+}
+
+.hourly-line-chart .weather-scroll th { color:var(--page-ink); }
+
+/* 가로 스크롤 없이 12시간을 한눈에: 그래프를 영역 폭에 맞춥니다. */
+.hourly-line-chart__area { min-width: 0; }
+.hourly-line-chart__scroll { overflow: hidden; }
+
+
+html[data-routel-theme=dark] .hourly-line-chart{--chart-accent:#f2d783}
+html[data-routel-theme=dark] .hourly-line-chart__line{stroke:var(--chart-accent)}
+html[data-routel-theme=dark] .hourly-line-chart__dot{stroke:var(--chart-accent);fill:#fff1ba;filter:drop-shadow(0 0 3px #f2d78399)}
+html[data-routel-theme=dark] .hourly-line-chart__controls button[aria-pressed=true]{background:#f2d783;color:#18263c;border-color:#fff1ba;font-weight:700;box-shadow:inset 0 -3px 0 #a68232}
+html[data-routel-theme=light] .hourly-line-chart__controls button[aria-pressed=true]{background:#215c80;color:#fff;border-color:#215c80;font-weight:700}
+

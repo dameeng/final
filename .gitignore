@@ -1,0 +1,36 @@
+# ===== 라이브러리 (각자 설치) =====
+node_modules/
+venv/
+
+# ===== 빌드 결과물 (실행하면 다시 생김) =====
+target/
+dist/
+build/
+__pycache__/
+*.pyc
+
+# ===== IDE / 개인 설정 =====
+.metadata/
+.idea/
+.vscode/
+.settings/
+.classpath
+.project
+.claude/
+
+# ===== 대용량 영상 =====
+*.mp4
+*.avi
+*.mov
+*.mkv
+
+# ===== 실행 중 생기는 업로드 파일 =====
+back/final/uploads/
+
+# ===== 비밀정보 (공개 저장소에 올리면 안 됨) =====
+.env
+.env.local
+application-secret.properties
+
+# ===== 기타 =====
+*.log

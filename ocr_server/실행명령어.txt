@@ -1,0 +1,247 @@
+==================================================================
+■■ 0. 먼저 읽기: 경로 찾는 법 (PC / 폴더 이름이 바뀌어도 이것만 알면 돼요) ■■
+==================================================================
+
+아래 명령어의 [ ... ] 부분은 "그 PC의 실제 경로"로 바꿔서 넣어야 해요.
+폴더 이름(fastapi0929, routel_back_0929 ...)은 계속 바뀌니까, 이름 말고 "안에 든 파일"로 찾으면 돼요.
+
+  [AI폴더]     = fast_api.py, config.py, run.bat 이 들어 있는 폴더
+  [스프링폴더] = mvnw.cmd, pom.xml 이 들어 있는 폴더 (보통 ...\final)
+  [프론트폴더] = package.json 이 들어 있는 폴더 (node_modules 안에 있는 것 말고)
+  [영상폴더]   = front_1.mp4, front_2.mp4 가 들어 있는 폴더 (보통 [프론트폴더]\public\videos)
+
+▶ 경로 복사하는 법
+  파일 탐색기로 그 폴더에 들어가서 -> 맨 위 주소창 클릭 -> 전체 선택 후 Ctrl + C
+  (예: C:\Users\ez\Desktop\Final프로젝트\project\fastapi0929\fastapi)
+
+▶ 더 쉬운 방법: cd 없이 바로 그 폴더에서 창 열기
+  파일 탐색기로 그 폴더에 들어가서 -> 주소창에 powershell (또는 cmd) 입력 -> Enter
+  -> 그 폴더에서 창이 열려요. 이렇게 열었으면 아래 명령어의 cd 줄은 건너뛰면 돼요.
+
+▶ 경로에 띄어쓰기가 있을 수 있으니 경로는 항상 " " 로 감싸서 넣기
+
+▶ 영상 폴더 지정이 귀찮으면
+  front_1.mp4, front_2.mp4 를 [AI폴더]\videos 폴더에 복사해 두면 VIDEO_DIR 줄은 안 써도 돼요.
+  (VIDEO_DIR 을 지정 안 하면 [AI폴더]\videos 에서 찾도록 config.py 에 설정돼 있어요)
+
+▶ 영상을 못 찾으면 서버 로그에 이렇게 나와요 -> VIDEO_DIR 경로를 다시 확인
+  [카메라 1] 영상 파일이 없어요: C:\...\front_1.mp4 (30초 뒤 다시 시도)
+
+
+==================================================================
+■■ 0-1. IP 주소: Spring 과 AI 서버를 다른 PC 에서 켤 때 ■■
+==================================================================
+
+Spring 과 AI 서버를 같은 PC 에서 켜면 이 부분은 건너뛰어도 돼요 (localhost 로 붙어요).
+다른 PC 에서 켜면 아래 [ ... ] 두 개를 알아야 해요.
+
+  [스프링IP] = Spring 을 켜는 PC 의 IP   -> AI 서버가 번호판 결과를 보낼 곳
+  [AI서버IP] = AI 서버를 켜는 PC 의 IP   -> 프론트/관리자 화면이 CCTV 영상을 받아올 곳
+
+▶ IP 확인하는 법 (각 PC 에서)
+  PowerShell 또는 CMD 에서:
+
+ipconfig
+
+  -> "IPv4 주소" (영어 Windows 는 "IPv4 Address") 줄의 값  (예: 192.168.0.94)
+  -> 두 PC 의 앞 세 자리(192.168.0.)가 같아야 같은 공유기 = 서로 연결 가능
+  ※ IP 는 재부팅하면 바뀔 수 있어요. 시연 전에 한 번 더 확인!
+
+▶ 연결 확인 (AI 서버 PC 에서, Spring 켠 다음에)
+  브라우저 주소창에 입력 -> JSON 이 보이면 연결 OK
+
+http://[스프링IP]:5555/api/underpasses
+
+  안 열리면: Spring PC 방화벽에서 5555 포트 허용 (아래 "방화벽" 참고)
+
+▶ AI 서버에 Spring IP 알려주기 (셋 중 하나)
+  1) run.bat 으로 켜면: [AI폴더]에 spring_url.txt 파일을 만들고 한 줄만 적기
+       http://[스프링IP]:5555
+  2) PowerShell 로 켜면: 5번에서 $env:SPRING_URL = "http://[스프링IP]:5555"
+  3) CMD 로 켜면:        5번에서 set "SPRING_URL=http://[스프링IP]:5555"
+  -> 서버가 켜질 때 창에 [AI] Spring: http://[스프링IP]:5555 처럼 나오면 OK
+
+▶ 방화벽 (다른 PC 에서 접속하려면 받는 쪽 PC 에서 한 번만)
+  시작 메뉴 -> PowerShell 우클릭 -> "관리자로 실행" 후 붙여넣기
+
+  - AI 서버 PC (CCTV 영상을 다른 PC 에서 보려면):
+New-NetFirewallRule -DisplayName "ROUTEL AI 8000" -Direction Inbound -Protocol TCP -LocalPort 8000 -Action Allow
+
+  - Spring PC (AI 서버가 결과를 보내려면):
+New-NetFirewallRule -DisplayName "ROUTEL Spring 5555" -Direction Inbound -Protocol TCP -LocalPort 5555 -Action Allow
+
+▶ 프론트에서 CCTV 영상 주소
+  AI 서버가 다른 PC 면 localhost 대신 [AI서버IP] 로:
+     http://[AI서버IP]:8000/stream/1
+     http://[AI서버IP]:8000/stream/2
+
+
+==================================================================
+■■ PowerShell 버전 ■■
+==================================================================
+
+■ 1. 가상환경 만들기 (처음 한 번만)
+
+cd "[AI폴더]"
+py -3.11 -m venv venv
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\venv\Scripts\Activate.ps1
+
+
+■ 2. 패키지 설치 (처음 한 번만, 1번에 이어서)
+
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+pip uninstall -y opencv-python opencv-python-headless
+pip install --force-reinstall --no-deps opencv-contrib-python==5.0.0.93
+
+
+■ 3. 설치 점검 (처음 한 번만, 2번에 이어서)
+
+python -u test_env.py
+
+
+■ 4. 창 1: Spring 켜기
+
+cd "[스프링폴더]"
+.\mvnw.cmd spring-boot:run
+
+
+■ 5. 창 2: AI 서버 켜기 (Spring 켠 다음에)
+
+cd "[AI폴더]"
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\venv\Scripts\Activate.ps1
+$env:VIDEO_DIR = "[영상폴더]"
+$env:SPRING_URL = "http://[스프링IP]:5555"
+python -m uvicorn fast_api:app --host 0.0.0.0 --port 8000
+
+  ※ PowerShell 에서 set VIDEO_DIR=... 은 동작 안 해요. 꼭 $env:VIDEO_DIR = "..." 로.
+  ※ VIDEO_DIR, SPRING_URL 은 그 창에서만 유지돼요. 창을 새로 열면 다시 입력해야 해요.
+  ※ Spring 이 같은 PC 면 SPRING_URL 줄은 빼도 돼요 (기본값 http://localhost:5555).
+
+
+■ 6. 창 3: 프론트 켜기
+
+cd "[프론트폴더]"
+npm install
+npm run dev
+
+
+==================================================================
+■■ CMD 버전 (명령 프롬프트) ■■
+==================================================================
+
+  ※ 다른 드라이브(D: 등)로도 이동되게 cd 대신 cd /d 를 써요
+  ※ set 은 set "VIDEO_DIR=경로" 처럼 따옴표를 "이름부터" 감싸야 띄어쓰기 문제 없이 들어가요
+
+■ 1. 가상환경 만들기 (처음 한 번만)
+
+cd /d "[AI폴더]"
+py -3.11 -m venv venv
+venv\Scripts\activate.bat
+
+
+■ 2. 패키지 설치 (처음 한 번만, 1번에 이어서)
+
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+pip uninstall -y opencv-python opencv-python-headless
+pip install --force-reinstall --no-deps opencv-contrib-python==5.0.0.93
+
+
+■ 3. 설치 점검 (처음 한 번만, 2번에 이어서)
+
+python -u test_env.py
+
+
+■ 4. 창 1: Spring 켜기
+
+cd /d "[스프링폴더]"
+mvnw.cmd spring-boot:run
+
+
+■ 5. 창 2: AI 서버 켜기 (Spring 켠 다음에)
+
+cd /d "[AI폴더]"
+venv\Scripts\activate.bat
+set "VIDEO_DIR=[영상폴더]"
+set "SPRING_URL=http://[스프링IP]:5555"
+python -m uvicorn fast_api:app --host 0.0.0.0 --port 8000
+
+  ※ VIDEO_DIR, SPRING_URL 은 그 창에서만 유지돼요. 창을 새로 열면 다시 입력해야 해요.
+  ※ Spring 이 같은 PC 면 SPRING_URL 줄은 빼도 돼요 (기본값 http://localhost:5555).
+
+
+■ 6. 창 3: 프론트 켜기
+
+cd /d "[프론트폴더]"
+npm install
+npm run dev
+
+
+==================================================================
+■■ 공통 ■■
+==================================================================
+
+■ 7. 영상 + 번호판 인식 시작 (실행 버튼)
+
+AI 서버는 켜기만 하면 모델만 올려두고 기다려요. 프론트 "실행" 버튼(Spring 경유)을 누르거나,
+버튼이 아직 없으면 PowerShell 에서 직접:
+
+Invoke-RestMethod -Method Post -Uri "http://localhost:8000/control/plate/start" -Headers @{"X-Internal-Api-Key"="dev-internal-key-change-me"}
+
+  정지:  주소 끝의 start 를 stop 으로
+  ※ 다른 PC 에서 보낼 때는 localhost 대신 [AI서버IP]
+  ※ 예전처럼 켜자마자 바로 돌게 하려면 5번에서 $env:PLATE_ENABLED = "1" (CMD: set "PLATE_ENABLED=1")
+
+
+■ 8. 확인 (CCTV 실시간 탐지 영상) - 7번 다음 브라우저 주소창에 입력
+  (다른 PC 에서 볼 때는 localhost 대신 [AI서버IP])
+
+http://localhost:8000/plate/status     <- 카메라마다 "running": true, "error": null 이면 정상
+http://localhost:8000/stream/1         <- 열고 4~5초 기다리면 번호판 네모가 보여요
+http://localhost:8000/stream/2
+http://localhost:8282/manager/
+  -> 관리자 로그인 -> CCTV -> 월계3지하차도 선택 -> "AI 실시간 탐지 영상"
+
+
+■ 끄기
+
+각 창에서 Ctrl + C
+
+
+==================================================================
+■■ 예시: 이 PC(ez, 2026-09-30) 기준 실제 경로 ■■
+==================================================================
+
+  [AI폴더]     C:\Users\ez\Desktop\Final프로젝트\project\fastapi0929\fastapi
+  [스프링폴더] C:\Users\ez\Desktop\Final프로젝트\project\routel_back_0929\final
+  [프론트폴더] C:\Users\ez\Desktop\Final프로젝트\project\routel통합본0929\routel통합본
+  [영상폴더]   C:\Users\ez\Desktop\Final프로젝트\project\routel통합본0929\routel통합본\public\videos
+
+  예) PowerShell 5번:
+      cd "C:\Users\ez\Desktop\Final프로젝트\project\fastapi0929\fastapi"
+      $env:VIDEO_DIR = "C:\Users\ez\Desktop\Final프로젝트\project\routel통합본0929\routel통합본\public\videos"
+
+  예) CMD 5번:
+      cd /d "C:\Users\ez\Desktop\Final프로젝트\project\fastapi0929\fastapi"
+      set "VIDEO_DIR=C:\Users\ez\Desktop\Final프로젝트\project\routel통합본0929\routel통합본\public\videos"
+
+
+==================================================================
+■■ 예시: Spring 과 AI 서버를 다른 PC 에서 켤 때 (2026-10-02 기준) ■■
+==================================================================
+
+  [스프링IP] 192.168.0.94    (Spring PC)
+  [AI서버IP] 192.168.0.117   (AI 서버 PC, 그래픽카드 RTX 3060)
+
+  AI 서버 PC 의 [AI폴더]\spring_url.txt 내용:
+      http://192.168.0.94:5555
+
+  예) PowerShell 5번:
+      $env:SPRING_URL = "http://192.168.0.94:5555"
+
+  프론트 CCTV 영상 주소:
+      http://192.168.0.117:8000/stream/1
+      http://192.168.0.117:8000/stream/2

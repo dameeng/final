@@ -1,0 +1,76 @@
+.routel-theme-switch{display:inline-flex;align-items:center;gap:8px;font-size:12px}.routel-theme-switch select{min-height:40px;max-width:110px}
+html[data-routel-theme=dark]{--routel-bg:#252a30;--routel-ink:#f0f2f4;--routel-sub:#c7cdd3;--routel-line:#56616d;--routel-soft:#30373f;--routel-blue:#99bddc;--page-ink:#f0f2f4;--page-sub:#c7cdd3;--page-blue:#99bddc;--page-line:#56616d;--page-soft:#30373f;color-scheme:dark;background:#252a30;color:#f0f2f4}
+html[data-routel-theme=dark] body{background:var(--routel-bg);color:var(--routel-ink)}
+html[data-routel-theme=dark] :is(.routel-content-page,.app-shell){--page-ink:#f0f2f4;--page-sub:#c7cdd3;--page-blue:#99bddc;--page-line:#56616d;--page-soft:#30373f;background:var(--routel-bg);color:var(--routel-ink)}
+html[data-routel-theme=dark] :is(.customer-header,.customer-header-inner,.customer-mega-menu,.customer-mega-groups,.customer-footer,.app-header,.header-panel,.live-alerts,.risk-banner){background:#30373f;color:var(--routel-ink);border-color:var(--routel-line)}
+html[data-routel-theme=dark] :is(.routel-content-page,.app-shell) :is(h1,h2,h3,h4,p,dt,dd,label,li,summary){color:inherit}
+html[data-routel-theme=dark] :is(button,input,select,textarea){background:#30373f;color:#f0f2f4;border-color:#637080}
+html[data-routel-theme=dark] :is(.routel-content-page,.app-shell) :is(button,input,select,textarea){background:#30373f;color:#f0f2f4;border-color:#637080}
+html[data-routel-theme=dark] :is(.routel-content-page,.app-shell) :is(th,td,dt,dd,fieldset,article,[role=alert],[role=status]){background:#30373f;color:#f0f2f4;border-color:#56616d}
+html[data-routel-theme=dark] :is(.routel-content-page,.app-shell) :is(.weather-current,.weather-forecast,.weather-place,.map-detail-column,.account-panel,.header-panel){background:#30373f;color:#f0f2f4}
+html[data-routel-theme=dark] :is(.app-shell,.routel-content-page,.customer-header,.customer-footer) a{color:#b5d1e9}
+html[data-routel-theme=dark] .routel-password-input img,html[data-routel-theme=dark] .password-field img{filter:invert(.85)}
+html[data-routel-theme=light]{color-scheme:light}
+.routel-content-page [aria-label*="페이지"],.app-shell [aria-label*="페이지"],.routel-pagination{display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap;width:100%;margin:20px auto}
+.routel-content-page .map-detail-column{scroll-margin-top:calc(var(--routel-header-height,88px) + 16px)}
+.weather-region-label{padding:2px 7px;min-height:28px;border:1px solid #7697b4;border-radius:5px;background:#f5f8fa;color:#34546f;font-size:12px;white-space:nowrap}
+html[data-routel-theme=dark] .customer-header-header{background:#30373f;border-color:#56616d}
+.customer-member-nav{flex-wrap:wrap;gap:8px 12px;white-space:normal;padding-block:8px}.customer-member-nav .routel-theme-switch{flex-basis:100%;justify-content:flex-end}.customer-member-nav .routel-theme-switch select{min-height:32px;padding:3px 8px}
+html[data-routel-theme=dark] .customer-shell .customer-sidebar :is(h2,a,span),html[data-routel-theme=dark] .customer-shell .customer-breadcrumb,html[data-routel-theme=dark] .customer-shell .customer-logo{color:#bad3e6}
+html[data-routel-theme=dark] .customer-shell :is(.customer-side-links,.customer-side-links a,.customer-mega-menu,.customer-mega-groups,.customer-mega-group,.footer-related a){background-color:#30373f;color:#e2e9ef;border-color:#637080}
+html[data-routel-theme=dark] .customer-shell .routel-content-page :is(h1,h2,h3,h4,p,dt,dd,label,li,summary,strong),html[data-routel-theme=dark] .app-shell main :is(h1,h2,h3,p,dt,dd,strong){color:#edf1f5}
+html[data-routel-theme=dark] .customer-shell .routel-content-page :is(section,article,fieldset,form){background-color:#30373f;border-color:#637080}
+html[data-routel-theme=dark] .customer-shell .weather-place span{color:#c7cdd3}
+html[data-routel-theme=dark] .customer-shell .weather-map{background:#252a30}
+html[data-routel-theme=dark] .customer-shell .weather-page .weather-rain-grid :is(dt,dd){color:#edf1f5;background:transparent}
+html[data-routel-theme=dark] .customer-shell .customer-page :is(.login-box,.sign-up-form,.account-card){background:#30373f;color:#edf1f5}
+
+/* Component-specific dark surfaces: retain photo/video and status colours. */
+html[data-routel-theme=dark] .customer-shell { --surface:#30373f; --surface-soft:#353e47; --text:#edf1f5; --muted:#c7cdd3; }
+html[data-routel-theme=dark] .customer-shell .customer-mega-group :is(a,h2),
+html[data-routel-theme=dark] .customer-shell :is(.customer-mega-label,.customer-mega-close) {color:#d3e1ed;}
+html[data-routel-theme=dark] .customer-shell .customer-mega-group a:is(:hover,:focus-visible,.router-link-exact-active){color:#a9d1f2;background:#3a4652;}
+html[data-routel-theme=dark] .customer-shell .routel-company {color:var(--text);}
+html[data-routel-theme=dark] .customer-shell .routel-company :is(h1,h2,h3){color:var(--text);}
+html[data-routel-theme=dark] .customer-shell .routel-company :is(p,figcaption){color:var(--muted);}
+html[data-routel-theme=dark] .customer-shell .routel-company :is(.routel-company-eyebrow,.routel-company-number){color:#a9cbe5;}
+html[data-routel-theme=dark] .customer-shell .routel-company-hero{background:var(--routel-bg);}
+html[data-routel-theme=dark] .customer-shell .routel-company-hero::before{background-image:linear-gradient(90deg,rgba(37,42,48,.97),rgba(37,42,48,.85) 45%,rgba(37,42,48,.48)),url('../assets/images/routel-company-background.png');}
+html[data-routel-theme=dark] .customer-shell .routel-company-direction{background:var(--surface);}
+html[data-routel-theme=dark] .customer-shell :is(.routel-services,.routel-vision){background:var(--routel-bg);color:var(--text);}
+html[data-routel-theme=dark] .customer-shell :is(.routel-services,.routel-vision) :is(h2,h3,strong){color:var(--text);}
+html[data-routel-theme=dark] .customer-shell :is(.routel-services,.routel-vision) :is(p,li){color:var(--muted);}
+html[data-routel-theme=dark] .customer-shell :is(.routel-service-card,.routel-vision-card){background:var(--surface);border-color:var(--routel-line);}
+.weather-map .weather-region-label {min-height:32px;padding:5px 11px;border-radius:999px;border:1px solid #7c98ad;background:#f5f8fa;color:#29485f;font-size:12px;line-height:20px;white-space:nowrap;box-shadow:none;}
+.weather-map .weather-region-label.is-selected{border:2px solid #347bac;background:#deedf7;color:#244965;}
+html[data-routel-theme=dark] .weather-map .weather-region-label{background:#34414e;color:#f1f5f9;border-color:#abc1d2;}
+html[data-routel-theme=dark] .weather-map .weather-region-label.is-selected{background:#405c72;border-color:#a7d5f7;}
+.weather-map .weather-region-label:focus-visible{outline:3px solid #78b5de;outline-offset:3px;}
+html[data-routel-theme=dark] .customer-shell .routel-vision-row{background:var(--surface);color:var(--text);border-radius:6px;}
+html[data-routel-theme=dark] .customer-shell .routel-vision-year{color:#a9cbe5;}
+html[data-routel-theme=dark] .customer-shell .routel-home-story{background:var(--routel-bg);}
+html[data-routel-theme=dark] .customer-shell .routel-home-scenery::before{background-image:linear-gradient(rgba(37,42,48,.78),rgba(37,42,48,.78)),url('../assets/images/routel-underpass-background.png');}
+html[data-routel-theme=dark] .customer-shell .routel-home-scenery::after{background:linear-gradient(90deg,#252a30,transparent 26%,transparent 85%,#252a30);}
+html[data-routel-theme=dark] .customer-shell .routel-hero-copy{color:var(--text);}
+html[data-routel-theme=dark] .customer-shell .routel-hero-copy :is(.routel-hero-eyebrow,.routel-hero-promise){color:#a9cbe5;}
+html[data-routel-theme=dark] .customer-shell .routel-hero-description{color:var(--muted);}
+html[data-routel-theme=dark] .customer-shell .routel-hero-button{background:var(--surface);color:var(--text);border-color:#8ba0b1;}
+html[data-routel-theme=dark] .customer-shell .routel-hero-button-primary{background:#42617b;}
+
+html[data-routel-theme=dark] .customer-shell .footer-related summary{background:#3a4956;color:#eef3f7;}
+html[data-routel-theme=dark] .customer-shell .customer-footer :is(.footer-bottom,.footer-related>p){color:#c7cdd3;}
+/* Keep typed text and field surfaces paired, including scoped signup CSS. */
+.customer-shell{--field-bg:#fff;--field-ink:#253c50;--field-placeholder:#657687;--field-line:#b9cad7;}
+html[data-routel-theme=dark] .customer-shell{--field-bg:#28313a;--field-ink:#f0f3f7;--field-placeholder:#b9c5d0;--field-line:#718292;}
+html[data-routel-theme] .customer-shell .routel-content-page :is(input:not([type=checkbox]):not([type=radio]):not([type=range]),textarea,select){background-color:var(--field-bg);color:var(--field-ink);caret-color:var(--field-ink);border-color:var(--field-line);}
+html[data-routel-theme] .customer-shell .routel-content-page :is(input,textarea)::placeholder{color:var(--field-placeholder);opacity:1;}
+html[data-routel-theme] .customer-shell .routel-content-page :is(input,textarea):is(:autofill,:-webkit-autofill){-webkit-text-fill-color:var(--field-ink);caret-color:var(--field-ink);box-shadow:0 0 0 1000px var(--field-bg) inset;}
+html[data-routel-theme=dark] .customer-shell .sign-up-main :is(.sign-up-fields button,.sign-up-domain){background:#35414c;color:#f0f3f7;border-color:#718292;}
+html[data-routel-theme=dark] .customer-shell .sign-up-main .password-field>button{background:transparent;}
+
+/* Padded page surfaces; avoid giving every nested form/section a separate box. */
+html[data-routel-theme=dark] .customer-shell .routel-content-page :is(section,article,fieldset,form){background-color:transparent;}
+html[data-routel-theme=dark] .customer-shell .account-page>section,
+html[data-routel-theme=dark] .customer-shell .weather-page :is(.weather-current,.weather-forecast,.weather-place){background-color:#30373f;}
+html[data-routel-theme=dark] .customer-shell .routel-content-page :is(.sign-up-form,.sign-up-group){background:transparent;}
+html[data-routel-theme=dark] .customer-shell .account-inquiry-detail{background:#30373f;}

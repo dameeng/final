@@ -1,0 +1,40 @@
+/* Customer app geometry; presentation lives in brand.css. */
+body { margin: 0; }
+.app-shell, .app-shell * { box-sizing: border-box; }
+.app-shell {
+  width: 100%;
+  max-width: 480px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin-inline: auto;
+  padding: max(12px, env(safe-area-inset-top)) 14px max(24px, env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+}
+.app-shell main { flex: 1; min-width: 0; padding-block: 16px; }
+.app-shell main > * + * { margin-top: 16px; }
+.app-shell main h1, .app-shell main h2, .app-shell main p { margin-bottom: 12px; }
+.app-shell main form { display: flex; flex-direction: column; align-items: stretch; gap: 12px; }
+.app-shell main form label { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.app-shell main input:not([type="checkbox"]):not([type="radio"]),
+.app-shell main select, .app-shell main textarea { max-width: 100%; min-width: 0; }
+.app-shell main form input:not([type="checkbox"]):not([type="radio"]) { flex: 1; }
+.app-shell main ul, .app-shell main ol { padding-left: 24px; }
+.app-shell main li + li { margin-top: 12px; }
+.app-shell main article + article { margin-top: 24px; }
+.app-shell main p, .app-shell main a, .app-shell main li, .app-shell main dd { overflow-wrap: anywhere; }
+.app-status { margin: 8px 0; }
+.app-footer { margin-top: auto; padding-top: 24px; }
+.app-footer details > * + * { margin-top: 12px; }
+.home-page { display: flex; flex-direction: column; }
+.weather-link { align-self: flex-start; }
+.navigation-banner { margin: 0; padding: 12px 0; text-align: center; }
+.navigation-area { padding-top: 32px; }
+.navigation-area > h1 { text-align: center; }
+
+.password-field { position: relative; display: block; width: 100%; }
+.password-field > input { width: 100%; padding-right: 48px; box-sizing: border-box; }
+.password-field > button { position: absolute; top: 50%; right: 5px; transform: translateY(-50%); width: 38px; min-height: 38px; margin: 0; padding: 0; border: 0; border-radius: 6px; background: transparent; color: inherit; font-size: 18px; cursor: pointer; }
+.password-field > button:focus-visible { outline: 2px solid #2675bf; }
+
+.password-field > button img { display: block; width: 22px; height: 22px; object-fit: contain; margin: auto; }

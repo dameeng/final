@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.mbc.puf.member.dao.CustomerSearchDao">
+
+    <!-- 일치 점수: 항목마다 정확히 같으면 3점, 앞부분이 같으면 2점, 포함되면 1점을 주고 모두 더한다.
+         여러 항목에서 일치할수록, 더 정확하게 일치할수록 점수가 높아 위로 올라온다.
+         전화번호는 숫자만 입력했을 때, 차량번호는 그 고객의 차량 중 가장 잘 맞는 하나의 점수를 쓴다. -->
+    <sql id="matchScore">
+        (
+            CASE WHEN LOWER(c.login_id) = LOWER(#{keyword.exact}) THEN 3
+                 WHEN c.login_id ILIKE #{keyword.prefix} THEN 2
+                 WHEN c.login_id ILIKE #{keyword.contains} THEN 1
+                 ELSE 0 END
+          + CASE WHEN LOWER(c.name) = LOWER(#{keyword.exact}) THEN 3
+                 WHEN c.name ILIKE #{keyword.prefix} THEN 2
+                 WHEN c.name ILIKE #{keyword.contains} THEN 1
+                 ELSE 0 END
+          + CASE WHEN LOWER(c.email) = LOWER(#{keyword.exact}) THEN 3
+                 WHEN c.email ILIKE #{keyword.prefix} THEN 2
+                 WHEN c.email ILIKE #{keyword.contains} THEN 1
+                 ELSE 0 END
+          <if test="keywordPhone != null">
+          + CASE WHEN REPLACE(c.phone, '-', '') = #{keywordPhone.exact} THEN 3
+                 WHEN REPLACE(c.phone, '-', '') LIKE #{keywordPhone.prefix} THEN 2
+                 WHEN REPLACE(c.phone, '-', '') LIKE #{keywordPhone.contains} THEN 1
+                 ELSE 0 END
+          </if>
+          + COALESCE((SELECT MAX(CASE WHEN LOWER(REPLACE(k.car_num, ' ', '')) = LOWER(#{keywordCar.exact}) THEN 3
+                                      WHEN REPLACE(k.car_num, ' ', '') ILIKE #{keywordCar.prefix} THEN 2
+                                      WHEN REPLACE(k.car_num, ' ', '') ILIKE #{keywordCar.contains} THEN 1
+                                      ELSE 0 END)
+                        FROM car k
+                       WHERE k.customer_id = c.id), 0)
+        )
+    </sql>
+
+    <!-- 항목별 조건과 탈퇴 회원 처리: 기본은 탈퇴 회원 제외, includeWithdrawn=true 면 포함 -->
+    <sql id="customerFilters">
+        <where>
+            <if test="!includeWithdrawn">
+                c.is_withdrawn = FALSE
+            </if>
+            <if test="loginId != null">
+                AND c.login_id ILIKE #{loginId.contains}
+            </if>
+            <if test="name != null">
+                AND c.name ILIKE #{name.contains}
+            </if>
+            <if test="email != null">
+                AND c.email ILIKE #{email.contains}
+            </if>
+            <if test="phone != null">
+                AND REPLACE(c.phone, '-', '') LIKE #{phone.contains}
+            </if>
+            <if test="carNum != null">
+                AND EXISTS (SELECT 1 FROM car k
+                             WHERE k.customer_id = c.id
+                               AND REPLACE(k.car_num, ' ', '') ILIKE #{carNum.contains})
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectCustomerList" resultType="CustomerListRow">
+        SELECT t.id, t.login_id, t.name, t.email, t.phone, t.created_at, t.withdrawn, t.car_nums_csv
+          FROM (
+                SELECT c.id, c.login_id, c.name, c.email, c.phone, c.created_at,
+                       c.is_withdrawn AS withdrawn,
+                       (SELECT string_agg(k.car_num, ',' ORDER BY k.id)
+                          FROM car k WHERE k.customer_id = c.id) AS car_nums_csv
+                       <if test="keyword != null">
+                       , <include refid="matchScore"/> AS score
+                       </if>
+                  FROM customer c
+                  <include refid="customerFilters"/>
+               ) t
+        <if test="keyword != null">
+         WHERE t.score &gt; 0
+        </if>
+         ORDER BY
+        <if test="keyword != null">
+                  t.score DESC,
+        </if>
+                  t.created_at DESC, t.id DESC
+         LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countCustomerList" resultType="long">
+        SELECT COUNT(*)
+          FROM (
+                SELECT c.id
+                       <if test="keyword != null">
+                       , <include refid="matchScore"/> AS score
+                       </if>
+                  FROM customer c
+                  <include refid="customerFilters"/>
+               ) t
+        <if test="keyword != null">
+         WHERE t.score &gt; 0
+        </if>
+    </select>
+
+</mapper>

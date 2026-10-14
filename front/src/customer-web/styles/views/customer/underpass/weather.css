@@ -1,0 +1,59 @@
+.weather-place { display:flex; align-items:center; flex-wrap:wrap; gap:12px; margin:18px 0 28px; padding:16px; background:#f5f7f9; }
+.weather-place span { color:#536575; font-size:14px; }
+.weather-overview { display:grid; grid-template-columns:minmax(0,1fr) minmax(280px,320px); gap:16px; align-items:start; }
+.weather-overview > section { min-width:0; padding:0; }
+.weather-map { height:560px; background:#f0f4f7; }
+.weather-temperature { display:block; color:#19354e; font-size:44px; font-weight:500; margin:12px 0 8px; font-variant-numeric:tabular-nums; }
+.weather-current dl { display:grid; grid-template-columns:96px minmax(0,1fr); }
+.weather-current dt, .weather-current dd { padding:12px 10px; margin:0; }
+.weather-forecast { padding-top:20px; margin-top:20px; border-top:1px solid #dce3e9; }
+.weather-forecast > label { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+/* 일별 예보 표: 가로 스크롤 없이 영역 폭에 맞춥니다. */
+.weather-scroll { width:100%; min-width:0; }
+.weather-scroll table { width:100%; table-layout:fixed; border-collapse:collapse; }
+.weather-scroll th, .weather-scroll td { text-align:center; padding:12px 4px; font-size:14px; overflow-wrap:anywhere; }
+.weather-scroll thead th:first-child, .weather-scroll tbody th { width:92px; }
+@media(max-width:700px) { .weather-scroll th, .weather-scroll td { padding:10px 2px; font-size:13px; } .weather-scroll thead th:first-child, .weather-scroll tbody th { width:64px; } }
+.weather-page .weather-rain-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:0; margin:24px 0; border-block:1px solid #dce3e9; }
+.weather-rain-grid > div { min-width:0; padding:16px 10px; border-right:1px solid #e2e8ed; }
+.weather-rain-grid > div:last-child { border-right:0; }
+.weather-page .weather-rain-grid dt, .weather-page .weather-rain-grid dd { padding:0; margin:0; border:0; background:transparent; text-align:center; }
+.weather-page .weather-rain-grid dt { font-size:13px; color:#627383; }
+.weather-page .weather-rain-grid dd { margin-top:8px; font-size:20px; color:#19354e; font-variant-numeric:tabular-nums; }
+@media(max-width:800px) { .weather-page .weather-rain-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } .weather-overview { grid-template-columns:minmax(0,1fr); } }
+/* SDK overlays do not receive Vue scoped attributes; labels inherit these global shared styles instead. */
+
+.weather-map-wrap { position:relative; min-width:0; }
+.weather-page .weather-nation-button { position:absolute; top:12px; left:12px; z-index:2; background:var(--page-soft); color:var(--page-ink); border:1px solid var(--page-line); box-shadow:0 1px 4px #152d451a; }
+.weather-overview h2 { margin:0 0 14px; }
+.weather-page .weather-location-note { font-size:13px; line-height:1.6; margin:0 0 12px; color:var(--page-sub); }
+.weather-overview > .weather-current { padding:0 16px 16px; }
+.weather-current dl { margin:16px 0 0; }
+.weather-current dd { min-width:0; overflow-wrap:normal; }
+.weather-page .weather-table-hint { font-size:14px; color:var(--page-sub); }
+.weather-page .weather-scroll:focus-visible { outline:2px solid var(--page-blue); outline-offset:2px; }
+@media(max-width:600px) { .weather-place { gap:8px; margin:16px 0; padding:12px; } .weather-place select { max-width:100%; } .weather-map { height:440px; } .weather-temperature { font-size:36px; } }
+/* 위험도 추이: 시간별 예보 그래프와 같은 모양 */
+.weather-risk-title { margin:28px 0 6px; font-size:18px; }
+.weather-risk-chart { min-width:0; overflow-x:auto; margin:12px 0 4px; background:var(--page-soft,#fff); }
+.weather-risk-trend { display:block; max-width:none; font-family:inherit; }
+.weather-risk-grid line { stroke:var(--page-line,#e0e7ed); stroke-width:1; }
+.weather-risk-grid text { fill:var(--page-sub,#657588); font-size:13px; }
+.weather-risk-line { fill:none; stroke:#c45555; stroke-width:2; stroke-linejoin:round; stroke-linecap:round; }
+.weather-risk-dot { fill:#fff; stroke:#c45555; stroke-width:2; }
+.weather-risk-time { fill:var(--page-sub,#536575); font-size:13px; }
+/* 지도에서 고른 지역의 지하차도 목록 */
+.weather-region-facilities { padding-top:20px; margin-top:20px; border-top:1px solid #dce3e9; }
+.weather-region-facilities h2 small { font-size:15px; font-weight:500; color:var(--page-sub,#657588); }
+.weather-region-facilities ul { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:10px; margin:12px 0 0; padding:0; list-style:none; }
+.weather-region-facilities li { margin:0; padding:0; border:0; }
+.weather-page .weather-region-facilities li > button { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 10px; align-items:center; width:100%; min-height:0; padding:12px 14px; text-align:left; }
+.weather-region-facilities li > button strong { grid-column:1; font-size:16px; }
+.weather-region-facilities .weather-region-facility-address { grid-column:1; font-size:13px; color:var(--page-sub,#657588); overflow-wrap:anywhere; }
+.weather-region-facilities .routel-page-state { grid-column:2; grid-row:1 / span 2; }
+.weather-page .weather-region-facilities li > button[aria-pressed="true"] { border-color:#347bac; box-shadow:inset 0 0 0 1px #347bac; }
+
+html[data-routel-theme=dark] .weather-risk-line{stroke:#f2d783}
+html[data-routel-theme=dark] .weather-risk-dot{stroke:#f2d783;fill:#fff1ba;filter:drop-shadow(0 0 3px #f2d78399)}
+.weather-symbol{width:64px;height:64px;margin:12px auto;color:var(--routel-blue);stroke-width:1.7;flex:none}
+

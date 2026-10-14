@@ -1,0 +1,75 @@
+/* 관리자 전용 최종 레이아웃. 고객 화면에는 적용하지 않는다. */
+html:has(.routel-manager-shell),body:has(.routel-manager-shell),#app:has(.routel-manager-shell){width:100%;max-width:none;min-width:0;margin:0;padding:0}
+body:has(.routel-manager-shell){display:block}
+.routel-manager-shell{width:100%;max-width:none;margin:0;--polish-panel:#303d49;--polish-bg:#252e36;--polish-line:#52616d;--polish-ink:#edf3f8;--polish-sub:#c4d0d9;--polish-accent:#9fc9e6;background:var(--polish-bg);color:var(--polish-ink);min-height:100dvh}
+.routel-manager-shell[data-theme=light]{--polish-panel:#fff;--polish-bg:#f0f4f7;--polish-line:#c9d5df;--polish-ink:#243b4b;--polish-sub:#516b7b;--polish-accent:#31688f}
+.routel-manager-shell:is(.routel-regional,.routel-super) .routel-admin-workspace{width:100%;padding:0 24px 24px;margin:0}
+.routel-manager-shell:is(.routel-regional,.routel-super) .routel-admin-content{width:100%;max-width:none;margin:0;padding-top:16px}
+.routel-manager-shell :is(.regional-workspace,.super-workspace,.routel-admin-page){max-width:none;width:100%;margin:0}
+.routel-manager-shell .regional-header{margin:0 -24px;width:calc(100% + 48px);padding-inline:24px}
+.routel-manager-shell .admin-breadcrumb{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--polish-sub);font-size:12px;margin:0 0 18px;padding:0;min-height:24px}
+.routel-manager-shell .admin-breadcrumb a{color:var(--polish-accent);text-decoration:none}
+.routel-manager-shell .admin-breadcrumb a:hover{text-decoration:underline}
+.routel-manager-shell .admin-breadcrumb [aria-current=page]{font-weight:600;color:var(--polish-ink)}
+.routel-manager-shell :is(.regional-panel,.su-card,.super-panel){border-radius:8px;padding:20px;border-color:var(--polish-line);background:var(--polish-panel)}
+.routel-manager-shell :is(.su-card,.regional-panel,.super-panel)>h2{padding-bottom:10px;border-bottom:1px solid var(--polish-line);margin-bottom:16px}
+.routel-manager-shell :is(.su-two,.rw-summary){align-items:stretch;gap:16px}
+.routel-manager-shell :is(.su-heading,.rw-detail-heading){margin-bottom:16px}
+.routel-manager-shell :is(.admin-pagination,.su-pagination,.super-pagination){width:100%;display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap;margin:20px 0 8px;grid-column:1/-1;flex-basis:100%}
+.routel-manager-shell :is(button,input,select,textarea){border-radius:6px}
+.routel-manager-shell :is(.su-badge,.regional-badge){font-size:13px;font-weight:700;padding:4px 10px;border-width:1px}
+.routel-manager-shell [data-tone=SAFE],.routel-manager-shell .regional-badge[data-level=SAFE]{background:#234d3d;color:#b7efd0;border-color:#60a37d}
+.routel-manager-shell [data-tone=WARNING],.routel-manager-shell .regional-badge[data-level=WARNING]{background:#534724;color:#ffe19b;border-color:#bd9c46}
+.routel-manager-shell [data-tone=DANGER],.routel-manager-shell [data-tone=BLOCKED]{background:#593532;color:#ffd0c9;border-color:#c47b71}
+.routel-manager-shell [data-tone=OPEN]{background:#2a4356;color:#c3e2f8;border-color:#759fbf}
+.routel-manager-shell[data-theme=light] [data-tone=SAFE]{background:#e3f2e9;color:#236443}
+.routel-manager-shell[data-theme=light] [data-tone=WARNING]{background:#fff0c9;color:#76550b}
+.routel-manager-shell[data-theme=light] [data-tone=DANGER],.routel-manager-shell[data-theme=light] [data-tone=BLOCKED]{background:#fbe3dd;color:#963c30}
+.routel-manager-shell[data-theme=light] [data-tone=OPEN]{background:#e2eff9;color:#295d83}
+.routel-manager-shell .threshold-edit{display:flex;gap:8px;align-items:center}.routel-manager-shell .threshold-edit input{width:100px}
+.routel-manager-shell :is(.regional-stats,.super-stats){gap:16px}
+.routel-manager-shell .regional-action-row [aria-pressed=true]{border-color:var(--polish-accent);background:var(--polish-panel);font-weight:700}
+.routel-manager-shell :is(.su-table-wrap,.routel-admin-table-scroll){max-width:100%;overflow-x:auto}
+.routel-manager-shell .su-filters{gap:12px;margin-bottom:16px}
+@media(max-width:800px){.routel-manager-shell:is(.routel-regional,.routel-super) .routel-admin-workspace{padding:0 16px 20px}.routel-manager-shell .regional-header{margin:0 -16px;width:calc(100% + 32px);padding-inline:16px}.routel-manager-shell :is(.regional-panel,.su-card,.super-panel){padding:16px}}
+/* 기존 both-edges 스크롤바 예약 공간이 왼쪽에 남기던 빈 띠 제거 */
+html:has(.routel-manager-shell){scrollbar-gutter:auto;background:#252e36}
+html:has(.routel-manager-shell[data-theme=light]){background:#f0f4f7}
+
+/* Drawer body scrolls independently from persistent account actions. */
+.routel-manager-shell .regional-drawer{display:flex;flex-direction:column;height:100dvh;max-height:100dvh;overflow:hidden;box-sizing:border-box;gap:12px;}
+.routel-manager-shell .regional-drawer>.regional-panel-heading,.routel-manager-shell .regional-drawer>p{flex-shrink:0;margin:0;}
+.routel-manager-shell .regional-drawer-scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;}
+.routel-manager-shell .regional-drawer-footer{flex-shrink:0;margin-top:auto;border-top:1px solid var(--polish-line);padding-top:16px;padding-bottom:env(safe-area-inset-bottom,0px);}
+.routel-manager-shell .regional-drawer-actions{display:flex;align-items:center;gap:12px;}
+.routel-manager-shell .regional-drawer-actions>a,.routel-manager-shell .regional-drawer-actions>button{flex:1;display:flex;align-items:center;justify-content:center;min-height:44px;margin:0;padding:8px;border:1px solid var(--polish-line);border-radius:6px;text-decoration:none;box-sizing:border-box;}
+.routel-manager-shell .admin-breadcrumb{margin-bottom:12px;}
+.routel-manager-shell .su-two,.routel-manager-shell .rw-summary{align-items:start;}
+.routel-super .super-bottom-grid{margin-left:0;align-items:start;}
+.routel-super .super-bottom-grid>:is(.super-unassigned,.super-approvals,.super-manager-activity){min-height:0;}
+.routel-super .super-scope{padding:12px 16px;gap:12px;align-items:center;margin:12px 0;}
+.routel-super .super-scope p{margin:4px 0;}
+.routel-super .super-scope small{line-height:1.5;}
+.routel-manager-shell :is(.su-card,.super-panel)>p:empty{display:none;}
+.routel-super :is(.super-analysis-row,.super-threshold-row){align-items:start;}
+@media(max-width:600px){.routel-super .super-scope{flex-direction:column;align-items:stretch;}.routel-manager-shell .regional-drawer{width:min(340px,92vw);}}
+/* Decimal values stay on one line; tables scroll within their panel. */
+.routel-super .super-table-scroll td:not(:first-child){white-space:nowrap;}
+.routel-super .super-empty{min-height:0;padding:16px 8px;}
+.routel-super .super-bottom-grid .super-empty{padding:12px 8px;}
+
+/* Draw selected boundaries last so neighbouring fills cannot cover them. */
+.routel-super .super-nation-map path.super-region-outline{fill:none!important;stroke:#acd5ee;stroke-width:2.2;pointer-events:none;vector-effect:non-scaling-stroke;stroke-linejoin:round;}
+.routel-super[data-theme=light] .super-nation-map path.super-region-outline{stroke:#39779f;}
+.routel-super .super-nation-map path.is-active{stroke-width:.7;}
+.routel-super .super-nation-map path:focus-visible{outline:none;stroke:#acd5ee;stroke-width:2;}
+.routel-super .super-nation-grid,.routel-super .super-map-column,.routel-super .super-nation-bars{overscroll-behavior:auto;}
+/* Plain sidebar navigation: no individual rectangular menu cards. */
+.routel-manager-shell .regional-drawer nav section>a,
+.routel-manager-shell .regional-drawer nav>a{position:relative;display:flex;align-items:center;min-height:44px;margin:2px 0;padding:10px 12px;border:0;border-radius:0;box-shadow:none;background:transparent;text-decoration:none;color:var(--polish-ink);}
+.routel-manager-shell .regional-drawer nav a.router-link-active{background:transparent;color:var(--polish-accent);font-weight:700;}
+.routel-manager-shell .regional-drawer nav a.router-link-active::before{content:'';position:absolute;left:0;top:12px;bottom:12px;width:3px;background:var(--polish-accent);border-radius:2px;}
+.routel-manager-shell .regional-drawer nav a:hover{background:transparent;color:var(--polish-accent);text-decoration:underline;text-underline-offset:4px;}
+.routel-manager-shell .regional-drawer-actions>a,
+.routel-manager-shell .regional-drawer-actions>button{border:0;border-radius:0;background:transparent;box-shadow:none;}
+.routel-manager-shell .regional-drawer :is(a,button):focus-visible{outline:2px solid var(--polish-accent);outline-offset:-2px;}
