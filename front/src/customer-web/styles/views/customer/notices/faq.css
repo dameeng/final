@@ -1,0 +1,9 @@
+.faq-form { display:flex; flex-wrap:wrap; align-items:end; gap:12px; padding:20px; background:#f5f7f9; margin:0 0 24px; border-block:1px solid #dce3e9; }
+.faq-form label { display:grid; gap:8px; flex:1 1 180px; }
+.faq-form input, .faq-form select { width:100%; }
+.faq-div { width:100%; min-width:0; overflow-x:auto; }
+.faq-table { min-width:320px; }
+.faq-table th:first-child { width:75%; }
+.faq-table td[colspan] { padding:40px 16px; text-align:center; }
+.routel-content-page > p:has(> button) { display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:14px; margin-top:24px; }
+@media(max-width:600px) { .faq-form { padding:16px; } .faq-form label { flex-basis:100%; } }

@@ -1,0 +1,107 @@
+/* Targeted customer refinements: maintain existing page widths and form order. */
+.customer-shell.customer-water .customer-underpass-page .underpass-state-cell{text-align:center;vertical-align:middle}
+.customer-shell.customer-water .routel-content-page .routel-page-state{display:inline-flex;align-items:center;justify-content:center;min-width:52px;min-height:28px;padding:3px 10px;border:1px solid #849bb866;border-radius:4px;font-size:14px;font-weight:500;line-height:1.5;background:#eef3f8;color:#536575}
+.customer-shell.customer-water .routel-content-page .routel-page-state[data-state=정상]{background:#e5f3ec;color:#27694e;border-color:#86b49b80}
+.customer-shell.customer-water .routel-content-page .routel-page-state:is([data-state=주의],[data-state=경고]){background:#fff2d9;color:#815713;border-color:#c19b5580}
+.customer-shell.customer-water .routel-content-page .routel-page-state:is([data-state=위험],[data-state=통제]){background:#f8e7e9;color:#963d45;border-color:#bf879080}
+html[data-routel-theme=dark] .customer-shell.customer-water .routel-content-page .routel-page-state{background:#8cabc21c;color:#c7d6e9;border-color:#8cabc24d}
+html[data-routel-theme=dark] .customer-shell.customer-water .routel-content-page .routel-page-state[data-state=정상]{background:#55ad8524;color:#a5e0c1;border-color:#76ba9b55}
+html[data-routel-theme=dark] .customer-shell.customer-water .routel-content-page .routel-page-state:is([data-state=주의],[data-state=경고]){background:#c99a3524;color:#f1d08f;border-color:#cfa95855}
+html[data-routel-theme=dark] .customer-shell.customer-water .routel-content-page .routel-page-state:is([data-state=위험],[data-state=통제]){background:#bf627329;color:#ffbdc6;border-color:#d6869455}
+/* Override the equal-panel padding specifically for the map canvas. */
+.customer-shell.customer-water .customer-underpass-page .map-columns>section.map-canvas-column{padding:0;overflow:hidden;scrollbar-gutter:auto;display:flex;align-items:stretch}
+.customer-shell.customer-water .customer-underpass-page .map-columns>section.map-canvas-column>.underpass-map-div{width:100%;height:100%;flex:1 1 auto;min-height:0;margin:0}
+html[data-routel-theme] .customer-shell.customer-water .customer-underpass-page .map-canvas-column .underpass-map-legend,
+html[data-routel-theme] .customer-shell.customer-water .customer-underpass-page .map-canvas-column .underpass-map-legend li{color:#111;text-shadow:none}
+.customer-shell.customer-water .customer-underpass-page .map-canvas-column .underpass-map-legend{top:12px;left:12px;right:52px;width:fit-content;max-width:calc(100% - 64px);padding:8px 10px;background:#fffffff0;border:1px solid #b8c7d2;border-radius:4px}
+.customer-shell.customer-water .customer-underpass-page .map-columns{margin-bottom:28px}
+/* Centre each menu group and its items on the same column axis. */
+.customer-shell.customer-water .customer-hover-groups section{text-align:center}
+.customer-shell.customer-water .customer-hover-groups h2{text-align:center}
+.customer-shell.customer-water .customer-hover-groups a{display:flex;align-items:center;justify-content:center;text-align:center}
+/* Inset content without moving/resizing the original outer auth cards. */
+.customer-shell.customer-water.customer-account-layout .login-main{padding:30px 28px 28px;box-sizing:border-box}
+.customer-shell.customer-water.customer-account-layout .login-main .login-section{padding:0;margin:0}
+.customer-shell.customer-water.customer-account-layout .login-main .login-nav{margin-top:28px;gap:14px 20px}
+.customer-shell.customer-water.customer-account-layout .sign-up-main{padding:32px;box-sizing:border-box}
+.customer-shell.customer-water.customer-account-layout .sign-up-main .sign-up-section{margin:0}
+.customer-shell.customer-water.customer-account-layout .sign-up-form{gap:36px}
+.customer-shell.customer-water.customer-account-layout .sign-up-fields{gap:20px 22px}
+.customer-shell.customer-water.customer-account-layout .sign-up-fields label{margin-bottom:10px}
+/* Final unpaired information card spans the row, preserving the grid edges. */
+.customer-shell.customer-water .routel-content-page>div.customer-balanced-cards>section:last-child:nth-child(odd){grid-column:1/-1;height:220px;align-items:center}
+.customer-shell.customer-water .routel-content-page>div.customer-balanced-cards>section:last-child:nth-child(odd)>p{width:100%;max-width:760px;margin-inline:auto;text-align:center}
+@media(max-width:600px){
+ .customer-shell.customer-water.customer-account-layout .login-main{padding:24px 20px}
+ .customer-shell.customer-water.customer-account-layout .sign-up-main{padding:24px 18px}
+ .customer-shell.customer-water.customer-account-layout .sign-up-fields{gap:20px 14px}
+ .customer-shell.customer-water.customer-account-layout .sign-up-email{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px}
+ .customer-shell.customer-water.customer-account-layout .sign-up-email select{grid-column:1/-1}
+ .customer-shell.customer-water .routel-content-page>div.customer-balanced-cards>section:last-child:nth-child(odd){height:240px}
+}
+/* Weather map fills its panel below a compact title band. */
+.customer-shell.customer-water .weather-page .weather-overview>section:first-child{position:relative;padding:0;display:flex;flex-direction:column;overflow:hidden;scrollbar-gutter:auto}
+.customer-shell.customer-water .weather-page .weather-overview>section:first-child>h2{flex:0 0 auto;margin:0;padding:18px 22px;border-bottom:1px solid var(--routel-line)}
+.customer-shell.customer-water .weather-page .weather-overview>section:first-child>.weather-map-wrap{flex:1 1 auto;width:100%;min-height:0;margin:0}
+.customer-shell.customer-water .weather-page .weather-overview>section:first-child .weather-map{width:100%;height:100%;min-height:0}
+html[data-routel-theme] .customer-shell.customer-water .weather-page .weather-overview>section:first-child>p[role=status]{position:absolute;bottom:12px;left:12px;right:12px;z-index:3;max-height:90px;overflow:auto;margin:0;padding:10px 12px;background:#fffffff2;color:#243849;border:1px solid #b8c7d2;border-radius:4px;font-size:13px}
+/* 지하차도 지도 라벨과 같은 작은 둥근 라벨. 페이지 공통 버튼(min-height 44px)보다 우선합니다. */
+html[data-routel-theme] .customer-shell.customer-water .weather-map .weather-region-label{min-height:0;padding:3px 8px;border:1px solid #bed2e1;border-radius:999px;background:#fff;color:#255e83;font-size:11px;font-weight:700;line-height:1.2;text-shadow:none;box-shadow:0 1px 4px #1c3e5540}
+html[data-routel-theme] .customer-shell.customer-water .weather-map .weather-region-label:hover{background:#326e9a;border-color:#326e9a;color:#fff}
+html[data-routel-theme] .customer-shell.customer-water .weather-map .weather-region-label.is-selected{background:#326e9a;border-color:#326e9a;color:#fff}
+html[data-routel-theme] .customer-shell.customer-water .weather-map .weather-region-label:is(:hover,.is-selected){position:relative;z-index:10}
+/* Toolbar belongs to the header; the slogan already sits beneath the logo. */
+.customer-shell.customer-water .customer-header-tools{display:flex;justify-content:flex-end;align-items:center;gap:16px;padding:0 4% 12px;color:var(--routel-sub)}
+html[data-routel-theme] .customer-shell.customer-water .customer-header-tools :is(button,select){font-size:13px;min-height:30px;padding:3px 9px;border:1px solid var(--routel-line);border-radius:3px;background:var(--water-card);color:var(--routel-ink)}
+.customer-shell.customer-water .customer-header-tools .routel-theme-switch{font-size:13px}
+/* Keep the existing scroll-controlled opacity, soften the photo into the water palette. */
+.customer-shell.customer-water .routel-hero-media{background:#173c53;mask-image:none;-webkit-mask-image:none}
+.customer-shell.customer-water .routel-hero-media img{object-position:center center}
+.customer-shell.customer-water .routel-hero-intro{background:linear-gradient(90deg,#092c424d,transparent 75%)}
+@media(max-width:600px){.customer-shell.customer-water .customer-header-tools{gap:10px;padding:0 5% 10px}.customer-shell.customer-water .weather-page .weather-overview>section:first-child>h2{padding:16px}}
+html[data-routel-theme] .customer-shell.customer-water .weather-page .weather-nation-button{background:#fffffff2;color:#172b40;border-color:#8299aa}
+/* Let the mid-page photograph dissolve into the live water background. */
+.customer-shell.customer-water .customer-photo-band{border:0;border-radius:0;background:transparent;box-shadow:none;overflow:visible;isolation:isolate}
+.customer-shell.customer-water .customer-photo-band>img{opacity:.94;filter:none;border-radius:0;pointer-events:none;mask-image:linear-gradient(to right,transparent,#000 5%,#000 95%,transparent),linear-gradient(to bottom,transparent,#000 8%,#000 92%,transparent);mask-composite:intersect;-webkit-mask-image:linear-gradient(to right,transparent,#000 5%,#000 95%,transparent),linear-gradient(to bottom,transparent,#000 8%,#000 92%,transparent);-webkit-mask-composite:source-in}
+.customer-shell.customer-water .customer-photo-band::after{display:block;background:linear-gradient(90deg,rgba(255,255,255,.94),rgba(255,255,255,.82) 28%,rgba(255,255,255,.12) 65%,transparent);mask-image:linear-gradient(to bottom,transparent,#000 8%,#000 92%,transparent);pointer-events:none}
+html[data-routel-theme=dark] .customer-shell.customer-water .customer-photo-band::after{background:linear-gradient(90deg,rgba(7,19,38,.94),rgba(7,19,38,.82) 28%,rgba(7,19,38,.10) 65%,transparent)}
+.customer-shell.customer-water .customer-photo-band>div{color:var(--routel-ink);text-shadow:0 1px 14px #ffffffb3}
+.customer-shell.customer-water .customer-photo-band p{color:var(--routel-sub)}
+.customer-shell.customer-water .customer-photo-band a{display:inline-block;color:var(--routel-ink);text-decoration:underline;text-underline-offset:5px}
+html[data-routel-theme=dark] .customer-shell.customer-water .customer-photo-band>img{opacity:.90;filter:none}
+html[data-routel-theme=dark] .customer-shell.customer-water .customer-photo-band>div{text-shadow:0 1px 14px #071326b3}
+/* Compact single-row desktop header; display preferences live in My Page. */
+.customer-shell.customer-water .customer-header-inner{min-height:72px;padding-block:10px}
+.customer-shell.customer-water .customer-logo img{width:38px;height:38px}
+.customer-shell.customer-water .account-display-settings{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:20px 36px}
+.customer-shell.customer-water .account-motion-setting{display:flex;align-items:center;gap:16px;font-size:13px}
+.customer-shell.customer-water .account-motion-setting button{min-height:40px;margin:0}
+@media(max-width:1100px){.customer-shell.customer-water .customer-header-inner{min-height:0;gap:4px 14px}}
+@media(max-width:600px){.customer-shell.customer-water .customer-logo img{width:34px;height:34px}.customer-shell.customer-water .account-display-settings{align-items:center;flex-direction:column;gap:16px}}
+/* Keep My Page title, navigation and inner cards away from the outer glass edge. */
+.customer-shell.customer-water.customer-account-layout .account-page{box-sizing:border-box;padding:32px}
+.customer-shell.customer-water.customer-account-layout .account-page>h1{margin-top:0;margin-bottom:28px;padding-bottom:22px}
+.customer-shell.customer-water.customer-account-layout .account-page>section{margin:28px 0;padding:28px}
+.customer-shell.customer-water.customer-account-layout .account-page>.account-links{margin:28px 0;gap:12px}
+.customer-shell.customer-water.customer-account-layout .account-page>section:last-child{margin-bottom:0}
+@media(max-width:640px){
+ .customer-shell.customer-water.customer-account-layout .account-page{padding:24px 18px}
+ .customer-shell.customer-water.customer-account-layout .account-page>section{padding:22px 16px;margin:24px 0}
+ .customer-shell.customer-water.customer-account-layout .account-page>.account-links{margin:24px 0;gap:10px}
+}
+
+/* Related sites open below their trigger, with one continuous theme surface. */
+html[data-routel-theme] .customer-shell.customer-water .footer-related details{background:var(--field-bg,#f5f9fc);color:var(--routel-ink);border:1px solid var(--routel-line);border-radius:10px;overflow:hidden}
+html[data-routel-theme] .customer-shell.customer-water .footer-related summary{background:transparent;color:inherit;align-items:center;min-height:44px;box-sizing:border-box;padding:12px 14px;line-height:1.5}
+.customer-shell.customer-water .footer-related summary span{flex:none;transition:transform .18s ease}
+.customer-shell.customer-water .footer-related details>ul{gap:2px;margin:0;list-style:none}
+html[data-routel-theme] .customer-shell.customer-water .footer-related li{margin:0;padding:0;background:transparent}
+html[data-routel-theme] .customer-shell.customer-water .footer-related li>a{display:block;padding:10px 12px;border-radius:6px;background:transparent;color:var(--routel-ink);text-decoration:none;line-height:1.5;overflow-wrap:anywhere}
+html[data-routel-theme] .customer-shell.customer-water .footer-related li>a:is(:hover,:focus-visible){background:var(--routel-soft);text-decoration:underline;text-underline-offset:3px}
+.customer-shell.customer-water .footer-related summary:focus-visible{outline:2px solid var(--routel-blue);outline-offset:-3px}
+.customer-shell.customer-water .footer-related>p{margin:14px 0 0;line-height:1.5}
+.customer-shell.customer-water .footer-grid{align-items:start}
+
+.customer-shell.customer-water #account-theme{text-align:center}
+.customer-shell.customer-water #account-theme .theme-switch{justify-content:center}
+

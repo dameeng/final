@@ -1,0 +1,54 @@
+.routel-content-page > div {
+  counter-reset: business;
+}
+.routel-content-page section {
+  counter-increment: business;
+  border-bottom: 1px solid var(--routel-line);
+  padding: 25px 0 30px;
+}
+.routel-content-page section:first-child {
+  padding-top: 0;
+}
+.routel-content-page section h2:before {
+  content: counter(business, decimal-leading-zero);
+  font-size: 13px;
+  color: var(--routel-blue);
+  display: block;
+  letter-spacing: 2px;
+  margin-bottom: 16px;
+}
+.routel-content-page section p {
+  max-width: 760px;
+}
+/* 단계별 색은 변수로 두고 다크 모드에서 같은 색 계열(어두운 바탕 + 밝은 글자)로 바꿔서 두 모드의 느낌을 맞춥니다.
+   plan=파랑, now=초록(강조), next=보라, future=점선 */
+.business-roadmap{max-width:820px;margin:8px auto 0;counter-reset:none;
+  --br-card:var(--water-card,#ffffffb3);--br-rail:var(--routel-line);
+  --br-plan-bg:#e2f0fa;--br-plan-ink:#24618a;--br-plan-line:transparent;
+  --br-now-solid:#2f8a5b;--br-now-on:#fff;--br-now-border:#7cc39b;--br-now-bg:#dff3e6;--br-now-ink:#22704a;--br-now-glow:transparent;
+  --br-next-bg:#ebe8fb;--br-next-ink:#5a48b5;--br-next-line:transparent}
+html[data-routel-theme=dark] .business-roadmap{
+  --br-card:#173058c7;--br-rail:#7093cb59;
+  --br-plan-bg:#4f8fd02e;--br-plan-ink:#a9d3ff;--br-plan-line:#a9d3ff59;
+  --br-now-solid:#3aa36d;--br-now-on:#fff;--br-now-border:#5fbf8a;--br-now-bg:#3aa36d33;--br-now-ink:#9fe3bb;--br-now-glow:#3aa36d40;
+  --br-next-bg:#8a78e633;--br-next-ink:#cbc1ff;--br-next-line:#cbc1ff59}
+.business-roadmap ol{list-style:none;margin:0;padding:0}
+.business-roadmap li{position:relative;display:grid;grid-template-columns:44px minmax(0,1fr);gap:18px;padding-bottom:18px}
+.business-roadmap li:last-child{padding-bottom:0}
+.business-roadmap li:not(:last-child)::before{content:"";position:absolute;left:21px;top:50px;bottom:4px;width:2px;background:var(--br-rail)}
+.business-roadmap-dot{display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:44px;height:44px;border-radius:50%;font-size:17px;font-weight:600;background:var(--br-plan-bg);color:var(--br-plan-ink);border:1px solid var(--br-plan-line)}
+.business-roadmap-card{padding:16px 22px;text-align:left;background:var(--br-card);border:1px solid var(--routel-line);border-radius:8px}
+.business-roadmap-head{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px}
+.business-roadmap-head strong{font-size:18px;font-weight:600}
+.business-roadmap-head span{font-size:13px;padding:2px 10px;border-radius:4px;background:var(--br-plan-bg);color:var(--br-plan-ink);border:1px solid var(--br-plan-line)}
+.business-roadmap-card p{margin:0;font-size:16px;line-height:1.7}
+.business-roadmap-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.business-roadmap-chips span{font-size:13px;padding:3px 10px;border-radius:4px;border:1px solid var(--routel-line);color:var(--routel-sub)}
+.business-roadmap .is-now .business-roadmap-dot{background:var(--br-now-solid);color:var(--br-now-on);border-color:transparent;box-shadow:0 0 0 4px var(--br-now-glow)}
+.business-roadmap .is-now .business-roadmap-card{border:2px solid var(--br-now-border);box-shadow:0 0 18px var(--br-now-glow)}
+.business-roadmap .is-now .business-roadmap-head span{background:var(--br-now-bg);color:var(--br-now-ink);border-color:transparent}
+.business-roadmap .is-next .business-roadmap-dot,.business-roadmap .is-next .business-roadmap-head span{background:var(--br-next-bg);color:var(--br-next-ink);border-color:var(--br-next-line)}
+.business-roadmap .is-future .business-roadmap-dot{background:transparent;color:var(--routel-sub);border:1.5px dashed var(--routel-sub)}
+.business-roadmap .is-future .business-roadmap-card{border-style:dashed}
+.business-roadmap .is-future .business-roadmap-head span{background:transparent;border:1px solid var(--routel-line);color:var(--routel-sub)}
+@media(max-width:480px){.business-roadmap li{grid-template-columns:34px minmax(0,1fr);gap:12px}.business-roadmap li:not(:last-child)::before{left:16px;top:40px}.business-roadmap-dot{width:34px;height:34px;font-size:15px}.business-roadmap-card{padding:12px 14px}.business-roadmap-head strong{font-size:16px}.business-roadmap-card p{font-size:15px}}

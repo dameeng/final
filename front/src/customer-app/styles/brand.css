@@ -1,0 +1,77 @@
+@import "../../shared/assets/fonts/noto-sans-kr/index.css";
+/* Customer app only. Reuse web photography without changing application behavior. */
+html:root[data-routel-theme] .app-shell{--ca-ink:#183c58;--ca-sub:#44657a;--ca-accent:#136e91;--ca-line:#c0dce8;--ca-panel:#ffffffd6;--ca-field:#ffffffeb;--ca-soft:#e9f6fbce;--ca-shadow:#306a871a;--ca-danger:#963443;--ca-alert:#fff0f0ed;--ca-photo:url('../../customer-web/assets/images/customer-water.webp');--ca-wash:linear-gradient(180deg,#effbffe8 0%,#e8faff7a 50%,#e1f4ff99);--routel-bg:var(--ca-panel);--routel-ink:var(--ca-ink);--routel-line:var(--ca-line);position:relative;isolation:isolate;color:var(--ca-ink);font:15px/1.8 "Noto Sans KR Variable","Noto Sans KR",sans-serif;background:transparent;color-scheme:light}
+html:root[data-routel-theme=dark] .app-shell{--ca-ink:#eaf3ff;--ca-sub:#c2d6ec;--ca-accent:#9bddf9;--ca-line:#82addc4f;--ca-panel:#122c4de0;--ca-field:#142f50f0;--ca-soft:#29466abe;--ca-shadow:#010e2933;--ca-danger:#ffb5b9;--ca-alert:#492c46eb;--ca-photo:url('../../customer-web/assets/images/customer-waterNight.webp');--ca-wash:linear-gradient(180deg,#07162ee6,#0b1b3d61 50%,#09223a96);color-scheme:dark}
+html:root[data-routel-theme] .app-shell::before,html:root[data-routel-theme] .app-shell::after{content:"";position:fixed;inset:-16px;pointer-events:none}
+html:root[data-routel-theme] .app-shell::before{z-index:-2;background-image:var(--ca-wash),var(--ca-photo);background-position:center;background-size:cover;filter:blur(5px);animation:ca-water-drift 16s ease-in-out infinite alternate}
+html:root[data-routel-theme] .app-shell::after{z-index:-1;background:radial-gradient(ellipse at 20% 70%,#fff6cecc 0 1px,#fff4bf22 4px,transparent 12px),radial-gradient(ellipse at 76% 38%,#ffffffc9 0 2px,#ffffff18 5px,transparent 16px),radial-gradient(ellipse at 87% 83%,#fff7dcd9 0 2px,transparent 12px),radial-gradient(ellipse at 15% 25%,#ffffffbd 0 1px,transparent 10px),radial-gradient(ellipse at 72% 55%,#8ff1e933,transparent 40%);animation:ca-glimmer 7s ease-in-out infinite alternate}
+html:root[data-routel-theme=dark] .app-shell::after{background:radial-gradient(circle at 14% 24%,#fff8bb 0 1px,#f6edab33 3px,transparent 10px),radial-gradient(circle at 85% 42%,#e4ffc9 0 1px,#ddffc52b 3px,transparent 11px),radial-gradient(circle at 18% 76%,#fff3b7 0 1px,transparent 8px),radial-gradient(circle at 80% 88%,#e9ffcf 0 1px,transparent 9px);animation-duration:9s}
+html:root[data-routel-theme] .app-shell a{color:var(--ca-accent);text-underline-offset:4px;text-decoration-thickness:1px}
+html:root[data-routel-theme] .app-shell :is(h1,h2,h3,h4,strong,label,li,dd,summary){color:var(--ca-ink)}
+html:root[data-routel-theme] .app-shell h1{font-size:27px;font-weight:700;line-height:1.5;letter-spacing:-.045em;margin:4px 0 20px;padding-bottom:15px;border-bottom:1px solid var(--ca-line)}
+html:root[data-routel-theme] .app-shell h1::after{content:"";display:block;width:48px;height:4px;border-radius:3px;margin-top:12px;background:linear-gradient(90deg,#2797bd,#79d9d0);box-shadow:0 2px 12px #3db8d642}
+html:root[data-routel-theme] .app-shell h2{font-size:20px;font-weight:650;line-height:1.5;letter-spacing:-.025em;margin-top:24px}
+html:root[data-routel-theme] .app-shell h3{font-size:16px;font-weight:650;line-height:1.6}
+html:root[data-routel-theme] .app-shell :is(p,dt,small){color:var(--ca-sub)}
+html:root[data-routel-theme] .app-shell button{font:inherit;font-weight:600;min-height:44px;padding:9px 13px;border:1px solid var(--ca-line);border-radius:12px;color:var(--ca-ink);background:var(--ca-field);cursor:pointer;transition:background .2s,box-shadow .2s}
+html:root[data-routel-theme] .app-shell button:disabled{opacity:.55;cursor:not-allowed}
+html:root[data-routel-theme] .app-shell main form>button:not([type=button]){background:linear-gradient(115deg,#146d91,#31889b);color:#fff;border-color:transparent;box-shadow:0 7px 16px #126f9224}
+html:root[data-routel-theme] .app-shell :is(input:not([type=checkbox]):not([type=radio]),select,textarea){min-height:46px;width:100%;font:inherit;font-size:16px;border:1px solid var(--ca-line);border-radius:11px;padding:10px 12px;color:var(--ca-ink);background:var(--ca-field);caret-color:var(--ca-ink)}
+html:root[data-routel-theme] .app-shell :is(input,textarea)::placeholder{color:var(--ca-sub);opacity:1}
+html:root[data-routel-theme] .app-shell input:is(:autofill,:-webkit-autofill){-webkit-text-fill-color:var(--ca-ink);box-shadow:0 0 0 1000px var(--ca-field) inset}
+html:root[data-routel-theme] .app-shell main form label{flex-direction:column;align-items:stretch}
+html:root[data-routel-theme] .app-shell main form label:has(input[type=checkbox]){flex-direction:row;align-items:center}
+html:root[data-routel-theme] .app-shell input[type=checkbox]{width:18px;height:18px;accent-color:var(--ca-accent)}
+html:root[data-routel-theme] .app-shell textarea{min-height:120px;resize:vertical}
+html:root[data-routel-theme] .app-shell :is(button,a,input,select,textarea,summary):focus-visible{outline:3px solid var(--ca-accent);outline-offset:3px}
+html:root[data-routel-theme] .app-shell .password-field>input{padding-right:48px}
+html:root[data-routel-theme] .app-shell .password-field>button{width:38px;min-height:38px;padding:0;border:0;border-radius:8px;background:transparent;color:var(--ca-ink)}
+html:root[data-routel-theme] .app-shell .app-header{padding:12px;border:1px solid var(--ca-line);border-radius:20px;background:var(--ca-panel);box-shadow:0 8px 26px var(--ca-shadow);backdrop-filter:blur(14px)}
+html:root[data-routel-theme] .app-shell .app-brand{color:var(--ca-ink);text-decoration:none;font-size:18px;font-weight:700}
+html:root[data-routel-theme] .app-shell .app-brand .app-logo{width:44px;height:40px;filter:drop-shadow(0 3px 5px #599acb30)}
+html:root[data-routel-theme] .app-shell .header-actions{gap:6px;font-size:12px}
+html:root[data-routel-theme] .app-shell .header-actions button{font-size:12px;padding:7px 9px}
+html:root[data-routel-theme] .app-shell .header-actions>a{display:inline-flex;align-items:center;min-height:44px;text-decoration:none;font-weight:600}
+html:root[data-routel-theme] .app-shell .menu-toggle{font-size:20px;width:44px;padding:5px;background:var(--ca-soft)}
+html:root[data-routel-theme] .app-shell .header-panel{padding:12px;border:1px solid var(--ca-line);border-radius:14px;background:var(--ca-field)}
+html:root[data-routel-theme] .app-shell .header-panel ul{gap:5px}
+html:root[data-routel-theme] .app-shell .header-panel a{display:block;padding:10px 12px;text-decoration:none;border-radius:9px;background:var(--ca-soft)}
+html:root[data-routel-theme] .app-shell .header-panel a.router-link-exact-active{background:linear-gradient(110deg,#146e93,#348695);color:white}
+html:root[data-routel-theme] .app-shell .header-panel .routel-theme-switch{display:flex;justify-content:space-between;gap:8px}
+html:root[data-routel-theme] .app-shell .app-footer{border:1px solid var(--ca-line);border-radius:18px;margin-top:24px;padding:12px 16px;background:var(--ca-panel);font-size:13px}
+html:root[data-routel-theme] .app-shell summary{cursor:pointer;min-height:44px;padding:10px 0;font-weight:600}
+html:root[data-routel-theme] .app-shell .live-alerts{padding:12px 15px;background:var(--ca-panel);border:1px solid var(--ca-line);border-radius:16px;font-size:13px;box-shadow:0 5px 18px var(--ca-shadow)}
+html:root[data-routel-theme] .app-shell :is([role=status]:not(:empty),.app-status){padding:11px 13px;background:var(--ca-soft);border:1px solid var(--ca-line);border-radius:11px;font-size:13px;color:var(--ca-sub)}
+html:root[data-routel-theme] .app-shell .live-connection[role=status]{margin:0;padding:0 0 8px;border:0;border-bottom:1px solid var(--ca-line);background:transparent}
+html:root[data-routel-theme] .app-shell [role=alert]{padding:0;background:transparent;border:0;border-radius:0;color:var(--ca-danger)}
+html:root[data-routel-theme] .app-shell .risk-banner{padding:14px;border:1px solid #b58545;background:var(--ca-alert);border-radius:14px}
+html:root[data-routel-theme] .app-shell main{padding:20px 0}
+html:root[data-routel-theme] .app-shell main>:is(section:not(.kakao-map),form,article){padding:18px;background:var(--ca-panel);border:1px solid var(--ca-line);border-radius:18px;box-shadow:0 8px 24px var(--ca-shadow)}
+html:root[data-routel-theme] .app-shell main>p:not(:empty):not([role]){padding:12px 14px;border-radius:12px;background:var(--ca-panel);font-size:14px}
+html:root[data-routel-theme] .app-shell main>p:has(label){display:grid;gap:12px;padding:16px;border:1px solid var(--ca-line)}
+html:root[data-routel-theme] .app-shell main>p label{display:grid;gap:6px;font-size:13px}
+html:root[data-routel-theme] .app-shell main ul{list-style:none;padding:0}
+html:root[data-routel-theme] .app-shell main ul>li{padding:14px 16px;border:1px solid var(--ca-line);border-radius:14px;background:var(--ca-panel);box-shadow:0 4px 16px var(--ca-shadow);line-height:1.9}
+html:root[data-routel-theme] .app-shell main ul>li>a{font-weight:650;text-decoration:none}
+html:root[data-routel-theme] .app-shell main ul>li>button{margin:6px 0 0 8px}
+html:root[data-routel-theme] .app-shell main ol{padding-left:24px}
+html:root[data-routel-theme] .app-shell main li{line-height:1.9}
+html:root[data-routel-theme] .app-shell main dl{display:grid;grid-template-columns:104px minmax(0,1fr);border:1px solid var(--ca-line);border-radius:12px;overflow:hidden}
+html:root[data-routel-theme] .app-shell main :is(dt,dd){margin:0;padding:10px 12px;border-bottom:1px solid var(--ca-line);background:transparent;min-width:0;overflow-wrap:anywhere}
+html:root[data-routel-theme] .app-shell main dt{color:var(--ca-sub);background:var(--ca-soft)}
+html:root[data-routel-theme] .app-shell main :is(dt,dd):nth-last-child(-n+2){border-bottom:0}
+html:root[data-routel-theme] .app-shell :is(img,video){max-width:100%}
+html:root[data-routel-theme] .app-shell .kakao-map{padding:12px;border:1px solid var(--ca-line);border-radius:20px;background:var(--ca-panel);box-shadow:0 10px 28px var(--ca-shadow);overflow:hidden}
+html:root[data-routel-theme] .app-shell .map-area{border-radius:12px;border:1px solid var(--ca-line)}
+html:root[data-routel-theme] .app-shell .weather-link{align-self:stretch;display:block;min-height:48px;padding:12px 18px;border:1px solid #9ee4ed;border-radius:14px;background:linear-gradient(115deg,#166f91,#408eac);box-shadow:0 8px 20px #196c9624;color:white;text-decoration:none;font-weight:650}
+html:root[data-routel-theme] .app-shell .navigation-banner{text-align:center}
+html:root[data-routel-theme] .app-shell .notification-content dl{display:block;border:0;overflow:visible}
+html:root[data-routel-theme] .app-shell .notification-content :is(dt,dd){padding:0;border:0;background:transparent}
+html:root[data-routel-theme] .app-shell .personal-alert-dialog{background:var(--ca-field);color:var(--ca-ink);border:1px solid var(--ca-line);border-radius:20px;box-shadow:0 20px 60px #06162955}
+html:root[data-routel-theme] .app-shell .personal-alert-dialog::backdrop{background:#081a3980;backdrop-filter:blur(4px)}
+html:root[data-routel-theme] .app-shell .notification-actions{flex-wrap:wrap}
+@media(hover:hover){html:root[data-routel-theme] .app-shell button:hover:not(:disabled){background:var(--ca-soft);box-shadow:0 3px 12px var(--ca-shadow)}html:root[data-routel-theme] .app-shell main form>button:not([type=button]):hover:not(:disabled){background:#156580;color:white}}
+@keyframes ca-water-drift{to{transform:translate3d(4px,-5px,0) scale(1.025)}}
+@keyframes ca-glimmer{from{opacity:.35;transform:translateY(5px)}to{opacity:.95;transform:translateY(-7px)}}
+@media(prefers-reduced-motion:reduce){html:root[data-routel-theme] .app-shell::before,html:root[data-routel-theme] .app-shell::after{animation:none}html:root[data-routel-theme] .app-shell button{transition:none}}
+@media(max-width:360px){html:root[data-routel-theme] .app-shell .app-header{padding:9px;gap:5px}html:root[data-routel-theme] .app-shell main>:is(section:not(.kakao-map),form,article){padding:14px}html:root[data-routel-theme] .app-shell .header-actions{gap:4px}html:root[data-routel-theme] .app-shell .app-brand strong{font-size:15px}html:root[data-routel-theme] .app-shell main :is(dt,dd){padding:9px}}

@@ -1,0 +1,29 @@
+/* Screenshot feedback: centered profile, aligned dashboard columns, compact review. */
+.routel-manager-shell .qa-profile-centered{width:100%;max-width:800px;margin-inline:auto}
+.routel-manager-shell .qa-profile-centered>h1,
+.routel-manager-shell .qa-profile-centered>h2{text-align:center}
+.routel-manager-shell .qa-profile-centered .staff-profile{width:100%;max-width:640px;margin:20px auto 32px}
+.routel-manager-shell .qa-profile-centered form.manager-password-form{width:100%;max-width:640px;margin-inline:auto}
+.routel-manager-shell .qa-profile-centered .manager-password-form>button{justify-self:center}
+.routel-manager-shell .qa-profile-centered>p,
+.routel-manager-shell .qa-profile-centered>a{text-align:center}
+.routel-manager-shell .qa-profile-centered>a{display:block;margin-block:16px}
+.routel-manager-shell.routel-regional .regional-dashboard{--qa-dashboard-gap:16px}
+.routel-manager-shell.routel-regional .regional-dashboard .regional-stats{grid-template-columns:repeat(5,minmax(0,1fr));gap:var(--qa-dashboard-gap);align-items:stretch;margin-bottom:var(--qa-dashboard-gap)}
+.routel-manager-shell.routel-regional .regional-dashboard .regional-stat{width:100%;height:112px;min-width:0;box-sizing:border-box;margin:0;padding:14px 16px;display:flex;flex-direction:column;justify-content:space-between}
+.routel-manager-shell.routel-regional .regional-dashboard .regional-top-grid{grid-template-columns:calc(20% - 12.8px) minmax(0,1fr);gap:var(--qa-dashboard-gap);margin-block:0 var(--qa-dashboard-gap)}
+.routel-manager-shell.routel-regional .regional-dashboard .regional-timeline{width:100%;min-width:0;margin:0;padding:16px;box-sizing:border-box}
+.routel-manager-shell.routel-regional .regional-dashboard .regional-timeline .regional-panel-heading{gap:8px;flex-wrap:wrap}
+.routel-manager-shell.routel-regional .regional-review-actions{justify-content:center}
+.routel-manager-shell.routel-regional .regional-review-actions input{text-align:center}
+.routel-manager-shell.routel-regional .regional-review-list .regional-image-link{display:block;width:fit-content;margin:8px 0}
+/* Match timeline to the summary column when the summary switches to three columns. */
+@media(min-width:801px) and (max-width:1199px){
+ .routel-manager-shell.routel-regional .regional-dashboard .regional-stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .routel-manager-shell.routel-regional .regional-dashboard .regional-top-grid{grid-template-columns:calc(33.333333% - 10.666667px) minmax(0,1fr)}
+}
+@media(max-width:800px){
+ .routel-manager-shell.routel-regional .regional-dashboard .regional-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .routel-manager-shell.routel-regional .regional-dashboard .regional-top-grid{grid-template-columns:minmax(0,1fr)}
+ .routel-manager-shell.routel-regional .regional-dashboard .regional-stat{height:112px;padding:12px}
+}

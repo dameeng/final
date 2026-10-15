@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.mbc.puf.alert.dao.AlertDao">
+
+    <insert id="insertAlertLog" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO alert_log (event_id, customer_id, car_id, car_num, alert_type)
+        VALUES (#{eventId}, #{customerId}, #{carId}, #{carNum}, #{alertType})
+    </insert>
+
+    <sql id="alertLogFilters">
+        <where>
+            <if test="underpassId != null">
+                AND ue.underpass_id = #{underpassId}
+            </if>
+            <if test="customerId != null">
+                AND a.customer_id = #{customerId}
+            </if>
+            <if test="alertType != null">
+                AND a.alert_type = #{alertType}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectAlertLogs" resultType="AlertLogListItem">
+        SELECT a.id, a.event_id, ue.underpass_id, a.customer_id, a.car_id, a.car_num, a.alert_type, a.sent_at
+          FROM alert_log a
+          JOIN underpass_event ue ON ue.id = a.event_id
+          <include refid="alertLogFilters"/>
+         ORDER BY a.sent_at DESC
+         LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countAlertLogs" resultType="long">
+        SELECT COUNT(*)
+          FROM alert_log a
+          JOIN underpass_event ue ON ue.id = a.event_id
+          <include refid="alertLogFilters"/>
+    </select>
+
+    <!-- 고객용 "내 알림": 지하차도 이름까지 조인해서 문자 화면에 바로 쓸 수 있게 내려준다. customerId는 항상 필수(본인 것만) -->
+    <sql id="myAlertFilters">
+        <where>
+            a.customer_id = #{customerId}
+            <if test="alertType != null">
+                AND a.alert_type = #{alertType}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectMyAlerts" resultType="MyAlertItem">
+        SELECT a.id, u.name AS underpass_name, a.car_num, c.phone AS recipient_phone, a.alert_type, a.sent_at
+          FROM alert_log a
+          JOIN underpass_event ue ON ue.id = a.event_id
+          JOIN underpass u ON u.id = ue.underpass_id
+          JOIN customer c ON c.id = a.customer_id
+          <include refid="myAlertFilters"/>
+         ORDER BY a.sent_at DESC
+         LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countMyAlerts" resultType="long">
+        SELECT COUNT(*)
+          FROM alert_log a
+          JOIN underpass_event ue ON ue.id = a.event_id
+          JOIN underpass u ON u.id = ue.underpass_id
+          <include refid="myAlertFilters"/>
+    </select>
+
+</mapper>

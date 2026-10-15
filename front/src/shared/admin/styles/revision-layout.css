@@ -1,0 +1,60 @@
+/* Shared layout corrections for the two dashboard roles. */
+.routel-manager-shell:is(.routel-regional,.routel-super) .regional-header{grid-template-areas:'identity brand connection';grid-template-columns:minmax(0,1fr) 90px minmax(0,1fr);min-height:92px}
+.routel-manager-shell:is(.routel-regional,.routel-super) .regional-header-user{grid-area:identity;justify-content:flex-start;flex-wrap:nowrap;gap:12px}
+.routel-manager-shell:is(.routel-regional,.routel-super) .regional-header-user>a{text-align:left;min-width:0}
+.routel-manager-shell:is(.routel-regional,.routel-super) .regional-center-logo{grid-area:brand;flex-direction:column;gap:2px;line-height:1.1;height:64px;align-self:center}
+.routel-manager-shell:is(.routel-regional,.routel-super) .regional-center-logo img{width:42px;height:36px;object-fit:contain}
+.routel-manager-shell:is(.routel-regional,.routel-super) .regional-center-logo strong{font-size:17px;letter-spacing:1.5px}
+.routel-manager-shell:is(.routel-regional,.routel-super) .regional-connection{grid-area:connection;justify-content:flex-end;min-width:0}
+.routel-manager-shell:is(.routel-regional,.routel-super) .regional-drawer-backdrop{justify-content:flex-start}
+.routel-manager-shell:is(.routel-regional,.routel-super) .regional-drawer{border-left:0;border-right:1px solid currentColor}
+.routel-manager-shell:is(.routel-regional,.routel-super) .regional-hamburger{flex-shrink:0}
+.routel-super .super-nation-map path:is(.is-active,:focus-visible){outline:none;stroke:var(--super-accent);stroke-width:2.5;paint-order:stroke fill}
+.routel-regional .regional-top-grid{grid-template-columns:clamp(320px,24vw,360px) minmax(0,1fr)}
+.routel-regional .regional-timeline-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.routel-regional .regional-timeline-filters button{font-size:12px;padding:6px 10px}
+.routel-regional .regional-timeline-scroll{overflow-anchor:none}
+.routel-regional .regional-timeline-scroll li button,.routel-regional .regional-facility-scroll button{border:0;border-radius:4px;background:transparent;box-shadow:none;padding:12px 8px;margin:0;min-height:40px}
+.routel-regional .regional-timeline-scroll li{border:0;margin:0;padding:0}
+.routel-regional .regional-facility-scroll button[aria-pressed=true]{box-shadow:inset 3px 0 var(--regional-accent);background:color-mix(in srgb,var(--regional-accent) 12%,var(--regional-panel))}
+.routel-regional .regional-two-cameras{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.routel-regional .regional-two-cameras .regional-video-main{aspect-ratio:16/9;min-height:0;height:auto}
+.routel-regional .regional-two-cameras video{width:100%;height:100%;object-fit:contain}
+.routel-manager-shell .staff-profile{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:16px 0 24px}
+.routel-manager-shell .staff-profile>div{min-width:0;padding:12px 0;border-bottom:1px solid var(--regional-line,var(--super-line,#637080))}
+.routel-manager-shell .staff-profile dt{font-size:12px;opacity:.85}.routel-manager-shell .staff-profile dd{margin:6px 0 0;overflow-wrap:anywhere}
+@media(max-width:1200px){.routel-regional .regional-facility-detail{position:relative;inset:auto;width:auto;max-height:none;margin:16px}.routel-regional .regional-top-grid{grid-template-columns:320px minmax(0,1fr)}}
+@media(max-width:800px){.routel-manager-shell:is(.routel-regional,.routel-super) .regional-header{grid-template-areas:'identity brand space' 'connection connection connection';grid-template-columns:minmax(0,1fr) 72px minmax(0,1fr);gap:12px;min-height:140px}.routel-manager-shell:is(.routel-regional,.routel-super) .regional-connection{justify-content:center;flex-wrap:wrap}.routel-manager-shell:is(.routel-regional,.routel-super) .regional-connection>div{flex-basis:auto}.routel-regional .regional-top-grid{grid-template-columns:1fr}.routel-regional .regional-timeline{height:auto;max-height:none}.routel-regional .regional-timeline-scroll{max-height:320px}.routel-manager-shell .staff-profile{grid-template-columns:1fr}}
+@media(max-width:500px){.routel-regional .regional-two-cameras{grid-template-columns:1fr}.routel-manager-shell:is(.routel-regional,.routel-super) .regional-header-user{align-items:flex-start;gap:8px}.routel-manager-shell:is(.routel-regional,.routel-super) .regional-header-user>a{font-size:12px}.routel-manager-shell .routel-admin-table-scroll{max-width:100%;overflow-x:auto}}
+.routel-manager-shell[data-theme=dark]:not(.routel-regional):not(.routel-super):not(.routel-regional-login){--admin-ink:#f0f2f4;--admin-sub:#c7cdd3;--admin-line:#56616d;--admin-blue:#99bddc;background:#252a30;color:#f0f2f4;min-height:100dvh;color-scheme:dark}
+.routel-manager-shell[data-theme=dark]:not(.routel-regional):not(.routel-super):not(.routel-regional-login) :is(.routel-admin-sidebar,.routel-admin-topbar,.routel-admin-page,form,input,select,textarea,button,th,td){background:#30373f;color:#f0f2f4;border-color:#56616d}
+.routel-manager-shell[data-theme=dark]:not(.routel-regional):not(.routel-super):not(.routel-regional-login) :is(h1,h2,h3,p,a,label,dt,dd){color:inherit}
+.routel-manager-shell[data-theme=dark] .routel-password-input img,.routel-manager-shell[data-theme=dark] .password-field img{filter:invert(.85)}
+.routel-super .super-nation-map path{stroke:#718495;stroke-width:.8}
+.routel-super .super-nation-map path:is(.is-active,:focus-visible){stroke:var(--super-accent);stroke-width:2.5;outline:none}
+.routel-manager-shell.routel-super .super-region-row{min-height:40px;padding:3px 0}
+.routel-super .super-region-name{display:flex;flex-direction:column;line-height:1.25}.routel-super .super-region-name small{line-height:1.25}
+@media(max-width:800px){.routel-manager-shell .routel-admin-topbar{flex-wrap:wrap;gap:12px}.routel-manager-shell .routel-admin-page{padding:16px}.routel-manager-shell .routel-admin-page form{max-width:100%}.routel-manager-shell .routel-admin-page :is(input,select){max-width:100%}}
+.routel-manager-shell.routel-regional .regional-timeline-scroll li button,.routel-manager-shell.routel-regional .regional-facility-scroll button{border:0!important;box-shadow:none;background:transparent;border-radius:0}
+.routel-manager-shell.routel-regional .regional-timeline-scroll li{border:0!important;border-radius:0;background:transparent}
+.routel-manager-shell.routel-regional .regional-facility-scroll button[aria-pressed=true]{box-shadow:inset 3px 0 var(--regional-accent);background:color-mix(in srgb,var(--regional-accent) 12%,var(--regional-panel))}
+.routel-regional .regional-lower-grid{align-items:start}.routel-regional .regional-stack>.regional-panel{flex:none}.routel-regional .regional-log-panel{margin-bottom:0}
+.routel-manager-shell.routel-regional-login[data-theme=light]{--regional-bg:#f0f2f4;--regional-nav:#f8f9fa;--regional-panel:#fff;--regional-line:#cbd1d7;--regional-ink:#28313a;--regional-muted:#586570;--regional-accent:#35648d;color-scheme:light}
+
+/* Reserve the document scrollbar so route changes do not shift the brand. */
+html:has(.routel-manager-shell) { scrollbar-gutter: stable both-edges; }
+.routel-manager-shell:is(.routel-regional,.routel-super) .regional-header { box-sizing:border-box; height:92px; }
+.routel-manager-shell:is(.routel-regional,.routel-super) .regional-header-user>a { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.routel-manager-shell:is(.routel-regional,.routel-super) .regional-center-logo { margin:0; padding:0; width:90px; justify-self:center; }
+.routel-manager-shell .routel-admin-page form.manager-password-form { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; width:100%; max-width:none; box-sizing:border-box; align-items:end; justify-content:start; padding:20px; }
+.routel-manager-shell .manager-password-form>p { margin:0; min-width:0; }
+.routel-manager-shell .manager-password-form label { width:100%; display:flex; flex-direction:column; align-items:stretch; gap:8px; }
+.routel-manager-shell .manager-password-form input { width:100%; min-width:0; height:40px; }
+.routel-manager-shell .manager-password-form>button { grid-column:1/-1; justify-self:end; height:40px; margin:0; }
+@media(max-width:800px) { .routel-manager-shell:is(.routel-regional,.routel-super) .regional-header { height:auto; min-height:140px; grid-template-rows:64px auto; } }
+@media(max-width:640px) { .routel-manager-shell .routel-admin-page form.manager-password-form { grid-template-columns:1fr; max-width:none; padding:16px; } }
+
+/* One SVG stroke keeps all three menu lines identical. */
+.routel-manager-shell:is(.routel-regional,.routel-super) .regional-hamburger { display:grid; place-items:center; padding:0; flex:0 0 44px; width:44px; height:44px; min-height:44px; }
+.routel-manager-shell .regional-menu-icon { display:block; width:24px; height:24px; flex:none; }
+.routel-manager-shell .regional-menu-icon path { fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:butt; vector-effect:non-scaling-stroke; }

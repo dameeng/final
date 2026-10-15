@@ -1,0 +1,46 @@
+/* Opt-in for unfinished customer pages; completed brand pages are excluded. */
+.routel-content-page {
+  --page-ink:#152d45; --page-sub:#536575; --page-blue:#35688d; --page-line:#dce3e9; --page-soft:#f5f7f9;
+  color:var(--page-ink); min-width:0; font-family:"Noto Sans KR Variable","Noto Sans KR",sans-serif;
+  word-break:keep-all; overflow-wrap:anywhere;
+}
+.routel-content-page > h1, .routel-content-page .login-h1, .routel-content-page .sign-up-h1 { font-size:clamp(28px,3vw,38px); line-height:1.45; font-weight:600; letter-spacing:-.04em; padding-bottom:24px; margin:0 0 32px; border-bottom:1px solid var(--page-line); color:var(--page-ink); }
+.routel-content-page h2 { color:var(--page-ink); font-size:22px; font-weight:600; line-height:1.55; }
+.routel-content-page h3 { color:var(--page-ink); font-size:19px; line-height:1.6; }
+.routel-content-page p { color:var(--page-sub); line-height:1.9; }
+.routel-content-page button { border:1px solid #b9c8d4; border-radius:3px; background:#fff; color:var(--page-ink); font-size:15px; min-height:44px; padding:10px 16px; line-height:1.5; }
+.routel-content-page button:hover:not(:disabled) { border-color:var(--page-blue); background:#eef3f7; }
+.routel-content-page button[type="submit"], .routel-content-page form > button:not([type]) { background:#19354e; border-color:#19354e; color:#fff; }
+.routel-content-page button[type="submit"]:hover:not(:disabled), .routel-content-page form > button:not([type]):hover:not(:disabled) { background:#254b6c; }
+.routel-content-page button:disabled { opacity:.5; cursor:not-allowed; }
+.routel-content-page input:not([type="checkbox"]):not([type="radio"]), .routel-content-page select, .routel-content-page textarea { border:1px solid #bdcbd5; border-radius:3px; background:#fff; color:var(--page-ink); min-height:44px; font:inherit; padding:10px 12px; }
+.routel-content-page input:disabled, .routel-content-page select:disabled { background:#f3f5f7; color:#627383; }
+.routel-content-page input[type="checkbox"], .routel-content-page input[type="radio"] { min-height:0; width:18px; height:18px; accent-color:#35688d; }
+.routel-content-page textarea { min-height:140px; resize:vertical; }
+.routel-content-page :is(button,a,input,select,textarea,summary):focus-visible { outline:2px solid #35688d; outline-offset:3px; }
+.routel-content-page :is([role="alert"],[role="status"]):not(:empty) { padding:12px 14px; margin:16px 0; background:#f4f7f9; border-left:3px solid #8da5b8; font-size:15px; overflow-wrap:anywhere; }
+.routel-content-page [role="alert"]:not(:empty) { color:#8a353b; border-left-color:#b84b52; background:#fcf4f4; }
+.routel-content-page table { border-collapse:collapse; border:0; width:100%; }
+.routel-content-page th { background:#f5f7f9; color:#19354e; font-weight:500; }
+.routel-content-page th, .routel-content-page td { padding:16px 14px; border:0; border-bottom:1px solid #dce3e9; font-size:15px; line-height:1.7; vertical-align:middle; }
+.routel-content-page td[colspan] { color:#627383; text-align:center; padding:36px 16px; }
+.routel-content-page td a { color:#35688d; text-decoration:underline; text-underline-offset:4px; }
+.routel-content-page dl { border-color:var(--page-line); }
+.routel-content-page dt { background:var(--page-soft); color:var(--page-sub); }
+.routel-content-page dd { color:var(--page-ink); }
+.routel-content-page .routel-important { display:inline-block; padding:1px 6px; margin-right:6px; border:1px solid #b9cbd9; color:#35688d; font-size:13px; vertical-align:middle; }
+.routel-content-page .password-field > button { position:absolute; padding:0; width:38px; min-height:38px; border:0; background:transparent; color:inherit; border-radius:2px; }
+.routel-content-page .password-field > input { padding-right:48px; }
+.routel-content-page .password-field > button:hover { background:#eef3f7; }
+@media(max-width:600px) {
+ .routel-content-page > h1 { margin-bottom:26px; padding-bottom:20px; }
+ .routel-content-page input:not([type="checkbox"]):not([type="radio"]), .routel-content-page select, .routel-content-page textarea { font-size:17px; }
+ .routel-content-page th, .routel-content-page td { padding:12px 10px; }
+ .routel-content-page h2 { font-size:21px; }
+}
+
+.routel-content-page .account-withdraw-button { color:#963d45; border-color:#d5a4a8; }
+.routel-content-page .routel-page-state { display:inline-block; padding:3px 8px; border:1px solid #c9d3dc; color:#627383; white-space:nowrap; }
+.routel-content-page .routel-page-state[data-state="정상"] { color:#27694e; border-color:#bdd7ca; background:#f2f8f5; }
+.routel-content-page .routel-page-state[data-state="주의"], .routel-content-page .routel-page-state[data-state="경고"] { color:#815713; border-color:#ddc798; background:#fff9ec; }
+.routel-content-page .routel-page-state[data-state="위험"], .routel-content-page .routel-page-state[data-state="통제"] { color:#963d45; border-color:#dfb7bc; background:#fcf3f4; }

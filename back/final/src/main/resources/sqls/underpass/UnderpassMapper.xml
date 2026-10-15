@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.mbc.puf.underpass.dao.UnderpassDao">
+
+    <!-- 필터: regionId는 선택(없으면 전체 지역), keyword는 이름 검색(선택) -->
+    <sql id="underpassFilters">
+        <where>
+            u.is_deleted = FALSE
+            <if test="regionId != null">
+                AND u.region_id = #{regionId}
+            </if>
+            <if test="keyword != null">
+                AND u.name ILIKE #{keyword.contains}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 지하차도 목록 (최근 등록순). 대시보드에서 한 번의 호출로 지역명/숫자 위험점수/판별대기·잔류차량
+         건수까지 전부 받아쓸 수 있도록 LEFT JOIN + LATERAL JOIN으로 확장 -->
+    <select id="selectUnderpassList" resultType="UnderpassListItem">
+        SELECT u.id, u.name, u.region_id, r.name AS region_name, u.road_address, u.latitude, u.longitude,
+               u.current_status, u.current_risk_level, rs.risk_score, u.flood_history_count, u.created_at,
+               COALESCE(pr.pending_count, 0) AS pending_review_count,
+               COALESCE(rc.remaining_count, 0) AS remaining_count
+          FROM underpass u
+          LEFT JOIN region r ON r.id = u.region_id
+          LEFT JOIN LATERAL (
+                SELECT rs2.risk_score
+                  FROM risk_score rs2
+                 WHERE rs2.underpass_id = u.id
+                 ORDER BY rs2.predicted_at DESC
+                 LIMIT 1
+               ) rs ON TRUE
+          LEFT JOIN LATERAL (
+                SELECT COUNT(*) AS pending_count
+                  FROM plate_log p
+                  JOIN underpass_camera c ON c.id = p.camera_id
+                 WHERE c.underpass_id = u.id
+                   AND p.review_status = 'PENDING'
+               ) pr ON TRUE
+          LEFT JOIN LATERAL (
+                SELECT COUNT(*) AS remaining_count
+                  FROM underpass_transit t
+                 WHERE t.underpass_id = u.id
+                   AND t.status = 'REMAINING'
+               ) rc ON TRUE
+          <include refid="underpassFilters"/>
+         ORDER BY u.created_at DESC, u.id DESC
+         LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countUnderpassList" resultType="long">
+        SELECT COUNT(*)
+          FROM underpass u
+          <include refid="underpassFilters"/>
+    </select>
+
+    <!-- 지하차도 상세 -->
+    <select id="selectUnderpassById" resultType="UnderpassDetailResponse">
+        SELECT id, name, region_id, road_address, latitude, longitude, height_m, length_m,
+               flood_history_count, current_status, current_block_event_id, current_risk_level,
+               entry_camera_id, exit_camera_id, created_at
+          FROM underpass
+         WHERE id = #{id}
+           AND is_deleted = FALSE
+    </select>
+
+    <!-- 지하차도 등록: 생성된 id를 파라미터 객체(Underpass)의 id 에 채워준다.
+         current_status는 서비스에서 항상 NORMAL로 세팅해 넘긴다 -->
+    <insert id="insertUnderpass" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO underpass (name, region_id, road_address, latitude, longitude, height_m, length_m,
+                                flood_history_count, current_status)
+        VALUES (#{name}, #{regionId}, #{roadAddress}, #{latitude}, #{longitude}, #{heightM}, #{lengthM},
+                #{floodHistoryCount}, #{currentStatus})
+    </insert>
+
+    <!-- 지하차도 정보 수정: current_status/current_block_event_id는 여기서 건드리지 않는다 -->
+    <update id="updateUnderpass">
+        UPDATE underpass
+           SET name = #{name},
+               region_id = #{regionId},
+               road_address = #{roadAddress},
+               latitude = #{latitude},
+               longitude = #{longitude},
+               height_m = #{heightM},
+               length_m = #{lengthM},
+               flood_history_count = #{floodHistoryCount}
+         WHERE id = #{id}
+           AND is_deleted = FALSE
+    </update>
+
+    <!-- 지하차도 삭제 (소프트 삭제) -->
+    <update id="softDeleteUnderpass">
+        UPDATE underpass
+           SET is_deleted = TRUE
+         WHERE id = #{id}
+           AND is_deleted = FALSE
+    </update>
+
+    <!-- 차단/해제 시 상태 갱신. RELEASE면 currentBlockEventId가 null로 넘어와 current_block_event_id도 비워진다 -->
+    <update id="updateCurrentStatus">
+        UPDATE underpass
+           SET current_status = #{currentStatus},
+               current_block_event_id = #{currentBlockEventId}
+         WHERE id = #{id}
+           AND is_deleted = FALSE
+    </update>
+
+    <!-- 입구 카메라 지정 (null로 넘기면 해제) -->
+    <update id="assignEntryCamera">
+        UPDATE underpass
+           SET entry_camera_id = #{cameraId}
+         WHERE id = #{id}
+           AND is_deleted = FALSE
+    </update>
+
+    <!-- 출구 카메라 지정 (null로 넘기면 해제) -->
+    <update id="assignExitCamera">
+        UPDATE underpass
+           SET exit_camera_id = #{cameraId}
+         WHERE id = #{id}
+           AND is_deleted = FALSE
+    </update>
+
+    <!-- 위험도 판정용: 지금 저장된 값만 (조회 전용 필드라 별도로 가볍게 조회) -->
+    <select id="selectCurrentRiskLevel" resultType="RiskLevel">
+        SELECT current_risk_level
+          FROM underpass
+         WHERE id = #{id}
+    </select>
+
+    <!-- 위험도 판정 결과 갱신 (상승/하강 공용) -->
+    <update id="updateCurrentRiskLevel">
+        UPDATE underpass
+           SET current_risk_level = #{riskLevel}
+         WHERE id = #{id}
+    </update>
+
+</mapper>

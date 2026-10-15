@@ -1,0 +1,103 @@
+/* Customer PWA: compact navigation and map/list workspace. */
+html:root[data-routel-theme] .app-shell{--ca-panel:#fff;--ca-field:#fff;--ca-soft:#edf3f8;--ca-line:#dce5ed;--ca-ink:#18324b;--ca-sub:#63778a;--ca-accent:#226aab;--ca-page:#f3f6fa;max-width:1120px;padding:16px 24px 100px;line-height:1.6}
+html:root[data-routel-theme=dark] .app-shell{--ca-panel:#15283c;--ca-field:#192f45;--ca-soft:#20384e;--ca-line:#30495e;--ca-ink:#edf4fc;--ca-sub:#aabed1;--ca-accent:#91c7ff;--ca-page:#0c1b2b}
+html:root[data-routel-theme] .app-shell::before{inset:0;background:var(--ca-page);filter:none;animation:none}
+html:root[data-routel-theme] .app-shell::after{display:none}
+.app-icon{width:22px;height:22px;flex-shrink:0;vertical-align:middle}
+html:root[data-routel-theme] .app-shell button{border-radius:8px;box-shadow:none}
+html:root[data-routel-theme] .app-shell .app-header{position:sticky;top:0;z-index:30;padding:8px 12px;border-radius:12px;box-shadow:none;backdrop-filter:none;min-height:68px;background:var(--ca-panel)}
+html:root[data-routel-theme] .app-shell .app-brand{flex-direction:row;gap:8px;min-height:44px}
+html:root[data-routel-theme] .app-shell .app-brand .app-logo{width:33px;height:36px;filter:none}
+html:root[data-routel-theme] .app-shell .app-brand strong{font-size:17px}
+html:root[data-routel-theme] .app-shell .menu-toggle{display:grid;place-items:center;background:transparent;border-color:transparent}
+html:root[data-routel-theme] .app-shell .header-actions button{border:0;background:transparent;min-width:44px}
+html:root[data-routel-theme] .app-shell .live-alerts{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:0 16px;border:0;border-bottom:1px solid var(--ca-line);border-radius:0;box-shadow:none;padding:8px 2px;background:transparent;margin:0}
+html:root[data-routel-theme] .app-shell .live-connection[role=status]{padding:0;border:0;font-size:12px;flex:1}
+.app-shell .live-alerts details{font-size:12px}
+html:root[data-routel-theme] .app-shell .live-alerts summary{padding:8px 0;min-height:36px}
+.app-shell .live-alerts details[open]{flex-basis:100%}
+.app-shell .live-alerts>div:has(.risk-banner){flex-basis:100%}
+html:root[data-routel-theme] .app-shell .app-overlay{position:fixed;inset:12px 0 auto;margin:0 auto;padding:0;border:1px solid var(--ca-line);border-radius:16px;width:calc(100% - 24px);max-width:560px;max-height:calc(100dvh - 24px);overflow:auto;background:var(--ca-panel);color:var(--ca-ink);box-shadow:0 24px 80px #0005}
+.app-overlay::backdrop{background:#05142699;backdrop-filter:blur(3px)}
+.overlay-inner{padding:24px}
+.overlay-heading{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.overlay-heading h2{margin:4px 0;font-size:22px}
+.eyebrow{display:block;color:var(--ca-accent);font-size:10px;font-weight:750;letter-spacing:1.6px}
+.menu-account{display:flex;align-items:center;gap:12px;padding:18px 0;margin:12px 0;border-block:1px solid var(--ca-line)}
+.menu-account p{margin:4px 0 0;font-size:12px}
+.menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+html:root[data-routel-theme] .app-shell .menu-grid a{display:flex;align-items:center;gap:10px;padding:16px 12px;background:var(--ca-soft);color:var(--ca-ink);text-decoration:none;border-radius:8px;font-size:14px;font-weight:600}
+html:root[data-routel-theme] .app-shell .menu-grid .router-link-exact-active{background:#266aab;color:white}
+.menu-secondary{display:flex;flex-wrap:wrap;gap:20px;padding:20px 0;border-bottom:1px solid var(--ca-line);font-size:13px}
+.menu-preferences{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:16px}
+html:root[data-routel-theme] .app-shell main{padding:24px 0 8px}
+html:root[data-routel-theme] .app-shell main h1{font-size:24px;border:0;padding:0;margin:4px 0;line-height:1.4}
+html:root[data-routel-theme] .app-shell main h1::after{display:none}
+.page-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.app-shell main .page-heading p{margin:6px 0 0;font-size:13px}
+html:root[data-routel-theme] .app-shell .page-heading>button{background:var(--ca-panel);flex-shrink:0}
+.facility-filters{display:grid;grid-template-columns:minmax(0,1fr) 160px;gap:12px}
+.facility-filters label{display:grid;gap:5px;font-size:12px;font-weight:600}
+html:root[data-routel-theme] .app-shell .facility-filters :is(input,select){border-radius:8px;font-size:14px}
+.status-filters{display:flex;gap:8px;flex-wrap:wrap}
+html:root[data-routel-theme] .app-shell .status-filters button{display:flex;gap:12px;align-items:center;font-size:12px;background:var(--ca-panel);min-height:40px;padding:8px 14px;border-radius:7px}
+html:root[data-routel-theme] .app-shell .status-filters button[aria-pressed=true]{background:var(--ca-soft);border-color:var(--ca-accent);box-shadow:inset 0 0 0 1px var(--ca-accent)}
+.status-filters strong{font-size:15px}
+.facility-workspace{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);align-items:start;gap:20px}
+.facility-map-column{min-width:0}
+html:root[data-routel-theme] .app-shell .kakao-map{padding:0;border-radius:12px;box-shadow:none;gap:10px}
+.map-canvas-wrap{position:relative;isolation:isolate}
+html:root[data-routel-theme] .app-shell .map-area{height:380px;border:0;border-radius:0;background:var(--ca-soft)}
+html:root[data-routel-theme] .app-shell .map-overview{position:absolute;top:12px;right:12px;z-index:5;font-size:12px;min-height:36px;background:var(--ca-panel);border:1px solid var(--ca-line);padding:6px 12px}
+html:root[data-routel-theme] .app-shell .map-search{padding:12px 12px 0}
+html:root[data-routel-theme] .app-shell .map-locate{margin-left:12px}
+html:root[data-routel-theme] .app-shell .facility-marker{display:grid;place-items:center;width:36px;height:36px;min-height:36px;padding:0;border:3px solid white;border-radius:50%;background:#16785e;color:white;box-shadow:0 2px 6px #142e5055;font:bold 20px/1 sans-serif;cursor:pointer}
+html:root[data-routel-theme] .app-shell .facility-marker[data-status=주의]{background:#a66706}
+html:root[data-routel-theme] .app-shell .facility-marker[data-status=통제]{background:#c53d48}
+html:root[data-routel-theme] .app-shell .facility-marker[data-status=미확인]{background:#66778a}
+html:root[data-routel-theme] .app-shell .facility-marker.is-selected{outline:3px solid #235fc4;outline-offset:3px;transform:scale(1.1)}
+.map-legend{display:flex;justify-content:center;flex-wrap:wrap;gap:16px;padding:12px 0;font-size:11px;color:var(--ca-sub)}
+.map-legend span::before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:#16785e;margin-right:5px}
+.map-legend [data-status=주의]::before{background:#a66706}.map-legend [data-status=통제]::before{background:#c53d48}.map-legend [data-status=미확인]::before{background:#66778a}
+html:root[data-routel-theme] .app-shell .selected-facility{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px;border:1px solid var(--ca-accent);border-radius:10px;background:var(--ca-panel)}
+html:root[data-routel-theme] .app-shell .selected-facility h2{font-size:17px;margin:7px 0 3px}
+.app-shell main .selected-facility p{font-size:12px;margin:0}
+.detail-link{display:flex;align-items:center;flex-shrink:0;min-height:44px;font-size:12px;font-weight:650;text-decoration:none}
+.app-shell main .map-hint{margin:0;font-size:12px;text-align:center;padding:12px;background:var(--ca-soft);border-radius:8px}
+.facility-list-panel{min-width:0;border:1px solid var(--ca-line);border-radius:12px;background:var(--ca-panel);overflow:hidden}
+.list-heading{display:flex;align-items:center;justify-content:space-between;padding:16px;border-bottom:1px solid var(--ca-line)}
+html:root[data-routel-theme] .app-shell .list-heading h2{margin:0;font-size:16px}
+.list-heading>span{font-size:12px;color:var(--ca-sub)}
+html:root[data-routel-theme] .app-shell main .facility-rows{margin:0;padding:0}
+html:root[data-routel-theme] .app-shell main .facility-rows>li{border:0;border-radius:0;padding:0;margin:0;box-shadow:none;background:transparent}
+html:root[data-routel-theme] .app-shell main .facility-rows>li+li{border-top:1px solid var(--ca-line)}
+html:root[data-routel-theme] .app-shell main .facility-rows>li>button{display:flex;align-items:center;gap:8px;width:100%;min-height:72px;margin:0;padding:12px 16px;text-align:left;border:0;border-radius:0;background:transparent;font-weight:400}
+html:root[data-routel-theme] .app-shell main .facility-rows>li>button.is-selected{background:var(--ca-soft);box-shadow:inset 3px 0 var(--ca-accent)}
+.facility-row-text{min-width:0;flex:1}.facility-row-text strong{display:block;font-size:14px}.facility-row-text small{display:block;font-size:11px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;max-width:100%;margin-top:4px}
+.facility-rows .app-icon{width:14px;color:var(--ca-sub)}
+html:root[data-routel-theme] .app-shell .status-badge{display:inline-block;flex-shrink:0;max-width:92px;padding:3px 7px;border-radius:4px;font-size:11px;line-height:1.5;font-weight:650;background:#e5f5ed;color:#14684c}
+html:root[data-routel-theme] .app-shell .status-badge[data-status=주의]{color:#875000;background:#fff1d6}
+html:root[data-routel-theme] .app-shell .status-badge[data-status=통제]{color:#ab2937;background:#ffebee}
+html:root[data-routel-theme] .app-shell .status-badge[data-status=미확인]{color:#506276;background:#e9edf2}
+html:root[data-routel-theme=dark] .app-shell .status-badge{background:#204538;color:#a6edce}
+html:root[data-routel-theme=dark] .app-shell .status-badge[data-status=주의]{background:#493c24;color:#f6d28b}
+html:root[data-routel-theme=dark] .app-shell .status-badge[data-status=통제]{background:#4e2c38;color:#ffb4c0}
+html:root[data-routel-theme=dark] .app-shell .status-badge[data-status=미확인]{background:#334354;color:#d5dfeb}
+html:root[data-routel-theme] .app-shell .facility-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;margin:0;border-top:1px solid var(--ca-line);font-size:12px}
+.facility-pagination button{font-size:12px!important;min-width:60px}
+.facility-empty{padding:28px 16px;text-align:center;font-size:13px}
+.home-shortcuts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+html:root[data-routel-theme] .app-shell .home-shortcuts a{display:flex;align-items:center;gap:10px;min-height:60px;padding:12px 16px;border:1px solid var(--ca-line);border-radius:10px;background:var(--ca-panel);text-decoration:none;font-size:13px;font-weight:600}
+.home-shortcuts a span{flex:1}.home-shortcuts a>.app-icon:last-child{width:16px}
+html:root[data-routel-theme] .app-shell main .facility-footnote{font-size:11px;background:transparent;padding:0}
+html:root[data-routel-theme] .app-shell .app-footer{margin-top:16px;border:0;border-top:1px solid var(--ca-line);border-radius:0;box-shadow:none;background:transparent;padding:8px 0}
+.app-bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);z-index:25;display:grid;grid-template-columns:repeat(4,1fr);width:100%;max-width:600px;padding:8px 8px max(8px,env(safe-area-inset-bottom));background:var(--ca-panel);border:1px solid var(--ca-line);border-bottom:0;border-radius:16px 16px 0 0}
+html:root[data-routel-theme] .app-shell .app-bottom-nav a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:48px;font-size:10px;text-decoration:none;color:var(--ca-sub);border-radius:8px}
+html:root[data-routel-theme] .app-shell .app-bottom-nav a.router-link-exact-active{background:var(--ca-soft);color:var(--ca-accent);font-weight:700}
+@media(max-width:760px){html:root[data-routel-theme] .app-shell{max-width:600px;padding:8px 14px 100px}.facility-workspace{grid-template-columns:1fr;gap:16px}.facility-filters{grid-template-columns:minmax(0,1fr) 108px;gap:8px}html:root[data-routel-theme] .app-shell main h1{font-size:21px}.status-filters{gap:5px}html:root[data-routel-theme] .app-shell .status-filters button{flex:1;justify-content:center;gap:5px;padding:7px 5px;font-size:11px}.status-filters strong{font-size:13px}html:root[data-routel-theme] .app-shell .map-area{height:310px}.overlay-inner{padding:20px}.home-shortcuts{gap:8px}html:root[data-routel-theme] .app-shell .home-shortcuts a{padding:12px 10px;gap:6px;font-size:12px}html:root[data-routel-theme] .app-shell .live-alerts{gap:0 8px}}
+@media(max-width:360px){html:root[data-routel-theme] .app-shell{padding-inline:10px}html:root[data-routel-theme] .app-shell .app-brand{gap:3px}html:root[data-routel-theme] .app-shell .app-brand strong{font-size:14px}.menu-grid{gap:6px}html:root[data-routel-theme] .app-shell .menu-grid a{padding:14px 8px;font-size:12px}.overlay-inner{padding:16px}html:root[data-routel-theme] .app-shell .live-connection[role=status]{font-size:11px}}
+
+/* Account links stay together beside the theme control. */
+.menu-auth-links{display:flex;align-items:center;flex-wrap:wrap;gap:16px}
+/* Never render an empty error strip; keep real error text accessible. */
+html:root[data-routel-theme] .app-shell [role=alert]:empty{display:none}

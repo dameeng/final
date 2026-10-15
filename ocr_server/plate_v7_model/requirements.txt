@@ -1,0 +1,12 @@
+# 번호판 읽기(plate_reader.py)에 필요한 패키지 (Python 3.13에서 확인)
+paddlepaddle-gpu==3.3.1   # 그래픽카드 없는 컴퓨터는 이 줄 대신: paddlepaddle==3.3.1
+opencv-python
+numpy
+pyclipper
+shapely
+PyYAML
+scikit-image
+albumentations
+lmdb
+RapidFuzz
+tqdm

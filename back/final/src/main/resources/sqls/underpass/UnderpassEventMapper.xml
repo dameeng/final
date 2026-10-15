@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.mbc.puf.underpass.dao.UnderpassEventDao">
+
+    <!-- 이벤트 기록. BLOCK/RELEASE는 riskLevel/riskScoreAtEvent가 null로, RISK_LEVEL_UP은 operatorId가
+         null로 들어온다. 생성된 id를 파라미터 객체(UnderpassEvent)의 id 에 채워준다 -->
+    <insert id="insertUnderpassEvent" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO underpass_event (underpass_id, event_type, risk_level, risk_score_at_event, operator_id)
+        VALUES (#{underpassId}, #{eventType}, #{riskLevel}, #{riskScoreAtEvent}, #{operatorId})
+    </insert>
+
+    <!-- 위험도 상승 여부 판단용: 가장 최근 RISK_LEVEL_UP의 단계 (없으면 결과 자체가 없음 → 서비스에서 SAFE로 간주) -->
+    <select id="selectLatestRiskLevel" resultType="RiskLevel">
+        SELECT risk_level
+          FROM underpass_event
+         WHERE underpass_id = #{underpassId}
+           AND event_type = 'RISK_LEVEL_UP'
+         ORDER BY created_at DESC, id DESC
+         LIMIT 1
+    </select>
+
+    <!-- PREDICTIVE 알림의 계기 이벤트로 쓸 id가 필요해서 전체를 조회 (없으면 결과 없음 → 서비스에서 SAFE로 간주, 알림 안 보냄) -->
+    <select id="selectLatestRiskLevelUpEvent" resultType="UnderpassEvent">
+        SELECT id, underpass_id, event_type, risk_level, risk_score_at_event, operator_id, created_at
+          FROM underpass_event
+         WHERE underpass_id = #{underpassId}
+           AND event_type = 'RISK_LEVEL_UP'
+         ORDER BY created_at DESC, id DESC
+         LIMIT 1
+    </select>
+
+    <!-- 제어이력(MP-16): underpass_event + display_log 통합. underpass 조인해서 이름도 같이 반환
+         (대시보드 통합 타임라인에서 재사용하기 위함). 이름 조인 없이 operator_id만 (테이블에도 id만 있음).
+         kind="EVENT"/"DISPLAY"로 한쪽만 걸러볼 수 있고(둘 다 안 주면 전체), startAt/endAt은 기간 필터.
+         "AND FALSE" 트릭으로 kind가 반대쪽을 가리킬 때 그 UNION 가지를 통째로 비운다 -->
+    <select id="selectControlHistory" resultType="ControlHistoryItem">
+        SELECT 'EVENT' AS kind, e.underpass_id, u.name AS underpass_name, e.event_type, e.risk_level,
+               e.risk_score_at_event, NULL::display_message_type AS message_type, e.operator_id, e.created_at
+          FROM underpass_event e
+          JOIN underpass u ON u.id = e.underpass_id
+         WHERE e.underpass_id = #{underpassId}
+           <if test="kind != null and kind == 'DISPLAY'">AND FALSE</if>
+           <if test="startAt != null">AND e.created_at &gt;= #{startAt}</if>
+           <if test="endAt != null">AND e.created_at &lt; #{endAt}</if>
+        UNION ALL
+        SELECT 'DISPLAY' AS kind, d.underpass_id, u.name AS underpass_name, NULL::underpass_event_type,
+               NULL::risk_level, NULL::DECIMAL(4,3), d.message_type, d.operator_id, d.created_at
+          FROM display_log d
+          JOIN underpass u ON u.id = d.underpass_id
+         WHERE d.underpass_id = #{underpassId}
+           <if test="kind != null and kind == 'EVENT'">AND FALSE</if>
+           <if test="startAt != null">AND d.created_at &gt;= #{startAt}</if>
+           <if test="endAt != null">AND d.created_at &lt; #{endAt}</if>
+         ORDER BY created_at DESC
+    </select>
+
+</mapper>

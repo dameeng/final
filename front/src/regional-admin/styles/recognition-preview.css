@@ -1,0 +1,24 @@
+/* Native modal keeps focus within the preview and supports Escape. */
+.regional-image-dialog{width:min(620px,calc(100vw - 32px));max-height:85dvh;box-sizing:border-box;overflow:auto;padding:0;border:1px solid var(--regional-line,var(--su-line,#879bac));border-radius:8px;background:var(--regional-panel,var(--su-card,#fff));color:var(--regional-ink,var(--su-ink,#19354e))}
+.regional-image-dialog::backdrop{background:#07142688}
+.regional-image-content{padding:20px}
+.regional-image-content h2{font-size:18px;margin:0 0 16px;overflow-wrap:anywhere}
+.regional-image-content img{display:block;width:100%;max-height:60dvh;object-fit:contain}
+.regional-image-actions{display:flex;justify-content:flex-end;margin-top:16px}
+.regional-image-link{border:0;background:transparent;color:var(--regional-accent,var(--su-accent,#267396));padding:4px 0;min-height:32px;text-decoration:underline;text-underline-offset:4px;cursor:pointer}
+
+/* Keep the edit field centred, with save/close beside it on wide screens. */
+.regional-image-dialog{width:min(900px,calc(100vw - 32px));max-height:90dvh}
+.regional-image-content img{max-height:55dvh}
+.regional-image-review-form{display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,280px) minmax(0,1fr);gap:12px;align-items:end;margin:20px 0 0}
+.regional-image-review-field{grid-column:2;display:grid;gap:8px;min-width:0;text-align:center;font-size:13px}
+.regional-image-review-field input{width:100%;min-width:0;box-sizing:border-box;text-align:center;min-height:44px}
+.regional-image-review-buttons{grid-column:3;display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0}
+.regional-image-review-buttons button{min-height:44px;white-space:nowrap}
+.regional-image-review-message{grid-column:1/-1;text-align:center;margin:0;overflow-wrap:anywhere}
+@media(max-width:700px){
+ .regional-image-content{padding:16px}
+ .regional-image-review-form{grid-template-columns:minmax(0,1fr)}
+ .regional-image-review-field{grid-column:1;width:min(280px,100%);justify-self:center}
+ .regional-image-review-buttons{grid-column:1;justify-content:center}
+}

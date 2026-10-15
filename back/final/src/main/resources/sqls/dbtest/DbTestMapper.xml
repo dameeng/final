@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- namespace = DAO 인터페이스의 전체 경로, id = DAO 메서드명 -->
+<mapper namespace="com.mbc.puf.dbtest.DbTestDao">
+
+    <select id="selectVersion" resultType="string">
+        SELECT version()
+    </select>
+
+    <select id="countRegion" resultType="int">
+        SELECT COUNT(*) FROM region
+    </select>
+
+    <!-- DB enum 라벨('안전','경고','위험')을 전부 꺼내 RiskLevel로 변환 -->
+    <select id="selectRiskLevels" resultType="RiskLevel">
+        SELECT unnest(enum_range(NULL::risk_level)) AS risk_level
+    </select>
+
+    <!-- enum 컬럼과 비교: 핸들러가 없으면 여기서 operator does not exist 에러 -->
+    <select id="countUnderpassByStatus" resultType="int">
+        SELECT COUNT(*) FROM underpass WHERE current_status = #{status}
+    </select>
+
+</mapper>

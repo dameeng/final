@@ -1,0 +1,90 @@
+# Dependencies and local Python environments
+node_modules/
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Build output and local IDE state
+target/
+dist/
+build/
+coverage/
+.metadata/
+.idea/
+.settings/
+.classpath
+.project
+.factorypath
+*.iml
+.DS_Store
+Thumbs.db
+
+# Secrets (share sanitized example files instead)
+.env
+.env.*
+!.env.example
+!**/.env.example
+application-secret.properties
+application-secret.yml
+application-secret.yaml
+
+# Runtime files
+*.log
+/back/final/uploads/
+spring_url.txt
+
+# Videos and archives: distribute separately from source code
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.webm
+*.wmv
+*.zip
+*.7z
+*.rar
+*.tar
+*.gz
+/ocr_server/자동차영상/
+
+# Trained model weights: distribute separately from source code
+*.pt
+*.pth
+*.onnx
+*.pdparams
+*.pdiparams
+*.pdiparams.info
+*.pdmodel
+*.h5
+*.hdf5
+*.keras
+*.ckpt
+*.safetensors
+*.tflite
+*.joblib
+*.pkl
+
+# Generated OCR results
+/ocr_server/yolo8!/yolo_plate_far/result/
+
+# AI 모델 파일 제외
+*.bin
+*.pt
+*.pth
+*.onnx
+*.joblib
+
+# 영상 파일 제외
+*.mp4
+*.avi
+*.mov
+*.mkv
+
+# 압축 파일 제외
+*.zip
+*.7z
+*.rar

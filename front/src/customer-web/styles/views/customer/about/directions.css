@@ -1,0 +1,18 @@
+.routel-content-page section {
+  padding: 25px 0;
+  border-bottom: 1px solid var(--routel-line);
+}
+.routel-content-page section:first-child {
+  padding-top: 0;
+}
+.routel-content-page section p {
+  max-width: 760px;
+}
+.directions-demo{text-align:center;max-width:none;margin:0 0 24px}
+.directions-body{display:grid;gap:24px}
+.directions-map{position:relative;width:100%;height:clamp(280px,40vw,420px);border:1px solid var(--routel-line);border-radius:6px;overflow:hidden;background:#eef4f8}
+.directions-map-error{position:absolute;inset:0;display:grid;place-items:center;margin:0;padding:16px;text-align:center;max-width:none}
+.directions-info{display:grid;grid-template-columns:90px minmax(0,1fr);margin:0;border-top:1px solid var(--routel-line)}
+.directions-info dt,.directions-info dd{margin:0;padding:14px 0;border-bottom:1px solid var(--routel-line);text-align:left}
+.directions-info dt{font-weight:600;color:var(--routel-ink)}
+@media(max-width:480px){.directions-info{grid-template-columns:64px minmax(0,1fr)}}

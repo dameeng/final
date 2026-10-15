@@ -1,0 +1,4 @@
+.routel-eye-icon{display:block;flex:none;color:inherit;background:transparent;filter:none}
+:is(.routel-password-input,.password-field) > button{background:transparent!important;border:0!important;box-shadow:none!important;color:#425667!important;display:grid;place-items:center}
+:is(html[data-routel-theme=dark],.routel-manager-shell[data-theme=dark]) :is(.routel-password-input,.password-field)>button{color:#e3eaf1!important;background:transparent!important}
+:is(.routel-password-input,.password-field)>button:focus-visible{outline:2px solid #679cc3;outline-offset:2px}

@@ -1,0 +1,193 @@
+.sign-up-main {
+  width: min(100% - 32px, 680px);
+  margin: 48px auto 72px;
+}
+
+.sign-up-h1 {
+  margin: 0 0 28px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--routel-line);
+  font-size: 28px;
+}
+
+.sign-up-form {
+  display: grid;
+  gap: 30px;
+}
+
+.routel-content-page .sign-up-group {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.routel-content-page .sign-up-group legend {
+  width: 100%;
+  margin-bottom: 18px;
+  padding: 0 0 10px;
+  border-bottom: 1px solid var(--routel-line);
+  color: var(--routel-ink);
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.sign-up-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 20px;
+}
+
+.sign-up-fields > div {
+  min-width: 0;
+}
+
+.sign-up-full {
+  grid-column: 1 / -1;
+}
+
+.sign-up-fields label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.sign-up-fields input,
+.sign-up-fields select {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  height: 44px;
+  padding: 0 12px;
+  border: 1px solid #c8d7e1;
+  background: #fff;
+  color: var(--routel-ink);
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.sign-up-fields input:focus-visible,
+.sign-up-fields select:focus-visible {
+  outline: 2px solid var(--routel-blue);
+  outline-offset: 1px;
+}
+
+.sign-up-inline {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.sign-up-email {
+  display: grid;
+  grid-template-columns: minmax(110px, 1fr) auto minmax(110px, 1fr) minmax(110px, 160px);
+  align-items: center;
+  gap: 10px;
+}
+
+.sign-up-domain {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  height: 44px;
+  padding: 0 12px;
+  border: 1px solid #c8d7e1;
+  background: #f7fafc;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.sign-up-fields .sign-up-select-label {
+  margin-top: 14px;
+}
+
+.sign-up-fields select {
+  max-width: 280px;
+}
+.sign-up-email select { width: 100%; max-width: none; }
+
+.sign-up-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.sign-up-fields button {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid #aac3d2;
+  background: #fff;
+  color: var(--routel-ink);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.sign-up-fields button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.sign-up-feedback {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--routel-sub);
+}
+
+.sign-up-optional {
+  margin-left: 4px;
+  color: var(--routel-sub);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.sign-up-form > button[type="submit"] {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid var(--routel-ink);
+  background: #19354e;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sign-up-form > button[type="submit"]:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.sign-up-result {
+  margin: -12px 0 0;
+  font-size: 14px;
+}
+
+.sign-up-nav {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 24px;
+  font-size: 14px;
+  color: var(--routel-sub);
+}
+
+@media (max-width: 520px) {
+  .sign-up-main { margin-top: 32px; }
+  .sign-up-fields { grid-template-columns: 1fr; }
+  .sign-up-fields select { max-width: none; }
+  .sign-up-inline { grid-template-columns: minmax(0, 1fr); }
+  .sign-up-email { gap: 6px; }
+  .sign-up-email { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+  .sign-up-email select { grid-column: 1 / -1; }
+  .sign-up-fields button { white-space: normal; }
+}
+
+.password-field { position: relative; display: block; width: 100%; }
+.password-field > input { width: 100%; padding-right: 48px; box-sizing: border-box; }
+.password-field > button { position: absolute; top: 50%; right: 5px; transform: translateY(-50%); width: 38px; min-height: 38px; margin: 0; padding: 0; border: 0; border-radius: 2px; background: transparent; color: inherit; font-size: 19px; cursor: pointer; }
+.password-field > button:focus-visible { outline: 2px solid #2675bf; }
+
+.password-field > button img { display: block; width: 22px; height: 22px; object-fit: contain; margin: auto; }
+
+.sign-up-main button{display:inline-flex;align-items:center;justify-content:center;text-align:center}
+

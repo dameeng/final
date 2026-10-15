@@ -1,0 +1,13 @@
+.cctv-page > select { margin-left: 12px; min-width: 0; width: min(100%, 320px); }
+.cctv-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 20px; }
+.cctv-grid article { min-width: 0; border: 1px solid #d4e1eb; padding: 12px; }
+.cctv-grid h2 { margin: 0 0 10px; font-size: 1rem; }
+.cctv-grid video { display: block; width: 100%; aspect-ratio: 16 / 9; background: #161b21; }
+.cctv-note { color: #666e76; }
+.cctv-scroll { min-width: 0; max-width: 100%; }
+.routel-admin-page .cctv-camera-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 24px; }
+.cctv-camera-form label { display: grid; gap: 4px; }
+@media (max-width: 760px) { .cctv-grid, .routel-admin-page .cctv-camera-form { grid-template-columns: 1fr; } }
+.cctv-monitor{margin-top:24px}.cctv-log-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px;flex-wrap:wrap}.cctv-monitor-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}.cctv-monitor-layout.has-logs{grid-template-columns:minmax(0,1fr) minmax(280px,340px)}.cctv-monitor-layout>*{min-width:0}.cctv-monitor-layout video{width:100%;aspect-ratio:16/9;object-fit:contain;background:#20262d}.cctv-monitor-layout .cctv-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.cctv-log-panel{padding:20px;border:1px solid #718096;border-radius:8px}.cctv-log-panel h2{margin:0;font-size:16px}.cctv-log-panel>p{font-size:12px}.cctv-log-filters{display:flex;flex-wrap:wrap;gap:8px}.cctv-log-scroll{max-height:560px;overflow:auto;overflow-anchor:none;overscroll-behavior:contain}.cctv-log-scroll article{padding:12px 0;border-bottom:1px solid #718096}.cctv-log-scroll strong,.cctv-log-scroll small{display:block;overflow-wrap:anywhere}.cctv-log-scroll small{font-size:12px}.cctv-demo{margin-top:16px}.cctv-demo summary{cursor:pointer;padding:12px 0}
+@media(max-width:900px){.cctv-monitor-layout.has-logs{grid-template-columns:1fr}.cctv-log-scroll{max-height:320px}}
+@media(max-width:500px){.cctv-monitor-layout .cctv-grid{grid-template-columns:1fr}}
