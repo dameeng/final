@@ -56,10 +56,10 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.GET, "/api/dashboard/status-summary", "/api/dashboard/region-status").permitAll()
 						// ---- 로그인 없이 조회 가능한 날씨 (CP-08) ----
 						.requestMatchers(HttpMethod.GET, "/api/weather").permitAll()
+						// ---- 로그인 없이 연결 가능한 실시간 스트림(SSE). 비로그인은 공개 이벤트만 받는다.
+						//                  관리자 스트림(/api/admin/stream)은 여기 넣지 않아 로그인이 필요하다 ----
+						.requestMatchers(HttpMethod.GET, "/api/stream").permitAll()
 
-						// ---- API 문서(Swagger UI). 시연/배포 때는 springdoc.swagger-ui.enabled=false 로 끄면 화면 자체가 404가 된다 ----
-						.requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs", "/v3/api-docs/**").permitAll()
-						
 						// [개발 전용] 스텁 문자 인증코드 확인 (puf.sms-stub.expose-code=true 일 때만 컨트롤러가 있음)
 						.requestMatchers(HttpMethod.GET, "/api/dev/sms/last").permitAll()
 						// [임시] 개발용 테스트 API. dbtest 패키지를 지울 때 이 줄도 삭제
