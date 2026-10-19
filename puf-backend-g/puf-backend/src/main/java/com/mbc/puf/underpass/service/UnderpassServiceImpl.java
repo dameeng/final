@@ -163,7 +163,10 @@ public class UnderpassServiceImpl implements UnderpassService {
         underpass.setHeightM(request.getHeightM());
         underpass.setLengthM(request.getLengthM());
         underpass.setWidthM(request.getWidthM());
-        underpass.setWaterDistM(request.getWaterDistM());
+        underpass.setLanes(request.getLanes());
+        underpass.setSafetyGrade(request.getSafetyGrade());
+        underpass.setRiverDistM(request.getRiverDistM());
+        underpass.setSeaDistM(request.getSeaDistM());
         underpass.setFloodHistoryCount(request.getFloodHistoryCount());
         underpass.setCurrentStatus(UnderpassCurrentStatus.NORMAL);   // 등록 시 항상 정상 상태로 고정
         underpassRepository.saveAndFlush(underpass);
@@ -188,7 +191,10 @@ public class UnderpassServiceImpl implements UnderpassService {
         underpass.setHeightM(request.getHeightM());
         underpass.setLengthM(request.getLengthM());
         underpass.setWidthM(request.getWidthM());
-        underpass.setWaterDistM(request.getWaterDistM());
+        underpass.setLanes(request.getLanes());
+        underpass.setSafetyGrade(request.getSafetyGrade());
+        underpass.setRiverDistM(request.getRiverDistM());
+        underpass.setSeaDistM(request.getSeaDistM());
         underpass.setFloodHistoryCount(request.getFloodHistoryCount());
         return toDetail(reload(underpass));
     }
@@ -445,7 +451,10 @@ public class UnderpassServiceImpl implements UnderpassService {
         d.setCurrentBlockEventId(u.getCurrentBlockEventId());
         d.setCurrentRiskLevel(u.getCurrentRiskLevel());
         d.setWidthM(u.getWidthM());
-        d.setWaterDistM(u.getWaterDistM());
+        d.setLanes(u.getLanes());
+        d.setSafetyGrade(u.getSafetyGrade());
+        d.setRiverDistM(u.getRiverDistM());
+        d.setSeaDistM(u.getSeaDistM());
         d.setCurrentRiskScore(u.getCurrentRiskScore());
         d.setUpEntryCameraId(u.getUpEntryCameraId());
         d.setUpExitCameraId(u.getUpExitCameraId());

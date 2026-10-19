@@ -5,7 +5,7 @@
 -- ⚠️ 개발 DB 전용. public 스키마를 통째로 지우므로 되돌릴 수 없음. 운영 DB 실행 금지.
 -- 실행 순서: 스키마 리셋 → ENUM → 테이블 → CHECK → FK/인덱스 → 필수 기준행
 -- 약어 사전: cam(카메라) num(번호) addr(주소) dist(거리) lat/lng(위경도) ctrl(통제) pm(예지보전) recog(인식)
--- 단위: height/length/width/water_dist/dist = m, rain* = mm, temp = 섭씨, humidity/rain_prob = %
+-- 단위: height/length/width/river_dist/sea_dist/dist = m, rain* = mm, temp = 섭씨, humidity/rain_prob = %
 -- =====================================================================
 
 DROP SCHEMA public CASCADE;
@@ -135,7 +135,10 @@ CREATE TABLE underpass ( -- 지하차도 마스터 테이블
     height DECIMAL(4,2), -- 높이(깊이 개념의 층고, m, AI 모델 입력값)
     length DECIMAL(8,2), -- 길이(m)
     width DECIMAL(6,2), -- 폭(m)
-    water_dist DECIMAL(8,2), -- 인근 하천/바다까지 직선거리(m, AI 모델 입력값)
+    lanes INT, -- 차로수
+    safety_grade VARCHAR(10), -- 안전등급(FMS 등급 A~E, 미실시/불명은 'UNKNOWN')
+    river_dist DECIMAL(10,1), -- 가까운 하천까지 직선거리(m, AI 모델 입력값)
+    sea_dist DECIMAL(10,1), -- 바다(해안선)까지 직선거리(m, AI 모델 입력값)
     flood_count INT NOT NULL DEFAULT 0, -- 침수 이력 횟수
     up_entry_cam_id BIGINT, -- 상행 입구 카메라 아이디
     up_exit_cam_id BIGINT, -- 상행 출구 카메라 아이디

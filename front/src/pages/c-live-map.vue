@@ -271,15 +271,25 @@ function findRegion(row: Json): string {
   const code = text(row.sidoCode || row.regionCode).slice(0, 2);
   const byCode = regions.find((r) => r.codes.includes(code));
   if (byCode) return byCode.id;
-  const name = text(
-    row.regionName || row.sidoName || row.region || row.roadAddress || row.address,
-  ).trim();
-  // 주소 첫 단어만 사용하여 경기도 광주시와 옛 광주광역시를 혼동하지 않습니다.
-  return (
-    regions.find((r) =>
+  // 백엔드 region이 구·군 단위("강서구")라 regionName만으로는 시·도를 못 찾는다.
+  // 후보(지역명 → 시도명 → 주소)를 순서대로 모두 시도한다.
+  // 주소 첫 단어만 사용하여 경기도 광주시와 옛 광주광역시를 혼동하지 않는다.
+  const candidates = [
+    row.regionName,
+    row.sidoName,
+    row.region,
+    row.roadAddress,
+    row.address,
+  ]
+    .map((v) => text(v).trim())
+    .filter(Boolean);
+  for (const name of candidates) {
+    const hit = regions.find((r) =>
       r.aliases.some((alias) => name === alias || name.startsWith(alias + " ")),
-    )?.id || ""
-  );
+    );
+    if (hit) return hit.id;
+  }
+  return "";
 }
 function statusLabel(value: unknown): string {
   const labels: Record<string, string> = {

@@ -34,6 +34,10 @@ dependencies {
     // 시큐리티
     implementation 'org.springframework.boot:spring-boot-starter-security'
 
+    // API 문서(Swagger UI). /swagger-ui.html 에서 확인, 원본 JSON은 /v3/api-docs
+    // springdoc 3.1.x는 Spring Boot 4.1 기준으로 빌드된 버전 (Boot BOM이 관리하지 않아 버전 직접 지정)
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1'
+
     // JPA (Hibernate). 단순 CRUD·목록은 엔티티+리포지토리, 통계성 집계는 네이티브 SQL (MyBatis 대체)
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
