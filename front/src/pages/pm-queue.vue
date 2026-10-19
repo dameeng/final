@@ -1,4 +1,5 @@
 ﻿<script setup lang="ts">
+import MenuIcon from '../components/MenuIcon.vue'
 import AdminIdentity from '../components/AdminIdentity.vue'
 import {ref,onMounted,onBeforeUnmount} from 'vue'
 import {useRouter} from 'vue-router'
@@ -14,7 +15,7 @@ onBeforeUnmount(()=>dispose?.())
 <template><div ref="root" class="wire-page page-pm-queue">
 <header class="hdr">
   <div class="hdr-l">
-    <button type="button" id="menu-btn" class="iconbtn" aria-label="메뉴 열기" aria-expanded="false" aria-controls="side"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M3 6H21 M3 12H21 M3 18H21" fill="none" stroke="#1f2630" stroke-width="2" stroke-linecap="round"></path></svg></button>
+    <button type="button" id="menu-btn" class="iconbtn" aria-label="메뉴 열기" aria-expanded="false" aria-controls="side"><MenuIcon/></button>
     <RouterLink class="inl-1444c6eaca admin-home-logo" to="/admin-dashboard" aria-label="종합 현황으로 이동">ROUTEL</RouterLink>
   </div>
   <div class="hdr-r">
@@ -58,7 +59,7 @@ onBeforeUnmount(()=>dispose?.())
 <div class="filters">
 <div class="chips" id="qchips" role="group" aria-label="처리 상태"><button type="button" class="chip" data-st="" aria-pressed="true">전체 <span class="sub">6</span></button><button type="button" class="chip" data-st="new" aria-pressed="false">신규 <span class="sub">3</span></button><button type="button" class="chip" data-st="ack" aria-pressed="false">확인 <span class="sub">1</span></button><button type="button" class="chip" data-st="work" aria-pressed="false">점검 중 <span class="sub">1</span></button><button type="button" class="chip" data-st="done" aria-pressed="false">조치 완료 <span class="sub">1</span></button></div>
 <select aria-label="발생 사유"><option>사유 전체</option><option>위험 진입</option><option>주의 진입</option><option>급상승</option><option>데이터 미수신</option></select>
-<select aria-label="설비 유형"><option>유형 전체</option><option>배수펌프</option><option>전광판</option><option>CCTV</option></select>
+<select aria-label="설비 유형"><option>유형 전체</option><option>배수펌프</option><option>전광판</option><option>CCTV</option><option>수위센서</option></select>
 </div>
 <div class="tbl-wrap"><table class="tbl" id="qtbl"><thead><tr><th>상태</th><th>발생</th><th>설비</th><th>발생 사유</th><th>위험 점수</th><th>처리</th></tr></thead><tbody>
 <tr data-st="new" data-i="0"><td><span class="stat new" id="st-0">신규</span></td><td class="sub">10:20</td><td><a class="link" href="/pm-equipment-detail">P-01</a><div class="sub">배수펌프 · 초량1지하차도</div></td><td>위험 진입</td><td><span class="badge danger">위험</span> <strong>82</strong></td><td id="act-0"><button type="button" class="btn sm q-act" data-i="0">확인</button></td></tr>

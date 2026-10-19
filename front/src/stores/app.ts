@@ -3,7 +3,7 @@ import {ref,computed} from 'vue'
 export const useApp=defineStore('app',()=>{
  const authVersion=ref(0)
  const theme=ref(localStorage.getItem('routel-theme')==='dark'?'dark':'light')
- const account=ref<{id:string;name:string;role:string}|null>(null)
+ const account=ref<{id:string;name:string;role:string;regions?:{id:number;name:string}[]}|null>(null)
  const signupNationality=ref<'domestic'|'foreign'>('domestic')
  const signupCarrier=ref('')
  // The frontend is usable as a public prototype before the API is connected.
@@ -21,6 +21,6 @@ export const useApp=defineStore('app',()=>{
  function themeToggle(){theme.value=theme.value==='light'?'dark':'light';localStorage.setItem('routel-theme',theme.value)}
  function record(category:string,content:string,facility=''){events.value.unshift({time:new Date().toLocaleString('ko-KR'),facility,category,content})}
  function receiveUrgent(at:number){if(Number.isFinite(at)&&at>0){bannerAt.value=at;sessionStorage.setItem('routel-alert-at',String(at))}}
- function clearAccount(){setMemberPreview(false);authVersion.value++;account.value=null;data.value={};faqs.value=[];notices.value=[];events.value=[];selectedFacility.value=0;unread.value=0;bannerAt.value=0;sessionStorage.removeItem('routel-alert-at')}
+ function clearAccount(){localStorage.removeItem('routel-session-kind');setMemberPreview(false);authVersion.value++;account.value=null;data.value={};faqs.value=[];notices.value=[];events.value=[];selectedFacility.value=0;unread.value=0;bannerAt.value=0;sessionStorage.removeItem('routel-alert-at')}
  return {authVersion,theme,account,signupNationality,signupCarrier,previewAvailable,memberPreview,setMemberPreview,selectedFacility,filter,unread,data,faqs,notices,events,bannerAt,roleKey,pageData,themeToggle,record,clearAccount,receiveUrgent}
 })

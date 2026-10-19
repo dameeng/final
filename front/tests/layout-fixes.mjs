@@ -26,7 +26,7 @@ try{
  const toggle=page.locator('.page-my-alerts #m');await toggle.waitFor()
  const checked=await toggle.evaluate(el=>({height:el.getBoundingClientRect().height,width:el.getBoundingClientRect().width,color:getComputedStyle(el).backgroundColor,text:getComputedStyle(el,'::after').content}))
  assert.equal(checked.height,28);assert.equal(checked.width,52);assert.equal(checked.text,'"ON"')
- await toggle.uncheck()
+ await toggle.uncheck();await page.waitForFunction(color=>getComputedStyle(document.querySelector('.page-my-alerts #m')).backgroundColor!==color,checked.color)
  assert.equal(await toggle.evaluate(el=>getComputedStyle(el,'::after').content),'"OFF"')
  assert.notEqual(await toggle.evaluate(el=>getComputedStyle(el).backgroundColor),checked.color)
  await page.locator('.mypage-sidebar').getByRole('link',{name:'계정 설정',exact:true}).click()

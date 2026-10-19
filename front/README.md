@@ -1,5 +1,11 @@
 # ROUTEL 2차 원본 배치 기반 Vue 프로젝트
 
+## 제공 백엔드 연결 및 고정 대시보드
+
+종합 현황의 위젯 편집 기능은 제거하고 시설 요약·최근 이벤트·큰 지도·주요 현황의 고정 배치로 정리했습니다. 제공된 PUF 백엔드의 인증, 시설·카메라·임계치, 번호판 판별, 차량 통과 기록, 전광판, 이관 PDF, 고객·게시판 관리 기능을 연결했습니다.
+
+`.env`에 `BACKEND_URL=http://localhost:5555`, `VITE_DATA_MODE=server`를 설정하고 Vite를 다시 실행하세요. 실제 관리자 로그인은 `/admin-login`, 추가 업무는 `/index`의 운영 관리 또는 사이드바에서 시작합니다. [연결 범위·계약 변경·남은 백엔드 항목](docs/BACKEND_INTEGRATION.md)을 확인하세요.
+
 ## 고객앱 길찾기 API 연결
 
 ### 부산시 CCTV 프런트 직접 연결
@@ -44,13 +50,12 @@ http://localhost:8282 접속. 종료는 Ctrl+C. 포트가 사용 중이면 자�
 
 ## 구성
 
-- Vue 3, TypeScript, vue-router, Pinia, Vite, GridStack
+- Vue 3, TypeScript, vue-router, Pinia, Vite
 - `src/pages`: 원본에 대응하는 Vue 템플릿
 - `src/styles`: 공통 및 화면별 위치·간격·크기 CSS (Vue style 블록 없음)
 - `src/runtime/*.js`: 원본 이벤트·탭·표·서랍 동작 보존 모듈
 - `src/runtime/*.ts`: DOM 범위·이벤트 정리, 추가 기능, 지도 묶음, 위젯
 - `src/stores/app.ts`: 계정, 테마, 알림, 시설 선택, 페이지 예시 데이터, 공지·FAQ
-- `src/stores/widgets.ts`: 저장 배치와 편집 중 배치
 - `src/data`: 원본 예시 데이터, 그래프 데이터 및 SVG 자료
 
 원본 동작의 대규모 누락을 피하려고 초기 DOM은 Vue 템플릿으로 구성하고, 원본 JavaScript 동작은 페이지별 모듈로 보존했습니다. 모든 레거시 동작을 ref/v-model로 재작성한 버전은 아닙니다. 모듈의 document 접근은 해당 페이지로 제한하며, 전역 이벤트·타이머·관찰자를 페이지 종료 시 정리합니다.

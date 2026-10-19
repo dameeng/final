@@ -298,7 +298,7 @@ async function loadMap() {
   } catch { mapError.value = '지도를 불러오지 못했습니다. 카카오 지도 키와 등록 도메인을 확인해 주세요.' }
 }
 let riskChartResize: ResizeObserver | undefined
-onMounted(() => { if (riskChartEl.value) { riskChartWidth.value = riskChartEl.value.clientWidth || riskChartWidth.value; riskChartResize = new ResizeObserver(([entry]) => { if (entry) riskChartWidth.value = Math.round(entry.contentRect.width) }); riskChartResize.observe(riskChartEl.value) } void loadMap(); void refresh(); timer = setInterval(() => { if (!loading.value) void refresh() }, 30000) })
+onMounted(() => { if (riskChartEl.value) { riskChartWidth.value = riskChartEl.value.clientWidth || riskChartWidth.value; riskChartResize = new ResizeObserver(([entry]) => { if (entry) riskChartWidth.value = Math.round(entry.contentRect.width) }); riskChartResize.observe(riskChartEl.value) } void loadMap(); void refresh() })
 onBeforeUnmount(() => { active = false; riskChartResize?.disconnect(); lookupTimers.forEach(clearTimeout);lookupTimers.clear();if(map){const events=(window as any).kakao?.maps?.event;events?.removeListener(map,'dragstart',markMapInteraction);events?.removeListener(map,'zoom_changed',markMapInteraction);events?.removeListener(map,'idle',declutterLabels)}clearTimeout(declutterTimer);resize?.disconnect();regionMarkers.forEach(m=>m.setMap(null));regionOverlays.forEach(m=>m.setMap(null));marker?.setMap(null);request?.abort(); if (timer) clearInterval(timer) })
 </script>
 

@@ -1,4 +1,5 @@
 ﻿<script setup lang="ts">
+import MenuIcon from '../components/MenuIcon.vue'
 import AdminIdentity from '../components/AdminIdentity.vue'
 import {ref,onMounted,onBeforeUnmount} from 'vue'
 import {useRouter} from 'vue-router'
@@ -14,7 +15,7 @@ onBeforeUnmount(()=>dispose?.())
 <template><div ref="root" class="wire-page page-logs">
 <header class="hdr">
   <div class="hdr-l">
-    <button type="button" id="menu-btn" class="iconbtn" aria-label="메뉴 열기" aria-expanded="false" aria-controls="side"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M3 6H21 M3 12H21 M3 18H21" fill="none" stroke="#1f2630" stroke-width="2" stroke-linecap="round"></path></svg></button>
+    <button type="button" id="menu-btn" class="iconbtn" aria-label="메뉴 열기" aria-expanded="false" aria-controls="side"><MenuIcon/></button>
     <RouterLink class="inl-1444c6eaca admin-home-logo" to="/admin-dashboard" aria-label="종합 현황으로 이동">ROUTEL</RouterLink>
   </div>
   <div class="hdr-r">

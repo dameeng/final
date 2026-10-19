@@ -82,7 +82,7 @@
 .page-handover-pdf .stat.work{background:var(--surface,#fff);border-color:var(--line,#c9ced6)}
 .page-handover-pdf .stat.done{background:var(--surface,#fff);border-color:var(--line,#c9ced6)}
 .page-handover-pdf dialog{border:1px solid var(--ink-sub);padding:0;max-width:min(560px,calc(100vw - 24px));width:100%}
-.page-handover-pdf dialog::backdrop{background:var(--surface,#fff)}
+.page-handover-pdf dialog::backdrop{background:rgba(15,23,42,.32)}
 .page-handover-pdf .dlg-h{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 20px;border-bottom:1px solid var(--line)}
 .page-handover-pdf .dlg-h h2{margin:0;font-size:17px}
 .page-handover-pdf .dlg-b{padding:16px 20px;display:flex;flex-direction:column;gap:14px}

@@ -1,0 +1,67 @@
+ROUTEL 프런트엔드 팀원 전달 안내
+기준일: 2026-10-19
+
+1. 압축을 풀고 ROUTEL-front 폴더를 VS Code에서 엽니다.
+   package.json이 보이는 폴더가 프로젝트 루트입니다.
+
+2. Node.js 22.12 이상 또는 24 버전을 설치합니다.
+
+3. 프로젝트 터미널에서 실행합니다. (Windows PowerShell)
+   npm.cmd ci
+   Copy-Item .env.example .env
+
+4. 생성된 .env에 팀의 API 키를 입력합니다.
+   VITE_KAKAO_MAP_KEY : 카카오 JavaScript 지도 키
+   KAKAO_REST_API_KEY : 서버용 카카오 REST 키
+   KMA_SERVICE_KEY : 기상청 서비스 키
+   ITS_API_KEY : ITS 서비스 키
+   BACKEND_URL : 백엔드 주소 (기본 http://localhost:5555)
+
+   .env는 개인정보·인증키 보호를 위해 압축에 포함하지 않았습니다.
+   기존 키가 필요하면 팀 내 별도 안전한 경로로 전달받으세요.
+   REST 키·기상청 키에는 VITE_ 접두어를 붙이지 마세요.
+
+5. 카카오 개발자 콘솔에 다음 사이트 주소를 등록합니다.
+   http://localhost:8283
+   http://localhost:8282
+   주소가 등록되지 않으면 지도 SDK가 401 오류로 차단됩니다.
+
+6. 개발 서버 실행
+   npm.cmd run dev
+   브라우저: http://localhost:8282
+
+   8282이외의 포트를 사용할 경우 카카오 허용 주소에 해당 포트도 등록해야 합니다.
+   8282를 명시해 실행하려면:
+   npm.cmd run dev -- --port 8282
+   브라우저: http://localhost:8282
+
+7. 주요 화면
+   고객 웹: /
+   전체 관리자 화면 안내: /index
+   관리자 종합 현황: /admin-dashboard
+   고객 앱 로그인·둘러보기: /customer-app/screen-1
+   관리자 앱 로그인·둘러보기: /admin-app/screen-1
+   PWA 설치 안내: /pwa/
+
+8. 데이터 모드
+   VITE_DATA_MODE=example : 기존 예시 지도와 대시보드 배치
+   VITE_DATA_MODE=server : 백엔드 기반 지도와 대시보드
+   실제 로그인·회원가입·정보 수정 등은 백엔드 실행이 필요합니다.
+   백엔드 소스·DB는 이 프런트엔드 압축에 포함하지 않았습니다.
+
+9. 검사·배포
+   npm.cmd run typecheck
+   npm.cmd run build
+   빌드 결과: dist 폴더 (PWA 서비스워커 포함)
+   PWA 설치에는 HTTPS 배포가 필요합니다.
+   정적 파일만 올리면 /api 중계는 실행되지 않습니다.
+
+10. 포함·제외
+   포함: src, public, server, scripts, tests, docs, 설정 및 잠금 파일
+   제외: node_modules, .env, .git, 빌드 결과, 기존 ZIP·배포 복사본,
+         백엔드 참고 압축 해제본, 생성된 테스트 결과
+
+기존 npm test의 화면 검사는 localhost:8282를 기준으로 한 항목이 있습니다.
+테스트하려면 해당 포트로 개발 서버를 실행하세요.
+PWA 검사는 빌드 후 node scripts/serve-pwa.mjs 실행 상태에서
+node tests/pwa.mjs를 사용합니다. 기본 테스트 주소는 8283입니다.

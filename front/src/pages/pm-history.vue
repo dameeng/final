@@ -1,4 +1,5 @@
 ﻿<script setup lang="ts">
+import MenuIcon from '../components/MenuIcon.vue'
 import AdminIdentity from '../components/AdminIdentity.vue'
 import {ref,onMounted,onBeforeUnmount} from 'vue'
 import {useRouter} from 'vue-router'
@@ -14,7 +15,7 @@ onBeforeUnmount(()=>dispose?.())
 <template><div ref="root" class="wire-page page-pm-history">
 <header class="hdr">
   <div class="hdr-l">
-    <button type="button" id="menu-btn" class="iconbtn" aria-label="메뉴 열기" aria-expanded="false" aria-controls="side"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M3 6H21 M3 12H21 M3 18H21" fill="none" stroke="#1f2630" stroke-width="2" stroke-linecap="round"></path></svg></button>
+    <button type="button" id="menu-btn" class="iconbtn" aria-label="메뉴 열기" aria-expanded="false" aria-controls="side"><MenuIcon/></button>
     <RouterLink class="inl-1444c6eaca admin-home-logo" to="/admin-dashboard" aria-label="종합 현황으로 이동">ROUTEL</RouterLink>
   </div>
   <div class="hdr-r">
@@ -56,7 +57,7 @@ onBeforeUnmount(()=>dispose?.())
   <div class="crumb"><span>예지보전 &gt; <strong class="inl-7891572d91">점검 이력</strong></span><span class="note"></span></div>
 <div class="page-head"><h1>예지보전</h1><div class="row"><button type="button" class="btn" id="h-reg">점검 직접 등록</button></div></div><nav class="tabs" aria-label="예지보전 탭"><a href="/pm-equipment">설비</a><a href="/pm-queue">점검 대상·알림 <span class="count">3</span></a><a href="/pm-history" aria-current="page">점검 이력</a><a href="/pm-settings">기준 설정</a></nav>
 <div class="filters" role="search">
-<select id="h-type" aria-label="설비 유형"><option value="">유형 전체</option><option>배수펌프</option><option>전광판</option><option>CCTV</option></select>
+<select id="h-type" aria-label="설비 유형"><option value="">유형 전체</option><option>배수펌프</option><option>전광판</option><option>CCTV</option><option>수위센서</option></select>
 <select aria-label="조치 유형"><option>조치 유형 전체</option><option>현장 점검</option><option>부품 교체</option><option>설정 조정</option><option>원격 확인</option><option>이상 없음</option></select>
 <input type="date" aria-label="시작일" class="inl-99fb937df8" /> <span>~</span> <input type="date" aria-label="종료일" class="inl-99fb937df8" />
 <input type="search" id="h-q" placeholder="설비 ID, 지하차도 검색" aria-label="검색" />
