@@ -19,6 +19,7 @@ import com.mbc.puf.common.query.QueryConditions;
 import com.mbc.puf.common.request.PageParams;
 import com.mbc.puf.common.request.PeriodQuery;
 import com.mbc.puf.common.response.PageResponse;
+import com.mbc.puf.notification.service.NotificationService;
 
 import jakarta.persistence.EntityManager;
 
@@ -29,10 +30,13 @@ public class InquiryServiceImpl implements InquiryService {
     private static final String FROM = " from Inquiry o join Customer c on c.id = o.customerId";
 
     private final InquiryRepository inquiryRepository;
+    private final NotificationService notificationService;   // 고객 알림 센터(문의 분류)
     private final EntityManager em;
 
-    public InquiryServiceImpl(InquiryRepository inquiryRepository, EntityManager em) {
+    public InquiryServiceImpl(InquiryRepository inquiryRepository, NotificationService notificationService,
+                              EntityManager em) {
         this.inquiryRepository = inquiryRepository;
+        this.notificationService = notificationService;
         this.em = em;
     }
 
@@ -128,6 +132,10 @@ public class InquiryServiceImpl implements InquiryService {
             throw new BusinessException(HttpStatus.CONFLICT, "이미 답변이 등록된 문의입니다.");
         }
         original.setStatus(InquiryStatus.ANSWERED);
+
+        // 고객 알림 센터(문의 분류): 내 문의에 답변이 달렸다고 알린다
+        notificationService.notifyCustomerInquiryAnswered(original.getCustomerId(), original.getId(),
+                original.getTitle());
     }
 
     @Override
