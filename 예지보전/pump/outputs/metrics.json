@@ -1,0 +1,112 @@
+{
+  "overall": {
+    "anomaly_roc_auc": 0.5110750044125931,
+    "clf_pr_auc": 0.025528640959703496,
+    "clf_roc_auc": 0.6657164479712953,
+    "positive_rate": 0.016383734701934466,
+    "failures_detected_anomaly": 0,
+    "failures_detected_clf": 0,
+    "n_failures": 7,
+    "mean_lead_h_clf": 0.0,
+    "rul_mae_h": 67.97565308954734,
+    "thresholds": {
+      "anomaly": 0.9882315049109643,
+      "prob": 0.10429945959259955,
+      "anomaly_warn": 0.9646334706577124,
+      "prob_warn": 0.004731883080276134
+    }
+  },
+  "folds": [
+    {
+      "fold": 0,
+      "failure_at": "2018-04-12 21:55:00",
+      "anomaly_roc_auc": 0.7662585034013605,
+      "anomaly_lead_h": 0.0,
+      "anomaly_false_alarm": 0.0,
+      "clf_pr_auc": 0.04958802809704504,
+      "clf_roc_auc": 0.7862755102040816,
+      "clf_lead_h": 0.0,
+      "clf_false_alarm": 0.011904761904761904,
+      "rul_mae_h": 48.98701214376208,
+      "rul_mae_h_last168h": 75.15972072480353
+    },
+    {
+      "fold": 1,
+      "failure_at": "2018-04-18 00:30:00",
+      "anomaly_roc_auc": 0.7736455463728191,
+      "anomaly_lead_h": 0.0,
+      "anomaly_false_alarm": 0.06232294617563739,
+      "clf_pr_auc": 0.08842024807475579,
+      "clf_roc_auc": 0.7156106519742884,
+      "clf_lead_h": 0.0,
+      "clf_false_alarm": 0.0,
+      "rul_mae_h": 91.21694279787134,
+      "rul_mae_h_last168h": 91.21694279787134
+    },
+    {
+      "fold": 2,
+      "failure_at": "2018-05-19 03:18:00",
+      "anomaly_roc_auc": 0.18735612318965816,
+      "anomaly_lead_h": 0.0,
+      "anomaly_false_alarm": 0.01520226745684102,
+      "clf_pr_auc": 0.009391235707313726,
+      "clf_roc_auc": 0.5734609933980851,
+      "clf_lead_h": 0.0,
+      "clf_false_alarm": 0.02061324400927596,
+      "rul_mae_h": 63.81658181136385,
+      "rul_mae_h_last168h": 48.31111507156598
+    },
+    {
+      "fold": 3,
+      "failure_at": "2018-05-25 00:30:00",
+      "anomaly_roc_auc": 0.28145966290296187,
+      "anomaly_lead_h": 0.0,
+      "anomaly_false_alarm": 0.02810304449648712,
+      "clf_pr_auc": 0.7465671693095687,
+      "clf_roc_auc": 0.9624447717231223,
+      "clf_lead_h": 0.0,
+      "clf_false_alarm": 0.0,
+      "rul_mae_h": 71.94749431194401,
+      "rul_mae_h_last168h": 71.94749431194401
+    },
+    {
+      "fold": 4,
+      "failure_at": "2018-06-28 22:00:00",
+      "anomaly_roc_auc": 0.9096320346320347,
+      "anomaly_lead_h": 0.0,
+      "anomaly_false_alarm": 0.0036355859709153123,
+      "clf_pr_auc": 0.006951217100516698,
+      "clf_roc_auc": 0.5097740800865801,
+      "clf_lead_h": 0.0,
+      "clf_false_alarm": 0.0053464499572284,
+      "rul_mae_h": 40.238199399354265,
+      "rul_mae_h_last168h": 64.2773215432328
+    },
+    {
+      "fold": 5,
+      "failure_at": "2018-07-08 00:11:00",
+      "anomaly_roc_auc": 0.5115865701119158,
+      "anomaly_lead_h": 0.0,
+      "anomaly_false_alarm": 0.0,
+      "clf_pr_auc": 0.9330200166309989,
+      "clf_roc_auc": 0.9947992100065833,
+      "clf_lead_h": 0.0,
+      "clf_false_alarm": 0.0,
+      "rul_mae_h": 115.76597798508224,
+      "rul_mae_h_last168h": 115.76597798508224
+    },
+    {
+      "fold": 6,
+      "failure_at": "2018-07-25 14:00:00",
+      "anomaly_roc_auc": 0.4205711735832217,
+      "anomaly_lead_h": 0.0,
+      "anomaly_false_alarm": 0.009830205540661306,
+      "clf_pr_auc": 0.010029893499781365,
+      "clf_roc_auc": 0.3288710397144132,
+      "clf_lead_h": 0.0,
+      "clf_false_alarm": 0.004468275245755138,
+      "rul_mae_h": 43.85736317745357,
+      "rul_mae_h_last168h": 78.15353483054933
+    }
+  ]
+}

@@ -9,7 +9,7 @@ export async function customerRequest(path:string,body?:unknown){
 export async function loginCustomer(loginId:string,password:string){
  const data=await customerRequest('/api/customers/login',{loginId,password})
  if(data.data?.id==null)throw new Error('로그인 응답에 사용자 정보가 없습니다.')
- useApp().authVersion++;useApp().account={id:String(data.data.id),name:data.data.name||loginId,role:'customer'}
+ localStorage.setItem('routel-session-kind','customer');useApp().authVersion++;useApp().account={id:String(data.data.id),name:data.data.name||loginId,role:'customer'}
 }
 export async function restoreCustomer(){
  const app=useApp(),version=app.authVersion

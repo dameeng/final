@@ -59,6 +59,7 @@ $('c-ok').addEventListener('click',function(){var f=FAC[cur];f.ctl=act==='block'
   toast(f.name+' '+(act==='block'?'통제':'통제 해제')+' 처리했어요');});
 $('obs-open').addEventListener('click',function(){ctx.closeAll();$('o-name').textContent=FAC[cur].name;od.showModal();});
 $('o-close').addEventListener('click',function(){od.close()});
+od.addEventListener('click',function(event){if(event.target!==od)return;var rect=od.getBoundingClientRect();if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)od.close();});
 
 
 })();

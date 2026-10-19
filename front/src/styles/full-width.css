@@ -1,3 +1,4 @@
+:root{--admin-sidebar-width:380px}
 /* Use the available viewport width across desktop pages. */
 @media screen {
  :root{--content-width:100%}
@@ -15,7 +16,7 @@
 .wire-page .side-user:hover{text-decoration:underline;text-underline-offset:4px}
 .wire-page[class] .side-bot{display:flex;flex-direction:column;flex-wrap:nowrap;gap:0;align-items:stretch;white-space:nowrap}
 .wire-page[class] .side-bot a{display:block;width:100%;padding:12px 20px;text-align:left}
-.wire-page[class] .side{width:min(360px,90vw);max-width:90vw}
+.wire-page[class] .side{width:min(var(--admin-sidebar-width),90vw);max-width:90vw}
 .wire-page .side-bot a{font-size:13px}
 .page-admin-dashboard .map-body .kakao-map-controls{left:14px;right:auto;top:auto;bottom:16px}
 .page-admin-dashboard .kakao-map-controls svg{position:static;width:21px;height:21px;flex:none}

@@ -88,3 +88,6 @@ spring_url.txt
 *.zip
 *.7z
 *.rar
+
+# GitHub 100MB 제한 초과 데이터
+예지보전/pump_sensor.csv

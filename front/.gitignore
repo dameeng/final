@@ -3,3 +3,8 @@ dist/
 .env
 .env.local
 test-results/
+
+.backend-reference/
+.publish-final/
+
+releases/

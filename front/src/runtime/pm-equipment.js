@@ -31,6 +31,7 @@ var EQ=store.pageData('pm-equipment','EQ',seeds.EQ);var cur=-1;
 var peek=$('peek');
 function line(series){var x0=30,x1=380,w=(x1-x0)/(series.length-1);return series.map(function(v,i){return (x0+i*w).toFixed(0)+','+(120-v*1.0).toFixed(0);}).join(' ');}
 function fill(i){var e=EQ[i];cur=i;
+ peek.querySelector('a[href^="/pm-equipment-detail"]').href='/pm-equipment-detail?equipment='+encodeURIComponent(e.id);
  $('p-type').textContent=e.type;$('p-title').textContent=e.id+' · '+e.site;
  var b=$('p-badge');var l=e.score>=70?['danger','위험']:e.score>=40?['warn','주의']:['safe','안전'];b.className='badge '+l[0];b.textContent=l[1];
  $('p-score').textContent=e.score;$('p-rx').textContent=e.rx;$('p-insp').textContent=e.insp==='-'?'해당 없음':e.insp;
@@ -42,6 +43,7 @@ function openPeek(i){ctx.closeAll('drawer');fill(i);peek.hidden=false;document.g
 function closePeek(){peek.hidden=true;[].forEach.call(document.querySelectorAll('#tbl tbody tr'),function(tr){tr.classList.remove('sel')});}
 window.__closeOther=function(except){if(except!=='drawer')closePeek();};
 document.querySelectorAll('.row-open').forEach(function(b){b.addEventListener('click',function(){openPeek(+b.dataset.i)});});
+var requested=new URLSearchParams(location.search).get('equipment');if(requested){var index=EQ.findIndex(function(e){return e.id===requested});if(index>=0)openPeek(index);}
 $('peek-close').addEventListener('click',function(){ctx.closeAll();});
 $('p-reg').addEventListener('click',function(){var e=EQ[cur];openReg(e.id+' · '+e.type+' · '+e.site);});
 var tf='',lf='',q='';

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import {pageFriendlyMapScroll} from '../runtime/mapScroll'
+import {useApp} from '../stores/app'
+import '../styles/map-weather.css'
 let disposeMapScroll:(()=>void)|undefined
 
 import {
@@ -11,16 +13,17 @@ import {
   watch,
 } from "vue";
 import { displayDate, dateParts } from "../utils/display-date";
-import { RouterLink } from "vue-router";
+import { RouterLink,useRoute } from "vue-router";
 import BusanCctvModal from '../components/BusanCctvModal.vue'
 const cctvOpen=ref(false)
+const currentRoute=useRoute()
 
 const props = withDefaults(defineProps<{ manager?: boolean }>(), {
   manager: false,
 });
 // 고객과 관리자에서 조회하는 공개 시설 목록입니다.
 const API_BASE_URL = "";
-const REFRESH_INTERVAL_MS = 30000;
+const app=useApp();
 const STALE_AFTER_MS = 120000;
 // 백엔드(back/final) UnderpassController 기준. 목록 항목에 현재 상태(currentStatus/currentRiskLevel)가 함께 옵니다.
 const API = {
@@ -172,6 +175,8 @@ type Facility = {
   name: string;
   address: string;
   regionId: string;
+  assignedRegionId?: string;
+  assignedRegionName?: string;
   latitude: number | null;
   longitude: number | null;
   status: string;
@@ -202,13 +207,26 @@ const receivedAt = ref(""),
   loaded = ref(false),
   now = ref(Date.now());
 const mapElement = ref<HTMLDivElement | null>(null);
+const findingPosition=ref(false);
+let userLocation:any;
+function zoomMap(change:number){if(map)map.setLevel(Math.max(1,Math.min(14,map.getLevel()+change)))}
+function locateUser(){
+ if(!map||findingPosition.value)return;
+ if(!navigator.geolocation){mapError.value='이 브라우저에서는 위치 찾기를 지원하지 않습니다.';return}
+ findingPosition.value=true;
+ navigator.geolocation.getCurrentPosition(position=>{
+  if(!alive)return;findingPosition.value=false;mapError.value='';
+  const center=new maps.LatLng(position.coords.latitude,position.coords.longitude);
+  if(!userLocation){const dot=document.createElement('div');dot.className='map-user-location';dot.setAttribute('aria-label','내 현재 위치');userLocation=new maps.CustomOverlay({map,position:center,content:dot,zIndex:4})}else userLocation.setPosition(center);
+  map.setLevel(4);map.panTo(center);
+ },error=>{if(!alive)return;findingPosition.value=false;mapError.value=error.code===1?'위치 권한을 허용한 뒤 다시 눌러 주세요.':'현재 위치를 확인하지 못했습니다.'},{enableHighAccuracy:true,timeout:10000,maximumAge:60000});
+}
 let alive = true,
   requestNumber = 0,
   regionLookupNumber = 0;
 let listAbort: AbortController | undefined,
   detailAbort: AbortController | undefined;
-let polling: ReturnType<typeof setInterval> | undefined,
-  clock: ReturnType<typeof setInterval> | undefined;
+
 let sdkWatchdog: number | undefined;
 let sdkPoll: number | undefined;
 let observer: ResizeObserver | undefined;
@@ -306,6 +324,8 @@ function normalize(row: Json, current?: Json): Facility | null {
     name: text(row.name) || "이름 미제공",
     address: text(row.roadAddress || row.address),
     regionId: findRegion(row),
+    assignedRegionId: String(row.regionId ?? ""),
+    assignedRegionName: String(row.regionName ?? ""),
     latitude: coordinatesValid ? latitude : null,
     longitude: coordinatesValid ? longitude : null,
     // 백엔드: currentStatus(NORMAL/BLOCKED) + currentRiskLevel(SAFE/WARNING/DANGER)
@@ -486,7 +506,7 @@ async function refresh() {
       }
     }
     facilities.value = [...unique.values()];
-    if (map && !initialFacilityBoundsApplied && facilities.value.length && !selectedId.value && !regionId.value) { fitNation(); initialFacilityBoundsApplied = true; }
+    if (map && !initialFacilityBoundsApplied && facilities.value.length && !selectedId.value) { fitNation(); initialFacilityBoundsApplied = true; }
     loaded.value = true;
     receivedAt.value = new Date().toISOString();
     now.value = Date.now();
@@ -650,12 +670,14 @@ function handleZoomChanged() {
 }
 function fitNation() {
   const bounds = new maps.LatLngBounds();
-  const points = facilities.value.filter(f => f.latitude !== null && f.longitude !== null && Number.isFinite(f.latitude) && Number.isFinite(f.longitude));
+  const assigned=props.manager?app.account?.regions||[]:[];
+  const scoped=facilities.value.filter(f=>assigned.some(r=>String(r.id)===f.assignedRegionId||f.assignedRegionName===r.name||f.address.includes(r.name)));
+  const points = (scoped.length?scoped:facilities.value.filter(f=>!regionId.value||f.regionId===regionId.value)).filter(f => f.latitude !== null && f.longitude !== null && Number.isFinite(f.latitude) && Number.isFinite(f.longitude));
   for (const f of points) bounds.extend(new maps.LatLng(f.latitude, f.longitude));
   // Keep the existing service region representatives (including Jeju) in the nationwide view.
   for (const r of (points.length ? [] : regions)) if(Number.isFinite(r.latitude) && Number.isFinite(r.longitude)) bounds.extend(new maps.LatLng(r.latitude,r.longitude));
   map.setBounds(bounds, props.manager ? 16 : 48, 16, 16, 16);
-  if (!props.manager && points.length === 1) map.setLevel(6);
+  if (points.length === 1) map.setLevel(props.manager ? 4 : 6);
 }
 function openSelectedPopup() {
   if (!map || !selected.value || detailLoading.value) return;
@@ -929,7 +951,6 @@ async function initializeMap() {
           disposeMapScroll=pageFriendlyMapScroll(mapElement.value,map);
           clusterer=new maps.MarkerClusterer({map,averageCenter:true,minLevel:0,gridSize:70,disableClickZoom:true});
           maps.event.addListener(clusterer,'clusterclick',selectCluster);
-          map.addControl(new maps.ZoomControl(),maps.ControlPosition.BOTTOMRIGHT);
           infoWindow = new maps.InfoWindow({ removable: true, disableAutoPan: true });
           geocoder = maps.services ? new maps.services.Geocoder() : undefined;
           fitNation();
@@ -959,7 +980,6 @@ async function initializeMap() {
 function handleVisibility() {
   if (!document.hidden) {
     now.value = Date.now();
-    void refresh();
   }
 }
 watch([filtered, regionId, selectedId, now, listError, statusError], drawMap);
@@ -968,15 +988,10 @@ watch(filtered,rows=>clusterFacilityIds.value=clusterFacilityIds.value.filter(id
 onMounted(() => {
   void initializeMap();
   void refresh();
-  polling = setInterval(() => {
-    if (!document.hidden) void refresh();
-  }, REFRESH_INTERVAL_MS);
-  clock = setInterval(() => {
-    if (!document.hidden) now.value = Date.now();
-  }, 10000);
   document.addEventListener("visibilitychange", handleVisibility);
 });
 onBeforeUnmount(() => {
+ userLocation?.setMap(null);
  disposeMapScroll?.()
   if(clusterer)maps.event.removeListener(clusterer,'clusterclick',selectCluster);clusterer?.clear();
   weatherAbort?.abort();
@@ -987,8 +1002,6 @@ onBeforeUnmount(() => {
   detailAbort?.abort();
   clearTimeout(sdkWatchdog);
   sdkErrorCleanup?.();
-  clearInterval(polling);
-  clearInterval(clock);
   clearInterval(sdkPoll);
   observer?.disconnect();
   document.removeEventListener("visibilitychange", handleVisibility);
@@ -1002,7 +1015,8 @@ onBeforeUnmount(() => {
 
 <template>
   <main class="wire-page customer-content page-c-live-map routel-content-page" :class="{ 'customer-underpass-page': !props.manager }">
-    <h1>{{ props.manager ? "통제 / 해제" : "지하차도 통제 현황" }}</h1>
+    <RouterLink v-if="props.manager&&selectedId&&currentRoute.path.startsWith('/admin-app/')" :to="'/admin-app/screen-5?id='+selectedId">시설 상세</RouterLink><div v-if="props.manager&&selectedId&&!currentRoute.path.startsWith('/admin-app/')" class="service-actions"><RouterLink :to="'/admin-data/facilities?id='+selectedId">시설 정보·통제</RouterLink><RouterLink :to="'/admin-data/cameras?underpassId='+selectedId">카메라 관리</RouterLink><RouterLink :to="'/admin-data/transits?underpassId='+selectedId">차량 통과 기록</RouterLink></div>
+<h1>{{ props.manager ? "통제 / 해제" : "지하차도 통제 현황" }}</h1>
     <form @submit.prevent="searchFacilities" class="underpass-map-form">
       <label class="underpass-map-label"
         >지역<select
@@ -1069,11 +1083,17 @@ onBeforeUnmount(() => {
           <li><span class="underpass-map-legend-dot" style="background:#1671d9"></span>내 위치</li>
         </ul>
         <!-- 지도 표시에는 높이가 필요합니다. 지도 크기 외 디자인 CSS는 없습니다. -->
+        <div class="live-map-surface">
         <div
           ref="mapElement"
           class="underpass-map-div"
           aria-label="카카오 지도"
         ></div>
+        <div class="kakao-map-controls live-map-controls" aria-label="지도 조작">
+          <button type="button" aria-label="카카오 지도 확대" @click="zoomMap(-1)">+</button>
+          <button type="button" aria-label="카카오 지도 축소" @click="zoomMap(1)">−</button>
+          <button type="button" aria-label="내 위치 찾기" :disabled="findingPosition" :aria-busy="findingPosition" @click="locateUser"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 1v4m0 14v4M1 12h4m14 0h4"/></svg></button>
+        </div></div>
       </section>
       <aside :class="{'map-sidebar': !props.manager}">
       <section

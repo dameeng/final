@@ -38,7 +38,7 @@ try{
  await handle.click();assert.equal(await handle.getAttribute('aria-expanded'),'true')
  assert(await page.locator('.ph').evaluate(el=>el.scrollHeight<=el.clientHeight+1))
  await handle.click()
- assert.equal(await page.locator('.app-map-legend span').count(),4)
+ assert.equal(await page.locator('.map-status-legend span').count(),5)
  await page.route('**/api/navigation/weather?*',route=>route.fulfill({json:{success:true,data:{temperature:21,humidity:60,rainfall:0,condition:'Clear',observedAt:'2026-10-15T10:00:00+09:00'}}}))
  await page.locator('.app-weather-toggle').click()
  await page.locator('.app-weather-temperature').waitFor()

@@ -1,4 +1,5 @@
 ﻿<script setup lang="ts">
+import MenuIcon from '../components/MenuIcon.vue'
 import AdminIdentity from '../components/AdminIdentity.vue'
 import {ref,onMounted,onBeforeUnmount} from 'vue'
 import {useRouter} from 'vue-router'
@@ -14,7 +15,7 @@ onBeforeUnmount(()=>dispose?.())
 <template><div ref="root" class="wire-page page-pm-equipment">
 <header class="hdr">
   <div class="hdr-l">
-    <button type="button" id="menu-btn" class="iconbtn" aria-label="메뉴 열기" aria-expanded="false" aria-controls="side"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M3 6H21 M3 12H21 M3 18H21" fill="none" stroke="#1f2630" stroke-width="2" stroke-linecap="round"></path></svg></button>
+    <button type="button" id="menu-btn" class="iconbtn" aria-label="메뉴 열기" aria-expanded="false" aria-controls="side"><MenuIcon/></button>
     <RouterLink class="inl-1444c6eaca admin-home-logo" to="/admin-dashboard" aria-label="종합 현황으로 이동">ROUTEL</RouterLink>
   </div>
   <div class="hdr-r">
@@ -56,10 +57,10 @@ onBeforeUnmount(()=>dispose?.())
   <div class="crumb"><span>예지보전 &gt; <strong class="inl-7891572d91">설비</strong></span><span class="note"></span></div>
 <div class="page-head"><h1>예지보전</h1><div class="row"></div></div><nav class="tabs" aria-label="예지보전 탭"><a href="/pm-equipment" aria-current="page">설비</a><a href="/pm-queue">점검 대상·알림 <span class="count">3</span></a><a href="/pm-history">점검 이력</a><a href="/pm-settings">기준 설정</a></nav>
 <div class="filters" role="search">
-<select id="f-type" aria-label="설비 유형"><option value="">유형 전체</option><option>배수펌프</option><option>전광판</option><option>CCTV</option></select>
+<select id="f-type" aria-label="설비 유형"><option value="">유형 전체</option><option>배수펌프</option><option>전광판</option><option>CCTV</option><option>수위센서</option></select>
 <div class="chips" role="group" aria-label="위험 단계"><button type="button" class="chip" data-lv="" aria-pressed="true">전체</button><button type="button" class="chip" data-lv="위험" aria-pressed="false">위험</button><button type="button" class="chip" data-lv="주의" aria-pressed="false">주의</button><button type="button" class="chip" data-lv="안전" aria-pressed="false">안전</button></div>
 <input type="search" id="f-q" placeholder="설비 ID, 지하차도 검색" aria-label="검색" />
-<span class="sub inl-6d00061700" id="f-count">총 10개</span>
+<span class="sub inl-6d00061700" id="f-count">총 11개</span>
 </div>
 <div class="tbl-wrap"><table class="tbl" id="tbl">
 <thead><tr><th>설비</th><th>유형</th><th>지하차도</th><th>위험 점수</th><th>7일 변화</th><th>마지막 수신</th><th>점검 상태</th></tr></thead>
@@ -74,6 +75,7 @@ onBeforeUnmount(()=>dispose?.())
 <tr data-type="CCTV" data-lv="안전" data-text="C-08 좌동지하차도"><td><button type="button" class="link row-open" data-i="7">C-08</button></td><td>CCTV</td><td>좌동지하차도</td><td><span class="badge safe">안전</span> <strong>19</strong></td><td>–</td><td>10:41</td><td><span class="sub">-</span></td></tr>
 <tr data-type="배수펌프" data-lv="안전" data-text="P-09 수영강변지하차도"><td><button type="button" class="link row-open" data-i="8">P-09</button></td><td>배수펌프</td><td>수영강변지하차도</td><td><span class="badge safe">안전</span> <strong>17</strong></td><td>▼ 1</td><td>10:42</td><td><span class="sub">-</span></td></tr>
 <tr data-type="전광판" data-lv="안전" data-text="D-10 ★★지하차도"><td><button type="button" class="link row-open" data-i="9">D-10</button></td><td>전광판</td><td>★★지하차도</td><td><span class="badge safe">안전</span> <strong>12</strong></td><td>▼ 2</td><td>10:42</td><td><span class="sub">-</span></td></tr>
+<tr data-type="수위센서" data-lv="주의" data-text="W-11 초량1지하차도"><td><button type="button" class="link row-open" data-i="10">W-11</button></td><td>수위센서</td><td>초량1지하차도</td><td><span class="badge warn">주의</span> <strong>58</strong></td><td>▲ 28</td><td>10:42</td><td>-</td></tr>
 </tbody></table></div>
 <p class="sub">점수 구간: 0~39 안전 · 40~69 주의 · 70 이상 위험 (기준 설정에서 변경)</p>
 

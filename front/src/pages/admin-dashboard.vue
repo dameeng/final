@@ -1,24 +1,28 @@
 ﻿<script setup lang="ts">
+import MenuIcon from '../components/MenuIcon.vue'
 import AdminIdentity from '../components/AdminIdentity.vue'
-import AdminShortcuts from '../components/AdminShortcuts.vue'
-import {ref,onMounted,onBeforeUnmount} from 'vue'
-import {useRouter,onBeforeRouteLeave} from 'vue-router'
+import {computed,ref,onMounted,onBeforeUnmount} from 'vue'
+import {useAdminProfile} from '../stores/adminProfile'
+import {useApp} from '../stores/app'
+import {useRouter} from 'vue-router'
 import {makeContext} from '../runtime/context'
 import {mountClusters} from '../runtime/mapClusters'
 import {enhance} from '../runtime/enhance'
 import {initialize} from '../runtime/admin-dashboard.js'
-import {mountWidgets} from '../runtime/widgets'
 import '../styles/admin-dashboard.css'
-const root=ref<HTMLElement>();const router=useRouter();let dispose:(()=>void)|undefined;let widgets:ReturnType<typeof mountWidgets>|undefined
-onMounted(()=>{if(!root.value)return;const runtime=makeContext(root.value,router);enhance('admin-dashboard',runtime.ctx);initialize(runtime.ctx);mountClusters(root.value,runtime.ctx,'admin-dashboard');widgets=mountWidgets(root.value,runtime.ctx);dispose=()=>{widgets?.dispose();runtime.dispose()}})
-onBeforeRouteLeave(()=>{widgets?.save()})
+import '../styles/dashboard-fixed.css'
+const root=ref<HTMLElement>();const router=useRouter();let dispose:(()=>void)|undefined
+const facilityExpanded=ref(true)
+const admin=useAdminProfile(),app=useApp()
+const mapRegion=computed(()=>app.account?app.account.regions?.map(region=>region.name).join(' · ')||'담당 지역 미지정':admin.region)
+onMounted(()=>{if(!root.value)return;const runtime=makeContext(root.value,router);enhance('admin-dashboard',runtime.ctx);initialize(runtime.ctx);mountClusters(root.value,runtime.ctx,'admin-dashboard');dispose=runtime.dispose})
 onBeforeUnmount(()=>dispose?.())
 </script>
 <template><div ref="root" class="wire-page page-admin-dashboard">
 
 <header class="hdr">
   <div class="hdr-l">
-    <button type="button" id="menu-btn" class="iconbtn" aria-label="메뉴 열기" aria-expanded="false" aria-controls="side"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M3 6H21 M3 12H21 M3 18H21" fill="none" stroke="#1f2630" stroke-width="2" stroke-linecap="round"/></svg></button>
+    <button type="button" id="menu-btn" class="iconbtn" aria-label="메뉴 열기" aria-expanded="false" aria-controls="side"><MenuIcon/></button>
     <RouterLink to="/admin-dashboard" class="admin-home-logo" aria-label="종합 현황으로 이동">ROUTEL</RouterLink>
   </div>
   <div class="hdr-r">
@@ -57,17 +61,12 @@ onBeforeUnmount(()=>dispose?.())
   <div class="crumb"><span>종합 현황</span><span class="note">샘플 데이터 · 구조 확인용 저충실도 와이어프레임</span></div>
 <div class="page-head">
 <h1>종합 현황</h1>
-<div><button type="button" id="edit-on" class="btn">위젯 편집</button></div>
+<div></div>
 </div>
-<div id="editbar" class="editbar" hidden>
-<div><strong>위젯 편집 중</strong><br><span style="color:var(--ink-sub)">표시 항목과 크기를 조정하고, 각 위젯 제목의 ⠿ 손잡이를 끌어 위치를 옮기세요.</span></div>
-<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" id="widget-add" class="btn">위젯 관리</button><button type="button" id="reset" class="btn">기본값으로 초기화</button><button type="button" id="done" class="btn primary">완료</button></div>
-</div>
-<div id="grid" class="grid-stack">
-<div class="grid-stack-item" gs-id="shortcuts" gs-x="0" gs-y="11" gs-w="12" gs-h="5"><div class="grid-stack-item-content"><section class="card wg widget-original-content" data-id="shortcuts" aria-label="관리자 페이지 바로가기"><div class="wg-head"><h2>관리자 페이지 바로가기</h2><RouterLink to="/index">전체 화면 →</RouterLink></div><AdminShortcuts/></section></div></div>
-<div class="grid-stack-item" gs-id="map" gs-x="3" gs-y="2" gs-w="9" gs-h="8"><div class="grid-stack-item-content"><div class="map-widget-layout"><section class="card map-w widget-original-content" data-id="map" data-size="l" aria-label="지도">
+<div id="grid" class="dashboard-fixed-layout">
+<div class="dashboard-fixed-item fixed-map"><div class="dashboard-fixed-content"><div class="map-widget-layout"><section class="card map-w widget-original-content" data-id="map" data-size="l" aria-label="지도">
 <div class="map-top">
-<h2>부산 지하차도 지도 <span style="font-weight:400;color:var(--ink-sub);font-size:13px">· 크기 조절 가능</span></h2>
+<h2>{{mapRegion}} 지하차도 지도</h2>
 <div class="legend"><span><i style="background:#1f2630"></i>위험</span><span><i style="background:#fff;border:3px solid #1f2630;width:12px;height:12px"></i>주의</span><span><i style="background:#c9ced6;border:1px solid #8a93a0"></i>안전</span></div>
 </div>
 <div class="map-body">
@@ -95,18 +94,21 @@ onBeforeUnmount(()=>dispose?.())
 <circle id="ring" cx="470" cy="150" r="22" fill="none" stroke="#2b5c8a" stroke-width="3" stroke-dasharray="4 3" pointer-events="none"/>
 </svg>
 <section class="card selp" aria-label="선택 시설" aria-live="polite">
-<div class="wg-head"><h2>선택 시설</h2><button type="button" class="btn sm" id="obs-open">관측 기록</button></div>
+<div class="wg-head"><h2>선택 시설</h2><button type="button" class="btn sm" id="facility-detail-toggle" :aria-expanded="facilityExpanded" aria-controls="facility-detail-body" @click="facilityExpanded=!facilityExpanded">{{facilityExpanded?'상세 접기 ▴':'상세 펼치기 ▾'}}</button></div>
 <div><p class="name"><span id="s-name"></span></p><p class="addr" id="s-addr"></p>
 <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap"><span class="badge" id="s-badge"></span><span class="badge safe" id="s-ctl"></span></div></div>
+<div id="facility-detail-body" v-show="facilityExpanded" class="facility-detail-body">
+<div class="facility-observation-action"><button type="button" class="btn sm" id="obs-open">관측 기록</button></div>
 <div><div style="display:flex;align-items:baseline;justify-content:space-between"><strong style="font-size:22px" id="s-score"></strong><small style="color:var(--ink-sub)">위험 점수</small></div>
 <div class="gauge" aria-hidden="true"><b id="g-fill"></b><i style="left:50%"></i><i style="left:70%"></i></div>
 <small style="color:var(--ink-sub)">주의 50점 이상 · 위험 70점 이상 (서버 임계치)</small></div>
 <div class="kv"><div><small>강우량</small><strong id="s-rain"></strong></div><div><small>위험도 관측</small><strong id="s-obs"></strong></div></div>
 <div><strong>시설 위치 날씨</strong><div id="s-wx" style="color:var(--ink-sub)"></div></div>
-<div><strong>설비</strong> <span id="s-eq"></span> <a href="/pm-equipment" style="color:var(--accent);text-decoration:underline">예지보전에서 보기</a></div>
+<div><strong>설비</strong> <span id="s-eq"></span> <a href="/pm-equipment" style="color:inherit;text-decoration:underline">예지보전에서 보기</a></div>
 <div style="margin-top:auto;display:flex;flex-direction:column;gap:8px">
 <div class="row2"><button type="button" class="btn primary" id="b-block">통제</button><button type="button" class="btn" id="b-release">통제 해제</button></div>
 <a class="btn" href="/fac-detail">시설 상세 →</a>
+</div>
 </div>
 </section>
 <div class="flist" id="flist">
@@ -120,9 +122,9 @@ onBeforeUnmount(()=>dispose?.())
 </ul></div>
 </div>
 </div>
-</section></div></div></div><div class="grid-stack-item" gs-id="summary" gs-x="0" gs-y="0" gs-w="12" gs-h="2"><div class="grid-stack-item-content"><section class="card wg widget-original-content" data-id="summary" data-size="l" aria-label="지하차도 현황">
+</section></div></div></div><div class="dashboard-fixed-item fixed-summary"><div class="dashboard-fixed-content"><section class="card wg widget-original-content" data-id="summary" data-size="l" aria-label="지하차도 현황">
 <div class="wg-head"><h2>지하차도 현황</h2><a href="/fac-list">지하차도 관리</a></div>
-<div class="ctl" role="group" aria-label="위젯 설정"><label><input type="checkbox" class="on" checked>표시</label><span><label><input type="radio" name="sz-summary" value="s" checked>작게</label><label><input type="radio" name="sz-summary" value="m">보통</label><label><input type="radio" name="sz-summary" value="l">크게</label></span><span class="sp"><button type="button" class="btn sm up" aria-label="위로">↑</button><button type="button" class="btn sm dn" aria-label="아래로">↓</button></span></div>
+
 <div class="tiles5">
 <div class="tile"><small>담당 시설</small><strong>16</strong></div>
 <div class="tile"><small>정상</small><strong>12</strong></div>
@@ -131,38 +133,40 @@ onBeforeUnmount(()=>dispose?.())
 <div class="tile block"><small>통제 중</small><strong>1</strong></div>
 </div>
 </section></div></div>
-<div class="grid-stack-item" gs-id="todo" gs-x="8" gs-y="10" gs-w="4" gs-h="4"><div class="grid-stack-item-content"><section class="card wg widget-original-content" data-id="todo" data-size="s" aria-label="점검 필요">
+<div class="dashboard-bottom">
+<div class="dashboard-fixed-item fixed-todo"><div class="dashboard-fixed-content"><section class="card wg widget-original-content" data-id="todo" data-size="s" aria-label="점검 필요">
 <div class="wg-head"><h2>점검 필요</h2></div>
-<div class="ctl" role="group" aria-label="위젯 설정"><label><input type="checkbox" class="on" checked>표시</label><span><label><input type="radio" name="sz-todo" value="s" checked>작게</label><label><input type="radio" name="sz-todo" value="m">보통</label><label><input type="radio" name="sz-todo" value="l">크게</label></span><span class="sp"><button type="button" class="btn sm up" aria-label="위로">↑</button><button type="button" class="btn sm dn" aria-label="아래로">↓</button></span></div>
+
 <div class="fill"><div><span class="big">3</span> <span style="color:var(--ink-sub)">건 · 신규 점검 대상</span></div>
 <div style="display:flex;flex-wrap:wrap;gap:8px"><a class="btn sm primary" href="/pm-queue">점검 대상 보기 →</a><a class="btn sm" href="/pm-settings">기준 설정 →</a></div></div>
 </section></div></div>
-<div class="grid-stack-item" gs-id="verify" gs-x="0" gs-y="14" gs-w="6" gs-h="2"><div class="grid-stack-item-content"><section class="card wg widget-original-content" data-id="verify" data-size="s" aria-label="수동 판별 대기">
+<div class="dashboard-fixed-item fixed-verify"><div class="dashboard-fixed-content"><section class="card wg widget-original-content" data-id="verify" data-size="s" aria-label="수동 판별 대기">
 <div class="wg-head"><h2>수동 판별 대기</h2><a href="/verify">판별하러 가기</a></div>
-<div class="ctl" role="group" aria-label="위젯 설정"><label><input type="checkbox" class="on" checked>표시</label><span><label><input type="radio" name="sz-verify" value="s" checked>작게</label><label><input type="radio" name="sz-verify" value="m">보통</label><label><input type="radio" name="sz-verify" value="l">크게</label></span><span class="sp"><button type="button" class="btn sm up" aria-label="위로">↑</button><button type="button" class="btn sm dn" aria-label="아래로">↓</button></span></div>
+
 <div class="fill"><div><span class="big">2</span> <span style="color:var(--ink-sub)">건 대기 중</span></div>
 <div style="color:var(--ink-sub)">가장 급한 건: 남은 시간 0:23 · 1분 지나면 자동 넘김</div></div>
 </section></div></div>
-<div class="grid-stack-item" gs-id="health" gs-x="6" gs-y="14" gs-w="6" gs-h="2"><div class="grid-stack-item-content"><section class="card wg widget-original-content" data-id="health" data-size="s" aria-label="데이터 수신 상태">
+<div class="dashboard-fixed-item fixed-health"><div class="dashboard-fixed-content"><section class="card wg widget-original-content" data-id="health" data-size="s" aria-label="데이터 수신 상태">
 <div class="wg-head"><h2>데이터 수신 상태</h2><a href="/logs">로그 보기</a></div>
-<div class="ctl" role="group" aria-label="위젯 설정"><label><input type="checkbox" class="on" checked>표시</label><span><label><input type="radio" name="sz-health" value="s" checked>작게</label><label><input type="radio" name="sz-health" value="m">보통</label><label><input type="radio" name="sz-health" value="l">크게</label></span><span class="sp"><button type="button" class="btn sm up" aria-label="위로">↑</button><button type="button" class="btn sm dn" aria-label="아래로">↓</button></span></div>
+
 <div class="fill"><div><span class="big" style="font-size:22px">정상 14 · 지연 1</span></div>
 <div style="color:var(--ink-sub)">△△지하차도 번호판 수신 11분 지연 · 날씨·위험도·CCTV 수신 시각 점검</div></div>
 </section></div></div>
-<div class="grid-stack-item" gs-id="top5" gs-x="0" gs-y="10" gs-w="8" gs-h="4"><div class="grid-stack-item-content"><section class="card wg widget-original-content" data-id="top5" data-size="m" aria-label="예지보전 Top5">
+<div class="dashboard-fixed-item fixed-top5"><div class="dashboard-fixed-content"><section class="card wg widget-original-content" data-id="top5" data-size="m" aria-label="예지보전 Top5">
 <div class="wg-head"><h2>예지보전 Top5</h2><a href="/pm-equipment">전체 보기</a></div>
-<div class="ctl" role="group" aria-label="위젯 설정"><label><input type="checkbox" class="on" checked>표시</label><span><label><input type="radio" name="sz-top5" value="s">작게</label><label><input type="radio" name="sz-top5" value="m" checked>보통</label><label><input type="radio" name="sz-top5" value="l">크게</label></span><span class="sp"><button type="button" class="btn sm up" aria-label="위로">↑</button><button type="button" class="btn sm dn" aria-label="아래로">↓</button></span></div>
+
 <ol class="rank">
-<li><span class="n">1</span><span class="t">배수펌프 · ○○지하차도<small>모터 전류 상승 외 2건</small></span><span class="badge danger">위험</span><span class="sc">82</span></li>
-<li><span class="n">2</span><span class="t">CCTV · △△지하차도<small>영상 끊김 반복</small></span><span class="badge warn">주의</span><span class="sc">61</span></li>
-<li><span class="n">3</span><span class="t">전광판 · □□지하차도<small>통신 지연 증가</small></span><span class="badge warn">주의</span><span class="sc">55</span></li>
-<li><span class="n">4</span><span class="t">배수펌프 · ◇◇지하차도<small>기동 오류 증가</small></span><span class="badge warn">주의</span><span class="sc">48</span></li>
-<li><span class="n">5</span><span class="t">CCTV · ☆☆지하차도<small>데이터 미수신</small></span><span class="badge safe">안전</span><span class="sc">31</span></li>
+<li><span class="n">1</span><RouterLink class="t equipment-detail-link" to="/pm-equipment-detail?equipment=P-01">배수펌프 · ○○지하차도<small>모터 전류 상승 외 2건</small></RouterLink><span class="badge danger">위험</span><span class="sc">82</span></li>
+<li><span class="n">2</span><RouterLink class="t equipment-detail-link" to="/pm-equipment-detail?equipment=C-02">CCTV · △△지하차도<small>영상 끊김 반복</small></RouterLink><span class="badge warn">주의</span><span class="sc">61</span></li>
+<li><span class="n">3</span><RouterLink class="t equipment-detail-link" to="/pm-equipment-detail?equipment=D-03">전광판 · □□지하차도<small>통신 지연 증가</small></RouterLink><span class="badge warn">주의</span><span class="sc">55</span></li>
+<li><span class="n">4</span><RouterLink class="t equipment-detail-link" to="/pm-equipment-detail?equipment=P-04">배수펌프 · ◇◇지하차도<small>기동 오류 증가</small></RouterLink><span class="badge warn">주의</span><span class="sc">48</span></li>
+<li><span class="n">5</span><RouterLink class="t equipment-detail-link" to="/pm-equipment-detail?equipment=C-05">CCTV · ☆☆지하차도<small>데이터 미수신</small></RouterLink><span class="badge safe">안전</span><span class="sc">31</span></li>
 </ol>
 </section></div></div>
-<div class="grid-stack-item" gs-id="events" gs-x="0" gs-y="2" gs-w="3" gs-h="8"><div class="grid-stack-item-content"><section class="card wg widget-original-content" data-id="events" data-size="m" aria-label="최근 이벤트">
+</div>
+<div class="dashboard-fixed-item fixed-events"><div class="dashboard-fixed-content"><section class="card wg widget-original-content" data-id="events" data-size="m" aria-label="최근 이벤트">
 <div class="wg-head"><h2>최근 이벤트</h2><a href="/logs">로그 전체 보기</a></div>
-<div class="ctl" role="group" aria-label="위젯 설정"><label><input type="checkbox" class="on" checked>표시</label><span><label><input type="radio" name="sz-events" value="s">작게</label><label><input type="radio" name="sz-events" value="m" checked>보통</label><label><input type="radio" name="sz-events" value="l">크게</label></span><span class="sp"><button type="button" class="btn sm up" aria-label="위로">↑</button><button type="button" class="btn sm dn" aria-label="아래로">↓</button></span></div>
+
 <ol class="tl">
 <li class="lv-danger"><time>10:42</time><div><span class="cat">위험</span><strong>○○지하차도 위험 단계로 상승</strong><small>주의 → 위험 · 76.4점</small></div></li>
 <li><time>10:37</time><div><span class="cat">통제</span><strong>○○지하차도 입구 차단</strong><small>자동 · 시스템</small></div></li>

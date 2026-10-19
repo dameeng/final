@@ -54,3 +54,8 @@
 .page-c-notice .inl-6d00061700{margin-left:auto}
 .page-c-notice .inl-d2c171b18b{margin-top:10px}
 .page-c-notice .inl-d2c171b18b{margin-top:10px}
+/* Notice titles open readable content without leaving the list. */
+.page-c-notice .notice-title-button{display:block;padding:0;border:0;background:transparent;color:inherit;text-align:left;font:inherit;font-weight:500;cursor:pointer;min-height:28px}
+.page-c-notice .notice-title-button:hover{text-decoration:underline}.page-c-notice .notice-title-button:focus-visible{outline:2px solid #1671d9;outline-offset:4px}
+.page-c-notice .notice-detail-dialog{box-sizing:border-box;position:fixed;inset:0;margin:auto;width:min(720px,calc(100vw - 32px));max-height:calc(100dvh - 32px);padding:24px;overflow:auto;border:1px solid var(--line,#cbd5e1);border-radius:12px;background:var(--surface,#fff);color:inherit;box-shadow:0 20px 60px #0f172a40}
+.page-c-notice .notice-detail-dialog::backdrop{background:rgba(15,23,42,.32)}.notice-detail-dialog header{display:flex;justify-content:space-between;align-items:start;gap:16px}.notice-detail-dialog h2{margin:0;font-size:20px;line-height:1.5;overflow-wrap:anywhere}.notice-detail-dialog header button{flex-shrink:0;padding:8px 12px;border:1px solid var(--line,#cbd5e1);background:var(--surface,#fff);color:inherit;font:inherit}.notice-detail-meta{font-size:13px;color:var(--ink-sub,#64748b);padding-bottom:16px;border-bottom:1px solid var(--line,#cbd5e1)}.notice-detail-body{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;line-height:1.9;padding:8px 0}
