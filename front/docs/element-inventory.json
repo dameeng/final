@@ -1,0 +1,546 @@
+[
+  {
+    "file": "my-home.html",
+    "vue": "my-home.vue",
+    "original": {
+      "tables": 0,
+      "fields": 1,
+      "svg": 0,
+      "links": 23
+    },
+    "current": {
+      "tables": 0,
+      "fields": 1,
+      "svg": 0
+    },
+    "changes": []
+  },
+  {
+    "file": "shift-login.html",
+    "vue": "shift-login.vue",
+    "original": {
+      "tables": 0,
+      "fields": 0,
+      "svg": 2,
+      "links": 12
+    },
+    "current": {
+      "tables": 0,
+      "fields": 0,
+      "svg": 2
+    },
+    "changes": []
+  },
+  {
+    "file": "staff.html",
+    "vue": "staff.vue",
+    "original": {
+      "tables": 1,
+      "fields": 3,
+      "svg": 2,
+      "links": 12
+    },
+    "current": {
+      "tables": 1,
+      "fields": 3,
+      "svg": 2
+    },
+    "changes": []
+  },
+  {
+    "file": "fac-list.html",
+    "vue": "fac-list.vue",
+    "original": {
+      "tables": 1,
+      "fields": 3,
+      "svg": 2,
+      "links": 21
+    },
+    "current": {
+      "tables": 1,
+      "fields": 3,
+      "svg": 2
+    },
+    "changes": []
+  },
+  {
+    "file": "verify.html",
+    "vue": "verify.vue",
+    "original": {
+      "tables": 2,
+      "fields": 5,
+      "svg": 2,
+      "links": 11
+    },
+    "current": {
+      "tables": 1,
+      "fields": 5,
+      "svg": 2
+    },
+    "changes": []
+  },
+  {
+    "file": "my-cars.html",
+    "vue": "my-cars.vue",
+    "original": {
+      "tables": 0,
+      "fields": 2,
+      "svg": 0,
+      "links": 17
+    },
+    "current": {
+      "tables": 0,
+      "fields": 2,
+      "svg": 0
+    },
+    "changes": []
+  },
+  {
+    "file": "c-auth.html",
+    "vue": "c-auth.vue",
+    "original": {
+      "tables": 0,
+      "fields": 0,
+      "svg": 0,
+      "links": 19
+    },
+    "current": {
+      "tables": 0,
+      "fields": 0,
+      "svg": 0
+    },
+    "changes": []
+  },
+  {
+    "file": "my-inquiries.html",
+    "vue": "my-inquiries.vue",
+    "original": {
+      "tables": 0,
+      "fields": 1,
+      "svg": 0,
+      "links": 18
+    },
+    "current": {
+      "tables": 0,
+      "fields": 1,
+      "svg": 0
+    },
+    "changes": []
+  },
+  {
+    "file": "cs-notice-edit.html",
+    "vue": "cs-notice-edit.vue",
+    "original": {
+      "tables": 0,
+      "fields": 8,
+      "svg": 2,
+      "links": 11
+    },
+    "current": {
+      "tables": 0,
+      "fields": 8,
+      "svg": 2
+    },
+    "changes": []
+  },
+  {
+    "file": "bot-logs.html",
+    "vue": "bot-logs.vue",
+    "original": {
+      "tables": 1,
+      "fields": 1,
+      "svg": 2,
+      "links": 13
+    },
+    "current": {
+      "tables": 1,
+      "fields": 1,
+      "svg": 2
+    },
+    "changes": []
+  },
+  {
+    "file": "pm-history.html",
+    "vue": "pm-history.vue",
+    "original": {
+      "tables": 1,
+      "fields": 9,
+      "svg": 2,
+      "links": 21
+    },
+    "current": {
+      "tables": 1,
+      "fields": 9,
+      "svg": 2
+    },
+    "changes": []
+  },
+  {
+    "file": "pm-queue.html",
+    "vue": "pm-queue.vue",
+    "original": {
+      "tables": 1,
+      "fields": 6,
+      "svg": 2,
+      "links": 20
+    },
+    "current": {
+      "tables": 1,
+      "fields": 6,
+      "svg": 2
+    },
+    "changes": []
+  },
+  {
+    "file": "index.html",
+    "vue": "index.vue",
+    "original": {
+      "tables": 0,
+      "fields": 0,
+      "svg": 0,
+      "links": 28
+    },
+    "current": {
+      "tables": 0,
+      "fields": 0,
+      "svg": 0
+    },
+    "changes": []
+  },
+  {
+    "file": "logs.html",
+    "vue": "logs.vue",
+    "original": {
+      "tables": 1,
+      "fields": 4,
+      "svg": 2,
+      "links": 11
+    },
+    "current": {
+      "tables": 1,
+      "fields": 4,
+      "svg": 2
+    },
+    "changes": []
+  },
+  {
+    "file": "notifications.html",
+    "vue": "notifications.vue",
+    "original": {
+      "tables": 0,
+      "fields": 1,
+      "svg": 2,
+      "links": 19
+    },
+    "current": {
+      "tables": 0,
+      "fields": 1,
+      "svg": 2
+    },
+    "changes": []
+  },
+  {
+    "file": "bot-stats.html",
+    "vue": "bot-stats.vue",
+    "original": {
+      "tables": 0,
+      "fields": 0,
+      "svg": 2,
+      "links": 13
+    },
+    "current": {
+      "tables": 0,
+      "fields": 0,
+      "svg": 2
+    },
+    "changes": []
+  },
+  {
+    "file": "c-notice.html",
+    "vue": "c-notice.vue",
+    "original": {
+      "tables": 1,
+      "fields": 0,
+      "svg": 0,
+      "links": 14
+    },
+    "current": {
+      "tables": 1,
+      "fields": 0,
+      "svg": 0
+    },
+    "changes": []
+  },
+  {
+    "file": "fac-new.html",
+    "vue": "fac-new.vue",
+    "original": {
+      "tables": 1,
+      "fields": 13,
+      "svg": 2,
+      "links": 11
+    },
+    "current": {
+      "tables": 0,
+      "fields": 7,
+      "svg": 2
+    },
+    "changes": []
+  },
+  {
+    "file": "cs-inquiry-detail.html",
+    "vue": "cs-inquiry-detail.vue",
+    "original": {
+      "tables": 0,
+      "fields": 2,
+      "svg": 2,
+      "links": 15
+    },
+    "current": {
+      "tables": 0,
+      "fields": 2,
+      "svg": 2
+    },
+    "changes": []
+  },
+  {
+    "file": "c-map.html",
+    "vue": "c-map.vue",
+    "original": {
+      "tables": 0,
+      "fields": 1,
+      "svg": 1,
+      "links": 9
+    },
+    "current": {
+      "tables": 0,
+      "fields": 1,
+      "svg": 1
+    },
+    "changes": []
+  },
+  {
+    "file": "my-alerts.html",
+    "vue": "my-alerts.vue",
+    "original": {
+      "tables": 0,
+      "fields": 2,
+      "svg": 0,
+      "links": 17
+    },
+    "current": {
+      "tables": 0,
+      "fields": 2,
+      "svg": 0
+    },
+    "changes": []
+  },
+  {
+    "file": "cs-customer-detail.html",
+    "vue": "cs-customer-detail.vue",
+    "original": {
+      "tables": 1,
+      "fields": 0,
+      "svg": 2,
+      "links": 16
+    },
+    "current": {
+      "tables": 1,
+      "fields": 0,
+      "svg": 2
+    },
+    "changes": []
+  },
+  {
+    "file": "handover-pdf.html",
+    "vue": "handover-pdf.vue",
+    "original": {
+      "tables": 1,
+      "fields": 0,
+      "svg": 2,
+      "links": 10
+    },
+    "current": {
+      "tables": 1,
+      "fields": 0,
+      "svg": 2
+    },
+    "changes": []
+  },
+  {
+    "file": "cs-customers.html",
+    "vue": "cs-customers.vue",
+    "original": {
+      "tables": 1,
+      "fields": 2,
+      "svg": 2,
+      "links": 14
+    },
+    "current": {
+      "tables": 1,
+      "fields": 2,
+      "svg": 2
+    },
+    "changes": []
+  },
+  {
+    "file": "my-inquiry-new.html",
+    "vue": "my-inquiry-new.vue",
+    "original": {
+      "tables": 0,
+      "fields": 4,
+      "svg": 0,
+      "links": 19
+    },
+    "current": {
+      "tables": 0,
+      "fields": 4,
+      "svg": 0
+    },
+    "changes": []
+  },
+  {
+    "file": "pm-settings.html",
+    "vue": "pm-settings.vue",
+    "original": {
+      "tables": 2,
+      "fields": 2,
+      "svg": 2,
+      "links": 14
+    },
+    "current": {
+      "tables": 2,
+      "fields": 2,
+      "svg": 2
+    },
+    "changes": []
+  },
+  {
+    "file": "my-withdraw.html",
+    "vue": "my-withdraw.vue",
+    "original": {
+      "tables": 0,
+      "fields": 3,
+      "svg": 0,
+      "links": 18
+    },
+    "current": {
+      "tables": 0,
+      "fields": 3,
+      "svg": 0
+    },
+    "changes": []
+  },
+  {
+    "file": "pm-equipment-detail.html",
+    "vue": "pm-equipment-detail.vue",
+    "original": {
+      "tables": 1,
+      "fields": 4,
+      "svg": 3,
+      "links": 18
+    },
+    "current": {
+      "tables": 1,
+      "fields": 4,
+      "svg": 3
+    },
+    "changes": []
+  },
+  {
+    "file": "cs-inquiries.html",
+    "vue": "cs-inquiries.vue",
+    "original": {
+      "tables": 1,
+      "fields": 2,
+      "svg": 2,
+      "links": 14
+    },
+    "current": {
+      "tables": 1,
+      "fields": 2,
+      "svg": 2
+    },
+    "changes": []
+  },
+  {
+    "file": "c-app.html",
+    "vue": "c-app.vue",
+    "original": {
+      "tables": 0,
+      "fields": 0,
+      "svg": 4,
+      "links": 20
+    },
+    "current": {
+      "tables": 0,
+      "fields": 0,
+      "svg": 4
+    },
+    "changes": []
+  },
+  {
+    "file": "my-account.html",
+    "vue": "my-account.vue",
+    "original": {
+      "tables": 0,
+      "fields": 15,
+      "svg": 0,
+      "links": 20
+    },
+    "current": {
+      "tables": 0,
+      "fields": 15,
+      "svg": 0
+    },
+    "changes": []
+  },
+  {
+    "file": "fac-detail.html",
+    "vue": "fac-detail.vue",
+    "original": {
+      "tables": 5,
+      "fields": 18,
+      "svg": 3,
+      "links": 21
+    },
+    "current": {
+      "tables": 5,
+      "fields": 18,
+      "svg": 3
+    },
+    "changes": []
+  },
+  {
+    "file": "pm-equipment.html",
+    "vue": "pm-equipment.vue",
+    "original": {
+      "tables": 1,
+      "fields": 6,
+      "svg": 3,
+      "links": 15
+    },
+    "current": {
+      "tables": 1,
+      "fields": 6,
+      "svg": 3
+    },
+    "changes": []
+  },
+  {
+    "file": "cs-content.html",
+    "vue": "cs-content.vue",
+    "original": {
+      "tables": 2,
+      "fields": 7,
+      "svg": 2,
+      "links": 14
+    },
+    "current": {
+      "tables": 2,
+      "fields": 7,
+      "svg": 2
+    },
+    "changes": []
+  }
+]

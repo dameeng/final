@@ -1,0 +1,61 @@
+{
+  "results": [
+    {
+      "name": "원본 대시보드 지도+선택시설+기본5위젯",
+      "status": "PASS"
+    },
+    {
+      "name": "위젯 제거·취소·복원",
+      "status": "PASS"
+    },
+    {
+      "name": "위젯 저장·새로고침·추가목록",
+      "status": "PASS"
+    },
+    {
+      "name": "시설 상세 다섯 탭·표·그래프 보존",
+      "status": "PASS"
+    },
+    {
+      "name": "수신상태 이동·CCTV 단일 로그 필터",
+      "status": "PASS"
+    },
+    {
+      "name": "고객 지도 목록·상세 교체·지도 크기 유지",
+      "status": "PASS"
+    },
+    {
+      "name": "마커 축소 묶음·목록·상세 복귀",
+      "status": "PASS"
+    },
+    {
+      "name": "고객 인증 전환·필드·전화번호 붙여넣기",
+      "status": "PASS"
+    },
+    {
+      "name": "대화 상세에서 FAQ 등록",
+      "status": "PASS"
+    },
+    {
+      "name": "공지 기간 역전 저장 차단",
+      "status": "PASS"
+    },
+    {
+      "name": "예지보전 필터·기준표·장비상세 보존",
+      "status": "PASS"
+    },
+    {
+      "name": "고객앱 통합 날씨·헤더알림·관리자앱 헬스",
+      "status": "PASS"
+    },
+    {
+      "name": "1440·1280·390·360 화면 가로 넘침·위젯겹침",
+      "status": "PASS"
+    },
+    {
+      "name": "브라우저 런타임 오류 없음",
+      "status": "PASS"
+    }
+  ],
+  "errors": []
+}

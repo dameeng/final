@@ -1,0 +1,11 @@
+<script setup lang="ts">
+import {ref,onMounted,onBeforeUnmount} from 'vue'
+import {useRouter} from 'vue-router'
+import {useApp} from '../stores/app'
+import '../styles/admin-app-12.css'
+const router=useRouter(),store=useApp();const weather=ref(false)
+const clock=ref(Date.now());let timer:number|undefined
+onMounted(()=>{timer=window.setInterval(()=>clock.value=Date.now(),1000)})
+onBeforeUnmount(()=>clearInterval(timer))
+</script>
+<template><div class="wire-page mobile-page page-admin-app-12"><div class="ph adm"><div class="ah"><span>점검 등록</span><span class="inl-683edd9226">닫기</span><a class="app-bell" href="/admin-app/screen-13">알림</a><button class="theme-toggle" type="button" aria-label="라이트·다크 전환" @click="store.themeToggle()">◐</button></div><div v-if="store.bannerAt > 0 &amp;&amp; clock-store.bannerAt&lt;300000" class="urgent-app-banner" role="alert">초량1지하차도 위험 · 통제 상태를 확인하세요.</div><div class="bd"><div class="card"><b>P-01 · 배수펌프 · 초량1지하차도</b></div><div class="sub">조치 유형</div><div class="chips"><button class="chip on" type="button">현장 점검</button><button class="chip" type="button">부품 교체</button><button class="chip" type="button">설정 조정</button><button class="chip" type="button">원격 확인</button><button class="chip" type="button">이상 없음</button></div><div class="sub">조치 내용</div><input class="inp inl-b6fd870864" placeholder="내용 입력" aria-label="내용 입력" type="text" /><div class="sub">점검 결과</div><div class="chips"><button class="chip on" type="button">정상 복구</button><button class="chip" type="button">추가 점검 필요</button><button class="chip" type="button">교체 필요</button></div><div class="sub">등록자 · 로그인 계정 자동 기록</div><button class="btn p inl-26d3d1951d" type="button" @click="router.push('/admin-app/screen-11')">등록</button></div><div class="tb"><a class="" href="/admin-app/screen-3"><b>▦</b>현황</a><a class="" href="/admin-app/screen-4"><b>◼</b>통제</a><a class="on" href="/admin-app/screen-9"><b>⚙</b>예지보전</a><a class="" href="/admin-app/screen-13"><b>◔</b>알림</a><a class="" href="/admin-app/screen-14"><b>☰</b>더보기</a></div></div></div></template>

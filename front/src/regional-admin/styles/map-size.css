@@ -1,9 +1,0 @@
-.routel-map-resizable{min-width:0;--map-height:560px}
-.routel-regional .routel-map-resizable .regional-map-stage{min-height:var(--map-height)}
-.routel-regional .routel-map-resizable :is(.regional-map-wrap,.regional-map-canvas){height:var(--map-height);min-height:var(--map-height)}
-.routel-regional .routel-map-resizable .regional-map-list{max-height:calc(var(--map-height) - 90px);overflow:auto}
-.routel-regional .routel-map-resizable .regional-facility-detail{max-height:calc(var(--map-height) - 90px);overflow:auto}
-.routel-regional .regional-map-zoom{display:flex;justify-content:center;gap:8px;padding:6px;position:absolute;z-index:4;left:50%;bottom:12px;transform:translateX(-50%);background:var(--regional-panel);border:1px solid var(--regional-line);border-radius:8px;}
-.routel-regional .regional-map-zoom button{min-width:76px;min-height:44px;white-space:nowrap;}
-.routel-regional .regional-map-message{bottom:84px;}
-@media(max-width:1150px){.routel-map-resizable{--map-height:460px}.routel-regional .routel-map-resizable .regional-facility-detail{max-height:none;overflow:visible}}

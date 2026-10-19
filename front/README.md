@@ -1,37 +1,136 @@
-# routel-admin 통합 프로젝트
+# ROUTEL 2차 원본 배치 기반 Vue 프로젝트
 
-Node.js 22.18+, Java 17+, PostgreSQL이 필요합니다.
+## 고객앱 길찾기 API 연결
 
-## 프런트엔드 (8282)
+### 부산시 CCTV 프런트 직접 연결
 
-```bash
-npm install
-npm run dev
+현재 웹 지도 팝업·고객앱 현황·길찾기의 CCTV는 `https://its.busan.go.kr/api-n/v1/bsits/user/cctvs`를 브라우저에서 직접 조회합니다. 별도 인증키나 프로젝트 백엔드가 필요하지 않습니다. `src/services/busanCctv.ts`에서 1분간 목록을 캐시하고, 선택 시설/목적지 반경 5km 내 영상을 거리순으로 표시합니다. 제공 카메라의 이름·주소·시설과의 거리를 안내하며 지하차도 내부 영상으로 단정하지 않습니다. 재생은 hls.js를 사용하고, 팝업을 닫거나 화면을 떠나면 연결을 해제합니다. 출처: 부산광역시 교통정보서비스센터.
+
+`/customer-app/screen-7`에서 출발지·도착지를 검색하면 카카오모빌리티 자동차 경로와 구간별 안내를 표시합니다. 목적지 주변 기상청 실황과 ITS 도로 CCTV를 함께 조회합니다. CCTV는 제공 지역에만 표시하며, 지하차도 내부 영상으로 간주하지 않습니다. 회피 지점은 사용자가 직접 지정한 반경 150m 기준입니다. 실제 침수·통제 데이터는 연결되지 않았습니다.
+
+`.env`의 `KAKAO_REST_API_KEY`, `KMA_SERVICE_KEY`, `ITS_API_KEY`는 `server/navigation-api.mjs`에서만 사용합니다. `VITE_` 접두어를 붙이지 마세요. 장소 검색 REST 권한이 없는 경우 기존 JavaScript 지도 SDK의 장소·주소 검색으로 보완합니다. 실제 카카오 인증이나 사용자 로그인은 이 대체 검색과 별개입니다.
+
+개발 중에는 `npm.cmd run dev`의 Vite 서버가 `/api/navigation/*` 요청을 처리합니다. `vite preview`에서도 같은 연결을 지원합니다. 정적 `dist` 파일만 배포하면 서버 API가 동작하지 않으므로 운영 백엔드에 동일한 API 중계가 필요합니다. Vite 설정이나 서버 환경변수를 변경한 뒤에는 개발 서버를 다시 시작하세요.
+
+API 문서: [카카오모빌리티 자동차 길찾기](https://developers.kakaomobility.com/guide/navi-api/directions), [기상청 단기예보](https://www.data.go.kr/data/15084084/openapi.do), [ITS CCTV](https://www.its.go.kr/opendata/opendataList?service=cctv).
+
+첨부 `PUF_와이어프레임_전체(1).zip`의 DOM·표·폼·SVG 그래프를 기준으로 재작성한 프런트엔드입니다. 고객·관리자 웹과 각각 14개 앱 화면을 포함합니다. 이전에 전달한 간략화 프로젝트를 기반으로 하지 않았습니다.
+
+## 실행 — Windows PowerShell
+
+Node.js 22.12 이상 또는 24 권장. **package.json이 있는 폴더**를 VS Code로 열고 터미널에서:
+
+```powershell
+npm.cmd ci
+Copy-Item .env.example .env
+npm.cmd run dev
 ```
 
-- 고객 웹: http://localhost:8282/
-- 고객 앱: http://localhost:8282/app/
-- 관리자: http://localhost:8282/manager/
+http://localhost:8282 접속. 종료는 Ctrl+C. 포트가 사용 중이면 자동으로 다른 포트로 변경하지 않습니다.
 
-`npm run build`로 세 화면을 빌드합니다. Vite는 `/api`를 백엔드 `http://localhost:5555`로 전달합니다.
+`npm.ps1` 보안 오류를 피하려면 npm 대신 npm.cmd를 사용하세요. 휴대폰에서 접속하려면 `npm.cmd run dev -- --host 0.0.0.0`으로 실행하고 같은 네트워크의 PC 주소로 접속합니다.
 
-## 백엔드와 DB (5555)
+## 화면 경로
 
-`backend/db/schema-reset.sql`은 개발 DB의 public 스키마를 **통째로 삭제**합니다. 비어 있는 별도 개발 DB에만 적용하세요. 이어서 `backend/db/demo-seed.sql`을 실행합니다.
+- 고객 지도: `/c-map` (첫 화면)
+- 고객 앱: `/customer-app/screen-5`
+- 관리자 종합 현황: `/admin-dashboard`
+- 관리자 앱: `/admin-app/screen-3`
+- 전체 화면 안내: `/index`
+- 앱 각 화면: `/customer-app/screen-1` ~ `screen-14`, `/admin-app/screen-1` ~ `screen-14`
+- 원본 HTML 파일명은 확장자를 뺀 Vue 경로로 대응합니다. `bot-unanswered`는 `/bot-logs`로 통합했습니다.
 
-```bash
-psql -d routel_dev -f backend/db/schema-reset.sql
-psql -d routel_dev -f backend/db/demo-seed.sql
-cd backend
-DB_PASSWORD='개발 DB 비밀번호' PUF_INTERNAL_API_KEY='내부 API 키' bash mvnw spring-boot:run
+현재 프로젝트는 모바일 웹 화면이며 APK·네이티브 앱·PWA 설치 패키지는 아닙니다.
+
+## 구성
+
+- Vue 3, TypeScript, vue-router, Pinia, Vite, GridStack
+- `src/pages`: 원본에 대응하는 Vue 템플릿
+- `src/styles`: 공통 및 화면별 위치·간격·크기 CSS (Vue style 블록 없음)
+- `src/runtime/*.js`: 원본 이벤트·탭·표·서랍 동작 보존 모듈
+- `src/runtime/*.ts`: DOM 범위·이벤트 정리, 추가 기능, 지도 묶음, 위젯
+- `src/stores/app.ts`: 계정, 테마, 알림, 시설 선택, 페이지 예시 데이터, 공지·FAQ
+- `src/stores/widgets.ts`: 저장 배치와 편집 중 배치
+- `src/data`: 원본 예시 데이터, 그래프 데이터 및 SVG 자료
+
+원본 동작의 대규모 누락을 피하려고 초기 DOM은 Vue 템플릿으로 구성하고, 원본 JavaScript 동작은 페이지별 모듈로 보존했습니다. 모든 레거시 동작을 ref/v-model로 재작성한 버전은 아닙니다. 모듈의 document 접근은 해당 페이지로 제한하며, 전역 이벤트·타이머·관찰자를 페이지 종료 시 정리합니다.
+
+## 데이터와 실제 서비스 연결
+
+서비스 화면에는 '시연용', '샘플 데이터', 'API 미연결' 같은 제작 문구를 노출하지 않습니다. **표·수치·그래프·날씨·연결 상태는 첨부 원본의 예시 자료이며 실제 관측값이 아닙니다.** 로컬 변경은 도로 제어·문자·푸시·외부기관 전송을 수행하지 않습니다.
+
+`VITE_DATA_MODE=example`은 원본 예시 데이터로 화면을 구성하는 모드입니다. 웹 로그인 흐름의 로컬 계정 전환은 실제 인증이 아닙니다. 실제 아이디·비밀번호·개인정보를 입력하지 마세요. server 값만 설정한다고 실제 서비스와 연결되지 않습니다.
+
+실제 API 주소와 계약은 제공되지 않아 임의로 만들지 않았습니다. 다음을 서버 연결 시 구현·검증해야 합니다.
+
+- 인증, 가입, 아이디 중복, 문자·휴대폰 인증, 비밀번호 변경, 탈퇴
+- 역할·지역·고객별 데이터 권한과 서버 보안
+- 시설 등록·삭제·복원·통제·해제, 전광판 명령과 실제 응답
+- 기상청, 위험도·예측, CCTV 영상·번호판·차량 로그, 실시간 이벤트
+- 실제 예지보전 점수·센서·기준 저장, 점검 기록
+- 공지·FAQ·문의·고객·직원·알림의 서버 저장과 조회
+- 실제 챗봇, 통계, 푸시 구독·발송
+- 실제 경로 계산·내비게이션·우회 안내
+- 위젯 배치 서버 저장 및 PC 간 동기화
+- 실제 경찰·소방 전달
+
+예시 상태의 일부 편집은 현재 세션 내에서만 유지됩니다. 모든 업무 변경이 서버나 새로고침 후에도 저장되는 구현은 아닙니다.
+
+## 지도
+
+기본 화면은 **원본 SVG 도식**을 보존합니다. 실제 지리 좌표와 도로 지도가 아닙니다. 도식 위에서는 확대·축소와 화면 거리 기준 묶음·목록 전환을 확인할 수 있습니다.
+
+실제 카카오 지도를 사용하려면:
+
+1. `.env`에 `VITE_KAKAO_MAP_KEY` 설정
+2. 카카오 개발자 콘솔의 JavaScript SDK 도메인에 `http://localhost:8282` 등록
+3. `public/facility-coordinates.json`에 실제 시설 좌표를 입력
+
+```json
+[
+  {"index": 0, "lat": 35.0000, "lng": 129.0000}
+]
 ```
 
-DB 연결 주소·계정 및 메일 발송 설정은 `backend/src/main/resources/application.properties`와 환경 변수로 지정합니다. 비밀번호를 Git에 올리지 마세요.
+위 수치는 **형식 예시**이며 실제 시설 좌표가 아닙니다. index는 원본 시설 배열의 인덱스입니다. 기본 좌표 파일은 빈 배열로 두었습니다. 시설명에 맞는 실제 좌표를 확보한 후 사용하세요.
 
-`model/`에는 제공된 침수 예측·차량 인식 모델이 있습니다. 모델 실행 서비스는 별도로 필요합니다. 위험점수 0~100은 확률이 아닙니다.
+좌표와 키가 있으면 실제 지도 SDK 및 MarkerClusterer를 로딩합니다. 클러스터 클릭 시 자동 확대 대신 시설 목록을 제공합니다. 실제 키·도메인·좌표 환경은 이번 검증에 제공되지 않았습니다.
 
-`team-frontend/`에는 팀 프런트 원본을 보존했습니다. 실행 진입점은 루트 `src/`입니다. 스냅샷은 파일로 저장하고, 게시판 첨부 메타데이터는 `notice_attachment`와 `faq_attachment`에 저장합니다. 시드에 기재된 데모 첨부 파일의 실물은 제공되지 않았습니다.
+시설 등록의 주소 검색은 실제 카카오 Geocoder를 사용하며, 실패 시 임의 좌표를 생성하지 않습니다.
 
-CCTV 영상과 스냅샷 사진 원본은 제공된 ZIP에 없어 해당 파일을 받은 뒤 교체할 수 있습니다.
+## 위젯
 
-고객 지하차도 지도에는 조원 제공 지도 구성과 상태별 마커를 적용했습니다. 공개 `/api/underpasses` 목록은 로그인 없이 조회합니다. 기상청에서 전달한 HTML은 화면 구성 참고 자료입니다.
+관리자 웹 종합 현황에만 적용합니다.
+
+기본: 지도와 선택 시설 / 시설 현황 / 판별대기 / 점검필요 대상 / TOP 5.
+
+데이터 수신 상태와 최근 이벤트는 추가 목록에 보존했습니다. 평소에는 이동·크기 조절이 잠기며 편집 모드에서 추가·제거·이동·크기 조절·취소·저장을 제공합니다.
+
+배치는 localStorage에 사용자·역할 키로 저장합니다. 다른 PC와 동기화되지 않습니다. 실제 인증·권한은 서버 연결 시 보완해야 합니다.
+
+## 출력과 내보내기
+
+- `/handover-pdf`: 원본 경찰·소방 도로 통제 전달 문서 미리보기
+- `/shift-report`: 별도의 근무 인수인계 리포트
+- PDF 버튼은 브라우저 인쇄에서 'PDF로 저장'을 선택하는 방식
+- 외부기관 실제 전송 없음
+- 로그 내보내기는 Excel에서 열 수 있는 TSV 파일이며 XLSX 바이너리 생성은 아님
+
+## 검증
+
+```powershell
+npm.cmd run typecheck
+npm.cmd run build
+npx.cmd playwright install chromium
+npm.cmd test
+```
+
+별도 Chromium이 있으면 CHROME_EXECUTABLE 환경변수로 실행 파일을 지정할 수 있습니다.
+
+원본 대응표와 실제 검증 결과·제한은 docs 폴더를 확인하세요. 기존 서비스에 src를 그대로 덮어쓰지 말고 라우터·인증·API를 병합하세요.
+
+## 이번 수정: 디자인 CSS 정리
+
+위치·크기·Grid/Flex·여백·행간·스크롤·반응형·인쇄 CSS와 GridStack의 필수 레이아웃 CSS는 유지했습니다. 장식용 그림자·둥근 모서리·애니메이션·배경 이미지·개별 글꼴은 제거했고 일반 영역의 색은 기본 배경·글자·테두리로 정리했습니다. 선택·포커스·위험 단계·다크 테마처럼 기능을 구분하는 최소 표현은 유지했습니다. 모든 CSS는 src/styles의 별도 파일입니다.
+
+앱 소개(c-app)의 큰 아이콘·QR 그림·휴대폰 화면 미리보기 영역을 제거했습니다. 소개 문구·주요 기능·설치 안내는 유지하며 삭제된 QR 영역의 빈 열은 남기지 않습니다. 실제 설치 링크가 제공되지 않은 제한은 기존과 같습니다.

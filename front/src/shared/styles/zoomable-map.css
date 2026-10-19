@@ -1,9 +1,0 @@
-.routel-svg-zoom{position:relative;min-width:0;max-width:100%}
-.routel-svg-zoom-buttons{position:absolute;z-index:4;right:12px;bottom:12px;display:flex;align-items:center;gap:6px;max-width:calc(100% - 24px);padding:6px;border:1px solid var(--super-line,var(--regional-line,#718495));border-radius:8px;background:var(--super-panel,var(--regional-panel,#fff));color:var(--super-ink,var(--regional-ink,#263544));}
-.routel-svg-zoom-buttons button{min-width:44px;min-height:44px}
-.routel-svg-zoom-buttons span{font-size:13px;min-width:42px;text-align:center;font-variant-numeric:tabular-nums}
-.routel-svg-zoom-viewport{overflow:auto;max-width:100%;overscroll-behavior:auto;border-radius:6px}
-.routel-svg-zoom-viewport:focus-visible{outline:2px solid #79acd2;outline-offset:2px}
-.routel-svg-zoom-content>svg{display:block;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important}
-
-.routel-svg-zoom-viewport{touch-action:pan-x pan-y;scrollbar-gutter:auto;}

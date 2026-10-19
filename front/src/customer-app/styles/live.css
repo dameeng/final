@@ -1,7 +1,0 @@
-.live-alerts { margin-block: 8px; overflow-wrap: anywhere; }
-.live-connection { margin: 0 0 8px; }
-.live-alerts details > * + * { margin-top: 12px; }
-.risk-banner { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 16px; padding-block: 12px; }
-.risk-banner strong, .risk-banner p { flex-basis: 100%; margin: 0; }
-.app-logo { display: block; width: 56px; height: 56px; object-fit: contain; }
-.home-status-list { margin-block: 12px; }

@@ -1,6 +1,0 @@
-.routel-page-back { display:flex; justify-content:flex-start; width:100%; margin:0 0 16px; }
-.routel-page-back > button { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:40px; width:auto; margin:0; padding:8px 12px; border:1px solid currentColor; border-radius:4px; background:transparent; color:inherit; font:inherit; font-size:14px; font-weight:600; line-height:1.4; cursor:pointer; }
-.routel-page-back > button:hover { background:color-mix(in srgb,currentColor 8%,transparent); }
-.routel-page-back > button:focus-visible { outline:2px solid currentColor; outline-offset:3px; }
-.routel-page-back svg { width:18px; height:18px; flex:none; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
-.routel-page-back--app { box-sizing:border-box; padding:12px 20px 0; margin-bottom:0; }

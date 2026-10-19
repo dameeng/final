@@ -1,8 +1,0 @@
-.sitemap-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; align-items:stretch; }
-.sitemap-grid > section { height:auto; min-width:0; margin:0; padding:20px; overflow:visible; border:1px solid var(--routel-line); border-radius:4px; }
-.sitemap-grid h2 { margin:0 0 12px; font-size:19px; line-height:1.4; text-align:center; }
-.sitemap-grid ul { list-style:none; margin:0; padding:0; }
-.sitemap-grid li a { display:block; padding:9px 0; border-bottom:1px solid var(--routel-line); font-size:15px; line-height:1.5; overflow-wrap:anywhere; }
-.sitemap-grid li:last-child a { border-bottom:0; }
-@media(max-width:1000px) { .sitemap-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
-@media(max-width:560px) { .sitemap-grid { grid-template-columns:minmax(0,1fr); } }

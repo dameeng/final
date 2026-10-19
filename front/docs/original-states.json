@@ -1,0 +1,241 @@
+[
+  {
+    "file": "admin-dashboard.html",
+    "states": [
+      "dialog:confirm",
+      "dialog:obs"
+    ]
+  },
+  {
+    "file": "bot-logs.html",
+    "states": []
+  },
+  {
+    "file": "bot-stats.html",
+    "states": []
+  },
+  {
+    "file": "bot-unanswered.html",
+    "states": [
+      "dialog:fq"
+    ]
+  },
+  {
+    "file": "c-app-screens.html",
+    "states": [
+      "app-screen-1",
+      "app-screen-2",
+      "app-screen-3",
+      "app-screen-4",
+      "app-screen-5",
+      "app-screen-6",
+      "app-screen-7",
+      "app-screen-8",
+      "app-screen-9",
+      "app-screen-10",
+      "app-screen-11",
+      "app-screen-12",
+      "app-screen-13",
+      "app-screen-14"
+    ]
+  },
+  {
+    "file": "c-app.html",
+    "states": []
+  },
+  {
+    "file": "c-auth.html",
+    "states": []
+  },
+  {
+    "file": "c-map.html",
+    "states": []
+  },
+  {
+    "file": "c-notice.html",
+    "states": []
+  },
+  {
+    "file": "cs-content.html",
+    "states": [
+      "dialog:fq"
+    ]
+  },
+  {
+    "file": "cs-customer-detail.html",
+    "states": []
+  },
+  {
+    "file": "cs-customers.html",
+    "states": []
+  },
+  {
+    "file": "cs-inquiries.html",
+    "states": []
+  },
+  {
+    "file": "cs-inquiry-detail.html",
+    "states": []
+  },
+  {
+    "file": "cs-notice-edit.html",
+    "states": [
+      "dialog:cf"
+    ]
+  },
+  {
+    "file": "fac-detail.html",
+    "states": [
+      "개요",
+      "설비",
+      "전광판",
+      "CCTV",
+      "설정",
+      "dialog:cf",
+      "dialog:dl"
+    ]
+  },
+  {
+    "file": "fac-list.html",
+    "states": []
+  },
+  {
+    "file": "fac-new.html",
+    "states": []
+  },
+  {
+    "file": "handover-pdf.html",
+    "states": []
+  },
+  {
+    "file": "index.html",
+    "states": []
+  },
+  {
+    "file": "logs.html",
+    "states": [
+      "전체",
+      "통제",
+      "위험 단계 변화",
+      "알림 발송",
+      "전광판 표출",
+      "판별 처리",
+      "설비·점검",
+      "설정 변경"
+    ]
+  },
+  {
+    "file": "m-app-screens.html",
+    "states": [
+      "app-screen-1",
+      "app-screen-2",
+      "app-screen-3",
+      "app-screen-4",
+      "app-screen-5",
+      "app-screen-6",
+      "app-screen-7",
+      "app-screen-8",
+      "app-screen-9",
+      "app-screen-10",
+      "app-screen-11",
+      "app-screen-12",
+      "app-screen-13",
+      "app-screen-14"
+    ]
+  },
+  {
+    "file": "my-account.html",
+    "states": [
+      "회원정보",
+      "비밀번호",
+      "알림 설정"
+    ]
+  },
+  {
+    "file": "my-alerts.html",
+    "states": []
+  },
+  {
+    "file": "my-cars.html",
+    "states": [
+      "dialog:dc",
+      "dialog:dd"
+    ]
+  },
+  {
+    "file": "my-home.html",
+    "states": []
+  },
+  {
+    "file": "my-inquiries.html",
+    "states": []
+  },
+  {
+    "file": "my-inquiry-new.html",
+    "states": []
+  },
+  {
+    "file": "my-withdraw.html",
+    "states": [
+      "dialog:dg"
+    ]
+  },
+  {
+    "file": "notifications.html",
+    "states": [
+      "전체\n3",
+      "위험\n1",
+      "설비\n1",
+      "업무\n1",
+      "시스템"
+    ]
+  },
+  {
+    "file": "pm-equipment-detail.html",
+    "states": [
+      "dialog:reg"
+    ]
+  },
+  {
+    "file": "pm-equipment.html",
+    "states": [
+      "dialog:reg"
+    ]
+  },
+  {
+    "file": "pm-history.html",
+    "states": [
+      "dialog:reg"
+    ]
+  },
+  {
+    "file": "pm-queue.html",
+    "states": [
+      "dialog:reg"
+    ]
+  },
+  {
+    "file": "pm-settings.html",
+    "states": [
+      "dialog:cf"
+    ]
+  },
+  {
+    "file": "shift-login.html",
+    "states": [
+      "dialog:sh"
+    ]
+  },
+  {
+    "file": "staff.html",
+    "states": []
+  },
+  {
+    "file": "verify.html",
+    "states": [
+      "대기\n4",
+      "처리 이력",
+      "미인식·미수신\n3"
+    ]
+  }
+]
