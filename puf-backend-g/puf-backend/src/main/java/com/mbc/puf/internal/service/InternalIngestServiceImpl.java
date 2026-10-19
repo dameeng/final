@@ -36,6 +36,10 @@ import com.mbc.puf.internal.dto.PlateLogResponse;
 import com.mbc.puf.internal.dto.RiskScoreCreateRequest;
 import com.mbc.puf.internal.dto.RiskScoreResponse;
 import com.mbc.puf.internal.entity.RiskScore;
+import com.mbc.puf.common.enums.ManagerNotificationCategory;
+import com.mbc.puf.notification.service.NotificationService;
+import com.mbc.puf.stream.StreamPayloads;
+import com.mbc.puf.stream.StreamPublisher;
 import com.mbc.puf.internal.repository.RiskScoreRepository;
 import com.mbc.puf.plate.entity.PlateLog;
 import com.mbc.puf.plate.repository.PlateLogRepository;
@@ -79,6 +83,8 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 	private final CameraRepository cameraRepository;
 	private final CarRepository carRepository;
 	private final AlertService alertService;
+	private final NotificationService notificationService;   // 관리자 알림(위험도 변화, 판별 대기)
+	private final StreamPublisher streamPublisher;           // SSE 실시간 이벤트
 
 	// 첨부파일 저장 위치. application.properties의 file.upload-dir (board 도메인 첨부와 같은 설정을 공유)
 	@Value("${file.upload-dir}")
@@ -87,7 +93,8 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 	public InternalIngestServiceImpl(RiskScoreRepository riskScoreRepository, PlateLogRepository plateLogRepository,
 			UnderpassRepository underpassRepository, UnderpassEventRepository eventRepository,
 			TransitRepository transitRepository, ThresholdRepository thresholdRepository,
-			CameraRepository cameraRepository, CarRepository carRepository, AlertService alertService) {
+			CameraRepository cameraRepository, CarRepository carRepository, AlertService alertService,
+			NotificationService notificationService, StreamPublisher streamPublisher) {
 		this.riskScoreRepository = riskScoreRepository;
 		this.plateLogRepository = plateLogRepository;
 		this.underpassRepository = underpassRepository;
@@ -97,6 +104,8 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 		this.cameraRepository = cameraRepository;
 		this.carRepository = carRepository;
 		this.alertService = alertService;
+		this.notificationService = notificationService;
+		this.streamPublisher = streamPublisher;
 	}
 
 	@Override
@@ -119,7 +128,25 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 
 		riskScoreRepository.save(riskScore);
 
+		RiskLevel levelBefore = underpass.getCurrentRiskLevel();
 		updateRiskLevel(underpass, request.getRiskScore());
+
+		// 실시간: 점수는 갱신될 때마다(등급 그대로여도) 공개로 보낸다
+		streamPublisher.publishPublic("risk-update", underpass.getRegionId(),
+				new StreamPayloads.RiskUpdate(underpass.getId(), request.getRiskScore(), underpass.getCurrentRiskLevel(),
+						request.getRainfall1hMm(), request.getPredictedAt()));
+
+		// 등급이 바뀐 순간에만: 공개 이벤트 + 담당 지역 관리자 알림(위험)
+		if (underpass.getCurrentRiskLevel() != levelBefore) {
+			boolean up = underpass.getCurrentRiskLevel().ordinal() > levelBefore.ordinal();
+			streamPublisher.publishPublic("risk-level-change", underpass.getRegionId(),
+					new StreamPayloads.RiskLevelChange(underpass.getId(), underpass.getName(), levelBefore,
+							underpass.getCurrentRiskLevel(), up ? "UP" : "DOWN", request.getRiskScore()));
+			notificationService.notifyManagers(ManagerNotificationCategory.RISK, underpass.getRegionId(),
+					up ? "위험도 상승" : "위험도 하락",
+					underpass.getName() + ": " + levelBefore.getDbValue() + " → " + underpass.getCurrentRiskLevel().getDbValue(),
+					"UNDERPASS", underpass.getId());
+		}
 
 		return new RiskScoreResponse(riskScore.getId(), riskScore.getUnderpassId(), riskScore.getRiskScore(),
 				riskScore.getPredictedAt());
@@ -172,6 +199,16 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 			// 입출구 매칭: 이 카메라가 소속 지하차도의 상행/하행 입·출구 카메라로 지정돼 있을 때만 처리
 			// (아직 지정 안 된 지하차도라면 조용히 건너뛴다 — 이건 "실제 게이트가 어디냐"의 문제라 camera_role과는 무관)
 			processTransit(underpass, camera, plateLog, storedDetectedNum);
+
+			// 신뢰도가 낮아 수동 판별 대기열에 들어간 건: 관리자 화면에 바로 추가 + 업무 알림
+			if (plateLog.getReviewStatus() == ReviewStatus.PENDING) {
+				streamPublisher.publishToAdmins(underpass.getRegionId(), "plate-queue-add",
+						new StreamPayloads.PlateQueue(plateLog.getId(), underpass.getId(), camera.getId(),
+								storedDetectedNum, plateLog.getConfidence(), ReviewStatus.PENDING,
+								plateLog.getReviewDeadline()));
+				notificationService.notifyManagers(ManagerNotificationCategory.TASK, underpass.getRegionId(),
+						"번호판 수동 판별 필요", underpass.getName() + " · " + storedDetectedNum, "PLATE_LOG", plateLog.getId());
+			}
 
 			boolean matched = carId != null && (recognitionStatus == RecognitionStatus.SUCCESS
 					|| recognitionStatus == RecognitionStatus.LOW_CONFIDENCE);
@@ -305,6 +342,9 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 			transit.setStatus(TransitStatus.IN_TRANSIT);
 			transit.setEntryAt(plateLog.getDetectedAt());
 			transitRepository.save(transit);
+			streamPublisher.publishToAdmins(underpass.getRegionId(), "transit-update",
+					new StreamPayloads.TransitUpdate(underpass.getId(), "ENTRY", transit.getDirection().name(),
+							storedDetectedNum));
 			return;
 		}
 
@@ -328,6 +368,8 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 				active.setStatus(TransitStatus.EXITED);
 				active.setExitPlateLogId(plateLog.getId());
 				active.setExitAt(plateLog.getDetectedAt());
+				streamPublisher.publishToAdmins(underpass.getRegionId(), "transit-update",
+						new StreamPayloads.TransitUpdate(underpass.getId(), "EXIT", direction.name(), active.getCarNum()));
 			}
 		}
 	}

@@ -27,6 +27,10 @@ import com.mbc.puf.member.repository.ManagerRegionRepository;
 import com.mbc.puf.member.repository.ManagerRepository;
 import com.mbc.puf.member.repository.ShiftRepository;
 import com.mbc.puf.region.repository.RegionRepository;
+import com.mbc.puf.common.enums.ManagerNotificationCategory;
+import com.mbc.puf.notification.service.NotificationService;
+import com.mbc.puf.stream.StreamPayloads;
+import com.mbc.puf.stream.StreamPublisher;
 import com.mbc.puf.underpass.dto.UnderpassDetailResponse;
 import com.mbc.puf.underpass.entity.Underpass;
 import com.mbc.puf.underpass.entity.UnderpassEvent;
@@ -65,6 +69,8 @@ public class ControlServiceImpl implements ControlService {
     private final RiskScoreRepository riskScoreRepository;   // 전달서에 적을 이벤트 시점 위험도·강우
     private final ShiftRepository shiftRepository;           // 전달서에 적을 담당자 근무조
     private final EntityManager em;                          // 전광판 문구 조회(native)
+    private final StreamPublisher streamPublisher;           // SSE 실시간 이벤트
+    private final NotificationService notificationService;   // 관리자 알림(위험)
 
     public ControlServiceImpl(
             ReasonPresetRepository reasonPresetRepository,
@@ -81,7 +87,9 @@ public class ControlServiceImpl implements ControlService {
             ScopeResolver scopeResolver,
             RiskScoreRepository riskScoreRepository,
             ShiftRepository shiftRepository,
-            EntityManager em) {
+            EntityManager em,
+            StreamPublisher streamPublisher,
+            NotificationService notificationService) {
         this.reasonPresetRepository = reasonPresetRepository;
         this.ctrlTransferRepository = ctrlTransferRepository;
         this.ctrlTransferCarRepository = ctrlTransferCarRepository;
@@ -97,6 +105,17 @@ public class ControlServiceImpl implements ControlService {
         this.riskScoreRepository = riskScoreRepository;
         this.shiftRepository = shiftRepository;
         this.em = em;
+        this.streamPublisher = streamPublisher;
+        this.notificationService = notificationService;
+    }
+
+    // 차단/해제 직후: 공개 이벤트(지도·목록 갱신) + 담당 지역 관리자 알림(위험). 커밋 뒤에 전송된다
+    private void publishControlChange(Underpass underpass, UnderpassCurrentStatus status, LoginUser operator) {
+        streamPublisher.publishPublic("control-change", underpass.getRegionId(),
+                new StreamPayloads.ControlChange(underpass.getId(), underpass.getName(), status, LocalDateTime.now()));
+        boolean blocked = status == UnderpassCurrentStatus.BLOCKED;
+        notificationService.notifyManagers(ManagerNotificationCategory.RISK, underpass.getRegionId(),
+                blocked ? "지하차도 통제(차단)" : "지하차도 통제 해제", underpass.getName(), "UNDERPASS", underpass.getId());
     }
 
     // ─────────────────────────── 사유 프리셋 ───────────────────────────
@@ -137,6 +156,9 @@ public class ControlServiceImpl implements ControlService {
 
         // 3) IN_TRANSIT → REMAINING 일괄 처리
         transitRepository.markRemaining(underpassId);
+        publishControlChange(underpass, UnderpassCurrentStatus.BLOCKED, loginUser);
+        streamPublisher.publishToAdmins(underpass.getRegionId(), "transit-update",
+                new StreamPayloads.TransitUpdate(underpassId, "REMAINING", null, null));
 
         // 4) 경찰 이관 기록 저장
         CtrlTransfer transfer = saveTransfer(event.getId(), TransferAgency.POLICE, null, loginUser.id());
@@ -182,6 +204,7 @@ public class ControlServiceImpl implements ControlService {
         // 2) 지하차도 상태 갱신
         underpass.setCurrentStatus(UnderpassCurrentStatus.NORMAL);
         underpass.setCurrentBlockEventId(null);
+        publishControlChange(underpass, UnderpassCurrentStatus.NORMAL, loginUser);
 
         // 3) 경찰 이관 기록 저장
         CtrlTransfer transfer = saveTransfer(event.getId(), TransferAgency.POLICE, null, loginUser.id());

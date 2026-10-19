@@ -1,5 +1,6 @@
 package com.mbc.puf.notification.service;
 
+import java.time.LocalDateTime;
 import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -28,6 +29,8 @@ import com.mbc.puf.notification.entity.CustomerNotification;
 import com.mbc.puf.notification.entity.ManagerNotification;
 import com.mbc.puf.notification.repository.CustomerNotificationRepository;
 import com.mbc.puf.notification.repository.ManagerNotificationRepository;
+import com.mbc.puf.stream.StreamPayloads;
+import com.mbc.puf.stream.StreamPublisher;
 
 import jakarta.persistence.EntityManager;
 
@@ -45,14 +48,17 @@ public class NotificationServiceImpl implements NotificationService {
     private final ManagerNotificationRepository managerRepository;
     private final ManagerRegionRepository managerRegionRepository;
     private final EntityManager em;
+    private final StreamPublisher streamPublisher;
 
     public NotificationServiceImpl(CustomerNotificationRepository customerRepository,
                                    ManagerNotificationRepository managerRepository,
-                                   ManagerRegionRepository managerRegionRepository, EntityManager em) {
+                                   ManagerRegionRepository managerRegionRepository, EntityManager em,
+                                   StreamPublisher streamPublisher) {
         this.customerRepository = customerRepository;
         this.managerRepository = managerRepository;
         this.managerRegionRepository = managerRegionRepository;
         this.em = em;
+        this.streamPublisher = streamPublisher;
     }
 
     // ================= 고객 알림: 만들기 =================
@@ -69,6 +75,7 @@ public class NotificationServiceImpl implements NotificationService {
         n.setRefType("ALERT");
         n.setRefId(alertId);
         customerRepository.save(n);
+        pushToCustomer(n);
     }
 
     @Override
@@ -76,6 +83,9 @@ public class NotificationServiceImpl implements NotificationService {
     public void notifyCustomersNewNotice(Long noticeId, String noticeTitle, boolean important) {
         customerRepository.insertNoticeForAllActiveCustomers(noticeId, important ? "[긴급] 새 공지" : "새 공지",
                 noticeTitle);
+        // 고객 수만큼 알림 행이 한 번에 생기므로 개인 이벤트 대신 공개 이벤트 1건만 보낸다.
+        // 로그인한 고객의 프런트는 이걸 받으면 안 읽은 알림 개수를 다시 조회한다
+        streamPublisher.publishPublic("notice-new", null, new StreamPayloads.NoticeNew(noticeId, noticeTitle, important));
     }
 
     @Override
@@ -89,6 +99,7 @@ public class NotificationServiceImpl implements NotificationService {
         n.setRefType("INQUIRY");
         n.setRefId(inquiryId);
         customerRepository.save(n);
+        pushToCustomer(n);
     }
 
     // ================= 고객 알림: 조회·읽음 =================
@@ -154,6 +165,10 @@ public class NotificationServiceImpl implements NotificationService {
         n.setRefType(refType);
         n.setRefId(refId);
         managerRepository.save(n);
+        // 해당 지역 담당 관리자(regionId 가 null 이면 모든 관리자)의 화면에 새 알림을 알린다
+        streamPublisher.publishToAdmins(regionId, "notification-new",
+                new StreamPayloads.ManagerNotificationNew(n.getId(), n.getCategory(), n.getRegionId(), n.getTitle(),
+                        n.getBody(), n.getRefType(), n.getRefId(), createdOrNow(n.getCreatedAt())));
     }
 
     @Override
@@ -234,6 +249,17 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     // ================= 내부 =================
+
+    // 방금 저장한 고객 알림을 그 고객의 SSE 로 보낸다 (안 읽은 개수 포함)
+    private void pushToCustomer(CustomerNotification n) {
+        streamPublisher.publishToCustomer(n.getCustomerId(), "notification-new",
+                new StreamPayloads.CustomerNotificationNew(n.getId(), n.getCategory(), n.getTitle(), n.getBody(),
+                        n.getRefType(), n.getRefId(), createdOrNow(n.getCreatedAt()), getMyUnread(n.getCustomerId())));
+    }
+
+    private LocalDateTime createdOrNow(LocalDateTime createdAt) {
+        return createdAt != null ? createdAt : LocalDateTime.now();
+    }
 
     private List<Long> myRegionIds(Long managerId) {
         List<Long> mine = managerRegionRepository.findRegionIds(managerId);

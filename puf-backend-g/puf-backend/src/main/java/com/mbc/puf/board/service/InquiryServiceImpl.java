@@ -32,12 +32,14 @@ public class InquiryServiceImpl implements InquiryService {
     private final InquiryRepository inquiryRepository;
     private final NotificationService notificationService;   // 고객 알림 센터(문의 분류)
     private final EntityManager em;
+    private final com.mbc.puf.stream.StreamPublisher streamPublisher;   // SSE 실시간 이벤트
 
     public InquiryServiceImpl(InquiryRepository inquiryRepository, NotificationService notificationService,
-                              EntityManager em) {
+                              EntityManager em, com.mbc.puf.stream.StreamPublisher streamPublisher) {
         this.inquiryRepository = inquiryRepository;
         this.notificationService = notificationService;
         this.em = em;
+        this.streamPublisher = streamPublisher;
     }
 
     // ---- 고객용 ----
@@ -69,6 +71,11 @@ public class InquiryServiceImpl implements InquiryService {
         inquiry.setTitle(request.getTitle().trim());
         inquiry.setContent(request.getContent());
         inquiryRepository.saveAndFlush(inquiry);
+        // 모든 관리자에게: 화면 갱신(SSE) + 업무 알림. 문의는 지역 구분이 없다
+        streamPublisher.publishToAdmins(null, "inquiry-new", new com.mbc.puf.stream.StreamPayloads.InquiryNew(
+                inquiry.getId(), inquiry.getTitle(), java.time.LocalDateTime.now()));
+        notificationService.notifyManagers(com.mbc.puf.common.enums.ManagerNotificationCategory.TASK, null,
+                "새 1:1 문의", inquiry.getTitle(), "INQUIRY", inquiry.getId());
         return toDetail(inquiry);
     }
 
