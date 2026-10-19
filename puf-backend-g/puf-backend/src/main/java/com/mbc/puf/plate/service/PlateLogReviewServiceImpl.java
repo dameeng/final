@@ -95,13 +95,15 @@ public class PlateLogReviewServiceImpl implements PlateLogReviewService {
                 ? " order by p.reviewDeadline asc, p.id asc"
                 : " order by p.detectedAt desc, p.id desc";
 
+        var now = dbClock.now();   // 남은 시간도 DB 시계 기준 (마감 판정과 같은 시계)
         return PagedQuery.fetch(em, "select p, c.underpassId, u.name" + FROM, "select count(p)" + FROM, c, orderBy,
                 Object[].class, row -> {
                     PlateLog p = (PlateLog) row[0];
                     return new PlateLogListItem(p.getId(), p.getCameraId(), (Long) row[1], (String) row[2],
                             p.getDetectedNum(), p.getCorrectedNum(), p.getConfidence(), p.getImagePath(),
                             p.getRecognitionStatus(), p.getCarId(), p.getReviewStatus(), p.getReviewDeadline(),
-                            p.getReviewedBy(), p.getReviewedAt(), p.getDetectedAt());
+                            p.getReviewedBy(), p.getReviewedAt(), p.getDetectedAt(),
+                            com.mbc.puf.stream.StreamPayloads.remainingSeconds(p.getReviewStatus(), p.getReviewDeadline(), now));
                 }, page.toParams());
     }
 
@@ -154,7 +156,7 @@ public class PlateLogReviewServiceImpl implements PlateLogReviewService {
         // 대기열에서 빠졌음을 같은 지역 관리자 화면에 알린다
         streamPublisher.publishToAdmins(underpass.getRegionId(), "plate-queue-done",
                 new com.mbc.puf.stream.StreamPayloads.PlateQueue(id, underpass.getId(), plateLog.getCameraId(),
-                        plateLog.getDetectedNum(), plateLog.getConfidence(), ReviewStatus.CONFIRMED, null));
+                        plateLog.getDetectedNum(), plateLog.getConfidence(), ReviewStatus.CONFIRMED, null, null));
 
         return new PlateLogReviewResponse(id, correctedNum, carId, ReviewStatus.CONFIRMED, loginUser.id(), now);
     }
@@ -172,7 +174,7 @@ public class PlateLogReviewServiceImpl implements PlateLogReviewService {
         for (Object[] row : expired) {
             streamPublisher.publishToAdmins((Long) row[2], "plate-queue-done",
                     new com.mbc.puf.stream.StreamPayloads.PlateQueue((Long) row[0], (Long) row[1], null, null, null,
-                            ReviewStatus.AUTO_PROCESSED, null));
+                            ReviewStatus.AUTO_PROCESSED, null, null));
         }
     }
 }

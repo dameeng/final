@@ -36,6 +36,7 @@ import com.mbc.puf.internal.dto.PlateLogResponse;
 import com.mbc.puf.internal.dto.RiskScoreCreateRequest;
 import com.mbc.puf.internal.dto.RiskScoreResponse;
 import com.mbc.puf.internal.entity.RiskScore;
+import com.mbc.puf.common.jpa.DbClock;
 import com.mbc.puf.common.enums.ManagerNotificationCategory;
 import com.mbc.puf.notification.service.NotificationService;
 import com.mbc.puf.stream.StreamPayloads;
@@ -85,6 +86,7 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 	private final AlertService alertService;
 	private final NotificationService notificationService;   // 관리자 알림(위험도 변화, 판별 대기)
 	private final StreamPublisher streamPublisher;           // SSE 실시간 이벤트
+	private final DbClock dbClock;                           // 판별 마감까지 남은 시간 계산(DB 시계)
 
 	// 첨부파일 저장 위치. application.properties의 file.upload-dir (board 도메인 첨부와 같은 설정을 공유)
 	@Value("${file.upload-dir}")
@@ -94,7 +96,7 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 			UnderpassRepository underpassRepository, UnderpassEventRepository eventRepository,
 			TransitRepository transitRepository, ThresholdRepository thresholdRepository,
 			CameraRepository cameraRepository, CarRepository carRepository, AlertService alertService,
-			NotificationService notificationService, StreamPublisher streamPublisher) {
+			NotificationService notificationService, StreamPublisher streamPublisher, DbClock dbClock) {
 		this.riskScoreRepository = riskScoreRepository;
 		this.plateLogRepository = plateLogRepository;
 		this.underpassRepository = underpassRepository;
@@ -106,6 +108,7 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 		this.alertService = alertService;
 		this.notificationService = notificationService;
 		this.streamPublisher = streamPublisher;
+		this.dbClock = dbClock;
 	}
 
 	@Override
@@ -205,7 +208,8 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 				streamPublisher.publishToAdmins(underpass.getRegionId(), "plate-queue-add",
 						new StreamPayloads.PlateQueue(plateLog.getId(), underpass.getId(), camera.getId(),
 								storedDetectedNum, plateLog.getConfidence(), ReviewStatus.PENDING,
-								plateLog.getReviewDeadline()));
+								plateLog.getReviewDeadline(), StreamPayloads.remainingSeconds(ReviewStatus.PENDING,
+										plateLog.getReviewDeadline(), dbClock.now())));
 				notificationService.notifyManagers(ManagerNotificationCategory.TASK, underpass.getRegionId(),
 						"번호판 수동 판별 필요", underpass.getName() + " · " + storedDetectedNum, "PLATE_LOG", plateLog.getId());
 			}

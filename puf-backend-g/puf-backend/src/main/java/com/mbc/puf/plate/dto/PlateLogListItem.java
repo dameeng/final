@@ -28,12 +28,14 @@ public class PlateLogListItem {
     private final Long reviewedBy;
     private final LocalDateTime reviewedAt;
     private final LocalDateTime detectedAt;
+    // 판별대기 타이머용: 응답 시점 기준 마감까지 남은 초 (대기 상태가 아니거나 마감이 지났으면 0)
+    private final long remainingSeconds;
 
     public PlateLogListItem(Long id, Long cameraId, Long underpassId, String underpassName, String detectedNum,
                             String correctedNum, BigDecimal confidence, String imagePath,
                             RecognitionStatus recognitionStatus, Long carId, ReviewStatus reviewStatus,
                             LocalDateTime reviewDeadline, Long reviewedBy, LocalDateTime reviewedAt,
-                            LocalDateTime detectedAt) {
+                            LocalDateTime detectedAt, long remainingSeconds) {
         this.id = id;
         this.cameraId = cameraId;
         this.underpassId = underpassId;
@@ -49,8 +51,10 @@ public class PlateLogListItem {
         this.reviewedBy = reviewedBy;
         this.reviewedAt = reviewedAt;
         this.detectedAt = detectedAt;
+        this.remainingSeconds = remainingSeconds;
     }
 
+    public long getRemainingSeconds() { return remainingSeconds; }
     public Long getId() { return id; }
     public Long getCameraId() { return cameraId; }
     public Long getUnderpassId() { return underpassId; }

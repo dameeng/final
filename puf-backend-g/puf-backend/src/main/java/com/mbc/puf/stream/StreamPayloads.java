@@ -41,10 +41,20 @@ public final class StreamPayloads {
     public record TransitUpdate(Long underpassId, String action, String direction, String carNum) {
     }
 
-    /** [plate-queue-add] / [plate-queue-done] (관리자) 번호판 수동 판별 대기열. done 의 reviewStatus 는 CONFIRMED / AUTO_PROCESSED */
+    /** [plate-queue-add] / [plate-queue-done] (관리자) 번호판 수동 판별 대기열. done 의 reviewStatus 는 CONFIRMED / AUTO_PROCESSED.
+ *  remainingSeconds 는 add 일 때만 값이 있는 마감까지 남은 초(타이머용) */
     public record PlateQueue(Long plateLogId, Long underpassId, Long cameraId, String detectedNum, BigDecimal confidence,
             ReviewStatus reviewStatus,
-            @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime reviewDeadline) {
+            @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime reviewDeadline,
+            Long remainingSeconds) {
+    }
+
+    /** 판별대기 건의 마감까지 남은 초 (DB 시계 기준 now 와 비교). 대기 상태가 아니거나 마감 지났으면 0 */
+    public static long remainingSeconds(ReviewStatus status, LocalDateTime deadline, LocalDateTime now) {
+        if (status != ReviewStatus.PENDING || deadline == null) {
+            return 0;
+        }
+        return Math.max(0, java.time.Duration.between(now, deadline).getSeconds());
     }
 
     /** [notice-new] 새 공지가 등록됨 (공개). 로그인 고객은 알림 개수를 다시 조회하면 된다 */

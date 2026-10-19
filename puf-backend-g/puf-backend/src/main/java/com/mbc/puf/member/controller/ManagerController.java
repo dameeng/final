@@ -1,5 +1,6 @@
 package com.mbc.puf.member.controller;
 
+import com.mbc.puf.member.dto.PhoneCodeTiming;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -110,13 +111,14 @@ public class ManagerController {
         EmployeeCheckResult result = managerService.checkEmployeeAndSendCode(request);
         httpRequest.getSession(true).setAttribute(SIGNUP_EMPLOYEE_ID, result.employeeId());
         return ApiResponse.ok(result.maskedPhone() + " 번호로 인증코드를 보냈습니다.",
-                new ManagerEmployeeCheckResponse(result.maskedPhone()));
+                new ManagerEmployeeCheckResponse(result.maskedPhone(), result.timing().expiresInSeconds(),
+                        result.timing().resendAfterSeconds()));
     }
 
     @PostMapping("/signup/phone-code/resend")
-    public ApiResponse<Void> resendPhoneCode(HttpServletRequest httpRequest) {
-        managerService.resendSignupCode(requireSignupEmployeeId(httpRequest));
-        return ApiResponse.ok("인증코드를 다시 발송했습니다.", null);
+    public ApiResponse<PhoneCodeTiming> resendPhoneCode(HttpServletRequest httpRequest) {
+        return ApiResponse.ok("인증코드를 다시 발송했습니다.",
+                managerService.resendSignupCode(requireSignupEmployeeId(httpRequest)));
     }
 
     // 2단계: 인증코드 확인

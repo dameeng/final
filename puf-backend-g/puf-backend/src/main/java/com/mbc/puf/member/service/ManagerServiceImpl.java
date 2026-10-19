@@ -1,5 +1,6 @@
 package com.mbc.puf.member.service;
 
+import com.mbc.puf.member.dto.PhoneCodeTiming;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -109,15 +110,16 @@ public class ManagerServiceImpl implements ManagerService {
 
         String phone = PhoneNumber.normalize(employee.getPhone());
         phoneVerificationService.sendSignupCode(phone);
-        return new EmployeeCheckResult(employee.getId(), PhoneNumber.mask(phone));
+        return new EmployeeCheckResult(employee.getId(), PhoneNumber.mask(phone), phoneVerificationService.timing());
     }
 
     @Override
     @Transactional
-    public void resendSignupCode(Long employeeId) {
+    public PhoneCodeTiming resendSignupCode(Long employeeId) {
         Employee employee = requireEmployee(employeeId);
         assertNoActiveAccount(employeeId);
         phoneVerificationService.sendSignupCode(PhoneNumber.normalize(employee.getPhone()));
+        return phoneVerificationService.timing();
     }
 
     @Override

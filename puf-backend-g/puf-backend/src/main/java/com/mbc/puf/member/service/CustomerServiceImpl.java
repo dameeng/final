@@ -1,5 +1,6 @@
 package com.mbc.puf.member.service;
 
+import com.mbc.puf.member.dto.PhoneCodeTiming;
 import java.util.List;
 import java.util.Locale;
 
@@ -92,12 +93,13 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     @Transactional
-    public void sendSignupPhoneCode(String phone) {
+    public PhoneCodeTiming sendSignupPhoneCode(String phone) {
         String target = PhoneNumber.normalize(phone);
         if (customerRepository.existsByPhoneAndWithdrawnFalse(target)) {
             throw conflict("이미 가입된 전화번호입니다.");
         }
         phoneVerificationService.sendSignupCode(target);
+        return phoneVerificationService.timing();
     }
 
     @Override

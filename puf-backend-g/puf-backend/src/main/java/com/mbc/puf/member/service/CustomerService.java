@@ -1,5 +1,6 @@
 package com.mbc.puf.member.service;
 
+import com.mbc.puf.member.dto.PhoneCodeTiming;
 import java.util.List;
 
 import com.mbc.puf.member.dto.AvailabilityResponse;
@@ -25,7 +26,7 @@ public interface CustomerService {
     AvailabilityResponse checkEmail(String email, Long excludeCustomerId);
 
     // 가입용 전화번호 인증
-    void sendSignupPhoneCode(String phone);
+    PhoneCodeTiming sendSignupPhoneCode(String phone);
     void verifySignupPhoneCode(String phone, String code);
 
     CustomerSignupResponse signup(CustomerSignupRequest request);

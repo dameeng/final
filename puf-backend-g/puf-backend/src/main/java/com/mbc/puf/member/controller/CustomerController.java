@@ -1,5 +1,6 @@
 package com.mbc.puf.member.controller;
 
+import com.mbc.puf.member.dto.PhoneCodeTiming;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -84,9 +85,8 @@ public class CustomerController {
 
     @Operation(summary = "가입용 전화번호 인증코드 발송")
     @PostMapping("/phone-code/send")
-    public ApiResponse<Void> sendPhoneCode(@Valid @RequestBody PhoneCodeSendRequest request) {
-        customerService.sendSignupPhoneCode(request.getPhone());
-        return ApiResponse.ok("인증코드를 발송했습니다.", null);
+    public ApiResponse<PhoneCodeTiming> sendPhoneCode(@Valid @RequestBody PhoneCodeSendRequest request) {
+        return ApiResponse.ok("인증코드를 발송했습니다.", customerService.sendSignupPhoneCode(request.getPhone()));
     }
 
     @Operation(summary = "가입용 전화번호 인증코드 확인")
