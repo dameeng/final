@@ -2,6 +2,8 @@ package com.mbc.puf.board.dto;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import com.mbc.puf.common.enums.InquiryStatus;
 
 /** 접수의견 상세 응답. 원글 + 답글(있으면)을 한 번에 담는다.
@@ -13,9 +15,11 @@ public class InquiryDetailResponse {
     private String title;
     private String content;
     private InquiryStatus status;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
     private LocalDateTime createdAt;
     private String replyContent;       // 답글 없으면 null
     private String replyAuthorName;    // 답글 없으면 null
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
     private LocalDateTime repliedAt;   // 답글 없으면 null
 
     public InquiryDetailResponse() {

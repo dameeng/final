@@ -9,6 +9,7 @@ import com.mbc.puf.board.dto.InquiryCreateRequest;
 import com.mbc.puf.board.dto.InquiryDetailResponse;
 import com.mbc.puf.board.dto.InquiryListItem;
 import com.mbc.puf.board.dto.InquiryReplyRequest;
+import com.mbc.puf.board.dto.InquiryUpdateRequest;
 import com.mbc.puf.board.entity.Inquiry;
 import com.mbc.puf.board.repository.InquiryRepository;
 import com.mbc.puf.common.enums.InquiryStatus;
@@ -65,6 +66,25 @@ public class InquiryServiceImpl implements InquiryService {
         inquiry.setContent(request.getContent());
         inquiryRepository.saveAndFlush(inquiry);
         return toDetail(inquiry);
+    }
+
+    @Override
+    @Transactional
+    public InquiryDetailResponse updateMyInquiry(Long customerId, Long id, InquiryUpdateRequest request) {
+        Inquiry inquiry = requireMyEditable(customerId, id);
+        inquiry.setTitle(request.getTitle().trim());
+        inquiry.setContent(request.getContent());
+        inquiryRepository.flush();
+        return toDetail(inquiry);
+    }
+
+    @Override
+    @Transactional
+    public void deleteMyInquiry(Long customerId, Long id) {
+        Inquiry inquiry = requireMine(customerId, id);
+        inquiry.setDeleted(true);
+        // 답변도 같이 지운다 (관리자 화면에서도 함께 사라짐)
+        inquiryRepository.findByParentIdAndDeletedFalse(id).ifPresent(reply -> reply.setDeleted(true));
     }
 
     // ---- 관리자용 ----
@@ -144,6 +164,22 @@ public class InquiryServiceImpl implements InquiryService {
     // 삭제되지 않은 원글, 없으면 404
     private Inquiry requireOriginal(Long id) {
         return inquiryRepository.findByIdAndParentIdIsNullAndDeletedFalse(id).orElseThrow(() -> notFound(id));
+    }
+
+    // 내 원글만. 남의 글/없는 글은 404
+    private Inquiry requireMine(Long customerId, Long id) {
+        return inquiryRepository.findByIdAndParentIdIsNullAndDeletedFalse(id)
+                .filter(o -> customerId.equals(o.getCustomerId()))
+                .orElseThrow(() -> notFound(id));
+    }
+
+    // 수정은 아직 답변 전(PENDING)인 내 원글만. 답변 후는 409
+    private Inquiry requireMyEditable(Long customerId, Long id) {
+        Inquiry inquiry = requireMine(customerId, id);
+        if (inquiry.getStatus() != InquiryStatus.PENDING) {
+            throw new BusinessException(HttpStatus.CONFLICT, "답변이 등록된 문의는 수정할 수 없습니다.");
+        }
+        return inquiry;
     }
 
     // 답변이 달린 원글만, 아니면 409

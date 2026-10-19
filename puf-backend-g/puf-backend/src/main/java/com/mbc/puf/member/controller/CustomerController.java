@@ -35,8 +35,11 @@ import com.mbc.puf.member.service.CustomerService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
+@Tag(name = "고객 회원/마이페이지", description = "가입·로그인·중복확인·내 정보·푸시 토큰")
 @RestController
 @RequestMapping("/api/customers")
 public class CustomerController {
@@ -51,34 +54,49 @@ public class CustomerController {
 
     // ==================== 회원가입 (로그인 없이 사용) ====================
 
+    @Operation(summary = "아이디 중복확인")
     @GetMapping("/check-login-id")
     public ApiResponse<AvailabilityResponse> checkLoginId(@RequestParam("loginId") String loginId) {
         return ApiResponse.ok(customerService.checkLoginId(loginId));
     }
 
+    // 회원가입, 그리고 정보 수정 화면에서 같이 쓴다. 고객으로 로그인한 상태면 본인 계정은 비교에서 빠진다
+    // (내 현재 번호를 그대로 둬도 "사용 가능"으로 나온다)
+    @Operation(summary = "전화번호 중복확인 (고객 로그인 상태면 본인 번호는 제외)")
     @GetMapping("/check-phone")
-    public ApiResponse<AvailabilityResponse> checkPhone(@RequestParam("phone") String phone) {
-        return ApiResponse.ok(customerService.checkPhone(phone));
+    public ApiResponse<AvailabilityResponse> checkPhone(@RequestParam("phone") String phone,
+                                                        @AuthenticationPrincipal LoginUser loginUser) {
+        return ApiResponse.ok(customerService.checkPhone(phone, customerIdOrNull(loginUser)));
     }
 
     // 이메일은 선택 항목이라 입력했을 때만 중복 확인한다(별도 인증 없음)
+    @Operation(summary = "이메일 중복확인 (고객 로그인 상태면 본인 이메일은 제외)")
     @GetMapping("/check-email")
-    public ApiResponse<AvailabilityResponse> checkEmail(@RequestParam("email") String email) {
-        return ApiResponse.ok(customerService.checkEmail(email));
+    public ApiResponse<AvailabilityResponse> checkEmail(@RequestParam("email") String email,
+                                                        @AuthenticationPrincipal LoginUser loginUser) {
+        return ApiResponse.ok(customerService.checkEmail(email, customerIdOrNull(loginUser)));
     }
 
+    // 비로그인이거나 관리자 세션이면 null (= 전체 계정과 비교)
+    private Long customerIdOrNull(LoginUser loginUser) {
+        return loginUser != null && !loginUser.isManager() ? loginUser.id() : null;
+    }
+
+    @Operation(summary = "가입용 전화번호 인증코드 발송")
     @PostMapping("/phone-code/send")
     public ApiResponse<Void> sendPhoneCode(@Valid @RequestBody PhoneCodeSendRequest request) {
         customerService.sendSignupPhoneCode(request.getPhone());
         return ApiResponse.ok("인증코드를 발송했습니다.", null);
     }
 
+    @Operation(summary = "가입용 전화번호 인증코드 확인")
     @PostMapping("/phone-code/verify")
     public ApiResponse<Void> verifyPhoneCode(@Valid @RequestBody PhoneCodeVerifyRequest request) {
         customerService.verifySignupPhoneCode(request.getPhone(), request.getCode());
         return ApiResponse.ok("전화번호 인증이 완료되었습니다.", null);
     }
 
+    @Operation(summary = "회원가입")
     @PostMapping("/signup")
     public ResponseEntity<ApiResponse<CustomerSignupResponse>> signup(
             @Valid @RequestBody CustomerSignupRequest request) {
@@ -89,6 +107,7 @@ public class CustomerController {
 
     // 로그인: 확인이 끝나면 세션에 로그인 상태를 남긴다 (응답 헤더의 Set-Cookie: JSESSIONID).
     // 웹푸시/앱 푸시 토큰은 로그인 후 POST /api/customers/me/device-tokens 로 따로 등록한다
+    @Operation(summary = "고객 로그인 (세션)")
     @PostMapping("/login")
     public ApiResponse<CustomerLoginResponse> login(@Valid @RequestBody CustomerLoginRequest request,
                                                     HttpServletRequest httpRequest,
@@ -100,6 +119,7 @@ public class CustomerController {
 
     // ==================== 마이페이지 (고객 로그인 필요) ====================
 
+    @Operation(summary = "내 정보 조회")
     @GetMapping("/me")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ApiResponse<CustomerProfileResponse> me(@AuthenticationPrincipal LoginUser loginUser) {
@@ -107,6 +127,7 @@ public class CustomerController {
     }
 
     // 내 정보 수정 (이름·전화번호·이메일·긴급연락처·주소. 아이디·생년월일은 바꾸지 않는다)
+    @Operation(summary = "내 정보 수정")
     @PutMapping("/me")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ApiResponse<CustomerProfileResponse> updateMe(@AuthenticationPrincipal LoginUser loginUser,
@@ -114,6 +135,7 @@ public class CustomerController {
         return ApiResponse.ok("정보가 수정되었습니다.", customerService.updateProfile(loginUser.id(), request));
     }
 
+    @Operation(summary = "비밀번호 변경")
     @PutMapping("/me/password")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ApiResponse<Void> changePassword(@AuthenticationPrincipal LoginUser loginUser,
@@ -123,6 +145,7 @@ public class CustomerController {
     }
 
     // 회원 탈퇴 (본인, 비밀번호 재확인). 차량·작성글·푸시 토큰도 함께 정리되고 세션도 바로 끊는다
+    @Operation(summary = "회원 탈퇴")
     @PostMapping("/me/withdraw")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ApiResponse<Void> withdraw(@AuthenticationPrincipal LoginUser loginUser,
@@ -134,6 +157,7 @@ public class CustomerController {
 
     // ==================== 푸시 토큰 (웹/앱) ====================
 
+    @Operation(summary = "내 푸시 토큰 목록")
     @GetMapping("/me/device-tokens")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ApiResponse<List<DeviceTokenResponse>> deviceTokens(@AuthenticationPrincipal LoginUser loginUser) {
@@ -141,6 +165,7 @@ public class CustomerController {
     }
 
     // 등록 (이미 있는 토큰이면 다시 사용 상태로)
+    @Operation(summary = "푸시 토큰 등록")
     @PostMapping("/me/device-tokens")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ApiResponse<DeviceTokenResponse> registerDeviceToken(@AuthenticationPrincipal LoginUser loginUser,
@@ -149,6 +174,7 @@ public class CustomerController {
     }
 
     // 해제 (로그아웃·알림 끄기). 행은 남기고 사용만 중지
+    @Operation(summary = "푸시 토큰 사용 중지")
     @DeleteMapping("/me/device-tokens")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ApiResponse<Void> deactivateDeviceToken(@AuthenticationPrincipal LoginUser loginUser,

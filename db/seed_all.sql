@@ -32,22 +32,22 @@ INSERT INTO shift (name, start_time, end_time) VALUES
 -- 3. employee — 관리자 가입 대조용 직원 16명
 -- =====================================================================
 INSERT INTO employee (name, birth, phone, email) VALUES
-('김민수', '1985-03-15', '010-1001-0001', 'minsu.kim@puf.go.kr'),
-('이정호', '1988-07-22', '010-1001-0002', 'jungho.lee@puf.go.kr'),
-('박서연', '1990-11-08', '010-1001-0003', 'seoyeon.park@puf.go.kr'),
-('최영진', '1983-01-30', '010-1001-0004', 'youngjin.choi@puf.go.kr'),
-('정다은', '1992-05-14', '010-1001-0005', 'daeun.jung@puf.go.kr'),
-('강현우', '1987-09-03', '010-1001-0006', 'hyunwoo.kang@puf.go.kr'),
-('조은지', '1991-12-25', '010-1001-0007', 'eunji.cho@puf.go.kr'),
-('윤태현', '1986-06-11', '010-1001-0008', 'taehyun.yoon@puf.go.kr'),
-('장수진', '1989-02-28', '010-1001-0009', 'sujin.jang@puf.go.kr'),
-('한성민', '1984-08-19', '010-1001-0010', 'sungmin.han@puf.go.kr'),
-('오지현', '1993-04-07', '010-1001-0011', 'jihyun.oh@puf.go.kr'),
-('서동욱', '1982-10-16', '010-1001-0012', 'dongwook.seo@puf.go.kr'),
-('신미래', '1994-07-01', '010-1001-0013', 'mirae.shin@puf.go.kr'),
-('임재현', '1988-03-24', '010-1001-0014', 'jaehyun.lim@puf.go.kr'),
-('홍유진', '1990-09-30', '010-1001-0015', 'yujin.hong@puf.go.kr'),
-('배준혁', '1986-01-12', '010-1001-0016', 'junhyuk.bae@puf.go.kr');
+('김민수', '1985-03-15', '01010010001', 'minsu.kim@puf.go.kr'),
+('이정호', '1988-07-22', '01010010002', 'jungho.lee@puf.go.kr'),
+('박서연', '1990-11-08', '01010010003', 'seoyeon.park@puf.go.kr'),
+('최영진', '1983-01-30', '01010010004', 'youngjin.choi@puf.go.kr'),
+('정다은', '1992-05-14', '01010010005', 'daeun.jung@puf.go.kr'),
+('강현우', '1987-09-03', '01010010006', 'hyunwoo.kang@puf.go.kr'),
+('조은지', '1991-12-25', '01010010007', 'eunji.cho@puf.go.kr'),
+('윤태현', '1986-06-11', '01010010008', 'taehyun.yoon@puf.go.kr'),
+('장수진', '1989-02-28', '01010010009', 'sujin.jang@puf.go.kr'),
+('한성민', '1984-08-19', '01010010010', 'sungmin.han@puf.go.kr'),
+('오지현', '1993-04-07', '01010010011', 'jihyun.oh@puf.go.kr'),
+('서동욱', '1982-10-16', '01010010012', 'dongwook.seo@puf.go.kr'),
+('신미래', '1994-07-01', '01010010013', 'mirae.shin@puf.go.kr'),
+('임재현', '1988-03-24', '01010010014', 'jaehyun.lim@puf.go.kr'),
+('홍유진', '1990-09-30', '01010010015', 'yujin.hong@puf.go.kr'),
+('배준혁', '1986-01-12', '01010010016', 'junhyuk.bae@puf.go.kr');
 
 -- =====================================================================
 -- 4. manager — 관리자 16명 (login_id = manager01~16, pw = login_id)
@@ -90,16 +90,16 @@ INSERT INTO manager_region (manager_id, region_id) VALUES
 -- 6. customer — 고객 10명 (login_id = customer01~10, pw = login_id)
 -- =====================================================================
 INSERT INTO customer (login_id, password, name, birth, email, phone, zipcode, road_addr, detail_addr, emergency, is_withdrawn, created_at) VALUES
-('customer01', '$2b$10$f7pNPQHzg6AvUlBaBfvUeuWGv6A9c8TA6LR8ZAYlZLCi04h2LnnXi', '이하은', '1995-04-12', 'haeun@example.com',   '010-2001-0001', '48058', '부산 해운대구 해운대로 570',      '1201호', '010-9001-0001', FALSE, NOW() - INTERVAL '60 days'),
-('customer02', '$2b$10$X84N0W6aE27uJ37Qv278N.LbVtBMSxcGN1g398ViRe7shu5nJCFBS', '김도윤', '1998-08-23', 'doyun@example.com',   '010-2001-0002', '47254', '부산 부산진구 중앙대로 672',      '301호',  '010-9001-0002', FALSE, NOW() - INTERVAL '55 days'),
-('customer03', '$2b$10$jvtXtDbYafu1HPRBTHZNeezv8tcb5NpHhXVS0hBXCFnWzY/4oADXG', '박지민', '1992-01-05', 'jimin@example.com',   '010-2001-0003', '48792', '부산 동래구 충렬대로 238',        '502호',  NULL,            FALSE, NOW() - INTERVAL '50 days'),
-('customer04', '$2b$10$PlrKiGmrg/WnWc/0ZPfPpuLdNoj83C45F36.R/7uzcMqda5PO0S4W', '정예준', '1990-06-17', 'yejun@example.com',   '010-2001-0004', '46726', '부산 강서구 녹산산업중로 333',    NULL,     '010-9001-0004', FALSE, NOW() - INTERVAL '45 days'),
-('customer05', '$2b$10$dAxj1t1KP8AXE78/MXu3b.wnYKHtYhcWP7QjS94vbF7UA5w1MX9C.', '최서아', '1997-11-30', NULL,                  '010-2001-0005', '48267', '부산 수영구 광안해변로 219',      '702호',  NULL,            FALSE, NOW() - INTERVAL '40 days'),
-('customer06', '$2b$10$864KglWTKZLl2Oe7OFo7uO069WKEQCtcLdaztTinTwozIslkndsA6', '강민재', '1988-03-09', 'minjae@example.com',  '010-2001-0006', '49236', '부산 사하구 낙동대로 398',        '203호',  '010-9001-0006', FALSE, NOW() - INTERVAL '35 days'),
-('customer07', '$2b$10$7ASBqdB9N10Yz1Ot5D2.xOF/OO1cAEz4g20QLUQ4NO5bmSXHTWsh6', '조하윤', '1999-09-14', 'hayun@example.com',   '010-2001-0007', '46241', '부산 금정구 금정로 63',           '101호',  NULL,            FALSE, NOW() - INTERVAL '30 days'),
-('customer08', '$2b$10$Y6AeEQ.Ieu8gvABl/pe5ve3s9ew8xtSiObmDWWKQ0JB/HIta4Pxvq', '윤시우', '1993-12-01', 'siwoo@example.com',   '010-2001-0008', '47545', '부산 연제구 연제로 2',            '805호',  '010-9001-0008', FALSE, NOW() - INTERVAL '25 days'),
-('customer09', '$2b$10$zGsSHPqwOjDzIN3ozBtdvuIY6uTYV2Zms41Hvxqb6VPHM1/s5Q2/u', '장소율', '1996-05-20', NULL,                  '010-2001-0009', '46079', '부산 중구 중앙대로 2',            NULL,     NULL,            FALSE, NOW() - INTERVAL '20 days'),
-('customer10', '$2b$10$u45mUGuoLrd2qkzKSipX.u7/y0ZmpVKO0MarPJ79K5KeDcmv75ieW', '한유찬', '1985-07-08', 'yuchan@example.com',  '010-2001-0010', '48311', '부산 사상구 사상로 310',          '1502호', '010-9001-0010', FALSE, NOW() - INTERVAL '15 days');
+('customer01', '$2b$10$f7pNPQHzg6AvUlBaBfvUeuWGv6A9c8TA6LR8ZAYlZLCi04h2LnnXi', '이하은', '1995-04-12', 'haeun@example.com',   '01020010001', '48058', '부산 해운대구 해운대로 570',      '1201호', '01090010001', FALSE, NOW() - INTERVAL '60 days'),
+('customer02', '$2b$10$X84N0W6aE27uJ37Qv278N.LbVtBMSxcGN1g398ViRe7shu5nJCFBS', '김도윤', '1998-08-23', 'doyun@example.com',   '01020010002', '47254', '부산 부산진구 중앙대로 672',      '301호',  '01090010002', FALSE, NOW() - INTERVAL '55 days'),
+('customer03', '$2b$10$jvtXtDbYafu1HPRBTHZNeezv8tcb5NpHhXVS0hBXCFnWzY/4oADXG', '박지민', '1992-01-05', 'jimin@example.com',   '01020010003', '48792', '부산 동래구 충렬대로 238',        '502호',  NULL,            FALSE, NOW() - INTERVAL '50 days'),
+('customer04', '$2b$10$PlrKiGmrg/WnWc/0ZPfPpuLdNoj83C45F36.R/7uzcMqda5PO0S4W', '정예준', '1990-06-17', 'yejun@example.com',   '01020010004', '46726', '부산 강서구 녹산산업중로 333',    NULL,     '01090010004', FALSE, NOW() - INTERVAL '45 days'),
+('customer05', '$2b$10$dAxj1t1KP8AXE78/MXu3b.wnYKHtYhcWP7QjS94vbF7UA5w1MX9C.', '최서아', '1997-11-30', NULL,                  '01020010005', '48267', '부산 수영구 광안해변로 219',      '702호',  NULL,            FALSE, NOW() - INTERVAL '40 days'),
+('customer06', '$2b$10$864KglWTKZLl2Oe7OFo7uO069WKEQCtcLdaztTinTwozIslkndsA6', '강민재', '1988-03-09', 'minjae@example.com',  '01020010006', '49236', '부산 사하구 낙동대로 398',        '203호',  '01090010006', FALSE, NOW() - INTERVAL '35 days'),
+('customer07', '$2b$10$7ASBqdB9N10Yz1Ot5D2.xOF/OO1cAEz4g20QLUQ4NO5bmSXHTWsh6', '조하윤', '1999-09-14', 'hayun@example.com',   '01020010007', '46241', '부산 금정구 금정로 63',           '101호',  NULL,            FALSE, NOW() - INTERVAL '30 days'),
+('customer08', '$2b$10$Y6AeEQ.Ieu8gvABl/pe5ve3s9ew8xtSiObmDWWKQ0JB/HIta4Pxvq', '윤시우', '1993-12-01', 'siwoo@example.com',   '01020010008', '47545', '부산 연제구 연제로 2',            '805호',  '01090010008', FALSE, NOW() - INTERVAL '25 days'),
+('customer09', '$2b$10$zGsSHPqwOjDzIN3ozBtdvuIY6uTYV2Zms41Hvxqb6VPHM1/s5Q2/u', '장소율', '1996-05-20', NULL,                  '01020010009', '46079', '부산 중구 중앙대로 2',            NULL,     NULL,            FALSE, NOW() - INTERVAL '20 days'),
+('customer10', '$2b$10$u45mUGuoLrd2qkzKSipX.u7/y0ZmpVKO0MarPJ79K5KeDcmv75ieW', '한유찬', '1985-07-08', 'yuchan@example.com',  '01020010010', '48311', '부산 사상구 사상로 310',          '1502호', '01090010010', FALSE, NOW() - INTERVAL '15 days');
 
 -- =====================================================================
 -- 7. car — 고객 등록 차량 (고객당 1~2대)
