@@ -1,0 +1,23 @@
+/* Shared dark tokens also cover mobile account pages and API-backed layouts. */
+:root[data-theme=dark]{color-scheme:dark;--text:#edf1f5;--foreground:#edf1f5;--background:#181b1e;--surface:#22272c;--ink:#edf1f5;--ink-sub:#c2c8ce;--sub:#c2c8ce}
+:root[data-theme=dark] .wire-page{--text:#edf1f5;--foreground:#edf1f5}
+:root[data-theme=dark] .wire-page :is(button,.count){color:var(--ink,#edf1f5)}
+:root[data-theme=dark] .wire-page button{background-color:var(--surface,#22272c)}
+:root[data-theme=dark] .wire-page button:is([aria-pressed=true],[aria-selected=true],.active,.on){background-color:#30465c!important;color:#edf1f5!important}
+:root[data-theme=dark] .wire-page :is(.link,.auth-text-button,.cluster-facility-row,.theme-toggle){color:var(--ink,#edf1f5)}
+:root[data-theme=dark] .wire-page :is(.sub,.note,.data-provenance,.sidebar-group-label,.profile-note,.contacts-note){color:var(--ink-sub,#c2c8ce)}
+:root[data-theme=dark] .wire-page :is(input,textarea)::placeholder{color:#aab5c0;opacity:1}
+:root[data-theme=dark] .wire-page :is(.hdr,.ah,.top) :is(button,a) svg :is(path,circle,line,polyline){stroke:currentColor}
+:root[data-theme=dark] .wire-page .selp a{color:var(--ink)}
+:root[data-theme=dark] .page-admin-dashboard #fl button{color:var(--ink);background:var(--surface)}
+:root[data-theme=dark] .page-admin-dashboard #fl button[aria-pressed=true]{background:#30465c;color:#f0f6fc}
+/* These controls and SDK overlays sit on a deliberately light map surface. */
+:root[data-theme=dark] .wire-page .kakao-map-controls button{background:#fff;color:#243447}
+:root[data-theme=dark] .wire-page :is(.map-weather-widget,.routel-map-popup){color:#243447}
+:root[data-theme=dark] .wire-page .map-weather-widget button{background:#fff;color:#243447}
+:root[data-theme=dark] .wire-page .map-status-legend{color:var(--foreground);background:var(--surface)}
+:root[data-theme=dark] .wire-page button:disabled{color:#a8b0b9}
+:root[data-theme=dark] .page-index .admin-section{background:var(--surface);border-color:var(--line);color:var(--ink)}
+:root[data-theme=dark] .page-index .admin-section nav a{background:#304052;color:#edf1f5}
+:root[data-theme=dark] .page-index .other-pages{border-color:var(--line)}
+:root[data-theme=dark] .page-index .other-pages a{color:#a8d0f5}

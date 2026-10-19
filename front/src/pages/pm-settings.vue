@@ -1,4 +1,5 @@
 ﻿<script setup lang="ts">
+import MenuIcon from '../components/MenuIcon.vue'
 import AdminIdentity from '../components/AdminIdentity.vue'
 import {ref,onMounted,onBeforeUnmount} from 'vue'
 import {useRouter} from 'vue-router'
@@ -14,7 +15,7 @@ onBeforeUnmount(()=>dispose?.())
 <template><div ref="root" class="wire-page page-pm-settings">
 <header class="hdr">
   <div class="hdr-l">
-    <button type="button" id="menu-btn" class="iconbtn" aria-label="메뉴 열기" aria-expanded="false" aria-controls="side"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M3 6H21 M3 12H21 M3 18H21" fill="none" stroke="#1f2630" stroke-width="2" stroke-linecap="round"></path></svg></button>
+    <button type="button" id="menu-btn" class="iconbtn" aria-label="메뉴 열기" aria-expanded="false" aria-controls="side"><MenuIcon/></button>
     <RouterLink class="inl-1444c6eaca admin-home-logo" to="/admin-dashboard" aria-label="종합 현황으로 이동">ROUTEL</RouterLink>
   </div>
   <div class="hdr-r">
@@ -58,7 +59,7 @@ onBeforeUnmount(()=>dispose?.())
 <p class="ro inl-7d0b01be6f">설비 위험도 기준은 <strong>침수 임계치와 별개</strong>예요. 침수 임계치는 지하차도 상세 &gt; 설정 탭에서 변경합니다.</p>
 <div class="split">
 <section class="card inl-fa5f50369a" aria-label="지표 규칙">
-<div class="chips inl-da12f2858b" id="ttabs" role="group" aria-label="설비 유형"><button type="button" class="chip" data-t="배수펌프" aria-pressed="true">배수펌프</button><button type="button" class="chip" data-t="전광판" aria-pressed="false">전광판</button><button type="button" class="chip" data-t="CCTV" aria-pressed="false">CCTV</button></div>
+<div class="chips inl-da12f2858b" id="ttabs" role="group" aria-label="설비 유형"><button type="button" class="chip" data-t="배수펌프" aria-pressed="true">배수펌프</button><button type="button" class="chip" data-t="전광판" aria-pressed="false">전광판</button><button type="button" class="chip" data-t="CCTV" aria-pressed="false">CCTV</button><button type="button" class="chip" data-t="수위센서" aria-pressed="false">수위센서</button></div>
 <div class="tbl-wrap inl-bb0c09db77"><table class="tbl inl-512bf91e30"><thead><tr><th>지표</th><th>기준값 (이상이면 점수 부여)</th><th>가중치 (점)</th></tr></thead><tbody id="mrows"></tbody>
 <tfoot><tr><td colspan="2"><strong>가중치 합계</strong></td><td><strong id="wsum"></strong> <span id="wmsg" class="sub"></span></td></tr></tfoot></table></div>
 <p class="sub">설비당 3~5개 지표를 규칙으로 판정하고, 기준을 넘으면 가중치만큼 점수를 더해 0~100점으로 계산해요.</p>

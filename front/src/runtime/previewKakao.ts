@@ -1,6 +1,7 @@
 import {pageFriendlyMapScroll} from './mapScroll'
 import {loadKakao} from '../services/kakao'
 import '../styles/map-weather.css'
+import {useAdminProfile} from '../stores/adminProfile'
 
 export async function mountPreviewKakao(root:HTMLElement,ctx:any,points:any[],selectGroup:(points:any[])=>void){
  if(!import.meta.env.VITE_KAKAO_MAP_KEY)return
@@ -81,7 +82,12 @@ export async function mountPreviewKakao(root:HTMLElement,ctx:any,points:any[],se
    clusterer.addMarker(marker)
   }
   filterMarkers()
-  if(positions.size){const bounds=new sdk.maps.LatLngBounds();positions.forEach(p=>bounds.extend(p));map.setBounds(bounds)}
+  if(positions.size){
+   const manager=!!root.querySelector('.page-admin-dashboard,.admin-home-logo')||root.classList.contains('page-admin-dashboard')
+   const regions=ctx.store.account?.regions?.map((r:any)=>r.name)||[useAdminProfile().profile.district]
+   const scoped=manager?points.filter(p=>regions.some((region:string)=>{const address=coords.find(c=>c.name===p.name)?.address||'';return address.includes(region)||address.includes(region.split(' ').at(-1)||region)})).map(p=>positions.get(p.index)).filter(Boolean):[]
+   const bounds=new sdk.maps.LatLngBounds();(scoped.length?scoped:[...positions.values()]).forEach(p=>bounds.extend(p));map.setBounds(bounds,40,40,40,40);if(scoped.length===1)map.setLevel(4)
+  }
   status.textContent=missing?`위치를 확인하지 못한 시설 ${missing}곳은 오른쪽 목록에서 확인해 주세요.`:''
   status.hidden=!missing
   const provenance=parent.querySelector<HTMLElement>('.data-provenance');if(provenance)provenance.textContent='시설명: 부산 공개 자료 · 상태·수치: 구성 예시 · 지도: 카카오맵'
