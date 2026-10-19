@@ -1,0 +1,63 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '4.1.0'
+}
+
+group = 'com.mbc'
+version = '0.0.1-SNAPSHOT'
+
+// 로컬 JDK가 17 이상이면 어느 버전이든 17 문법/바이트코드로 컴파일 (기존 pom의 java.version=17과 동일)
+tasks.withType(JavaCompile).configureEach {
+    options.release = 17
+    options.encoding = 'UTF-8'
+    // Spring 7(Boot 4)부터는 @PathVariable/@RequestParam에 이름을 명시 안 하면
+    // 컴파일 시 파라미터 이름이 바이트코드에 남아있어야 함 (-parameters 필요)
+    options.compilerArgs << '-parameters'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Spring Boot가 관리하는 라이브러리 버전표(BOM). 아래 starter들은 버전을 따로 안 적어도 됨
+    implementation platform(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
+    annotationProcessor platform(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
+    developmentOnly platform(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
+
+    // Web (Boot 4: starter-web → starter-webmvc / 내장 Tomcat, Jackson 포함)
+    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+
+    // @Valid, @NotBlank 등 입력값 검증
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // 시큐리티
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+
+    // JPA (Hibernate). 단순 CRUD·목록은 엔티티+리포지토리, 통계성 집계는 네이티브 SQL (MyBatis 대체)
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+    // Database
+    runtimeOnly 'org.postgresql:postgresql'
+
+    // auto reload
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+    // application.properties 자동완성용
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+    // PDF 생성 (이관 보고서: 경찰/소방 이관 PDF 출력)
+    implementation 'com.itextpdf:itext-core:9.1.0'
+    implementation 'com.itextpdf:layout:9.1.0'
+    implementation 'com.itextpdf:kernel:9.1.0'
+    implementation 'com.itextpdf:io:9.1.0'
+
+    // 테스트 (JUnit5, Mockito, AssertJ 포함)
+    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
