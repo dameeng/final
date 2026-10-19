@@ -46,14 +46,10 @@ public class TransferPdfGenerator {
     private static final float MARGIN = 50f;
 
     /**
-     * 경찰 이관 PDF (차단 또는 해제 정보)
+     * 도로 통제 정보 전달서 (통제 시작/해제 공용, A4 한 장).
+     * 시설·구분·사유·통제 방식·담당자·해제(또는 통제 시작) 정보를 한 장으로 정리한다.
      */
-    public byte[] generatePolicePdf(
-            String underpassName, String eventType, String reason,
-            String managerName, String managerRegion,
-            LocalDateTime eventAt, LocalDateTime transferAt,
-            String memo) {
-
+    public byte[] generatePolicePdf(ControlNoticeData d) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (PdfDocument pdf = new PdfDocument(new PdfWriter(baos));
              Document doc = new Document(pdf)) {
@@ -61,24 +57,96 @@ public class TransferPdfGenerator {
             doc.setMargins(MARGIN, MARGIN, MARGIN, MARGIN);
             PdfFont font = loadFont();
 
-            addTitle(doc, font, "경찰청 통제정보 이관 보고서");
-            addSubtitle(doc, font, "지하차도 " + eventType + " 신호조정 협조 요청");
+            addTitle(doc, font, "도로 통제 정보 전달서");
+            addSubtitle(doc, font, "발송 대상: 관할 경찰서 교통과 · 관할 소방서 (시연: 실제 전송 없이 PDF 저장)");
 
-            Table table = twoColTable();
-            addRow(table, font, "지하차도", underpassName, false);
-            addRow(table, font, "이벤트", eventType, true);
-            addRow(table, font, "사유", reason != null ? reason : "-", false);
-            addRow(table, font, "발생 일시", eventAt != null ? eventAt.format(DT_FMT) : "-", true);
-            addRow(table, font, "이관 일시", transferAt.format(DT_FMT), false);
-            addRow(table, font, "담당 관리자", managerName + " (" + managerRegion + ")", true);
-            addRow(table, font, "비고", memo != null && !memo.isBlank() ? memo : "-", false);
+            Table table = new Table(UnitValue.createPercentArray(new float[]{2.2f, 7.8f}))
+                    .setWidth(UnitValue.createPercentValue(100))
+                    .setHorizontalAlignment(HorizontalAlignment.CENTER);
+
+            String eventLabel = d.blockEvent() ? "통제 시작" : "통제 해제";
+            addNoticeRow(table, font, "시설", orDash(d.underpassName())
+                    + (d.address() != null && !d.address().isBlank() ? " (" + d.address() + ")" : ""));
+            addNoticeRow(table, font, "구분", "[" + eventLabel + "]  " + fmt(d.eventAt()));
+            addNoticeRow(table, font, "사유", reasonLine(d));
+            addNoticeRow(table, font, "통제 방식", methodLine(d));
+            addNoticeRow(table, font, "담당자", managerLine(d));
+            if (d.blockEvent()) {
+                addNoticeRow(table, font, "해제 정보", "미해제 (해제 시 같은 형식으로 사유와 함께 전달)");
+            } else {
+                addNoticeRow(table, font, "통제 시작 정보", startInfoLine(d));
+            }
+            if (d.memo() != null && !d.memo().isBlank()) {
+                addNoticeRow(table, font, "비고", d.memo());
+            }
             doc.add(table);
 
             addFooterNote(doc, font);
         } catch (Exception e) {
-            throw new RuntimeException("경찰 이관 PDF 생성 실패", e);
+            throw new RuntimeException("통제 정보 전달서 PDF 생성 실패", e);
         }
         return baos.toByteArray();
+    }
+
+    // 전달서 표의 한 행: 라벨 칸만 연회색, 내용 칸은 흰색
+    private void addNoticeRow(Table table, PdfFont font, String label, String value) {
+        table.addCell(labelCell(label, font, true));
+        table.addCell(dataCell(value, font, false, TextAlignment.LEFT));
+    }
+
+    // ---- 전달서 문구 조립 ----
+
+    private static final DateTimeFormatter NOTICE_DT = DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm");
+
+    private String fmt(LocalDateTime t) {
+        return t == null ? "-" : t.format(NOTICE_DT);
+    }
+
+    private String orDash(String v) {
+        return v == null || v.isBlank() ? "-" : v;
+    }
+
+    // "침수 위험 (위험도 76.4점 · 강우 18.0mm)" — 점수·강우는 있는 것만
+    private String reasonLine(ControlNoticeData d) {
+        StringBuilder sb = new StringBuilder(orDash(d.reason()));
+        List<String> extra = new java.util.ArrayList<>();
+        if (d.riskScore() != null) extra.add(String.format("위험도 %.1f점", d.riskScore()));
+        if (d.rainfallMm() != null) extra.add(String.format("강우 %.1fmm", d.rainfallMm()));
+        if (!extra.isEmpty()) sb.append(" (").append(String.join(" · ", extra)).append(")");
+        return sb.toString();
+    }
+
+    // 입구 차단 · 전광판 "입구 통제 중 · 우회 바랍니다"
+    private String methodLine(ControlNoticeData d) {
+        String base = d.blockEvent() ? "입구 차단" : "입구 차단 해제";
+        if (d.displayText() != null && !d.displayText().isBlank()) {
+            return base + " · 전광판 \"" + d.displayText() + "\"";
+        }
+        return base;
+    }
+
+    // 홍길동 (부산 강서구 · 1조 06:00~14:00)
+    private String managerLine(ControlNoticeData d) {
+        List<String> info = new java.util.ArrayList<>();
+        if (d.managerRegion() != null && !d.managerRegion().isBlank() && !"-".equals(d.managerRegion())) {
+            info.add(d.managerRegion());
+        }
+        if (d.shiftLabel() != null && !d.shiftLabel().isBlank()) info.add(d.shiftLabel());
+        String name = orDash(d.managerName());
+        return info.isEmpty() ? name : name + " (" + String.join(" · ", info) + ")";
+    }
+
+    // 해제 문서: 통제 시작 일시·사유와 통제 시간
+    private String startInfoLine(ControlNoticeData d) {
+        StringBuilder sb = new StringBuilder(fmt(d.blockAt()));
+        if (d.blockReason() != null && !d.blockReason().isBlank()) {
+            sb.append(" · 사유: ").append(d.blockReason());
+        }
+        if (d.blockAt() != null && d.eventAt() != null && !d.eventAt().isBefore(d.blockAt())) {
+            long min = java.time.Duration.between(d.blockAt(), d.eventAt()).toMinutes();
+            sb.append(" · 통제 시간 ").append(min).append("분");
+        }
+        return sb.toString();
     }
 
     /**
@@ -100,11 +168,11 @@ public class TransferPdfGenerator {
             addSubtitle(doc, font, "지하차도 내 잔류차량 현황 이관");
 
             Table infoTable = twoColTable();
-            addRow(infoTable, font, "지하차도", underpassName, false);
-            addRow(infoTable, font, "이관 일시", transferAt.format(DT_FMT), true);
-            addRow(infoTable, font, "잔류차량 수", carNums.size() + "대", false);
-            addRow(infoTable, font, "담당 관리자", managerName + " (" + managerRegion + ")", true);
-            addRow(infoTable, font, "비고", memo != null && !memo.isBlank() ? memo : "-", false);
+            addNoticeRow(infoTable, font, "지하차도", underpassName);
+            addNoticeRow(infoTable, font, "이관 일시", transferAt.format(DT_FMT));
+            addNoticeRow(infoTable, font, "잔류차량 수", carNums.size() + "대");
+            addNoticeRow(infoTable, font, "담당 관리자", managerName + " (" + managerRegion + ")");
+            addNoticeRow(infoTable, font, "비고", memo != null && !memo.isBlank() ? memo : "-");
             doc.add(infoTable);
 
             // 잔류차량 목록 헤더
@@ -129,7 +197,7 @@ public class TransferPdfGenerator {
                 carTable.addCell(emptyCell);
             } else {
                 for (int i = 0; i < carNums.size(); i++) {
-                    boolean alt = i % 2 != 0;
+                    boolean alt = false;   // 내용 칸은 흰색 (전달서와 같은 스타일)
                     carTable.addCell(dataCell(String.valueOf(i + 1), font, alt, TextAlignment.CENTER));
                     carTable.addCell(dataCell(carNums.get(i), font, alt, TextAlignment.LEFT));
                 }
@@ -209,9 +277,9 @@ public class TransferPdfGenerator {
         return new Cell()
                 .add(new Paragraph(text).setFont(font).setFontSize(10)
                         .setTextAlignment(TextAlignment.CENTER)
-                        .setFontColor(ColorConstants.WHITE))
-                .setBackgroundColor(HEADER_BG)
-                .setBorder(Border.NO_BORDER)
+                        .setFontColor(LABEL_COLOR))
+                .setBackgroundColor(ROW_ALT_BG)   // 정보 표 라벨 칸과 같은 연회색
+                .setBorder(new SolidBorder(ColorConstants.LIGHT_GRAY, 0.5f))
                 .setPadding(8f);
     }
 
