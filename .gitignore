@@ -34,3 +34,8 @@ application-secret.properties
 
 # ===== 기타 =====
 *.log
+
+# Flood generated datasets and local backups
+/flood_server/data/flood_training_dataset.csv
+/flood_server/data/flood_training_inputs.csv
+/flood_server/data/busan_underpass_master_backup_*.csv
