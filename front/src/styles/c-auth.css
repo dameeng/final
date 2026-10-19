@@ -1,0 +1,58 @@
+.page-c-auth{--ink:#20252b;--sub:#555;--line:#c9ced6;--soft:#c9ced6;--brand:#20252b;--accent:#20252b;--bg:#fff;--danger:#c62828;--dbg:#fde7e7;--warn:#a85a00;--wbg:#fff1d6;--wl:#f0a020;--safe:#1b7f5c;--sbg:#e1f3ea}
+.page-c-auth *{box-sizing:border-box}
+.page-c-auth{margin:0;background:var(--surface,#fff);font-size:15px;line-height:1.5}
+.page-c-auth a{text-decoration:none}
+.page-c-auth .top{background:var(--surface,#fff);border-bottom:1px solid var(--line)}
+.page-c-auth .top .in{max-width:1280px;margin:0 auto;padding:0 20px;height:60px;display:flex;align-items:center;gap:28px}
+.page-c-auth .logo{font-weight:800;font-size:18px}
+.page-c-auth .top nav{display:flex;gap:4px;flex:1}
+.page-c-auth .top nav a{padding:8px 14px}
+.page-c-auth .top nav a.on{background:#e3f0ff;color:var(--brand);font-weight:700}
+.page-c-auth .btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:8px 18px;border:1px solid var(--line);background:var(--surface,#fff);font-weight:600}
+.page-c-auth .btn.p{background:var(--surface,#fff);border-color:var(--line,#c9ced6)}
+.page-c-auth .btn.k{background:var(--surface,#fff);border-color:var(--line,#c9ced6)}
+.page-c-auth .wrap{max-width:1280px;margin:0 auto;padding:20px}
+.page-c-auth .panel{background:var(--surface,#fff);border:1px solid var(--soft);padding:18px}
+.page-c-auth .panel h2{margin:0 0 10px;font-size:17px}
+.page-c-auth .lvb{display:inline-block;padding:1px 10px;font-size:12px;font-weight:700;border:1px solid}
+.page-c-auth .lvb.d{background:var(--dbg);color:var(--danger);border-color:var(--danger)}
+.page-c-auth .lvb.d:before{content:"■ "}
+.page-c-auth .lvb.w{background:var(--wbg);color:var(--warn);border-color:var(--wl)}
+.page-c-auth .lvb.w:before{content:"▲ "}
+.page-c-auth .lvb.s{background:var(--sbg);color:var(--safe);border-color:transparent}
+.page-c-auth .lvb.s:before{content:"● "}
+.page-c-auth .sample{font-size:12px;border:1px dashed var(--sub);padding:2px 8px;background:var(--surface,#fff)}
+.page-c-auth .sub{font-size:13px}
+.page-c-auth .foot{border-top:1px solid var(--line);background:var(--surface,#fff);margin-top:30px}
+.page-c-auth .foot .in{max-width:1280px;margin:0 auto;padding:18px 20px;display:flex;gap:20px;font-size:13px}
+.page-c-auth .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start}
+.page-c-auth .f{margin-bottom:10px}
+.page-c-auth .f label{display:block;font-size:13px;font-weight:700;margin-bottom:3px}
+.page-c-auth .f em{font-style:normal}
+.page-c-auth .f small{font-size:12px}
+.page-c-auth .i{border:1px solid var(--line);padding:10px 12px;min-height:44px;background:var(--surface,#fff);display:flex;align-items:center}
+.page-c-auth .p3{display:flex;gap:6px;align-items:center}
+.page-c-auth .p3 .i{flex:1;justify-content:center}
+.page-c-auth .row2{display:flex;gap:8px}
+.page-c-auth .row2>*{flex:1}
+.page-c-auth .seg2{display:flex;gap:6px}
+.page-c-auth .seg2 span{flex:1;text-align:center;border:1px solid var(--line);padding:9px 0;background:var(--surface,#fff)}
+.page-c-auth .seg2 .on{background:#e3f0ff;color:var(--brand);border-color:var(--brand);font-weight:700}
+.page-c-auth .stub{background:var(--surface,#fff);border:1px dashed var(--sub);padding:8px 10px;font-size:12px;margin:6px 0 10px}
+.page-c-auth .ck{display:flex;gap:8px;padding:6px 0}
+.page-c-auth .ck b{font-weight:600}
+.page-c-auth .inl-75816cae84{display:flex}
+.page-c-auth .inl-3c5b6a25cb{display:flex;justify-content:space-between;margin-top:8px}
+.page-c-auth .inl-761d3addb2{margin-bottom:10px}
+.page-c-auth .inl-63c836833a{margin:-4px 0 8px}
+.page-c-auth .inl-c424680c64{display:flex;margin-bottom:8px}
+.page-c-auth .inl-865901ac93{letter-spacing:4px;justify-content:center}
+.page-c-auth .inl-eb66db133f{flex:0 0 80px}
+.page-c-auth .inl-557d84c06b{margin:4px 0}
+.page-c-auth .inl-75816cae84{display:flex}
+.page-c-auth .inl-fdf33f2304{margin-bottom:8px}
+.page-c-auth .inl-c424680c64{display:flex;margin-bottom:8px}
+.page-c-auth .inl-865901ac93{letter-spacing:4px;justify-content:center}
+.page-c-auth .inl-eb66db133f{flex:0 0 80px}
+.page-c-auth .inl-6a8e059875{height:10px}
+.page-c-auth .inl-75816cae84{display:flex}

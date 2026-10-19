@@ -1,0 +1,504 @@
+[
+  {
+    "file": "admin-dashboard.html",
+    "tables": 0,
+    "inputs": 25,
+    "svg": 4,
+    "dialogs": 2,
+    "drawers": 0,
+    "appScreens": 0,
+    "states": [
+      "menu-btn",
+      "bell-btn"
+    ],
+    "errors": []
+  },
+  {
+    "file": "bot-logs.html",
+    "tables": 1,
+    "inputs": 1,
+    "svg": 2,
+    "dialogs": 0,
+    "drawers": 1,
+    "appScreens": 0,
+    "states": [
+      "행 선택 상세",
+      "menu-btn",
+      "bell-btn"
+    ],
+    "errors": []
+  },
+  {
+    "file": "bot-stats.html",
+    "tables": 0,
+    "inputs": 0,
+    "svg": 2,
+    "dialogs": 0,
+    "drawers": 0,
+    "appScreens": 0,
+    "states": [
+      "menu-btn",
+      "bell-btn"
+    ],
+    "errors": []
+  },
+  {
+    "file": "bot-unanswered.html",
+    "tables": 1,
+    "inputs": 3,
+    "svg": 2,
+    "dialogs": 1,
+    "drawers": 0,
+    "appScreens": 0,
+    "states": [
+      "menu-btn",
+      "bell-btn"
+    ],
+    "errors": []
+  },
+  {
+    "file": "c-app-screens.html",
+    "tables": 0,
+    "inputs": 0,
+    "svg": 8,
+    "dialogs": 0,
+    "drawers": 0,
+    "appScreens": 14,
+    "states": [],
+    "errors": []
+  },
+  {
+    "file": "c-app.html",
+    "tables": 0,
+    "inputs": 0,
+    "svg": 4,
+    "dialogs": 0,
+    "drawers": 0,
+    "appScreens": 0,
+    "states": [],
+    "errors": []
+  },
+  {
+    "file": "c-auth.html",
+    "tables": 0,
+    "inputs": 0,
+    "svg": 0,
+    "dialogs": 0,
+    "drawers": 0,
+    "appScreens": 0,
+    "states": [],
+    "errors": []
+  },
+  {
+    "file": "c-map.html",
+    "tables": 0,
+    "inputs": 1,
+    "svg": 2,
+    "dialogs": 0,
+    "drawers": 0,
+    "appScreens": 0,
+    "states": [
+      "행 선택 상세"
+    ],
+    "errors": []
+  },
+  {
+    "file": "c-notice.html",
+    "tables": 1,
+    "inputs": 0,
+    "svg": 0,
+    "dialogs": 0,
+    "drawers": 0,
+    "appScreens": 0,
+    "states": [],
+    "errors": []
+  },
+  {
+    "file": "cs-content.html",
+    "tables": 2,
+    "inputs": 7,
+    "svg": 2,
+    "dialogs": 1,
+    "drawers": 1,
+    "appScreens": 0,
+    "states": [
+      "FAQ",
+      "menu-btn",
+      "bell-btn"
+    ],
+    "errors": []
+  },
+  {
+    "file": "cs-customer-detail.html",
+    "tables": 1,
+    "inputs": 0,
+    "svg": 2,
+    "dialogs": 0,
+    "drawers": 0,
+    "appScreens": 0,
+    "states": [
+      "menu-btn",
+      "bell-btn"
+    ],
+    "errors": []
+  },
+  {
+    "file": "cs-customers.html",
+    "tables": 1,
+    "inputs": 2,
+    "svg": 2,
+    "dialogs": 0,
+    "drawers": 1,
+    "appScreens": 0,
+    "states": [
+      "행 선택 상세",
+      "menu-btn",
+      "bell-btn"
+    ],
+    "errors": []
+  },
+  {
+    "file": "cs-inquiries.html",
+    "tables": 1,
+    "inputs": 2,
+    "svg": 2,
+    "dialogs": 0,
+    "drawers": 1,
+    "appScreens": 0,
+    "states": [
+      "행 선택 상세",
+      "menu-btn",
+      "bell-btn"
+    ],
+    "errors": []
+  },
+  {
+    "file": "cs-inquiry-detail.html",
+    "tables": 0,
+    "inputs": 2,
+    "svg": 2,
+    "dialogs": 0,
+    "drawers": 0,
+    "appScreens": 0,
+    "states": [
+      "menu-btn",
+      "bell-btn"
+    ],
+    "errors": []
+  },
+  {
+    "file": "cs-notice-edit.html",
+    "tables": 0,
+    "inputs": 8,
+    "svg": 2,
+    "dialogs": 1,
+    "drawers": 0,
+    "appScreens": 0,
+    "states": [
+      "menu-btn",
+      "bell-btn"
+    ],
+    "errors": []
+  },
+  {
+    "file": "fac-detail.html",
+    "tables": 5,
+    "inputs": 18,
+    "svg": 3,
+    "dialogs": 2,
+    "drawers": 0,
+    "appScreens": 0,
+    "states": [
+      "menu-btn",
+      "bell-btn"
+    ],
+    "errors": []
+  },
+  {
+    "file": "fac-list.html",
+    "tables": 1,
+    "inputs": 3,
+    "svg": 2,
+    "dialogs": 0,
+    "drawers": 1,
+    "appScreens": 0,
+    "states": [
+      "행 선택 상세",
+      "menu-btn",
+      "bell-btn"
+    ],
+    "errors": []
+  },
+  {
+    "file": "fac-new.html",
+    "tables": 1,
+    "inputs": 13,
+    "svg": 2,
+    "dialogs": 0,
+    "drawers": 0,
+    "appScreens": 0,
+    "states": [
+      "menu-btn",
+      "bell-btn"
+    ],
+    "errors": []
+  },
+  {
+    "file": "handover-pdf.html",
+    "tables": 1,
+    "inputs": 0,
+    "svg": 2,
+    "dialogs": 0,
+    "drawers": 0,
+    "appScreens": 0,
+    "states": [
+      "menu-btn",
+      "bell-btn"
+    ],
+    "errors": []
+  },
+  {
+    "file": "index.html",
+    "tables": 0,
+    "inputs": 0,
+    "svg": 0,
+    "dialogs": 0,
+    "drawers": 0,
+    "appScreens": 0,
+    "states": [],
+    "errors": []
+  },
+  {
+    "file": "logs.html",
+    "tables": 1,
+    "inputs": 4,
+    "svg": 2,
+    "dialogs": 0,
+    "drawers": 1,
+    "appScreens": 0,
+    "states": [
+      "행 선택 상세",
+      "menu-btn",
+      "bell-btn"
+    ],
+    "errors": []
+  },
+  {
+    "file": "m-app-screens.html",
+    "tables": 0,
+    "inputs": 0,
+    "svg": 1,
+    "dialogs": 0,
+    "drawers": 0,
+    "appScreens": 14,
+    "states": [],
+    "errors": []
+  },
+  {
+    "file": "my-account.html",
+    "tables": 0,
+    "inputs": 15,
+    "svg": 0,
+    "dialogs": 0,
+    "drawers": 0,
+    "appScreens": 0,
+    "states": [],
+    "errors": []
+  },
+  {
+    "file": "my-alerts.html",
+    "tables": 0,
+    "inputs": 2,
+    "svg": 0,
+    "dialogs": 0,
+    "drawers": 0,
+    "appScreens": 0,
+    "states": [],
+    "errors": []
+  },
+  {
+    "file": "my-cars.html",
+    "tables": 0,
+    "inputs": 2,
+    "svg": 0,
+    "dialogs": 2,
+    "drawers": 0,
+    "appScreens": 0,
+    "states": [],
+    "errors": []
+  },
+  {
+    "file": "my-home.html",
+    "tables": 0,
+    "inputs": 1,
+    "svg": 0,
+    "dialogs": 0,
+    "drawers": 0,
+    "appScreens": 0,
+    "states": [],
+    "errors": []
+  },
+  {
+    "file": "my-inquiries.html",
+    "tables": 0,
+    "inputs": 1,
+    "svg": 0,
+    "dialogs": 0,
+    "drawers": 0,
+    "appScreens": 0,
+    "states": [],
+    "errors": []
+  },
+  {
+    "file": "my-inquiry-new.html",
+    "tables": 0,
+    "inputs": 4,
+    "svg": 0,
+    "dialogs": 0,
+    "drawers": 0,
+    "appScreens": 0,
+    "states": [],
+    "errors": []
+  },
+  {
+    "file": "my-withdraw.html",
+    "tables": 0,
+    "inputs": 3,
+    "svg": 0,
+    "dialogs": 1,
+    "drawers": 0,
+    "appScreens": 0,
+    "states": [],
+    "errors": []
+  },
+  {
+    "file": "notifications.html",
+    "tables": 0,
+    "inputs": 1,
+    "svg": 2,
+    "dialogs": 0,
+    "drawers": 0,
+    "appScreens": 0,
+    "states": [
+      "menu-btn",
+      "bell-btn"
+    ],
+    "errors": []
+  },
+  {
+    "file": "pm-equipment-detail.html",
+    "tables": 1,
+    "inputs": 4,
+    "svg": 3,
+    "dialogs": 1,
+    "drawers": 0,
+    "appScreens": 0,
+    "states": [
+      "menu-btn",
+      "bell-btn"
+    ],
+    "errors": []
+  },
+  {
+    "file": "pm-equipment.html",
+    "tables": 1,
+    "inputs": 6,
+    "svg": 3,
+    "dialogs": 1,
+    "drawers": 1,
+    "appScreens": 0,
+    "states": [
+      "행 선택 상세",
+      "menu-btn",
+      "bell-btn"
+    ],
+    "errors": []
+  },
+  {
+    "file": "pm-history.html",
+    "tables": 1,
+    "inputs": 9,
+    "svg": 2,
+    "dialogs": 1,
+    "drawers": 1,
+    "appScreens": 0,
+    "states": [
+      "행 선택 상세",
+      "menu-btn",
+      "bell-btn"
+    ],
+    "errors": []
+  },
+  {
+    "file": "pm-queue.html",
+    "tables": 1,
+    "inputs": 6,
+    "svg": 2,
+    "dialogs": 1,
+    "drawers": 0,
+    "appScreens": 0,
+    "states": [
+      "menu-btn",
+      "bell-btn"
+    ],
+    "errors": []
+  },
+  {
+    "file": "pm-settings.html",
+    "tables": 2,
+    "inputs": 12,
+    "svg": 2,
+    "dialogs": 1,
+    "drawers": 0,
+    "appScreens": 0,
+    "states": [
+      "전광판",
+      "CCTV",
+      "menu-btn",
+      "bell-btn"
+    ],
+    "errors": []
+  },
+  {
+    "file": "shift-login.html",
+    "tables": 0,
+    "inputs": 0,
+    "svg": 2,
+    "dialogs": 1,
+    "drawers": 0,
+    "appScreens": 0,
+    "states": [
+      "menu-btn",
+      "bell-btn"
+    ],
+    "errors": []
+  },
+  {
+    "file": "staff.html",
+    "tables": 1,
+    "inputs": 3,
+    "svg": 2,
+    "dialogs": 0,
+    "drawers": 0,
+    "appScreens": 0,
+    "states": [
+      "menu-btn",
+      "bell-btn"
+    ],
+    "errors": []
+  },
+  {
+    "file": "verify.html",
+    "tables": 2,
+    "inputs": 5,
+    "svg": 2,
+    "dialogs": 0,
+    "drawers": 0,
+    "appScreens": 0,
+    "states": [
+      "menu-btn",
+      "bell-btn"
+    ],
+    "errors": []
+  }
+]

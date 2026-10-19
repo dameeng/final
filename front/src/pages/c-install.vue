@@ -1,0 +1,1 @@
+<template><main class="wire-page customer-content"><h1>앱 설치 안내</h1><section><h2>ROUTEL 앱 이용</h2><p>설치 주소가 확정되면 이 페이지에서 안내합니다.</p><p>현재는 아래 링크에서 앱 화면을 확인할 수 있습니다.</p><RouterLink to="/customer-app/screen-1">앱 로그인 화면 열기</RouterLink></section><RouterLink to="/c-app">앱 소개로</RouterLink></main></template>

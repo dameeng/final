@@ -1,0 +1,506 @@
+[
+  {
+    "route": "admin-app/screen-1",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 2,
+    "svg": 0
+  },
+  {
+    "route": "admin-app/screen-10",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 0,
+    "svg": 0
+  },
+  {
+    "route": "admin-app/screen-11",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 0,
+    "svg": 0
+  },
+  {
+    "route": "admin-app/screen-12",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 1,
+    "svg": 0
+  },
+  {
+    "route": "admin-app/screen-13",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 0,
+    "svg": 0
+  },
+  {
+    "route": "admin-app/screen-14",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 0,
+    "svg": 0
+  },
+  {
+    "route": "admin-app/screen-2",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 0,
+    "svg": 0
+  },
+  {
+    "route": "admin-app/screen-3",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 0,
+    "svg": 1
+  },
+  {
+    "route": "admin-app/screen-4",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 1,
+    "svg": 0
+  },
+  {
+    "route": "admin-app/screen-5",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 0,
+    "svg": 0
+  },
+  {
+    "route": "admin-app/screen-6",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 2,
+    "svg": 0
+  },
+  {
+    "route": "admin-app/screen-7",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 0,
+    "svg": 0
+  },
+  {
+    "route": "admin-app/screen-8",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 1,
+    "svg": 0
+  },
+  {
+    "route": "admin-app/screen-9",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 1,
+    "svg": 0
+  },
+  {
+    "route": "admin-dashboard",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 1,
+    "svg": 4
+  },
+  {
+    "route": "bot-logs",
+    "errors": [],
+    "markers": [],
+    "tables": 1,
+    "fields": 1,
+    "svg": 2
+  },
+  {
+    "route": "bot-stats",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 0,
+    "svg": 2
+  },
+  {
+    "route": "c-app",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 0,
+    "svg": 0
+  },
+  {
+    "route": "c-auth",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 24,
+    "svg": 0
+  },
+  {
+    "route": "c-map",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 1,
+    "svg": 2
+  },
+  {
+    "route": "c-notice",
+    "errors": [],
+    "markers": [],
+    "tables": 1,
+    "fields": 1,
+    "svg": 0
+  },
+  {
+    "route": "cs-content",
+    "errors": [],
+    "markers": [],
+    "tables": 2,
+    "fields": 7,
+    "svg": 2
+  },
+  {
+    "route": "cs-customer-detail",
+    "errors": [],
+    "markers": [],
+    "tables": 1,
+    "fields": 0,
+    "svg": 2
+  },
+  {
+    "route": "cs-customers",
+    "errors": [],
+    "markers": [],
+    "tables": 1,
+    "fields": 2,
+    "svg": 2
+  },
+  {
+    "route": "cs-inquiries",
+    "errors": [],
+    "markers": [],
+    "tables": 1,
+    "fields": 2,
+    "svg": 2
+  },
+  {
+    "route": "cs-inquiry-detail",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 2,
+    "svg": 2
+  },
+  {
+    "route": "cs-notice-edit",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 8,
+    "svg": 2
+  },
+  {
+    "route": "customer-app/screen-1",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 2,
+    "svg": 0
+  },
+  {
+    "route": "customer-app/screen-10",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 0,
+    "svg": 2
+  },
+  {
+    "route": "customer-app/screen-11",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 0,
+    "svg": 0
+  },
+  {
+    "route": "customer-app/screen-12",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 0,
+    "svg": 0
+  },
+  {
+    "route": "customer-app/screen-13",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 0,
+    "svg": 0
+  },
+  {
+    "route": "customer-app/screen-14",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 1,
+    "svg": 0
+  },
+  {
+    "route": "customer-app/screen-2",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 5,
+    "svg": 0
+  },
+  {
+    "route": "customer-app/screen-3",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 7,
+    "svg": 0
+  },
+  {
+    "route": "customer-app/screen-4",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 7,
+    "svg": 0
+  },
+  {
+    "route": "customer-app/screen-5",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 0,
+    "svg": 1
+  },
+  {
+    "route": "customer-app/screen-6",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 0,
+    "svg": 1
+  },
+  {
+    "route": "customer-app/screen-7",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 2,
+    "svg": 0
+  },
+  {
+    "route": "customer-app/screen-8",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 1,
+    "svg": 2
+  },
+  {
+    "route": "customer-app/screen-9",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 0,
+    "svg": 2
+  },
+  {
+    "route": "fac-detail",
+    "errors": [],
+    "markers": [],
+    "tables": 5,
+    "fields": 19,
+    "svg": 3
+  },
+  {
+    "route": "fac-list",
+    "errors": [],
+    "markers": [],
+    "tables": 1,
+    "fields": 3,
+    "svg": 2
+  },
+  {
+    "route": "fac-new",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 7,
+    "svg": 2
+  },
+  {
+    "route": "handover-pdf",
+    "errors": [],
+    "markers": [],
+    "tables": 1,
+    "fields": 0,
+    "svg": 2
+  },
+  {
+    "route": "index",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 0,
+    "svg": 0
+  },
+  {
+    "route": "logs",
+    "errors": [],
+    "markers": [],
+    "tables": 1,
+    "fields": 4,
+    "svg": 2
+  },
+  {
+    "route": "my-account",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 15,
+    "svg": 0
+  },
+  {
+    "route": "my-alerts",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 2,
+    "svg": 0
+  },
+  {
+    "route": "my-cars",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 2,
+    "svg": 0
+  },
+  {
+    "route": "my-home",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 1,
+    "svg": 0
+  },
+  {
+    "route": "my-inquiries",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 1,
+    "svg": 0
+  },
+  {
+    "route": "my-inquiry-new",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 4,
+    "svg": 0
+  },
+  {
+    "route": "my-withdraw",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 3,
+    "svg": 0
+  },
+  {
+    "route": "notifications",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 1,
+    "svg": 2
+  },
+  {
+    "route": "pm-equipment-detail",
+    "errors": [],
+    "markers": [],
+    "tables": 1,
+    "fields": 4,
+    "svg": 3
+  },
+  {
+    "route": "pm-equipment",
+    "errors": [],
+    "markers": [],
+    "tables": 1,
+    "fields": 7,
+    "svg": 3
+  },
+  {
+    "route": "pm-history",
+    "errors": [],
+    "markers": [],
+    "tables": 1,
+    "fields": 9,
+    "svg": 2
+  },
+  {
+    "route": "pm-queue",
+    "errors": [],
+    "markers": [],
+    "tables": 1,
+    "fields": 6,
+    "svg": 2
+  },
+  {
+    "route": "pm-settings",
+    "errors": [],
+    "markers": [],
+    "tables": 2,
+    "fields": 12,
+    "svg": 2
+  },
+  {
+    "route": "shift-login",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 0,
+    "svg": 2
+  },
+  {
+    "route": "shift-report",
+    "errors": [],
+    "markers": [],
+    "tables": 0,
+    "fields": 0,
+    "svg": 0
+  },
+  {
+    "route": "staff",
+    "errors": [],
+    "markers": [],
+    "tables": 1,
+    "fields": 3,
+    "svg": 2
+  }
+]

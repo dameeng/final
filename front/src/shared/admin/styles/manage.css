@@ -1,6 +1,0 @@
-.routel-admin-page .manage-page section { margin:28px 0; padding-top:20px; border-top:1px solid #dce3e9; }
-.routel-admin-page .manage-form { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; }
-.routel-admin-page .manage-form label { display:grid; gap:8px; }
-.manage-scroll { min-width:0; max-width:100%; }
-.routel-admin-page .manage-form > div { grid-column:1/-1; }
-@media(max-width:680px) { .routel-admin-page .manage-form { grid-template-columns:minmax(0,1fr); } }

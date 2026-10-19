@@ -1,9 +1,0 @@
-.demo-phone-verification{display:flex;flex-direction:column;gap:12px;min-width:0;width:100%;align-self:start}
-.demo-phone-field,.demo-phone-code{min-width:0;width:100%}
-.demo-phone-actions{display:flex;justify-content:flex-end}
-.demo-phone-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:stretch;gap:10px;min-width:0}
-.demo-phone-verification input{min-width:0;width:100%;box-sizing:border-box}
-.demo-phone-verification button{min-height:44px;margin:0;white-space:nowrap;font:inherit}
-.demo-phone-code{margin-top:4px}
-html[data-routel-theme] :is(.customer-shell.customer-water,.app-shell) .demo-phone-verification .demo-phone-message{margin:0;padding:0;border:0;background:transparent;box-shadow:none;font-size:13px;line-height:1.6;overflow-wrap:anywhere;color:var(--ca-sub,var(--routel-sub,#596579))}
-@media(max-width:400px){.demo-phone-row{grid-template-columns:minmax(0,1fr)}.demo-phone-row button{justify-self:end}}
