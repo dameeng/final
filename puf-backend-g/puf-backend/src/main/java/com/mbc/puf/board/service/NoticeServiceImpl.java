@@ -15,6 +15,7 @@ import com.mbc.puf.board.entity.Notice;
 import com.mbc.puf.board.repository.NoticeRepository;
 import com.mbc.puf.common.enums.AlertChannel;
 import com.mbc.puf.common.enums.DeliveryStatus;
+import com.mbc.puf.common.enums.NoticeCategory;
 import com.mbc.puf.common.exception.BusinessException;
 import com.mbc.puf.common.jpa.DbClock;
 import com.mbc.puf.notification.service.NotificationService;
@@ -54,20 +55,23 @@ public class NoticeServiceImpl implements NoticeService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<NoticeListItem> getNoticeList(String keyword, Boolean important, int page, int size) {
+    public PageResponse<NoticeListItem> getNoticeList(String keyword, NoticeCategory category, Boolean important, int page, int size) {
         PageParams pageParams = PageParams.of(page, size);
         QueryConditions c = new QueryConditions()
                 .add("n.deleted = false")
                 .containsIfPresent(keyword, "n.title", "n.content")   // 제목+내용 통합 검색
+                .eqIfPresent("n.category", category)                  // null 이면 전체 분류
                 .eqIfPresent("n.important", important);               // null 이면 전체
 
         return PagedQuery.fetch(em, "select n, e.name" + FROM, "select count(n)" + FROM, c,
-                " order by n.createdAt desc, n.id desc", Object[].class, row -> {
+                " order by n.important desc, n.createdAt desc, n.id desc", Object[].class, row -> {
                     Notice n = (Notice) row[0];
                     NoticeListItem item = new NoticeListItem();
                     item.setId(n.getId());
                     item.setTitle(n.getTitle());
+                    item.setCategory(n.getCategory());
                     item.setImportant(n.isImportant());
+                    item.setViewCount(n.getViewCount());
                     item.setAuthorName((String) row[1]);
                     item.setCreatedAt(n.getCreatedAt());
                     return item;
@@ -75,9 +79,14 @@ public class NoticeServiceImpl implements NoticeService {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public NoticeDetailResponse getNotice(Long id) {
-        return toDetail(getActiveNotice(id));
+    @Transactional
+    public NoticeDetailResponse getNotice(Long id, boolean countView) {
+        Notice notice = getActiveNotice(id);   // 없으면 404
+        if (countView) {
+            noticeRepository.increaseViewCount(id);
+            notice = getActiveNotice(id);      // 올라간 조회수를 다시 읽는다
+        }
+        return toDetail(notice);
     }
 
     @Override
@@ -86,12 +95,23 @@ public class NoticeServiceImpl implements NoticeService {
         Notice notice = new Notice();
         notice.setTitle(request.getTitle().trim());
         notice.setContent(request.getContent());
+        notice.setCategory(request.getCategory() == null ? NoticeCategory.INFO : request.getCategory());
         notice.setImportant(request.isImportant());
+        // 고객 알림 발송 여부: 관리자가 체크한 값. 안 보내면 긴급 분류만 보낸다 (관성적 공지에 알림이 가지 않도록)
+        boolean sendPush = request.getSendPush() != null
+                ? request.getSendPush() : notice.getCategory() == NoticeCategory.URGENT;
+        notice.setSendPush(sendPush);
         notice.setAuthorId(authorId);
         noticeRepository.saveAndFlush(notice);   // id 확보
 
+        if (!sendPush) {
+            return toDetail(notice);   // 알림을 보내지 않는 공지는 여기서 끝 (목록에만 올라간다)
+        }
+
         // 고객 알림 센터(공지 분류): 활성 고객 전체에게 한 건씩
-        notificationService.notifyCustomersNewNotice(notice.getId(), notice.getTitle(), notice.isImportant());
+        // 긴급 분류이거나 중요 공지면 "[긴급]" 으로 표시
+        notificationService.notifyCustomersNewNotice(notice.getId(), notice.getTitle(),
+                notice.isImportant() || notice.getCategory() == NoticeCategory.URGENT);
 
         // 활성 고객 전체에게 notice_alert 일괄 삽입 (native bulk insert)
         int inserted = noticeAlertRepository.insertForAllActiveCustomers(notice.getId());
@@ -126,6 +146,7 @@ public class NoticeServiceImpl implements NoticeService {
         Notice notice = getActiveNotice(id);   // 존재/삭제 여부 확인, 없으면 404
         notice.setTitle(request.getTitle().trim());
         notice.setContent(request.getContent());
+        notice.setCategory(request.getCategory() == null ? notice.getCategory() : request.getCategory());   // 안 보내면 기존 분류 유지
         notice.setImportant(request.isImportant());
         notice.setUpdatedAt(dbClock.now());
         return toDetail(notice);
@@ -150,7 +171,10 @@ public class NoticeServiceImpl implements NoticeService {
         detail.setId(n.getId());
         detail.setTitle(n.getTitle());
         detail.setContent(n.getContent());
+        detail.setCategory(n.getCategory());
         detail.setImportant(n.isImportant());
+        detail.setSendPush(n.isSendPush());
+        detail.setViewCount(n.getViewCount());
         detail.setAuthorId(n.getAuthorId());
         detail.setAuthorName(BoardAuthors.managerName(em, n.getAuthorId()));
         detail.setCreatedAt(n.getCreatedAt());

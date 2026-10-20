@@ -2,10 +2,6 @@ package com.mbc.puf.member.controller;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -13,12 +9,13 @@ import org.springframework.web.bind.annotation.RestController;
 import com.mbc.puf.common.response.ApiResponse;
 import com.mbc.puf.common.response.PageResponse;
 import com.mbc.puf.member.dto.CustomerListItem;
-import com.mbc.puf.member.dto.CustomerProfileUpdateRequest;
 import com.mbc.puf.member.service.CustomerSearchService;
 
-import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
-/** 관리자 화면용 고객 조회·관리 (MP-12. 민원 처리에 고객 정보가 필요하다) */
+/** 관리자 화면용 고객 조회 (MP-12. 민원 처리에 고객 정보가 필요하다). 조회 전용이라 수정·강제 탈퇴는 없다(1020 수정) */
+@Tag(name = "고객 조회(관리자)", description = "관리자용 고객 조회 전용")
 @RestController
 @RequestMapping("/api/customers")
 @PreAuthorize("hasRole('REGIONAL_ADMIN')")
@@ -36,6 +33,7 @@ public class CustomerSearchController {
      *  loginId ~ carNum : 항목별 조건 (걸면 좁혀지고 서로 AND)
      *  includeWithdrawn : true 면 탈퇴 회원도 포함 (기본은 제외)
      */
+    @Operation(summary = "고객 목록 조회", description = "조회 전용. 고객 수정·강제 탈퇴 API는 없다")
     @GetMapping
     public ApiResponse<PageResponse<CustomerListItem>> list(
             @RequestParam(name = "keyword", required = false) String keyword,
@@ -49,20 +47,5 @@ public class CustomerSearchController {
             @RequestParam(name = "size", defaultValue = "20") int size) {
         return ApiResponse.ok(customerSearchService.search(keyword, loginId, name, email, phone, carNum,
                 includeWithdrawn, page, size));
-    }
-
-    // 고객 정보 수정 (고객 본인 마이페이지와 같은 항목). 없으면 404, 탈퇴 회원이면 409
-    @PutMapping("/{id}")
-    public ApiResponse<Void> update(@PathVariable("id") Long id,
-                                     @Valid @RequestBody CustomerProfileUpdateRequest request) {
-        customerSearchService.updateCustomer(id, request);
-        return ApiResponse.ok("고객 정보가 수정되었습니다.", null);
-    }
-
-    // 강제 탈퇴 (차량·작성글·푸시 토큰도 함께 정리). 이미 탈퇴한 회원이면 409
-    @PostMapping("/{id}/withdraw")
-    public ApiResponse<Void> withdraw(@PathVariable("id") Long id) {
-        customerSearchService.forceWithdraw(id);
-        return ApiResponse.ok("탈퇴 처리되었습니다.", null);
     }
 }

@@ -4,7 +4,9 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.data.domain.Limit;
 import org.springframework.http.HttpStatus;
@@ -106,13 +108,24 @@ public class UnderpassServiceImpl implements UnderpassService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<UnderpassListItem> getUnderpassList(Long regionId, String keyword,
-                                                            UnderpassCurrentStatus status, Sort sort,
-                                                            PageQuery page) {
+    public PageResponse<UnderpassListItem> getUnderpassList(LoginUser loginUser, ListScope scope, Long regionId,
+                                                            String keyword, UnderpassCurrentStatus status,
+                                                            Sort sort, PageQuery page) {
         PageParams pageParams = page.toParams(UNDERPASS_LIST_MAX_SIZE);
-        QueryConditions c = new QueryConditions()
-                .add("u.deleted = false")
-                .eqIfPresent("u.regionId", regionId)          // 안 주면 전체 지역
+        QueryConditions c = new QueryConditions().add("u.deleted = false");
+        if (scope == ListScope.MINE) {
+            // 내 담당 지역만. 관리자가 아니면 거절, regionId 를 주면 그 지역이 내 담당일 때만(아니면 403)
+            if (loginUser == null) {
+                throw new BusinessException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다. 다시 로그인해주세요.");
+            }
+            if (!loginUser.isManager()) {
+                throw new BusinessException(HttpStatus.FORBIDDEN, "scope=MINE 은 관리자만 사용할 수 있습니다.");
+            }
+            c.inIfPresent("u.regionId", scopeResolver.regionsOf(loginUser, regionId));
+        } else {
+            c.eqIfPresent("u.regionId", regionId);        // 안 주면 전체 지역
+        }
+        c
                 .eqIfPresent("u.currentStatus", status)       // NORMAL/BLOCKED
                 .containsIfPresent(keyword, "u.name");        // 이름 검색
 
@@ -121,14 +134,17 @@ public class UnderpassServiceImpl implements UnderpassService {
             case RISK_SCORE -> " order by riskScore desc nulls last, u.name asc, u.id asc";
             case LATEST -> " order by u.createdAt desc, u.id desc";
         };
+        Set<Long> mine = myRegionIds(loginUser);   // 목록의 각 시설을 내가 관리할 수 있는지(manageable) 표시용
         return PagedQuery.fetch(em, LIST_SELECT, "select count(u) from Underpass u", c, orderBy,
-                Object[].class, this::toListItem, pageParams);
+                Object[].class, row -> toListItem(row, mine), pageParams);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public UnderpassDetailResponse getUnderpass(Long id) {
-        return toDetail(requireExistingUnderpass(id));
+    public UnderpassDetailResponse getUnderpass(LoginUser loginUser, Long id) {
+        UnderpassDetailResponse detail = toDetail(requireExistingUnderpass(id));
+        detail.setManageable(myRegionIds(loginUser).contains(detail.getRegionId()));
+        return detail;
     }
 
     @Override
@@ -167,7 +183,7 @@ public class UnderpassServiceImpl implements UnderpassService {
         underpass.setSafetyGrade(request.getSafetyGrade());
         underpass.setRiverDistM(request.getRiverDistM());
         underpass.setSeaDistM(request.getSeaDistM());
-        underpass.setFloodHistoryCount(request.getFloodHistoryCount());
+        underpass.setFloodHistoryCount(request.getFloodHistoryCount() == null ? 0 : request.getFloodHistoryCount());   // 안 보내면 0
         underpass.setCurrentStatus(UnderpassCurrentStatus.NORMAL);   // 등록 시 항상 정상 상태로 고정
         underpassRepository.saveAndFlush(underpass);
 
@@ -195,7 +211,9 @@ public class UnderpassServiceImpl implements UnderpassService {
         underpass.setSafetyGrade(request.getSafetyGrade());
         underpass.setRiverDistM(request.getRiverDistM());
         underpass.setSeaDistM(request.getSeaDistM());
-        underpass.setFloodHistoryCount(request.getFloodHistoryCount());
+        if (request.getFloodHistoryCount() != null) {   // 안 보내면 기존 값 유지
+            underpass.setFloodHistoryCount(request.getFloodHistoryCount());
+        }
         return toDetail(reload(underpass));
     }
 
@@ -298,9 +316,10 @@ public class UnderpassServiceImpl implements UnderpassService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<ControlHistoryItem> getControlHistory(Long id, String kind, PeriodQuery period,
-                                                              PageQuery page) {
+    public PageResponse<ControlHistoryItem> getControlHistory(LoginUser loginUser, Long id, String kind,
+                                                              PeriodQuery period, PageQuery page) {
         Underpass underpass = requireExistingUnderpass(id);
+        scopeResolver.resolve(loginUser, ScopeQuery.of(null, id));   // 담당 지역 밖의 제어이력은 볼 수 없다(403)
         PageParams pageParams = page.toParams();
 
         // 이벤트와 전광판 조작을 각각 "이번 페이지까지 필요한 만큼"만 최신순으로 가져와서 합친 뒤 잘라낸다
@@ -363,7 +382,15 @@ public class UnderpassServiceImpl implements UnderpassService {
 
     // ---- 내부 메서드 ----
 
-    // 삭제되지 않은 지하차도, 없으면 404 (지역 제한 없음 — 조회는 관리자 모두 허용)
+    // 로그인한 관리자의 담당 지역 id 집합. 비로그인·고객이면 빈 집합
+    private Set<Long> myRegionIds(LoginUser loginUser) {
+        if (loginUser == null || !loginUser.isManager()) {
+            return Set.of();
+        }
+        return new HashSet<>(scopeResolver.myRegionIds(loginUser));
+    }
+
+    // 삭제되지 않은 지하차도, 없으면 404 (지역 제한 없음 — 상세·목록은 공개 조회)
     private Underpass requireExistingUnderpass(Long id) {
         return underpassRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "존재하지 않는 지하차도입니다. id=" + id));
@@ -416,13 +443,14 @@ public class UnderpassServiceImpl implements UnderpassService {
     }
 
     // row = [Underpass, 지역명, 최신 위험점수, 판별대기 건수, 잔류차량 건수]
-    private UnderpassListItem toListItem(Object[] row) {
+    private UnderpassListItem toListItem(Object[] row, Set<Long> mine) {
         Underpass u = (Underpass) row[0];
         UnderpassListItem item = new UnderpassListItem();
         item.setId(u.getId());
         item.setName(u.getName());
         item.setRegionId(u.getRegionId());
         item.setRegionName((String) row[1]);
+        item.setManageable(mine.contains(u.getRegionId()));
         item.setRoadAddress(u.getRoadAddress());
         item.setLatitude(u.getLatitude());
         item.setLongitude(u.getLongitude());

@@ -180,17 +180,7 @@ public class CustomerServiceImpl implements CustomerService {
         return applyProfile(requireActiveCustomer(customerId), request);
     }
 
-    @Override
-    @Transactional
-    public void updateByAdmin(Long customerId, CustomerProfileUpdateRequest request) {
-        Customer customer = requireExistingCustomer(customerId);
-        if (customer.isWithdrawn()) {
-            throw conflict("탈퇴한 회원의 정보는 수정할 수 없습니다.");
-        }
-        applyProfile(customer, request);
-    }
-
-    // 본인 수정과 관리자 수정이 같이 쓰는 규칙 (전화번호·이메일 중복은 다른 활성 계정과만 비교)
+    // 본인 수정 규칙 (전화번호·이메일 중복은 다른 활성 계정과만 비교)
     private CustomerProfileResponse applyProfile(Customer customer, CustomerProfileUpdateRequest request) {
         Long customerId = customer.getId();
 
@@ -242,16 +232,6 @@ public class CustomerServiceImpl implements CustomerService {
             throw new BusinessException(HttpStatus.BAD_REQUEST, "비밀번호가 올바르지 않습니다.");
         }
 
-        withdrawAll(customer);
-    }
-
-    @Override
-    @Transactional
-    public void forceWithdraw(Long customerId) {
-        Customer customer = requireExistingCustomer(customerId);
-        if (customer.isWithdrawn()) {
-            throw conflict("이미 탈퇴한 회원입니다.");
-        }
         withdrawAll(customer);
     }
 

@@ -4,6 +4,7 @@ import com.mbc.puf.common.enums.DisplayCategory;
 import com.mbc.puf.common.exception.BusinessException;
 import com.mbc.puf.common.jpa.DbClock;
 import com.mbc.puf.common.security.LoginUser;
+import com.mbc.puf.common.security.ScopeResolver;
 import com.mbc.puf.display.dto.DisplayPageItem;
 import com.mbc.puf.display.dto.DisplayPageSaveRequest;
 import com.mbc.puf.display.dto.DisplayPresetItem;
@@ -27,6 +28,7 @@ public class DisplayServiceImpl implements DisplayService {
     private final DisplayHistoryRepository historyRepository;
     private final DbClock dbClock;
     private final jakarta.persistence.EntityManager em;
+    private final ScopeResolver scopeResolver;   // 담당 지역 확인
     private final com.mbc.puf.stream.StreamPublisher streamPublisher;   // SSE 실시간 이벤트
 
     public DisplayServiceImpl(
@@ -35,12 +37,14 @@ public class DisplayServiceImpl implements DisplayService {
             DisplayHistoryRepository historyRepository,
             DbClock dbClock,
             jakarta.persistence.EntityManager em,
+            ScopeResolver scopeResolver,
             com.mbc.puf.stream.StreamPublisher streamPublisher) {
         this.presetRepository = presetRepository;
         this.pageRepository = pageRepository;
         this.historyRepository = historyRepository;
         this.dbClock = dbClock;
         this.em = em;
+        this.scopeResolver = scopeResolver;
         this.streamPublisher = streamPublisher;
     }
 
@@ -61,7 +65,8 @@ public class DisplayServiceImpl implements DisplayService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<DisplayPageItem> getPages(Long equipId) {
+    public List<DisplayPageItem> getPages(LoginUser loginUser, Long equipId) {
+        requireEquipmentRegion(loginUser, equipId, false);
         return pageRepository.findByEquipIdOrderByPageNoAsc(equipId)
                 .stream().map(this::toItem).collect(Collectors.toList());
     }
@@ -71,6 +76,7 @@ public class DisplayServiceImpl implements DisplayService {
     @Override
     @Transactional
     public DisplayPageItem createPage(LoginUser loginUser, Long equipId, DisplayPageSaveRequest request) {
+        requireEquipmentRegion(loginUser, equipId, true);
         int nextPageNo = pageRepository.findMaxPageNoByEquipId(equipId)
                 .map(max -> max + 1)
                 .orElse(1);
@@ -96,6 +102,7 @@ public class DisplayServiceImpl implements DisplayService {
     @Override
     @Transactional
     public DisplayPageItem updatePage(LoginUser loginUser, Long equipId, Integer pageNo, DisplayPageSaveRequest request) {
+        requireEquipmentRegion(loginUser, equipId, true);
         DisplayPage page = requirePage(equipId, pageNo);
 
         String newContent = request.getContent().trim();
@@ -120,6 +127,7 @@ public class DisplayServiceImpl implements DisplayService {
     @Override
     @Transactional
     public void deletePage(LoginUser loginUser, Long equipId, Integer pageNo) {
+        requireEquipmentRegion(loginUser, equipId, true);
         DisplayPage page = requirePage(equipId, pageNo);
         pageRepository.delete(page);
         // 삭제된 페이지 뒤에 있는 페이지들의 page_no 를 1씩 내린다
@@ -128,6 +136,23 @@ public class DisplayServiceImpl implements DisplayService {
     }
 
     // ─── 내부 헬퍼 ──────────────────────────────────────────────────
+
+    // 전광판 설비가 속한 지하차도의 지역이 내 담당인지 확인한다. 설비가 없으면 404, 담당 밖이면 403.
+    // write=true 는 등록·수정·삭제, false 는 조회
+    private void requireEquipmentRegion(LoginUser loginUser, Long equipId, boolean write) {
+        List<?> rows = em.createNativeQuery("select u.region_id from pm_equipment e"
+                        + " join underpass u on u.id = e.underpass_id where e.id = :id")
+                .setParameter("id", equipId).getResultList();
+        if (rows.isEmpty()) {
+            throw new BusinessException(HttpStatus.NOT_FOUND, "전광판 설비를 찾을 수 없습니다. equipId=" + equipId);
+        }
+        Long regionId = ((Number) rows.get(0)).longValue();
+        if (write) {
+            scopeResolver.requireOwnable(loginUser, regionId);
+        } else if (!scopeResolver.myRegionIds(loginUser).contains(regionId)) {
+            throw new BusinessException(HttpStatus.FORBIDDEN, "담당 지역 밖의 전광판은 조회할 수 없습니다.");
+        }
+    }
 
     // 전광판 장비가 속한 지하차도의 지역 관리자에게 전광판 변경을 알린다
     private void publishDisplayChange(Long equipId, Integer pageNo, String action) {

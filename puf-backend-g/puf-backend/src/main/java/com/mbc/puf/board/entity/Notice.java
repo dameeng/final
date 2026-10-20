@@ -1,7 +1,10 @@
 package com.mbc.puf.board.entity;
 
 import jakarta.persistence.Column;
+import com.mbc.puf.common.enums.NoticeCategory;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -28,6 +31,13 @@ public class Notice {
 
     @Column(name = "is_important")
     private boolean important = false;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "category", nullable = false)
+    private NoticeCategory category = NoticeCategory.INFO;
+
+    @Column(name = "send_push", nullable = false)
+    private boolean sendPush = false;   // 등록할 때 고객에게 알림을 보냈는지(관리자가 체크). 긴급 분류는 기본 체크
 
     @Column(name = "manager_id")
     private Long authorId;
@@ -75,6 +85,22 @@ public class Notice {
 
     public void setImportant(boolean important) {
         this.important = important;
+    }
+
+    public NoticeCategory getCategory() {
+        return category;
+    }
+
+    public void setCategory(NoticeCategory category) {
+        this.category = category;
+    }
+
+    public boolean isSendPush() {
+        return sendPush;
+    }
+
+    public void setSendPush(boolean sendPush) {
+        this.sendPush = sendPush;
     }
 
     public Long getAuthorId() {

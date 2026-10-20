@@ -13,6 +13,7 @@ public class UnderpassDetailResponse {
     private Long id;
     private String name;
     private Long regionId;
+    private boolean manageable;   // 로그인한 관리자가 이 시설을 관리할 수 있는지(담당 지역이면 true)
     private String roadAddress;
     private BigDecimal latitude;
     private BigDecimal longitude;
@@ -42,6 +43,9 @@ public class UnderpassDetailResponse {
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+
+    public boolean isManageable() { return manageable; }
+    public void setManageable(boolean manageable) { this.manageable = manageable; }
 
     public Long getRegionId() { return regionId; }
     public void setRegionId(Long regionId) { this.regionId = regionId; }

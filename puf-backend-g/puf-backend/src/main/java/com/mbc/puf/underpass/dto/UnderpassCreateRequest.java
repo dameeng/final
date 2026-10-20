@@ -2,6 +2,8 @@ package com.mbc.puf.underpass.dto;
 
 import java.math.BigDecimal;
 
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -22,22 +24,37 @@ public class UnderpassCreateRequest {
     private String roadAddress;
 
     @NotNull(message = "위도는 필수입니다.")
+    @DecimalMin(value = "33.0", message = "위도는 33.0 ~ 39.0 사이여야 합니다.")   // 대한민국 범위. DB는 NUMERIC(10,7)
+    @DecimalMax(value = "39.0", message = "위도는 33.0 ~ 39.0 사이여야 합니다.")
     private BigDecimal latitude;
 
     @NotNull(message = "경도는 필수입니다.")
+    @DecimalMin(value = "124.0", message = "경도는 124.0 ~ 132.0 사이여야 합니다.")   // 대한민국 범위. DB는 NUMERIC(10,7)
+    @DecimalMax(value = "132.0", message = "경도는 124.0 ~ 132.0 사이여야 합니다.")
     private BigDecimal longitude;
 
+    @DecimalMin(value = "0", message = "높이는 0 이상이어야 합니다.")
+    @DecimalMax(value = "99.99", message = "높이는 99.99m 이하여야 합니다.")   // DB NUMERIC(4,2)
     private BigDecimal heightM;     // 높이(m, 층고), 선택 — AI 모델 입력값(3.5~5.0m 대)
+    @DecimalMin(value = "0", message = "길이는 0 이상이어야 합니다.")
+    @DecimalMax(value = "999999.99", message = "길이는 999999.99m 이하여야 합니다.")   // DB NUMERIC(8,2)
     private BigDecimal lengthM;     // 길이(m), 선택
+    @DecimalMin(value = "0", message = "폭은 0 이상이어야 합니다.")
+    @DecimalMax(value = "9999.99", message = "폭은 9999.99m 이하여야 합니다.")   // DB NUMERIC(6,2)
     private BigDecimal widthM;      // 폭(m), 선택
+    @PositiveOrZero(message = "차로수는 0 이상이어야 합니다.")
     private Integer lanes;          // 차로수, 선택
     @Size(max = 10, message = "안전등급은 10자 이하여야 합니다.")
     private String safetyGrade;     // 안전등급(A~E, 미실시/불명은 UNKNOWN), 선택
+    @DecimalMin(value = "0", message = "하천 거리는 0 이상이어야 합니다.")
+    @DecimalMax(value = "999999999.9", message = "하천 거리 값이 너무 큽니다.")   // DB NUMERIC(10,1)
     private BigDecimal riverDistM;  // 가까운 하천까지 직선거리(m), 선택 — AI 모델 입력값
+    @DecimalMin(value = "0", message = "바다 거리는 0 이상이어야 합니다.")
+    @DecimalMax(value = "999999999.9", message = "바다 거리 값이 너무 큽니다.")   // DB NUMERIC(10,1)
     private BigDecimal seaDistM;    // 바다까지 직선거리(m), 선택 — AI 모델 입력값
 
     @PositiveOrZero(message = "침수 이력 횟수는 0 이상이어야 합니다.")
-    private int floodHistoryCount;   // 안 보내면 0
+    private Integer floodHistoryCount;   // 안 보내거나 null 이면 등록은 0, 수정은 기존 값 유지   // 안 보내면 0
 
     public UnderpassCreateRequest() {
     }
@@ -78,6 +95,6 @@ public class UnderpassCreateRequest {
     public BigDecimal getSeaDistM() { return seaDistM; }
     public void setSeaDistM(BigDecimal seaDistM) { this.seaDistM = seaDistM; }
 
-    public int getFloodHistoryCount() { return floodHistoryCount; }
-    public void setFloodHistoryCount(int floodHistoryCount) { this.floodHistoryCount = floodHistoryCount; }
+    public Integer getFloodHistoryCount() { return floodHistoryCount; }
+    public void setFloodHistoryCount(Integer floodHistoryCount) { this.floodHistoryCount = floodHistoryCount; }
 }

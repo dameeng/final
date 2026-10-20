@@ -1,5 +1,6 @@
 package com.mbc.puf.control.controller;
 
+import com.mbc.puf.common.enums.ReasonType;
 import com.mbc.puf.common.response.ApiResponse;
 import com.mbc.puf.common.security.LoginUser;
 import com.mbc.puf.control.dto.BlockRequest;
@@ -8,6 +9,8 @@ import com.mbc.puf.control.dto.FireTransferRequest;
 import com.mbc.puf.control.dto.ReasonPresetItem;
 import com.mbc.puf.control.service.ControlService;
 import com.mbc.puf.control.service.ControlService.PdfResult;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.ContentDisposition;
@@ -21,6 +24,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URLEncoder;
@@ -33,6 +37,7 @@ import java.nio.charset.StandardCharsets;
  *  - 이관 기록 목록 조회
  *  - 이관 기록 단건 PDF 재출력
  */
+@Tag(name = "통제(차단·해제·이관)", description = "차단/해제 사유 프리셋, 차단·해제, 경찰·소방 이관 문서. 모두 관리자 전용이며 담당 지역만 가능")
 @RestController
 @RequestMapping("/api/control")
 public class ControlController {
@@ -48,11 +53,14 @@ public class ControlController {
     /**
      * GET /api/control/reason-presets
      * 차단/해제 사유 프리셋 목록 (로그인한 관리자 모두 조회 가능)
+     *  type : BLOCK(차단 사유) / RELEASE(해제 사유), 안 보내면 전체
      */
+    @Operation(summary = "차단/해제 사유 프리셋", description = "type=BLOCK 이면 차단 사유, type=RELEASE 이면 해제 사유만 내려간다")
     @GetMapping("/reason-presets")
     @PreAuthorize("isAuthenticated() and principal.manager")
-    public ResponseEntity<ApiResponse<List<ReasonPresetItem>>> getReasonPresets() {
-        return ResponseEntity.ok(ApiResponse.ok("사유 프리셋 목록입니다.", controlService.getReasonPresets()));
+    public ResponseEntity<ApiResponse<List<ReasonPresetItem>>> getReasonPresets(
+            @RequestParam(name = "type", required = false) ReasonType type) {
+        return ResponseEntity.ok(ApiResponse.ok("사유 프리셋 목록입니다.", controlService.getReasonPresets(type)));
     }
 
     // ── 차단 (사유 포함 + 경찰 이관 PDF) ────────────────────────────
@@ -66,7 +74,7 @@ public class ControlController {
     @PreAuthorize("isAuthenticated() and principal.manager")
     public ResponseEntity<byte[]> block(
             @AuthenticationPrincipal LoginUser loginUser,
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @Valid @RequestBody(required = false) BlockRequest request) {
 
         PdfResult result = controlService.blockUnderpass(loginUser, id, request);
@@ -83,7 +91,7 @@ public class ControlController {
     @PreAuthorize("isAuthenticated() and principal.manager")
     public ResponseEntity<byte[]> release(
             @AuthenticationPrincipal LoginUser loginUser,
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @Valid @RequestBody(required = false) BlockRequest request) {
 
         PdfResult result = controlService.releaseUnderpass(loginUser, id, request);
@@ -101,7 +109,7 @@ public class ControlController {
     @PreAuthorize("isAuthenticated() and principal.manager")
     public ResponseEntity<byte[]> fireTransfer(
             @AuthenticationPrincipal LoginUser loginUser,
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @Valid @RequestBody FireTransferRequest request) {
 
         PdfResult result = controlService.fireTransfer(loginUser, id, request);
@@ -117,9 +125,10 @@ public class ControlController {
     @GetMapping("/underpasses/{id}/transfers")
     @PreAuthorize("isAuthenticated() and principal.manager")
     public ResponseEntity<ApiResponse<List<CtrlTransferItem>>> getTransferHistory(
-            @PathVariable Long id) {
+            @AuthenticationPrincipal LoginUser loginUser,
+            @PathVariable("id") Long id) {
 
-        return ResponseEntity.ok(ApiResponse.ok("이관 기록 목록입니다.", controlService.getTransferHistory(id)));
+        return ResponseEntity.ok(ApiResponse.ok("이관 기록 목록입니다.", controlService.getTransferHistory(loginUser, id)));
     }
 
     // ── 이관 기록 PDF 재출력 ─────────────────────────────────────────
@@ -130,8 +139,9 @@ public class ControlController {
      */
     @GetMapping("/transfers/{transferId}/pdf")
     @PreAuthorize("isAuthenticated() and principal.manager")
-    public ResponseEntity<byte[]> redownloadPdf(@PathVariable Long transferId) {
-        PdfResult result = controlService.redownloadPdf(transferId);
+    public ResponseEntity<byte[]> redownloadPdf(@AuthenticationPrincipal LoginUser loginUser,
+                                                @PathVariable("transferId") Long transferId) {
+        PdfResult result = controlService.redownloadPdf(loginUser, transferId);
         return pdfResponse(result);
     }
 

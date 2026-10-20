@@ -1,7 +1,10 @@
 package com.mbc.puf.board.entity;
 
 import jakarta.persistence.Column;
+import com.mbc.puf.common.enums.FaqCategory;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -25,6 +28,13 @@ public class Faq {
 
     @Column(name = "answer")
     private String answer;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "category", nullable = false)
+    private FaqCategory category = FaqCategory.ETC;
+
+    @Column(name = "sort_order", nullable = false)
+    private int sortOrder = 0;   // 목록 표시 순서(작을수록 위). 새 FAQ는 맨 끝 번호
 
     @Column(name = "manager_id")
     private Long authorId;
@@ -64,6 +74,22 @@ public class Faq {
 
     public void setAnswer(String answer) {
         this.answer = answer;
+    }
+
+    public FaqCategory getCategory() {
+        return category;
+    }
+
+    public void setCategory(FaqCategory category) {
+        this.category = category;
+    }
+
+    public int getSortOrder() {
+        return sortOrder;
+    }
+
+    public void setSortOrder(int sortOrder) {
+        this.sortOrder = sortOrder;
     }
 
     public Long getAuthorId() {

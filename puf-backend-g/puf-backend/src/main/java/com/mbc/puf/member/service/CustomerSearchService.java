@@ -2,7 +2,6 @@ package com.mbc.puf.member.service;
 
 import com.mbc.puf.common.response.PageResponse;
 import com.mbc.puf.member.dto.CustomerListItem;
-import com.mbc.puf.member.dto.CustomerProfileUpdateRequest;
 
 public interface CustomerSearchService {
 
@@ -13,10 +12,4 @@ public interface CustomerSearchService {
     PageResponse<CustomerListItem> search(String keyword, String loginId, String name, String email,
                                           String phone, String carNum, boolean includeWithdrawn,
                                           int page, int size);
-
-    // 관리자가 고객 정보 수정 (본인 마이페이지와 같은 항목: 전화번호/긴급연락처/주소). 없으면 404
-    void updateCustomer(Long customerId, CustomerProfileUpdateRequest request);
-
-    // 강제 탈퇴. 이미 탈퇴한 회원이면 409
-    void forceWithdraw(Long customerId);
 }

@@ -40,10 +40,6 @@ public interface CustomerService {
     // 탈퇴: 비밀번호 확인 후 계정·차량·작성글·푸시 토큰을 한 트랜잭션으로 정리
     void withdraw(Long customerId, String password);
 
-    // 관리자(MP-12) 수정·강제 탈퇴: 본인 경로와 같은 규칙. 강제 탈퇴는 비밀번호 확인만 없고 정리 범위는 같다
-    void updateByAdmin(Long customerId, CustomerProfileUpdateRequest request);
-    void forceWithdraw(Long customerId);
-
     // 푸시 토큰 (웹/앱)
     DeviceTokenResponse registerDeviceToken(Long customerId, DeviceTokenRequest request);
     void deactivateDeviceToken(Long customerId, String token);

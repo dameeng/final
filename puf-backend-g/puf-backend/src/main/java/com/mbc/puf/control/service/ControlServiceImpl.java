@@ -6,6 +6,7 @@ import com.mbc.puf.common.enums.UnderpassEventType;
 import com.mbc.puf.common.exception.BusinessException;
 import com.mbc.puf.common.pdf.ControlNoticeData;
 import com.mbc.puf.common.pdf.TransferPdfGenerator;
+import com.mbc.puf.common.request.ScopeQuery;
 import com.mbc.puf.common.security.LoginUser;
 import com.mbc.puf.common.security.ScopeResolver;
 import com.mbc.puf.control.dto.BlockRequest;
@@ -28,6 +29,7 @@ import com.mbc.puf.member.repository.ManagerRepository;
 import com.mbc.puf.member.repository.ShiftRepository;
 import com.mbc.puf.region.repository.RegionRepository;
 import com.mbc.puf.common.enums.ManagerNotificationCategory;
+import com.mbc.puf.common.enums.ReasonType;
 import com.mbc.puf.notification.service.NotificationService;
 import com.mbc.puf.stream.StreamPayloads;
 import com.mbc.puf.stream.StreamPublisher;
@@ -122,9 +124,12 @@ public class ControlServiceImpl implements ControlService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ReasonPresetItem> getReasonPresets() {
-        return reasonPresetRepository.findAll().stream()
-                .map(p -> new ReasonPresetItem(p.getId(), p.getContent()))
+    public List<ReasonPresetItem> getReasonPresets(ReasonType type) {
+        List<ReasonPreset> presets = type == null
+                ? reasonPresetRepository.findAllByOrderByIdAsc()
+                : reasonPresetRepository.findByTypeOrderByIdAsc(type);
+        return presets.stream()
+                .map(p -> new ReasonPresetItem(p.getId(), p.getType(), p.getContent()))
                 .collect(Collectors.toList());
     }
 
@@ -140,7 +145,7 @@ public class ControlServiceImpl implements ControlService {
             throw new BusinessException(HttpStatus.CONFLICT, "이미 차단된 지하차도입니다.");
         }
 
-        String reason = resolveReason(request);
+        String reason = resolveReason(request, ReasonType.BLOCK);
 
         // 1) 차단 이벤트 저장
         UnderpassEvent event = new UnderpassEvent();
@@ -191,7 +196,7 @@ public class ControlServiceImpl implements ControlService {
                 ? eventRepository.findById(underpass.getCurrentBlockEventId()).orElse(null)
                 : null;
 
-        String reason = resolveReason(request);
+        String reason = resolveReason(request, ReasonType.RELEASE);
 
         // 1) 해제 이벤트 저장
         UnderpassEvent event = new UnderpassEvent();
@@ -227,6 +232,14 @@ public class ControlServiceImpl implements ControlService {
         Underpass underpass = requireUnderpass(underpassId);
         scopeResolver.requireOwnable(loginUser, underpass.getRegionId());
 
+        // 이관할 이벤트가 실제로 있고, 이 지하차도의 것인지 확인 (없는 id 를 보내면 FK 오류로 500 이 나던 문제)
+        UnderpassEvent sourceEvent = eventRepository.findById(request.getEventId())
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND,
+                        "이벤트를 찾을 수 없습니다. eventId=" + request.getEventId()));
+        if (!underpassId.equals(sourceEvent.getUnderpassId())) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "이 지하차도의 이벤트가 아닙니다. eventId=" + request.getEventId());
+        }
+
         // 이관 기록 저장
         CtrlTransfer transfer = saveTransfer(request.getEventId(), TransferAgency.FIRE, request.getMemo(), loginUser.id());
 
@@ -255,8 +268,10 @@ public class ControlServiceImpl implements ControlService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CtrlTransferItem> getTransferHistory(Long underpassId) {
+    public List<CtrlTransferItem> getTransferHistory(LoginUser loginUser, Long underpassId) {
         requireUnderpass(underpassId);
+        // 담당 지역 밖의 지하차도 이관 기록은 볼 수 없다 (403)
+        scopeResolver.resolve(loginUser, ScopeQuery.of(null, underpassId));
 
         // event → underpass_id 역추적이 필요하므로 native query로 event.underpass_id = underpassId 필터링
         List<CtrlTransfer> transfers = ctrlTransferRepository.findByUnderpassId(underpassId);
@@ -267,7 +282,7 @@ public class ControlServiceImpl implements ControlService {
 
     @Override
     @Transactional(readOnly = true)
-    public PdfResult redownloadPdf(Long transferId) {
+    public PdfResult redownloadPdf(LoginUser loginUser, Long transferId) {
         CtrlTransfer transfer = ctrlTransferRepository.findById(transferId)
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "이관 기록을 찾을 수 없습니다. id=" + transferId));
 
@@ -276,6 +291,8 @@ public class ControlServiceImpl implements ControlService {
 
         Underpass underpass = underpassRepository.findByIdAndDeletedFalse(event.getUnderpassId())
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "지하차도를 찾을 수 없습니다."));
+        // 담당 지역 밖의 이관문서는 다시 받을 수 없다 (403)
+        scopeResolver.resolve(loginUser, ScopeQuery.of(null, underpass.getId()));
 
         ManagerInfo mgr = managerInfo(transfer.getManagerId());
         LocalDateTime transferAt = transfer.getCreatedAt() != null ? transfer.getCreatedAt() : LocalDateTime.now();
@@ -317,11 +334,16 @@ public class ControlServiceImpl implements ControlService {
     }
 
     /** 프리셋 또는 직접 입력 사유 결정 */
-    private String resolveReason(BlockRequest request) {
+    private String resolveReason(BlockRequest request, ReasonType expectedType) {
         if (request == null) return null;
         if (request.getPresetId() != null) {
             ReasonPreset preset = reasonPresetRepository.findById(request.getPresetId())
                     .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "사유 프리셋을 찾을 수 없습니다."));
+            // 차단 화면에서 해제 사유를(또는 반대로) 고르는 실수를 서버에서도 막는다
+            if (preset.getType() != expectedType) {
+                throw new BusinessException(HttpStatus.BAD_REQUEST, expectedType == ReasonType.BLOCK
+                        ? "차단 사유 프리셋이 아닙니다." : "해제 사유 프리셋이 아닙니다.");
+            }
             return preset.getContent();
         }
         return request.getReason();

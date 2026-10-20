@@ -19,12 +19,19 @@ import com.mbc.puf.board.dto.NoticeDetailResponse;
 import com.mbc.puf.board.dto.NoticeListItem;
 import com.mbc.puf.board.dto.NoticeUpdateRequest;
 import com.mbc.puf.board.service.NoticeService;
+import com.mbc.puf.common.enums.NoticeCategory;
 import com.mbc.puf.common.response.ApiResponse;
 import com.mbc.puf.common.response.PageResponse;
 import com.mbc.puf.common.security.LoginUser;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import com.mbc.puf.common.util.ViewCookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
+@Tag(name = "공지사항", description = "공지 목록·상세는 공개, 등록·수정·삭제는 관리자")
 @RestController
 @RequestMapping("/api/notices")
 public class NoticeController {
@@ -38,21 +45,27 @@ public class NoticeController {
     /**
      * 공지사항 목록 (로그인 불필요).
      *  keyword   : 제목+내용 통합 검색 (없으면 전체)
+     *  category  : INFO(안내)/MAINTENANCE(점검)/UPDATE(업데이트)/URGENT(긴급), 안 보내면 전체
      *  important : true/false 로 필터, 안 보내면 전체
      */
+    @Operation(summary = "공지 목록", description = "category 로 분류 필터, keyword 로 제목+내용 검색")
     @GetMapping
     public ApiResponse<PageResponse<NoticeListItem>> list(
             @RequestParam(name = "keyword", required = false) String keyword,
+            @RequestParam(name = "category", required = false) NoticeCategory category,
             @RequestParam(name = "important", required = false) Boolean important,
             @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "size", defaultValue = "20") int size) {
-        return ApiResponse.ok(noticeService.getNoticeList(keyword, important, page, size));
+        return ApiResponse.ok(noticeService.getNoticeList(keyword, category, important, page, size));
     }
 
-    // 공지사항 상세 (로그인 불필요)
+    // 공지사항 상세 (로그인 불필요). 같은 브라우저가 24시간 안에 다시 열면 조회수는 올리지 않는다(쿠키)
+    @Operation(summary = "공지 상세", description = "처음 보는 글이면 조회수 +1 (viewed_notice 쿠키로 중복 방지)")
     @GetMapping("/{id}")
-    public ApiResponse<NoticeDetailResponse> detail(@PathVariable("id") Long id) {
-        return ApiResponse.ok(noticeService.getNotice(id));
+    public ApiResponse<NoticeDetailResponse> detail(@PathVariable("id") Long id,
+                                                    HttpServletRequest request, HttpServletResponse response) {
+        boolean countView = ViewCookie.firstView(request, response, "viewed_notice", id);
+        return ApiResponse.ok(noticeService.getNotice(id, countView));
     }
 
     // 공지사항 등록 (201 Created) - 관리자 전용

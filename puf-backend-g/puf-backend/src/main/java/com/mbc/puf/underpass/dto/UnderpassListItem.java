@@ -23,6 +23,7 @@ public class UnderpassListItem {
     private int floodHistoryCount;
     private LocalDateTime createdAt;
     private long pendingReviewCount;  // 대시보드용: 이 지하차도 소속 카메라의 판별대기(PENDING) 건수
+    private boolean manageable;   // 로그인한 관리자가 이 시설을 관리(차단·수정 등)할 수 있는지. 담당 지역이면 true, 그 외(비로그인·고객 포함)는 false
     private long remainingCount;      // 대시보드용: 이 지하차도의 잔류차량(REMAINING) 건수
 
     public UnderpassListItem() {
@@ -33,6 +34,9 @@ public class UnderpassListItem {
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+
+    public boolean isManageable() { return manageable; }
+    public void setManageable(boolean manageable) { this.manageable = manageable; }
 
     public Long getRegionId() { return regionId; }
     public void setRegionId(Long regionId) { this.regionId = regionId; }
