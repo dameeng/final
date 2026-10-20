@@ -144,6 +144,8 @@ public class PlateLogReviewServiceImpl implements PlateLogReviewService {
             alertService.sendAlertsForPlate(underpass, camera.getCameraRole(), matchedCars, correctedNum);
         }
 
+        streamPublisher.dataChangedToAdmins(underpass.getRegionId(), "plate-log", "UPDATE", id);
+
         // 대기열에서 빠졌음을 같은 지역 관리자 화면에 알린다
         streamPublisher.publishToAdmins(underpass.getRegionId(), "plate-queue-done",
                 new com.mbc.puf.stream.StreamPayloads.PlateQueue(id, underpass.getId(), plateLog.getCameraId(),
@@ -184,6 +186,7 @@ public class PlateLogReviewServiceImpl implements PlateLogReviewService {
         plateLogRepository.autoProcessExpired(now);
         for (Object[] row : expired) {
             sendAlertOnAutoClose((Long) row[0]);
+            streamPublisher.dataChangedToAdmins((Long) row[2], "plate-log", "UPDATE", (Long) row[0]);
             streamPublisher.publishToAdmins((Long) row[2], "plate-queue-done",
                     new com.mbc.puf.stream.StreamPayloads.PlateQueue((Long) row[0], (Long) row[1], null, null, null,
                             ReviewStatus.AUTO_PROCESSED, null, null));

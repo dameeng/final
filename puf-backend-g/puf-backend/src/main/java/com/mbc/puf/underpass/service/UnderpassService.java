@@ -46,6 +46,9 @@ public interface UnderpassService {
     // 위험도 추이 (그래프용 시계열이라 List, 시간 오름차순)
     List<RiskScoreTrendItem> getRiskScoreTrend(Long id, Integer limit, Integer hours);
 
+    // 위험도 미래 예측 (그래프의 미래 구간, 시간 오름차순). 지금 이후 시점만
+    List<com.mbc.puf.internal.dto.RiskForecastItem> getRiskForecast(Long id);
+
     UnderpassDetailResponse createUnderpass(LoginUser loginUser, UnderpassCreateRequest request);
 
     UnderpassDetailResponse updateUnderpass(LoginUser loginUser, Long id, UnderpassUpdateRequest request);

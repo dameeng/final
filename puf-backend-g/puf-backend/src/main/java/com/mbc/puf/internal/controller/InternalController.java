@@ -47,6 +47,13 @@ public class InternalController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(response));
     }
 
+    // 위험도 미래 예측 수신 (한 지하차도의 앞으로 몇 시간치). 프런트의 위험점수 예측 그래프가 읽는다
+    @PostMapping("/risk-forecasts")
+    public ResponseEntity<ApiResponse<com.mbc.puf.internal.dto.RiskForecastIngestResponse>> receiveRiskForecast(
+            @Valid @RequestBody com.mbc.puf.internal.dto.RiskForecastCreateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(internalIngestService.receiveRiskForecast(request)));
+    }
+
     // 수위계 측정값 수신 (지하차도당 센서 1개의 단일값, cm). 수위가 차단 기준에 닿으면 이 호출 안에서 자동 차단까지 일어난다
     @PostMapping("/water-levels")
     public ResponseEntity<ApiResponse<WaterLevelResponse>> receiveWaterLevel(

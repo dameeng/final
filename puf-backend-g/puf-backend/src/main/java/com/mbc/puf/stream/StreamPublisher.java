@@ -28,6 +28,23 @@ public class StreamPublisher {
         publisher.publishEvent(new StreamEvent(name, data, StreamScope.PUBLIC, regionId, null));
     }
 
+    // ---- data-changed: "다시 조회하라"는 신호 (본문 없음). 이벤트 이름은 모두 data-changed ----
+
+    /** 관리자에게만. regionId 가 있으면 그 지역 담당 관리자에게만 */
+    public void dataChangedToAdmins(Long regionId, String resource, String action, Long id) {
+        publishToAdmins(regionId, "data-changed", new StreamPayloads.DataChanged(resource, action, id, regionId));
+    }
+
+    /** 고객·관리자 모두에게 (공개 데이터: 지하차도, FAQ, 공지) */
+    public void dataChangedPublic(Long regionId, String resource, String action, Long id) {
+        publishPublic("data-changed", regionId, new StreamPayloads.DataChanged(resource, action, id, regionId));
+    }
+
+    /** 특정 고객 1명에게 */
+    public void dataChangedToCustomer(Long customerId, String resource, String action, Long id) {
+        publishToCustomer(customerId, "data-changed", new StreamPayloads.DataChanged(resource, action, id, null));
+    }
+
     /** 특정 고객 1명에게 */
     public void publishToCustomer(Long customerId, String name, Object data) {
         publisher.publishEvent(new StreamEvent(name, data, StreamScope.CUSTOMER, null, customerId));

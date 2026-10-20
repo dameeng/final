@@ -87,13 +87,16 @@ public class UnderpassServiceImpl implements UnderpassService {
     private final DbClock dbClock;
     private final com.mbc.puf.stream.StreamPublisher streamPublisher;   // SSE 실시간 이벤트
     private final EntityManager em;
+    private final com.mbc.puf.internal.repository.RiskForecastRepository riskForecastRepository;
 
     public UnderpassServiceImpl(UnderpassRepository underpassRepository, UnderpassEventRepository eventRepository,
                                 TransitRepository transitRepository,
                                 CameraRepository cameraRepository, RiskScoreRepository riskScoreRepository,
                                 ThresholdService thresholdService, ScopeResolver scopeResolver,
                                 DbClock dbClock, EntityManager em,
-                                com.mbc.puf.stream.StreamPublisher streamPublisher) {
+                                com.mbc.puf.stream.StreamPublisher streamPublisher,
+                                com.mbc.puf.internal.repository.RiskForecastRepository riskForecastRepository) {
+        this.riskForecastRepository = riskForecastRepository;
         this.streamPublisher = streamPublisher;
         this.underpassRepository = underpassRepository;
         this.eventRepository = eventRepository;
@@ -165,6 +168,18 @@ public class UnderpassServiceImpl implements UnderpassService {
         return items;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<com.mbc.puf.internal.dto.RiskForecastItem> getRiskForecast(Long id) {
+        requireExistingUnderpass(id);   // 존재하지 않으면 404
+        // 지금 시각이 속한 시(時)부터 보여준다 (예: 14:25 이면 14:00 시점부터)
+        java.time.LocalDateTime from = dbClock.now().truncatedTo(java.time.temporal.ChronoUnit.HOURS);
+        return riskForecastRepository.findByUnderpassIdAndTargetAtGreaterThanEqualOrderByTargetAtAsc(id, from).stream()
+                .map(f -> new com.mbc.puf.internal.dto.RiskForecastItem(f.getTargetAt(), f.getRiskScore(),
+                        f.getRainfallMm(), f.getPredictedAt()))
+                .toList();
+    }
+
     // ---- 등록/수정/삭제: REGIONAL_ADMIN은 본인 담당 지역만 ----
 
     @Override
@@ -191,6 +206,7 @@ public class UnderpassServiceImpl implements UnderpassService {
         underpassRepository.saveAndFlush(underpass);
 
         thresholdService.createDefaultThresholds(underpass.getId(), loginUser.id());   // 안전/관심/주의 3행 기본 생성
+        streamPublisher.dataChangedPublic(underpass.getRegionId(), "underpass", "CREATE", underpass.getId());
         return toDetail(reload(underpass));
     }
 
@@ -220,6 +236,7 @@ public class UnderpassServiceImpl implements UnderpassService {
         if (request.getFloodHistoryCount() != null) {   // 안 보내면 기존 값 유지
             underpass.setFloodHistoryCount(request.getFloodHistoryCount());
         }
+        streamPublisher.dataChangedPublic(underpass.getRegionId(), "underpass", "UPDATE", underpass.getId());
         return toDetail(reload(underpass));
     }
 
@@ -229,6 +246,7 @@ public class UnderpassServiceImpl implements UnderpassService {
         Underpass underpass = requireExistingUnderpass(id);
         requireOwnableRegion(loginUser, underpass.getRegionId());
         underpass.setDeleted(true);
+        streamPublisher.dataChangedPublic(underpass.getRegionId(), "underpass", "DELETE", underpass.getId());
     }
 
     // ---- 상행/하행 입·출구 카메라 지정 (MP-10-1): 담당 지역만 ----
@@ -256,6 +274,7 @@ public class UnderpassServiceImpl implements UnderpassService {
         underpass.setUpExitCameraId(request.getUpExitCameraId());
         underpass.setDownEntryCameraId(request.getDownEntryCameraId());
         underpass.setDownExitCameraId(request.getDownExitCameraId());
+        streamPublisher.dataChangedPublic(underpass.getRegionId(), "underpass", "UPDATE", underpass.getId());
         return toDetail(underpass);
     }
 

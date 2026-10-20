@@ -53,7 +53,7 @@ public class SecurityConfig {
 						// 통과 기록(차량번호)은 개인정보라 공개 목록·상세 규칙보다 먼저 로그인 필수로 막는다 (/api/underpasses/* 에 걸리지 않게)
 						.requestMatchers(HttpMethod.GET, "/api/underpasses/transits").authenticated()
 						.requestMatchers(HttpMethod.GET, "/api/underpasses", "/api/underpasses/*",
-								"/api/underpasses/*/risk-scores").permitAll()
+								"/api/underpasses/*/risk-scores", "/api/underpasses/*/risk-forecast").permitAll()
 						// ---- 로그인 없이 조회 가능한 통제현황 통계 (MP-06/08, CP 지도 화면의 통계 위젯) ----
 						.requestMatchers(HttpMethod.GET, "/api/dashboard/status-summary", "/api/dashboard/region-status").permitAll()
 						// ---- 로그인 없이 조회 가능한 날씨 (CP-08) ----

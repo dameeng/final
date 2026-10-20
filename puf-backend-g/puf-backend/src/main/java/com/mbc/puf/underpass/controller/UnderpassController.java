@@ -95,6 +95,13 @@ public class UnderpassController {
         return ApiResponse.ok(underpassService.getRiskScoreTrend(id, limit, hours));
     }
 
+    // 위험도 미래 예측 (그래프의 미래 구간). 과거 구간은 위 risk-scores 로 받아 이어 그린다.
+    // 응답: [{targetAt, riskScore, rainfallMm, predictedAt}] 시간 오름차순, 지금 시(時) 이후만
+    @GetMapping("/{id}/risk-forecast")
+    public ApiResponse<List<com.mbc.puf.internal.dto.RiskForecastItem>> riskForecast(@PathVariable("id") Long id) {
+        return ApiResponse.ok(underpassService.getRiskForecast(id));
+    }
+
     // 지하차도 등록 (201 Created). REGIONAL_ADMIN은 본인 담당 지역만 선택 가능
     @PreAuthorize("hasRole('REGIONAL_ADMIN')")
     @PostMapping

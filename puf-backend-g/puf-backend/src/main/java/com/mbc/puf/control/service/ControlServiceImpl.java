@@ -317,6 +317,8 @@ public class ControlServiceImpl implements ControlService {
                 mgr.name(), mgr.regionName(),
                 now, request.getMemo());
 
+        streamPublisher.dataChangedToAdmins(underpass.getRegionId(), "fire-transfer", "CREATE", transfer.getId());
+
         UnderpassDetailResponse detail = toDetail(underpass);
         String filename = String.format("소방이관_%s_%s.pdf", underpass.getName(), FILE_DT.format(now));
         return new PdfResult(filename, pdf, detail);

@@ -32,8 +32,11 @@ public class FaqServiceImpl implements FaqService {
     private final FaqRepository faqRepository;
     private final DbClock dbClock;
     private final EntityManager em;
+    private final com.mbc.puf.stream.StreamPublisher streamPublisher;   // SSE 실시간 이벤트
 
-    public FaqServiceImpl(FaqRepository faqRepository, DbClock dbClock, EntityManager em) {
+    public FaqServiceImpl(FaqRepository faqRepository, DbClock dbClock, EntityManager em,
+                          com.mbc.puf.stream.StreamPublisher streamPublisher) {
+        this.streamPublisher = streamPublisher;
         this.faqRepository = faqRepository;
         this.dbClock = dbClock;
         this.em = em;
@@ -112,6 +115,7 @@ public class FaqServiceImpl implements FaqService {
         for (int i = 0; i < ids.size(); i++) {
             byId.get(ids.get(i)).setSortOrder(slots.get(i));
         }
+        streamPublisher.dataChangedPublic(null, "faq", "REORDER", null);
     }
 
     @Override
@@ -124,6 +128,7 @@ public class FaqServiceImpl implements FaqService {
         faq.setAuthorId(authorId);
         faq.setSortOrder(faqRepository.findMaxSortOrder() + 1);   // 새 FAQ 는 맨 끝
         faqRepository.saveAndFlush(faq);
+        streamPublisher.dataChangedPublic(null, "faq", "CREATE", faq.getId());
         return toDetail(faq);
     }
 
@@ -135,6 +140,7 @@ public class FaqServiceImpl implements FaqService {
         faq.setAnswer(request.getAnswer());
         faq.setCategory(request.getCategory() == null ? faq.getCategory() : request.getCategory());   // 안 보내면 기존 분류 유지
         faq.setUpdatedAt(dbClock.now());
+        streamPublisher.dataChangedPublic(null, "faq", "UPDATE", faq.getId());
         return toDetail(faq);
     }
 
@@ -142,6 +148,7 @@ public class FaqServiceImpl implements FaqService {
     @Transactional
     public void deleteFaq(Long id) {
         getActiveFaq(id).setDeleted(true);
+        streamPublisher.dataChangedPublic(null, "faq", "DELETE", id);
     }
 
     private Faq getActiveFaq(Long id) {

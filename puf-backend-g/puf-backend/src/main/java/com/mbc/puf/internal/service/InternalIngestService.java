@@ -15,6 +15,10 @@ public interface InternalIngestService {
     // 위험도 예측 결과 저장
     RiskScoreResponse receiveRiskScore(RiskScoreCreateRequest request);
 
+    // 위험도 미래 예측 저장 (지하차도 한 곳의 앞으로 몇 시간치, 같은 시점은 덮어쓰기)
+    com.mbc.puf.internal.dto.RiskForecastIngestResponse receiveRiskForecast(
+            com.mbc.puf.internal.dto.RiskForecastCreateRequest request);
+
     // 수위계 측정값 저장 + 단계 재판정(경계 이상이면 자동 차단)
     WaterLevelResponse receiveWaterLevel(WaterLevelCreateRequest request);
 

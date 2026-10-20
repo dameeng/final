@@ -40,11 +40,14 @@ public class NoticeServiceImpl implements NoticeService {
     private final DbClock dbClock;
     private final NotificationService notificationService;   // 고객 알림 센터(공지 분류)
     private final EntityManager em;
+    private final com.mbc.puf.stream.StreamPublisher streamPublisher;   // SSE 실시간 이벤트
 
     public NoticeServiceImpl(NoticeRepository noticeRepository,
                              NoticeAlertRepository noticeAlertRepository,
                              NoticeDeliveryRepository noticeDeliveryRepository,
-                             DbClock dbClock, NotificationService notificationService, EntityManager em) {
+                             DbClock dbClock, NotificationService notificationService, EntityManager em,
+                             com.mbc.puf.stream.StreamPublisher streamPublisher) {
+        this.streamPublisher = streamPublisher;
         this.noticeRepository = noticeRepository;
         this.noticeAlertRepository = noticeAlertRepository;
         this.noticeDeliveryRepository = noticeDeliveryRepository;
@@ -103,6 +106,7 @@ public class NoticeServiceImpl implements NoticeService {
         notice.setSendPush(sendPush);
         notice.setAuthorId(authorId);
         noticeRepository.saveAndFlush(notice);   // id 확보
+        streamPublisher.dataChangedPublic(null, "notice", "CREATE", notice.getId());
 
         if (!sendPush) {
             return toDetail(notice);   // 알림을 보내지 않는 공지는 여기서 끝 (목록에만 올라간다)
@@ -149,6 +153,7 @@ public class NoticeServiceImpl implements NoticeService {
         notice.setCategory(request.getCategory() == null ? notice.getCategory() : request.getCategory());   // 안 보내면 기존 분류 유지
         notice.setImportant(request.isImportant());
         notice.setUpdatedAt(dbClock.now());
+        streamPublisher.dataChangedPublic(null, "notice", "UPDATE", notice.getId());
         return toDetail(notice);
     }
 
@@ -156,6 +161,7 @@ public class NoticeServiceImpl implements NoticeService {
     @Transactional
     public void deleteNotice(Long id) {
         getActiveNotice(id).setDeleted(true);
+        streamPublisher.dataChangedPublic(null, "notice", "DELETE", id);
     }
 
     // ---- 내부 메서드 ----

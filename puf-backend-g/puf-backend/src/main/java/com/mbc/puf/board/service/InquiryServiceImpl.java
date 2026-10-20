@@ -143,13 +143,15 @@ public class InquiryServiceImpl implements InquiryService {
         // 고객 알림 센터(문의 분류): 내 문의에 답변이 달렸다고 알린다
         notificationService.notifyCustomerInquiryAnswered(original.getCustomerId(), original.getId(),
                 original.getTitle());
+        publishInquiryChanged(original, "UPDATE");
     }
 
     @Override
     @Transactional
     public void updateReply(Long id, InquiryReplyRequest request) {
-        requireAnswered(id);
+        Inquiry original = requireAnswered(id);
         inquiryRepository.findByParentIdAndDeletedFalse(id).ifPresent(reply -> reply.setContent(request.getContent()));
+        publishInquiryChanged(original, "UPDATE");
     }
 
     @Override
@@ -158,6 +160,13 @@ public class InquiryServiceImpl implements InquiryService {
         Inquiry original = requireAnswered(id);
         inquiryRepository.findByParentIdAndDeletedFalse(id).ifPresent(reply -> reply.setDeleted(true));
         original.setStatus(InquiryStatus.PENDING);   // 다시 답변대기 목록에 노출되어 재답변 가능
+        publishInquiryChanged(original, "UPDATE");
+    }
+
+    // 문의 답변이 등록/수정/삭제되면 작성한 고객과 관리자에게 다시 조회하라고 알린다 (문의 id 기준)
+    private void publishInquiryChanged(Inquiry original, String action) {
+        streamPublisher.dataChangedToCustomer(original.getCustomerId(), "inquiry", action, original.getId());
+        streamPublisher.dataChangedToAdmins(null, "inquiry", action, original.getId());
     }
 
     // ---- 내부 메서드 ----

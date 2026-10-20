@@ -42,6 +42,9 @@ import com.mbc.puf.notification.service.NotificationService;
 import com.mbc.puf.stream.StreamPayloads;
 import com.mbc.puf.stream.StreamPublisher;
 import com.mbc.puf.internal.repository.RiskScoreRepository;
+import com.mbc.puf.internal.repository.RiskForecastRepository;
+import com.mbc.puf.internal.dto.RiskForecastCreateRequest;
+import com.mbc.puf.internal.dto.RiskForecastIngestResponse;
 import com.mbc.puf.internal.repository.WaterLevelRepository;
 import com.mbc.puf.internal.entity.WaterLevel;
 import com.mbc.puf.internal.dto.WaterLevelCreateRequest;
@@ -97,6 +100,7 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 	private final DbClock dbClock;                           // 판별 마감까지 남은 시간 계산(DB 시계)
 	private final WaterLevelRepository waterLevelRepository;   // 수위계 측정값 저장
 	private final RiskLevelService riskLevelService;           // 점수·수위로 단계 판정 + 자동 차단
+	private final RiskForecastRepository riskForecastRepository;   // 위험도 미래 예측 저장
 
 	// 첨부파일 저장 위치. application.properties의 file.upload-dir (board 도메인 첨부와 같은 설정을 공유)
 	@Value("${file.upload-dir}")
@@ -107,7 +111,9 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 			TransitRepository transitRepository, ThresholdRepository thresholdRepository,
 			CameraRepository cameraRepository, CarRepository carRepository, AlertService alertService,
 			NotificationService notificationService, StreamPublisher streamPublisher, DbClock dbClock,
-			WaterLevelRepository waterLevelRepository, RiskLevelService riskLevelService) {
+			WaterLevelRepository waterLevelRepository, RiskLevelService riskLevelService,
+			RiskForecastRepository riskForecastRepository) {
+		this.riskForecastRepository = riskForecastRepository;
 		this.waterLevelRepository = waterLevelRepository;
 		this.riskLevelService = riskLevelService;
 		this.riskScoreRepository = riskScoreRepository;
@@ -155,6 +161,26 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 
 		return new RiskScoreResponse(riskScore.getId(), riskScore.getUnderpassId(), riskScore.getRiskScore(),
 				riskScore.getPredictedAt());
+	}
+
+	@Override
+	@Transactional
+	public RiskForecastIngestResponse receiveRiskForecast(RiskForecastCreateRequest request) {
+		Underpass underpass = underpassRepository.findByIdAndDeletedFalse(request.getUnderpassId())
+				.orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST,
+						"존재하지 않는 지하차도입니다. underpassId=" + request.getUnderpassId()));
+
+		// 같은 시점은 덮어쓰고, 이미 지난 시점 행은 지운다 (예측 계산 시각 이전 시점)
+		for (RiskForecastCreateRequest.Item item : request.getItems()) {
+			riskForecastRepository.upsert(underpass.getId(), item.getRiskScore(), item.getRainfallMm(),
+					item.getRainfall1hMm(), item.getRainfall3hMm(), item.getRainfall6hMm(), item.getRainfall12hMm(),
+					item.getRainfall24hMm(), item.getTargetAt(), request.getPredictedAt());
+		}
+		riskForecastRepository.deletePast(underpass.getId(), request.getPredictedAt());
+
+		// 실시간: 예측 그래프를 다시 그리라고 알린다 (id 는 지하차도 id)
+		streamPublisher.dataChangedPublic(underpass.getRegionId(), "risk-forecast", "UPDATE", underpass.getId());
+		return new RiskForecastIngestResponse(underpass.getId(), request.getItems().size());
 	}
 
 	@Override

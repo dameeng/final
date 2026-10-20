@@ -32,6 +32,17 @@ public final class StreamPayloads {
             String direction, BigDecimal riskScore) {
     }
 
+    /**
+     * [data-changed] 목록·상세 데이터가 바뀌었으니 다시 조회하라는 신호. 내용(본문)은 담지 않는다 —
+     * 받은 쪽이 기존 조회 API 를 다시 호출하므로 권한 검사와 응답 형식이 그대로 적용된다.
+     * resource : fire-transfer / threshold / camera / underpass / plate-log / inquiry / faq / notice
+     * action   : CREATE / UPDATE / DELETE / REORDER
+     * id       : 바뀐 대상의 id (threshold 는 지하차도 id, faq 순서 변경은 null)
+     * regionId : 관련 지역 (지역 구분이 없으면 null)
+     */
+    public record DataChanged(String resource, String action, Long id, Long regionId) {
+    }
+
     /** [water-update] 수위 측정값이 들어올 때마다 공개. riskLevel 은 그 값을 반영한 현재 단계 */
     public record WaterUpdate(Long underpassId, BigDecimal waterCm, RiskLevel riskLevel,
             @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = DT) LocalDateTime measuredAt) {
