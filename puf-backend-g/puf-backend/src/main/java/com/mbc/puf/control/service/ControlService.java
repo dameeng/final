@@ -20,6 +20,9 @@ public interface ControlService {
      */
     PdfResult blockUnderpass(LoginUser loginUser, Long underpassId, BlockRequest request);
 
+    /** 수위가 차단 기준에 닿았을 때 시스템이 하는 자동 차단 (처리한 관리자 없음, PDF 는 이관 이력에서 내려받는다) */
+    void autoBlock(Long underpassId, java.math.BigDecimal waterCm);
+
     /**
      * 지하차도 해제 (해제 이벤트 저장 + 경찰 이관 PDF 바이트 반환)
      * @return PDF 바이트 배열

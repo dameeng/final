@@ -82,8 +82,8 @@ public class ThresholdServiceImpl implements ThresholdService {
     public void createDefaultThresholds(Long underpassId, Long createdBy) {
         // AI 모델의 표시점수 경계(0/40/70)를 기본값으로 사용. 지하차도별로 관리자가 이후 조정 가능
         insertOne(underpassId, RiskLevel.SAFE, new BigDecimal("0.00"), createdBy);
-        insertOne(underpassId, RiskLevel.WARNING, new BigDecimal("40.00"), createdBy);
-        insertOne(underpassId, RiskLevel.DANGER, new BigDecimal("70.00"), createdBy);
+        insertOne(underpassId, RiskLevel.INTEREST, new BigDecimal("40.00"), createdBy);
+        insertOne(underpassId, RiskLevel.CAUTION, new BigDecimal("70.00"), createdBy);
     }
 
     private void insertOne(Long underpassId, RiskLevel level, BigDecimal riskScoreMin, Long createdBy) {

@@ -42,7 +42,7 @@ import jakarta.validation.Valid;
 
 /** 지하차도 등록·관리 및 차단/해제(MP-10). 목록·상세 조회(CP-05~07)는 로그인 없이 공개,
  *  나머지는 관리자 전용(메서드별 @PreAuthorize) */
-@Tag(name = "지하차도", description = "목록·상세는 공개, 등록·수정·삭제·차단·해제는 담당 지역 관리자")
+@Tag(name = "지하차도", description = "목록·상세는 공개, 등록·수정·삭제는 담당 지역 관리자(차단·해제는 '통제' 태그의 /api/control)")
 @RestController
 @RequestMapping("/api/underpasses")
 public class UnderpassController {
@@ -122,22 +122,6 @@ public class UnderpassController {
     public ApiResponse<Void> delete(@AuthenticationPrincipal LoginUser loginUser, @PathVariable("id") Long id) {
         underpassService.deleteUnderpass(loginUser, id);
         return ApiResponse.ok("지하차도가 삭제되었습니다.", null);
-    }
-
-    // 차단 (MP-10). 이미 BLOCKED면 409. REGIONAL_ADMIN은 본인 담당 지역만 가능
-    @PreAuthorize("hasRole('REGIONAL_ADMIN')")
-    @PostMapping("/{id}/block")
-    public ApiResponse<UnderpassDetailResponse> block(@AuthenticationPrincipal LoginUser loginUser,
-                                                        @PathVariable("id") Long id) {
-        return ApiResponse.ok("지하차도가 차단되었습니다.", underpassService.blockUnderpass(loginUser, id));
-    }
-
-    // 해제 (MP-10). 이미 NORMAL이면 409. REGIONAL_ADMIN은 본인 담당 지역만 가능
-    @PreAuthorize("hasRole('REGIONAL_ADMIN')")
-    @PostMapping("/{id}/release")
-    public ApiResponse<UnderpassDetailResponse> release(@AuthenticationPrincipal LoginUser loginUser,
-                                                          @PathVariable("id") Long id) {
-        return ApiResponse.ok("지하차도가 해제되었습니다.", underpassService.releaseUnderpass(loginUser, id));
     }
 
     // 상행/하행 입·출구 카메라 지정 (MP-10-1). 네 자리를 한 번에 보내고 null 이면 지정 해제.

@@ -4,7 +4,10 @@ import com.mbc.puf.common.enums.TransferAgency;
 import com.mbc.puf.common.enums.UnderpassCurrentStatus;
 import com.mbc.puf.common.enums.UnderpassEventType;
 import com.mbc.puf.common.exception.BusinessException;
+import com.mbc.puf.common.enums.DisplayCategory;
 import com.mbc.puf.common.pdf.ControlNoticeData;
+import com.mbc.puf.risk.RiskPolicy;
+import tools.jackson.databind.json.JsonMapper;
 import com.mbc.puf.common.pdf.TransferPdfGenerator;
 import com.mbc.puf.common.request.ScopeQuery;
 import com.mbc.puf.common.security.LoginUser;
@@ -45,9 +48,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -73,6 +79,10 @@ public class ControlServiceImpl implements ControlService {
     private final EntityManager em;                          // 전광판 문구 조회(native)
     private final StreamPublisher streamPublisher;           // SSE 실시간 이벤트
     private final NotificationService notificationService;   // 관리자 알림(위험)
+    private final RiskPolicy riskPolicy;                     // 해제 가능 수위 판단
+
+    // 이관 스냅샷(JSON) 만들고 읽는 용도
+    private static final JsonMapper JSON = JsonMapper.builder().build();
 
     public ControlServiceImpl(
             ReasonPresetRepository reasonPresetRepository,
@@ -91,7 +101,9 @@ public class ControlServiceImpl implements ControlService {
             ShiftRepository shiftRepository,
             EntityManager em,
             StreamPublisher streamPublisher,
-            NotificationService notificationService) {
+            NotificationService notificationService,
+            RiskPolicy riskPolicy) {
+        this.riskPolicy = riskPolicy;
         this.reasonPresetRepository = reasonPresetRepository;
         this.ctrlTransferRepository = ctrlTransferRepository;
         this.ctrlTransferCarRepository = ctrlTransferCarRepository;
@@ -112,12 +124,13 @@ public class ControlServiceImpl implements ControlService {
     }
 
     // 차단/해제 직후: 공개 이벤트(지도·목록 갱신) + 담당 지역 관리자 알림(위험). 커밋 뒤에 전송된다
-    private void publishControlChange(Underpass underpass, UnderpassCurrentStatus status, LoginUser operator) {
+    private void publishControlChange(Underpass underpass, UnderpassCurrentStatus status, String detail) {
         streamPublisher.publishPublic("control-change", underpass.getRegionId(),
                 new StreamPayloads.ControlChange(underpass.getId(), underpass.getName(), status, LocalDateTime.now()));
         boolean blocked = status == UnderpassCurrentStatus.BLOCKED;
         notificationService.notifyManagers(ManagerNotificationCategory.RISK, underpass.getRegionId(),
-                blocked ? "지하차도 통제(차단)" : "지하차도 통제 해제", underpass.getName(), "UNDERPASS", underpass.getId());
+                blocked ? "지하차도 통제(차단)" : "지하차도 통제 해제",
+                underpass.getName() + (detail == null || detail.isBlank() ? "" : " — " + detail), "UNDERPASS", underpass.getId());
     }
 
     // ─────────────────────────── 사유 프리셋 ───────────────────────────
@@ -147,11 +160,47 @@ public class ControlServiceImpl implements ControlService {
 
         String reason = resolveReason(request, ReasonType.BLOCK);
 
+        BlockOutcome out = doBlock(underpass, loginUser.id(), false, reason, null);
+
+        // PDF 생성 + 최신 상태 다시 조회해서 응답 구성
+        LocalDateTime now = out.transfer().getCreatedAt() != null ? out.transfer().getCreatedAt() : LocalDateTime.now();
+        byte[] pdf = pdfGenerator.generatePolicePdf(out.notice());
+        UnderpassDetailResponse detail = toDetail(underpassRepository.findByIdAndDeletedFalse(underpassId).orElseThrow());
+        String filename = String.format("경찰이관_차단_%s_%s.pdf", underpass.getName(), FILE_DT.format(now));
+        return new PdfResult(filename, pdf, detail);
+    }
+
+    /**
+     * 수위가 차단 기준에 닿았을 때 시스템이 직접 차단한다(RiskLevelService 가 호출).
+     * 수동 차단과 같은 일을 한다: 차단 이벤트, 잔류차량 전환, 알림, 경찰 이관 기록(PDF 는 이력에서 내려받음), 전광판 전환.
+     * 처리한 관리자가 없으므로 operator 는 NULL, 이벤트에는 자동(is_auto) 표시가 붙는다.
+     */
+    @Override
+    @Transactional
+    public void autoBlock(Long underpassId, BigDecimal waterCm) {
+        Underpass underpass = requireUnderpass(underpassId);
+        if (underpass.getCurrentStatus() == UnderpassCurrentStatus.BLOCKED) {
+            return;   // 이미 차단 중이면 중복 처리하지 않는다
+        }
+        BigDecimal block = riskPolicy.blockCm(underpass);
+        String reason = "수위 " + waterCm.stripTrailingZeros().toPlainString() + "cm — 차단 기준 "
+                + block.stripTrailingZeros().toPlainString() + "cm 도달(자동 차단)";
+        doBlock(underpass, null, true, reason, waterCm);
+    }
+
+    private record BlockOutcome(UnderpassEvent event, CtrlTransfer transfer, ControlNoticeData notice) {}
+
+    // 수동/자동 차단이 같이 쓰는 본체. operatorId 가 NULL 이면 자동 차단
+    private BlockOutcome doBlock(Underpass underpass, Long operatorId, boolean auto, String reason, BigDecimal waterCm) {
+        Long underpassId = underpass.getId();
+
         // 1) 차단 이벤트 저장
         UnderpassEvent event = new UnderpassEvent();
         event.setUnderpassId(underpassId);
         event.setEventType(UnderpassEventType.BLOCK);
-        event.setOperatorId(loginUser.id());
+        event.setOperatorId(operatorId);
+        event.setAuto(auto);
+        event.setWaterCm(waterCm);
         event.setReason(reason);
         eventRepository.saveAndFlush(event);
 
@@ -159,24 +208,20 @@ public class ControlServiceImpl implements ControlService {
         underpass.setCurrentStatus(UnderpassCurrentStatus.BLOCKED);
         underpass.setCurrentBlockEventId(event.getId());
 
-        // 3) IN_TRANSIT → REMAINING 일괄 처리
+        // 3) IN_TRANSIT → REMAINING 일괄 처리 (이 호출이 영속성 컨텍스트를 비우므로 엔티티 수정은 위에서 끝낸다)
         transitRepository.markRemaining(underpassId);
-        publishControlChange(underpass, UnderpassCurrentStatus.BLOCKED, loginUser);
+        publishControlChange(underpass, UnderpassCurrentStatus.BLOCKED, auto ? reason : null);
         streamPublisher.publishToAdmins(underpass.getRegionId(), "transit-update",
                 new StreamPayloads.TransitUpdate(underpassId, "REMAINING", null, null));
 
-        // 4) 경찰 이관 기록 저장
-        CtrlTransfer transfer = saveTransfer(event.getId(), TransferAgency.POLICE, null, loginUser.id());
+        // 4) 전광판을 차단 문구로 전환
+        switchDisplay(underpass, event, operatorId, DisplayCategory.BLOCK);
 
-        // 5) PDF 생성
-        LocalDateTime now = transfer.getCreatedAt() != null ? transfer.getCreatedAt() : LocalDateTime.now();
-        byte[] pdf = pdfGenerator.generatePolicePdf(
-                buildNotice(underpass, event, null, loginUser.id(), null));
-
-        // 6) 최신 상태 다시 조회해서 응답 구성
-        UnderpassDetailResponse detail = toDetail(underpassRepository.findByIdAndDeletedFalse(underpassId).orElseThrow());
-        String filename = String.format("경찰이관_차단_%s_%s.pdf", underpass.getName(), FILE_DT.format(now));
-        return new PdfResult(filename, pdf, detail);
+        // 5) 경찰 이관 기록 저장 (전달서에 들어갈 내용은 스냅샷으로 같이 저장)
+        ControlNoticeData notice = buildNotice(underpass, event, null, operatorId, null);
+        CtrlTransfer transfer = saveTransfer(event.getId(), TransferAgency.POLICE, null, operatorId,
+                snapshotOf(notice, waterCm, auto));
+        return new BlockOutcome(event, transfer, notice);
     }
 
     // ─────────────────────────── 해제 ───────────────────────────
@@ -189,6 +234,13 @@ public class ControlServiceImpl implements ControlService {
 
         if (underpass.getCurrentStatus() == UnderpassCurrentStatus.NORMAL) {
             throw new BusinessException(HttpStatus.CONFLICT, "이미 정상 상태인 지하차도입니다.");
+        }
+
+        // 수위가 아직 차단 기준 이상이면 해제할 수 없다 (자동 차단 기준과 같은 값)
+        if (riskPolicy.reachedBlock(underpass, underpass.getCurrentWaterCm())) {
+            throw new BusinessException(HttpStatus.CONFLICT, "수위가 차단 기준("
+                    + riskPolicy.blockCm(underpass).stripTrailingZeros().toPlainString() + "cm) 이상이라 해제할 수 없습니다. 현재 수위 "
+                    + underpass.getCurrentWaterCm().stripTrailingZeros().toPlainString() + "cm");
         }
 
         // 차단 이벤트 조회 (PDF에 차단 시각 표시용)
@@ -209,15 +261,17 @@ public class ControlServiceImpl implements ControlService {
         // 2) 지하차도 상태 갱신
         underpass.setCurrentStatus(UnderpassCurrentStatus.NORMAL);
         underpass.setCurrentBlockEventId(null);
-        publishControlChange(underpass, UnderpassCurrentStatus.NORMAL, loginUser);
+        publishControlChange(underpass, UnderpassCurrentStatus.NORMAL, null);
 
-        // 3) 경찰 이관 기록 저장
-        CtrlTransfer transfer = saveTransfer(event.getId(), TransferAgency.POLICE, null, loginUser.id());
+        // 3) 전광판을 해제 문구로 전환
+        switchDisplay(underpass, event, loginUser.id(), DisplayCategory.RELEASE);
 
-        // 4) PDF 생성
+        // 4) 경찰 이관 기록 저장 + PDF 생성
+        ControlNoticeData notice = buildNotice(underpass, event, blockEvent, loginUser.id(), null);
+        CtrlTransfer transfer = saveTransfer(event.getId(), TransferAgency.POLICE, null, loginUser.id(),
+                snapshotOf(notice, null, false));
         LocalDateTime now = transfer.getCreatedAt() != null ? transfer.getCreatedAt() : LocalDateTime.now();
-        byte[] pdf = pdfGenerator.generatePolicePdf(
-                buildNotice(underpass, event, blockEvent, loginUser.id(), null));
+        byte[] pdf = pdfGenerator.generatePolicePdf(notice);
 
         UnderpassDetailResponse detail = toDetail(underpassRepository.findByIdAndDeletedFalse(underpassId).orElseThrow());
         String filename = String.format("경찰이관_해제_%s_%s.pdf", underpass.getName(), FILE_DT.format(now));
@@ -241,7 +295,11 @@ public class ControlServiceImpl implements ControlService {
         }
 
         // 이관 기록 저장
-        CtrlTransfer transfer = saveTransfer(request.getEventId(), TransferAgency.FIRE, request.getMemo(), loginUser.id());
+        Map<String, Object> fireSnap = new LinkedHashMap<>();
+        fireSnap.put("carNums", request.getCarNums().stream().map(String::trim).collect(Collectors.toList()));
+        fireSnap.put("memo", request.getMemo());
+        CtrlTransfer transfer = saveTransfer(request.getEventId(), TransferAgency.FIRE, request.getMemo(), loginUser.id(),
+                toJson(fireSnap));
 
         // 차량번호 저장
         for (String carNum : request.getCarNums()) {
@@ -309,8 +367,10 @@ public class ControlServiceImpl implements ControlService {
                             underpass.getId(), UnderpassEventType.BLOCK, event.getCreatedAt()).orElse(null)
                     : null;
 
-            pdf = pdfGenerator.generatePolicePdf(
-                    buildNotice(underpass, event, blockEvent, transfer.getManagerId(), transfer.getMemo()));
+            // 이관 당시 스냅샷이 있으면 그 값을 쓴다(지금 다시 계산하면 점수·전광판 문구가 달라져 있을 수 있음)
+            pdf = pdfGenerator.generatePolicePdf(applySnapshot(
+                    buildNotice(underpass, event, blockEvent, transfer.getManagerId(), transfer.getMemo()),
+                    transfer.getSnapshot()));
             filename = String.format("경찰이관_%s_%s_%s.pdf", eventTypeLabel, underpass.getName(), FILE_DT.format(transferAt));
         } else {
             List<String> carNums = ctrlTransferCarRepository.findByCtrlTransferId(transferId)
@@ -349,8 +409,9 @@ public class ControlServiceImpl implements ControlService {
         return request.getReason();
     }
 
-    private CtrlTransfer saveTransfer(Long eventId, TransferAgency agency, String memo, Long managerId) {
+    private CtrlTransfer saveTransfer(Long eventId, TransferAgency agency, String memo, Long managerId, String snapshot) {
         CtrlTransfer transfer = new CtrlTransfer();
+        transfer.setSnapshot(snapshot);
         transfer.setEventId(eventId);
         transfer.setAgency(agency);
         transfer.setMemo(memo);
@@ -360,6 +421,9 @@ public class ControlServiceImpl implements ControlService {
 
     /** 관리자 이름 + 첫 번째 담당 지역명 */
     private ManagerInfo managerInfo(Long managerId) {
+        if (managerId == null) {
+            return new ManagerInfo("시스템(자동 차단)", "-");   // 자동 차단으로 생긴 기록
+        }
         Manager manager = managerRepository.findById(managerId).orElse(null);
         String name = "알 수 없음";
         if (manager != null && manager.getEmployeeId() != null) {
@@ -422,6 +486,7 @@ public class ControlServiceImpl implements ControlService {
 
     // "1조 06:00~14:00" (근무조가 없으면 null)
     private String shiftLabel(Long managerId) {
+        if (managerId == null) return null;
         Manager manager = managerRepository.findById(managerId).orElse(null);
         if (manager == null || manager.getShiftId() == null) return null;
         return shiftRepository.findById(manager.getShiftId())
@@ -463,6 +528,96 @@ public class ControlServiceImpl implements ControlService {
         r.setCurrentRiskLevel(u.getCurrentRiskLevel());
         r.setCurrentRiskScore(u.getCurrentRiskScore());
         return r;
+    }
+
+    // ─────────────────────────── 스냅샷 / 전광판 전환 ───────────────────────────
+
+    private static String toJson(Map<String, Object> map) {
+        return JSON.writeValueAsString(map);
+    }
+
+    // 전달서 내용을 스냅샷(JSON)으로. 값이 없는 항목은 넣지 않는다
+    private String snapshotOf(ControlNoticeData n, BigDecimal waterCm, boolean auto) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("auto", auto);
+        if (n.riskScore() != null) m.put("riskScore", n.riskScore());
+        if (n.rainfallMm() != null) m.put("rainfallMm", n.rainfallMm());
+        if (waterCm != null) m.put("waterCm", waterCm);
+        if (n.displayText() != null) m.put("displayText", n.displayText());
+        m.put("managerName", n.managerName());
+        m.put("managerRegion", n.managerRegion());
+        if (n.shiftLabel() != null) m.put("shiftLabel", n.shiftLabel());
+        return toJson(m);
+    }
+
+    // 스냅샷에 있는 값으로 전달서 내용을 덮어쓴다(스냅샷이 없으면 그대로)
+    @SuppressWarnings("unchecked")
+    private ControlNoticeData applySnapshot(ControlNoticeData base, String snapshot) {
+        if (snapshot == null || snapshot.isBlank()) return base;
+        Map<String, Object> m;
+        try {
+            m = JSON.readValue(snapshot, Map.class);
+        } catch (RuntimeException e) {
+            return base;
+        }
+        return new ControlNoticeData(base.underpassName(), base.address(), base.blockEvent(), base.eventAt(), base.reason(),
+                m.get("riskScore") instanceof Number v ? Double.valueOf(v.doubleValue()) : base.riskScore(),
+                m.get("rainfallMm") instanceof Number v ? Double.valueOf(v.doubleValue()) : base.rainfallMm(),
+                m.get("displayText") instanceof String t ? t : base.displayText(),
+                m.get("managerName") instanceof String t ? t : base.managerName(),
+                m.get("managerRegion") instanceof String t ? t : base.managerRegion(),
+                m.get("shiftLabel") instanceof String t ? t : base.shiftLabel(),
+                base.blockAt(), base.blockReason(), base.memo());
+    }
+
+    /**
+     * 그 지하차도 전광판(DISPLAY 설비)의 1페이지 문구를 해당 분류(차단/해제)의 프리셋 문구로 바꾼다.
+     * 전광판이 없거나 프리셋이 없으면 아무 것도 하지 않는다. 바꾸면 전광판 이력(display_history)에 이 이벤트가 계기로 남는다.
+     */
+    private void switchDisplay(Underpass underpass, UnderpassEvent event, Long operatorId, DisplayCategory category) {
+        List<?> equips = em.createNativeQuery("SELECT pe.id FROM pm_equipment pe WHERE pe.underpass_id = :u"
+                        + " AND CAST(pe.type AS TEXT) = 'DISPLAY' ORDER BY pe.id")
+                .setParameter("u", underpass.getId()).setMaxResults(1).getResultList();
+        List<?> presets = em.createNativeQuery("SELECT id, content FROM display_preset"
+                        + " WHERE CAST(category AS TEXT) = :c ORDER BY id")
+                .setParameter("c", category.name()).setMaxResults(1).getResultList();
+        if (equips.isEmpty() || presets.isEmpty()) return;
+
+        Long equipId = ((Number) equips.get(0)).longValue();
+        Object[] preset = (Object[]) presets.get(0);
+        Long presetId = ((Number) preset[0]).longValue();
+        String content = (String) preset[1];
+
+        List<?> pages = em.createNativeQuery("SELECT id, content FROM display_page WHERE equip_id = :e AND page_no = 1")
+                .setParameter("e", equipId).getResultList();
+        Long pageId;
+        String oldContent;
+        String action;
+        if (pages.isEmpty()) {
+            Object id = em.createNativeQuery("INSERT INTO display_page (equip_id, page_no, content, preset_id, updated_by)"
+                            + " VALUES (:e, 1, :c, :p, :m) RETURNING id")
+                    .setParameter("e", equipId).setParameter("c", content).setParameter("p", presetId)
+                    .setParameter("m", operatorId).getSingleResult();
+            pageId = ((Number) id).longValue();
+            oldContent = null;
+            action = "CREATE";
+        } else {
+            Object[] page = (Object[]) pages.get(0);
+            pageId = ((Number) page[0]).longValue();
+            oldContent = (String) page[1];
+            if (content.equals(oldContent)) return;   // 이미 같은 문구
+            em.createNativeQuery("UPDATE display_page SET content = :c, preset_id = :p, updated_by = :m, updated_at = NOW()"
+                            + " WHERE id = :id")
+                    .setParameter("c", content).setParameter("p", presetId).setParameter("m", operatorId)
+                    .setParameter("id", pageId).executeUpdate();
+            action = "UPDATE";
+        }
+        em.createNativeQuery("INSERT INTO display_history (page_id, event_id, old_content, new_content, changed_by)"
+                        + " VALUES (:pg, :ev, :o, :n, :m)")
+                .setParameter("pg", pageId).setParameter("ev", event.getId()).setParameter("o", oldContent)
+                .setParameter("n", content).setParameter("m", operatorId).executeUpdate();
+        streamPublisher.publishToAdmins(underpass.getRegionId(), "display-change",
+                new StreamPayloads.DisplayChange(equipId, underpass.getId(), 1, action));
     }
 
     private record ManagerInfo(String name, String regionName) {}

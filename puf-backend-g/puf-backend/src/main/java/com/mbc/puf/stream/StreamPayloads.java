@@ -32,6 +32,11 @@ public final class StreamPayloads {
             String direction, BigDecimal riskScore) {
     }
 
+    /** [water-update] 수위 측정값이 들어올 때마다 공개. riskLevel 은 그 값을 반영한 현재 단계 */
+    public record WaterUpdate(Long underpassId, BigDecimal waterCm, RiskLevel riskLevel,
+            @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = DT) LocalDateTime measuredAt) {
+    }
+
     /** [control-change] 차단/해제 때 공개. status 는 BLOCKED / NORMAL */
     public record ControlChange(Long underpassId, String underpassName, UnderpassCurrentStatus status,
             @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = DT) LocalDateTime changedAt) {

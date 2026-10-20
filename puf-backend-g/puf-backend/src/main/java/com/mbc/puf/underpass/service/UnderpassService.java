@@ -52,9 +52,7 @@ public interface UnderpassService {
 
     void deleteUnderpass(LoginUser loginUser, Long id);
 
-    UnderpassDetailResponse blockUnderpass(LoginUser loginUser, Long id);
-
-    UnderpassDetailResponse releaseUnderpass(LoginUser loginUser, Long id);
+    // 차단/해제는 control 도메인(POST /api/underpasses/{id}/block, /release)에서만 한다
 
     // 상행/하행 입·출구 카메라 4자리 한 번에 지정 (null = 지정 해제)
     UnderpassDetailResponse assignGateCameras(LoginUser loginUser, Long id, GateCameraRequest request);

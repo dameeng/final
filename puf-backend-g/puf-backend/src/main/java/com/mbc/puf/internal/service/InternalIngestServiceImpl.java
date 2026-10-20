@@ -42,6 +42,11 @@ import com.mbc.puf.notification.service.NotificationService;
 import com.mbc.puf.stream.StreamPayloads;
 import com.mbc.puf.stream.StreamPublisher;
 import com.mbc.puf.internal.repository.RiskScoreRepository;
+import com.mbc.puf.internal.repository.WaterLevelRepository;
+import com.mbc.puf.internal.entity.WaterLevel;
+import com.mbc.puf.internal.dto.WaterLevelCreateRequest;
+import com.mbc.puf.internal.dto.WaterLevelResponse;
+import com.mbc.puf.risk.RiskLevelService;
 import com.mbc.puf.plate.entity.PlateLog;
 import com.mbc.puf.plate.repository.PlateLogRepository;
 import com.mbc.puf.threshold.entity.Threshold;
@@ -87,6 +92,8 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 	private final NotificationService notificationService;   // 관리자 알림(위험도 변화, 판별 대기)
 	private final StreamPublisher streamPublisher;           // SSE 실시간 이벤트
 	private final DbClock dbClock;                           // 판별 마감까지 남은 시간 계산(DB 시계)
+	private final WaterLevelRepository waterLevelRepository;   // 수위계 측정값 저장
+	private final RiskLevelService riskLevelService;           // 점수·수위로 단계 판정 + 자동 차단
 
 	// 첨부파일 저장 위치. application.properties의 file.upload-dir (board 도메인 첨부와 같은 설정을 공유)
 	@Value("${file.upload-dir}")
@@ -96,7 +103,10 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 			UnderpassRepository underpassRepository, UnderpassEventRepository eventRepository,
 			TransitRepository transitRepository, ThresholdRepository thresholdRepository,
 			CameraRepository cameraRepository, CarRepository carRepository, AlertService alertService,
-			NotificationService notificationService, StreamPublisher streamPublisher, DbClock dbClock) {
+			NotificationService notificationService, StreamPublisher streamPublisher, DbClock dbClock,
+			WaterLevelRepository waterLevelRepository, RiskLevelService riskLevelService) {
+		this.waterLevelRepository = waterLevelRepository;
+		this.riskLevelService = riskLevelService;
 		this.riskScoreRepository = riskScoreRepository;
 		this.plateLogRepository = plateLogRepository;
 		this.underpassRepository = underpassRepository;
@@ -131,25 +141,14 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 
 		riskScoreRepository.save(riskScore);
 
-		RiskLevel levelBefore = underpass.getCurrentRiskLevel();
-		updateRiskLevel(underpass, request.getRiskScore());
+		// 최신 점수를 반영하고, 점수와 수위를 같이 보고 단계를 다시 정한다 (단계 변화 이벤트·알림, 자동 차단까지 여기서)
+		underpass.setCurrentRiskScore(request.getRiskScore());
+		riskLevelService.reevaluate(underpass);
 
 		// 실시간: 점수는 갱신될 때마다(등급 그대로여도) 공개로 보낸다
 		streamPublisher.publishPublic("risk-update", underpass.getRegionId(),
 				new StreamPayloads.RiskUpdate(underpass.getId(), request.getRiskScore(), underpass.getCurrentRiskLevel(),
 						request.getRainfall1hMm(), request.getPredictedAt()));
-
-		// 등급이 바뀐 순간에만: 공개 이벤트 + 담당 지역 관리자 알림(위험)
-		if (underpass.getCurrentRiskLevel() != levelBefore) {
-			boolean up = underpass.getCurrentRiskLevel().ordinal() > levelBefore.ordinal();
-			streamPublisher.publishPublic("risk-level-change", underpass.getRegionId(),
-					new StreamPayloads.RiskLevelChange(underpass.getId(), underpass.getName(), levelBefore,
-							underpass.getCurrentRiskLevel(), up ? "UP" : "DOWN", request.getRiskScore()));
-			notificationService.notifyManagers(ManagerNotificationCategory.RISK, underpass.getRegionId(),
-					up ? "위험도 상승" : "위험도 하락",
-					underpass.getName() + ": " + levelBefore.getDbValue() + " → " + underpass.getCurrentRiskLevel().getDbValue(),
-					"UNDERPASS", underpass.getId());
-		}
 
 		return new RiskScoreResponse(riskScore.getId(), riskScore.getUnderpassId(), riskScore.getRiskScore(),
 				riskScore.getPredictedAt());
@@ -218,10 +217,9 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 					|| recognitionStatus == RecognitionStatus.LOW_CONFIDENCE);
 
 			// PREDICTIVE 알림: APPROACH_LPR(원거리 접근로) 카메라가 매칭했는데, 그 지하차도 위험도가
-			// 지금 WARNING/DANGER면 "아직 시간 있을 때" 경고로 발송
+			// 지금 관심 단계 이상이면 "아직 시간 있을 때" 경고로 발송
 			if (matched && camera.getCameraRole() == CameraRole.APPROACH_LPR
-					&& (underpass.getCurrentRiskLevel() == RiskLevel.WARNING
-							|| underpass.getCurrentRiskLevel() == RiskLevel.DANGER)) {
+					&& underpass.getCurrentRiskLevel().atLeast(RiskLevel.INTEREST)) {
 				// 알림 로그에 남길 계기 이벤트: "지금 이 단계로 올라간" 가장 최근 RISK_LEVEL_UP 행
 				// (currentRiskLevel 자체는 컬럼에서 바로 읽고, 이 조회는 event_id 확보용으로만 쓴다)
 				UnderpassEvent latestRiskUpEvent = eventRepository
@@ -281,44 +279,29 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 		}
 	}
 
-	// risk_score를 threshold와 대조해서 단계를 매기고, 지금 저장된 단계(underpass.current_risk_level)와
-	// 달라졌을 때만 상태를 갱신 + 이벤트를 남긴다. 오르면 RISK_LEVEL_UP, 내리면 RISK_LEVEL_DOWN으로
-	// 기록해서 추이를 전부 추적할 수 있게 한다. 같으면 아무 것도 하지 않는다(이벤트 남발 방지).
-	// 알림은 여기서 안 보내고, APPROACH_LPR 카메라가 이 단계를 감지했을 때(receivePlateLog) 보낸다
-	// — "이미 들어간 차"가 아니라 "접근 중인 차"에게 경고하는 게 맞아서
-	private void updateRiskLevel(Underpass underpass, BigDecimal riskScore) {
-		Long underpassId = underpass.getId();
-		List<Threshold> thresholds = thresholdRepository.findByUnderpassIdOrderByRiskScoreMinAsc(underpassId);
-		RiskLevel newLevel = determineRiskLevel(thresholds, riskScore);
-		RiskLevel currentLevel = underpass.getCurrentRiskLevel();
+	// 수위계 측정값 수신: 저장 → 최신 수위 캐시 갱신 → 단계 재판정(경계 이상이면 자동 차단)
+	@Override
+	@Transactional
+	public WaterLevelResponse receiveWaterLevel(WaterLevelCreateRequest request) {
+		Underpass underpass = underpassRepository.findByIdAndDeletedFalse(request.getUnderpassId())
+				.orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST,
+						"존재하지 않는 지하차도입니다. underpassId=" + request.getUnderpassId()));
 
-		underpass.setCurrentRiskScore(riskScore);   // 점수는 단계 변화와 상관없이 매번 최신값으로 갱신
+		WaterLevel water = new WaterLevel();
+		water.setUnderpassId(request.getUnderpassId());
+		water.setLevelCm(request.getLevelCm());
+		water.setMeasuredAt(request.getMeasuredAt());
+		waterLevelRepository.save(water);
 
-		if (newLevel == currentLevel) {
-			return; // 단계 변화가 없으면 단계 갱신도, 이벤트 기록도 하지 않는다
-		}
+		underpass.setCurrentWaterCm(request.getLevelCm());
+		boolean autoBlocked = riskLevelService.reevaluate(underpass);
 
-		underpass.setCurrentRiskLevel(newLevel);
+		streamPublisher.publishPublic("water-update", underpass.getRegionId(),
+				new StreamPayloads.WaterUpdate(underpass.getId(), request.getLevelCm(), underpass.getCurrentRiskLevel(),
+						request.getMeasuredAt()));
 
-		UnderpassEvent event = new UnderpassEvent();
-		event.setUnderpassId(underpassId);
-		event.setEventType(newLevel.ordinal() > currentLevel.ordinal() ? UnderpassEventType.RISK_LEVEL_UP
-				: UnderpassEventType.RISK_LEVEL_DOWN);
-		event.setRiskLevel(newLevel);
-		event.setRiskScoreAtEvent(riskScore);
-		eventRepository.save(event);
-	}
-
-	// thresholds는 risk_score_min 오름차순(SAFE→WARNING→DANGER)이므로, riskScore 이상인 것 중 가장
-	// 마지막(=가장 높은) 단계를 쓴다
-	private RiskLevel determineRiskLevel(List<Threshold> thresholds, BigDecimal riskScore) {
-		RiskLevel level = RiskLevel.SAFE;
-		for (Threshold threshold : thresholds) {
-			if (riskScore.compareTo(threshold.getRiskScoreMin()) >= 0) {
-				level = threshold.getLevel();
-			}
-		}
-		return level;
+		return new WaterLevelResponse(water.getId(), underpass.getId(), request.getLevelCm(), request.getMeasuredAt(),
+				underpass.getCurrentRiskLevel(), underpass.getCurrentStatus(), autoBlocked);
 	}
 
 	private void processTransit(Underpass underpass, Camera camera, PlateLog plateLog,

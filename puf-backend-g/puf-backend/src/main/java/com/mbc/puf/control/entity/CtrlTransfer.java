@@ -32,8 +32,12 @@ public class CtrlTransfer {
     @Column(name = "memo", columnDefinition = "TEXT")
     private String memo;
 
-    @Column(name = "manager_id", nullable = false)
+    @Column(name = "manager_id")   // 자동 차단으로 생긴 경찰 이관이면 NULL
     private Long managerId;
+
+    // 이관 시점 내용 스냅샷(JSON 문자열). PDF 재출력 때 이 값을 쓴다
+    @Column(name = "snapshot", columnDefinition = "jsonb")
+    private String snapshot;
 
     @Generated
     @Column(name = "created_at", insertable = false, updatable = false)
@@ -54,6 +58,9 @@ public class CtrlTransfer {
 
     public Long getManagerId() { return managerId; }
     public void setManagerId(Long managerId) { this.managerId = managerId; }
+
+    public String getSnapshot() { return snapshot; }
+    public void setSnapshot(String snapshot) { this.snapshot = snapshot; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
 }

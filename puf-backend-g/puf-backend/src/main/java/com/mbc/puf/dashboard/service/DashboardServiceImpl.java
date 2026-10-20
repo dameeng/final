@@ -92,7 +92,7 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     // KPI 카드. 서로 독립적인 스칼라 서브쿼리 7개. regionIds/underpassId 는 각 서브쿼리에 같이 걸린다.
-    // threshold.level 은 DB에 한글 라벨로 저장돼 있어서 DANGER 는 '위험' 으로 비교한다
+    // threshold.level 은 DB에 한글 라벨로 저장돼 있다. 점수 기준 최고 단계는 '주의'(CAUTION)라서 그 임계치를 기준으로 센다(경계·심각은 수위로만 정해짐)
     @Override
     @Transactional(readOnly = true)
     public FacilityKpiSummary getFacilityKpiSummary(List<Long> regionIds, Long underpassId, int nearMargin) {
@@ -108,11 +108,11 @@ public class DashboardServiceImpl implements DashboardService {
                 + " (SELECT COUNT(*) FROM alert a JOIN event e ON e.id = a.event_id"
                 + "    JOIN underpass u ON u.id = e.underpass_id"
                 + "   WHERE a.created_at >= date_trunc('day', NOW())" + scope + ") AS alerts_today,"
-                + " (SELECT COUNT(*) FROM underpass u JOIN threshold t ON t.underpass_id = u.id AND t.level = '위험' "
+                + " (SELECT COUNT(*) FROM underpass u JOIN threshold t ON t.underpass_id = u.id AND t.level = '주의' "
                 + LATEST_SCORE
                 + "   WHERE u.is_deleted = FALSE AND rs.score IS NOT NULL AND rs.score >= t.min_score" + scope
                 + " ) AS danger_level_count,"
-                + " (SELECT COUNT(*) FROM underpass u JOIN threshold t ON t.underpass_id = u.id AND t.level = '위험' "
+                + " (SELECT COUNT(*) FROM underpass u JOIN threshold t ON t.underpass_id = u.id AND t.level = '주의' "
                 + LATEST_SCORE
                 + "   WHERE u.is_deleted = FALSE AND rs.score IS NOT NULL AND rs.score < t.min_score"
                 + "     AND (t.min_score - rs.score) <= :nearMargin" + scope
@@ -195,14 +195,14 @@ public class DashboardServiceImpl implements DashboardService {
                 .list(em, ThresholdOverviewItem.class);
     }
 
-    // "위험 임박 TOP": DANGER 임계치까지 남은 점수(margin) 오름차순 (0 이하 = 이미 초과, 가장 급한 것부터)
+    // "위험 임박 TOP": 주의(점수 기준 최고 단계) 임계치까지 남은 점수(margin) 오름차순 (0 이하 = 이미 초과, 가장 급한 것부터)
     @Override
     @Transactional(readOnly = true)
     public List<RiskMarginItem> getRiskMarginList(List<Long> regionIds, int limit) {
         return new NativeSql("SELECT u.id AS underpass_id, u.name AS underpass_name, r.name AS region_name,"
                 + " rs.score AS risk_score, t.min_score AS danger_threshold, (t.min_score - rs.score) AS margin"
                 + " FROM underpass u LEFT JOIN region r ON r.id = u.region_id"
-                + " JOIN threshold t ON t.underpass_id = u.id AND t.level = '위험' " + LATEST_SCORE
+                + " JOIN threshold t ON t.underpass_id = u.id AND t.level = '주의' " + LATEST_SCORE
                 + " WHERE u.is_deleted = FALSE AND rs.score IS NOT NULL")
                 .andIf(regionIds != null, " AND u.region_id IN (:regionIds)", "regionIds", regionIds)
                 .append(" ORDER BY margin ASC LIMIT :limit")
@@ -228,7 +228,7 @@ public class DashboardServiceImpl implements DashboardService {
         return sql.list(em, RiskTrendPoint.class);
     }
 
-    // 시·도별 안전/주의/위험 시설 수 (현재 위험단계 기준 스냅샷, 한글 DB값 기준 집계)
+    // 시·도별 5단계(안전/관심/주의/경계/심각) 시설 수 (현재 위험단계 기준 스냅샷, 한글 DB값 기준 집계)
     @Override
     @Transactional(readOnly = true)
     public List<RegionRiskLevelItem> getRegionRiskLevel(List<Long> regionIds) {
@@ -236,8 +236,10 @@ public class DashboardServiceImpl implements DashboardService {
                 SELECT r.id   AS region_id,
                        r.name AS region_name,
                        COUNT(u.id) FILTER (WHERE u.risk_level = '안전') AS safe_count,
-                       COUNT(u.id) FILTER (WHERE u.risk_level = '주의') AS warning_count,
-                       COUNT(u.id) FILTER (WHERE u.risk_level = '위험') AS danger_count,
+                       COUNT(u.id) FILTER (WHERE u.risk_level = '관심') AS interest_count,
+                       COUNT(u.id) FILTER (WHERE u.risk_level = '주의') AS caution_count,
+                       COUNT(u.id) FILTER (WHERE u.risk_level = '경계') AS alert_count,
+                       COUNT(u.id) FILTER (WHERE u.risk_level = '심각') AS severe_count,
                        COUNT(u.id)                                      AS total_count
                   FROM region r
                   LEFT JOIN underpass u ON u.region_id = r.id AND u.is_deleted = FALSE

@@ -184,10 +184,11 @@ public class UnderpassServiceImpl implements UnderpassService {
         underpass.setRiverDistM(request.getRiverDistM());
         underpass.setSeaDistM(request.getSeaDistM());
         underpass.setFloodHistoryCount(request.getFloodHistoryCount() == null ? 0 : request.getFloodHistoryCount());   // 안 보내면 0
+        underpass.setEarlyBlock(Boolean.TRUE.equals(request.getEarlyBlock()));
         underpass.setCurrentStatus(UnderpassCurrentStatus.NORMAL);   // 등록 시 항상 정상 상태로 고정
         underpassRepository.saveAndFlush(underpass);
 
-        thresholdService.createDefaultThresholds(underpass.getId(), loginUser.id());   // SAFE/WARNING/DANGER 3행 기본 생성
+        thresholdService.createDefaultThresholds(underpass.getId(), loginUser.id());   // 안전/관심/주의 3행 기본 생성
         return toDetail(reload(underpass));
     }
 
@@ -211,6 +212,9 @@ public class UnderpassServiceImpl implements UnderpassService {
         underpass.setSafetyGrade(request.getSafetyGrade());
         underpass.setRiverDistM(request.getRiverDistM());
         underpass.setSeaDistM(request.getSeaDistM());
+        if (request.getEarlyBlock() != null) {   // 안 보내면 기존 값 유지
+            underpass.setEarlyBlock(request.getEarlyBlock());
+        }
         if (request.getFloodHistoryCount() != null) {   // 안 보내면 기존 값 유지
             underpass.setFloodHistoryCount(request.getFloodHistoryCount());
         }
@@ -223,42 +227,6 @@ public class UnderpassServiceImpl implements UnderpassService {
         Underpass underpass = requireExistingUnderpass(id);
         requireOwnableRegion(loginUser, underpass.getRegionId());
         underpass.setDeleted(true);
-    }
-
-    // ---- 차단/해제 (MP-10): REGIONAL_ADMIN은 본인 담당 지역만 ----
-
-    @Override
-    @Transactional
-    public UnderpassDetailResponse blockUnderpass(LoginUser loginUser, Long id) {
-        Underpass underpass = requireExistingUnderpass(id);
-        requireOwnableRegion(loginUser, underpass.getRegionId());
-        if (underpass.getCurrentStatus() == UnderpassCurrentStatus.BLOCKED) {
-            throw new BusinessException(HttpStatus.CONFLICT, "이미 차단된 지하차도입니다.");
-        }
-
-        UnderpassEvent event = saveOperatorEvent(id, UnderpassEventType.BLOCK, loginUser.id());
-        underpass.setCurrentStatus(UnderpassCurrentStatus.BLOCKED);
-        underpass.setCurrentBlockEventId(event.getId());
-
-        // 차단 시점에 안에 있던(IN_TRANSIT) 차량을 REMAINING으로 일괄 처리.
-        // (일괄 UPDATE는 실행 전에 위 변경을 먼저 DB에 반영한 뒤 영속성 컨텍스트를 비우므로, 응답은 다시 읽어서 만든다)
-        transitRepository.markRemaining(id);
-        return toDetail(requireExistingUnderpass(id));
-    }
-
-    @Override
-    @Transactional
-    public UnderpassDetailResponse releaseUnderpass(LoginUser loginUser, Long id) {
-        Underpass underpass = requireExistingUnderpass(id);
-        requireOwnableRegion(loginUser, underpass.getRegionId());
-        if (underpass.getCurrentStatus() == UnderpassCurrentStatus.NORMAL) {
-            throw new BusinessException(HttpStatus.CONFLICT, "이미 정상 상태인 지하차도입니다.");
-        }
-
-        saveOperatorEvent(id, UnderpassEventType.RELEASE, loginUser.id());
-        underpass.setCurrentStatus(UnderpassCurrentStatus.NORMAL);
-        underpass.setCurrentBlockEventId(null);   // 해제되면 차단 이벤트 연결도 비운다
-        return toDetail(underpass);
     }
 
     // ---- 상행/하행 입·출구 카메라 지정 (MP-10-1): 담당 지역만 ----
@@ -417,15 +385,6 @@ public class UnderpassServiceImpl implements UnderpassService {
         return entity;
     }
 
-    // 차단/해제 이벤트 기록 (operatorId 필수, 위험도 값은 비움)
-    private UnderpassEvent saveOperatorEvent(Long underpassId, UnderpassEventType type, Long operatorId) {
-        UnderpassEvent event = new UnderpassEvent();
-        event.setUnderpassId(underpassId);
-        event.setEventType(type);
-        event.setOperatorId(operatorId);
-        return eventRepository.saveAndFlush(event);
-    }
-
     private static java.time.LocalDateTime toLocalDateTime(Object value) {
         return (value instanceof java.sql.Timestamp ts) ? ts.toLocalDateTime() : (java.time.LocalDateTime) value;
     }
@@ -475,6 +434,8 @@ public class UnderpassServiceImpl implements UnderpassService {
         d.setHeightM(u.getHeightM());
         d.setLengthM(u.getLengthM());
         d.setFloodHistoryCount(u.getFloodHistoryCount());
+        d.setEarlyBlock(u.isEarlyBlock());
+        d.setCurrentWaterCm(u.getCurrentWaterCm());
         d.setCurrentStatus(u.getCurrentStatus());
         d.setCurrentBlockEventId(u.getCurrentBlockEventId());
         d.setCurrentRiskLevel(u.getCurrentRiskLevel());

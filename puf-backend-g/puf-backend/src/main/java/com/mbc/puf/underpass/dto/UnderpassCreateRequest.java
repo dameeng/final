@@ -53,6 +53,8 @@ public class UnderpassCreateRequest {
     @DecimalMax(value = "999999999.9", message = "바다 거리 값이 너무 큽니다.")   // DB NUMERIC(10,1)
     private BigDecimal seaDistM;    // 바다까지 직선거리(m), 선택 — AI 모델 입력값
 
+    private Boolean earlyBlock;   // 선제 차단 대상 지정(true 면 수위 5cm 에서 차단). 안 보내면 등록은 false, 수정은 기존 값 유지
+
     @PositiveOrZero(message = "침수 이력 횟수는 0 이상이어야 합니다.")
     private Integer floodHistoryCount;   // 안 보내거나 null 이면 등록은 0, 수정은 기존 값 유지   // 안 보내면 0
 
@@ -94,6 +96,9 @@ public class UnderpassCreateRequest {
 
     public BigDecimal getSeaDistM() { return seaDistM; }
     public void setSeaDistM(BigDecimal seaDistM) { this.seaDistM = seaDistM; }
+
+    public Boolean getEarlyBlock() { return earlyBlock; }
+    public void setEarlyBlock(Boolean earlyBlock) { this.earlyBlock = earlyBlock; }
 
     public Integer getFloodHistoryCount() { return floodHistoryCount; }
     public void setFloodHistoryCount(Integer floodHistoryCount) { this.floodHistoryCount = floodHistoryCount; }

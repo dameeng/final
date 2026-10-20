@@ -138,8 +138,7 @@ public class PlateLogReviewServiceImpl implements PlateLogReviewService {
         // (카메라가 삭제된 상태면 알림은 건너뛴다 — 예전과 동일)
         if (carId != null && !camera.isDeleted()) {
             if (camera.getCameraRole() == CameraRole.APPROACH_LPR
-                    && (underpass.getCurrentRiskLevel() == RiskLevel.WARNING
-                        || underpass.getCurrentRiskLevel() == RiskLevel.DANGER)) {
+                    && underpass.getCurrentRiskLevel().atLeast(RiskLevel.INTEREST)) {
                 eventRepository.findFirstByUnderpassIdAndEventTypeOrderByCreatedAtDescIdDesc(underpass.getId(),
                                 UnderpassEventType.RISK_LEVEL_UP)
                         .ifPresent(e -> matchedCars.forEach(

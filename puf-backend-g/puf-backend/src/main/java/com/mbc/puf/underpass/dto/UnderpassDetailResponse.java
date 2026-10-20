@@ -25,6 +25,8 @@ public class UnderpassDetailResponse {
     private BigDecimal riverDistM;
     private BigDecimal seaDistM;
     private int floodHistoryCount;
+    private boolean earlyBlock;          // 선제 차단 대상(수위 5cm 에서 차단. 침수 이력이 있어도 5cm)
+    private BigDecimal currentWaterCm;   // 수위계 최신값(cm)
     private UnderpassCurrentStatus currentStatus;
     private Long currentBlockEventId;
     private RiskLevel currentRiskLevel;
@@ -64,6 +66,12 @@ public class UnderpassDetailResponse {
 
     public BigDecimal getLengthM() { return lengthM; }
     public void setLengthM(BigDecimal lengthM) { this.lengthM = lengthM; }
+
+    public boolean isEarlyBlock() { return earlyBlock; }
+    public void setEarlyBlock(boolean earlyBlock) { this.earlyBlock = earlyBlock; }
+
+    public BigDecimal getCurrentWaterCm() { return currentWaterCm; }
+    public void setCurrentWaterCm(BigDecimal currentWaterCm) { this.currentWaterCm = currentWaterCm; }
 
     public int getFloodHistoryCount() { return floodHistoryCount; }
     public void setFloodHistoryCount(int floodHistoryCount) { this.floodHistoryCount = floodHistoryCount; }
