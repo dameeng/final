@@ -157,6 +157,15 @@ public class UnderpassController {
         return ApiResponse.ok(underpassService.getTransitHistory(loginUser, scope, status, vehicle, period, page));
     }
 
+    /** 통과 기록 1건 수동 완료(통과 완료 처리). 이미 완료면 409, 담당 지역 밖이면 403 */
+    @PreAuthorize("hasRole('REGIONAL_ADMIN')")
+    @PostMapping("/transits/{transitId}/complete")
+    public ApiResponse<TransitHistoryItem> completeTransit(
+            @AuthenticationPrincipal LoginUser loginUser,
+            @PathVariable("transitId") Long transitId) {
+        return ApiResponse.ok("통과 완료로 처리했습니다.", underpassService.completeTransit(loginUser, transitId));
+    }
+
     /**
      * 제어이력(MP-16: 차단/해제/위험도 변화 + 전광판 조작 통합, 최신순).
      *  kind              : "EVENT"(차단/해제/위험도 변화만) / "DISPLAY"(전광판 조작만), 안 주면 전체

@@ -66,12 +66,13 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional
     public void notifyCustomerRisk(Long customerId, Long alertId, String underpassName, String carNum,
-                                   AlertType alertType) {
+                                   AlertType alertType, String reason) {
         CustomerNotification n = new CustomerNotification();
         n.setCustomerId(customerId);
         n.setCategory(CustomerNotificationCategory.RISK);
         n.setTitle(alertType == AlertType.FINAL ? "지하차도 진입 직전 알림" : "지하차도 접근 알림");
-        n.setBody((underpassName == null ? "" : underpassName + " · ") + carNum);
+        n.setBody((underpassName == null ? "" : underpassName + " · ") + carNum
+                + (reason == null || reason.isBlank() ? "" : " · 사유: " + reason));
         n.setRefType("ALERT");
         n.setRefId(alertId);
         customerRepository.save(n);

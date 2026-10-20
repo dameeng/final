@@ -65,5 +65,6 @@ public interface UnderpassService {
     PageResponse<ControlHistoryItem> getControlHistory(LoginUser loginUser, Long id, String kind, PeriodQuery period, PageQuery page);
 
     // 잔류/장시간 IN_TRANSIT 자동 종료 (스케줄러 전용). 처리된 행 수
-    int expireStaleTransits();
+    // 통과 기록 1건을 관리자가 수동으로 통과 완료(EXITED) 처리. 이미 완료면 409, 담당 지역 밖이면 403
+    TransitHistoryItem completeTransit(LoginUser loginUser, Long transitId);
 }

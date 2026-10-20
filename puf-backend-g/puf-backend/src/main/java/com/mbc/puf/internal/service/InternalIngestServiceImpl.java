@@ -71,6 +71,9 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 	// 출구 보조 매칭(숫자만 같은 번호)을 허용할 입구 인식 후 시간(초). 같은 숫자의 다른 차와 잘못 짝짓지 않게 짧게 둔다
 	private static final long SIMILAR_MATCH_WINDOW_SEC = 60;
 
+	// 같은 카메라·같은 번호를 중복으로 보고 건너뛰는 시간(초)
+	private static final long DUPLICATE_WINDOW_SEC = 30;
+
 	// detected_num은 DB에서 NOT NULL이라, OCR이 아예 못 읽은 경우(null) 저장용으로 대신 넣는 값
 	private static final String FAILED_PLACEHOLDER = "FAILED";
 
@@ -162,6 +165,23 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 			throw new BusinessException(HttpStatus.BAD_REQUEST, "존재하지 않는 카메라입니다. cameraId=" + request.getCameraId());
 		}
 
+		// 같은 카메라에서 같은 번호가 30초 안에 또 들어오면 저장하지 않고 건너뛴다 (정차·서행 중 연속 인식, 중복 알림 방지).
+		// 응답은 먼저 저장된 기록을 그대로 돌려준다. 번호를 못 읽은 건(null)은 비교 대상이 아니다
+		if (request.getDetectedNum() != null && request.getDetectedAt() != null) {
+			PlateLog duplicate = plateLogRepository
+					.findFirstByCameraIdAndDetectedNumAndDetectedAtBetweenOrderByDetectedAtDesc(request.getCameraId(),
+							request.getDetectedNum(), request.getDetectedAt().minusSeconds(DUPLICATE_WINDOW_SEC),
+							request.getDetectedAt())
+					.orElse(null);
+			if (duplicate != null) {
+				log.info("번호판 중복 인식 건너뜀 (카메라 {}, {}초 이내): {}", request.getCameraId(), DUPLICATE_WINDOW_SEC,
+						request.getDetectedNum());
+				return new PlateLogResponse(duplicate.getId(), duplicate.getCameraId(), duplicate.getRecognitionStatus(),
+						duplicate.getCarId(), duplicate.getReviewStatus(), duplicate.getImagePath(),
+						duplicate.getDetectedAt());
+			}
+		}
+
 		// 같은 번호를 여러 고객이 등록할 수 있다(가족 공유 차량). 삭제한 차량·탈퇴 고객의 차량은 빠진다.
 		// plate_log.car_id 에는 첫 번째 차량을 남기고, 알림은 매칭된 고객마다 1건씩 보낸다
 		List<Car> matchedCars = (request.getDetectedNum() == null) ? List.of()
@@ -216,31 +236,11 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 			boolean matched = carId != null && (recognitionStatus == RecognitionStatus.SUCCESS
 					|| recognitionStatus == RecognitionStatus.LOW_CONFIDENCE);
 
-			// PREDICTIVE 알림: APPROACH_LPR(원거리 접근로) 카메라가 매칭했는데, 그 지하차도 위험도가
-			// 지금 관심 단계 이상이면 "아직 시간 있을 때" 경고로 발송
-			if (matched && camera.getCameraRole() == CameraRole.APPROACH_LPR
-					&& underpass.getCurrentRiskLevel().atLeast(RiskLevel.INTEREST)) {
-				// 알림 로그에 남길 계기 이벤트: "지금 이 단계로 올라간" 가장 최근 RISK_LEVEL_UP 행
-				// (currentRiskLevel 자체는 컬럼에서 바로 읽고, 이 조회는 event_id 확보용으로만 쓴다)
-				UnderpassEvent latestRiskUpEvent = eventRepository
-						.findFirstByUnderpassIdAndEventTypeOrderByCreatedAtDescIdDesc(underpass.getId(),
-								UnderpassEventType.RISK_LEVEL_UP)
-						.orElse(null);
-				if (latestRiskUpEvent != null) {
-					for (Car car : matchedCars) {
-						alertService.sendPredictiveAlert(latestRiskUpEvent.getId(), car.getId(), storedDetectedNum);
-					}
-				}
-			}
-
-			// FINAL 알림: FINAL_LPR(입구 바로 앞, 마지막으로 돌아갈 수 있는 지점) 카메라가 매칭했는데
-			// 그 지하차도가 지금 BLOCKED면, 진입 직전 최후 확인으로 그 차주에게 발송
-			if (matched && camera.getCameraRole() == CameraRole.FINAL_LPR
-					&& underpass.getCurrentStatus() == UnderpassCurrentStatus.BLOCKED
-					&& underpass.getCurrentBlockEventId() != null) {
-				for (Car car : matchedCars) {
-					alertService.sendRoiFinalAlert(underpass.getCurrentBlockEventId(), car.getId(), storedDetectedNum);
-				}
+			// 알림: 접근 카메라면 선제(PREDICTIVE), 입구 직전 카메라면 최종(FINAL). 조건 판단과 차단 사유 포함은 AlertService 가 한다.
+			// 판별 대기(PENDING)로 들어간 건은 여기서 보내지 않는다 — 자동 마감되거나 수동 판별이 끝나는 시점에 한 번만 보낸다
+			// (대기 중에는 이 번호가 맞는지 아직 모르고, 마감될지 정정될지도 모르기 때문)
+			if (matched && plateLog.getReviewStatus() != ReviewStatus.PENDING) {
+				alertService.sendAlertsForPlate(underpass, camera.getCameraRole(), matchedCars, storedDetectedNum);
 			}
 		}
 

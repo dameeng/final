@@ -67,7 +67,6 @@ public class UnderpassServiceImpl implements UnderpassService {
     private static final int HOURS_SAFETY_LIMIT = 3000;
     // 잔류/장시간 IN_TRANSIT 차량을 자동으로 "통과완료" 처리하기까지 기다리는 시간(분). 2026-10-01 확정값
     // (※ 새 DB 구조 단계에서 이 타이머는 삭제 예정 — 소방 보고 흐름과 충돌)
-    private static final int AUTO_EXIT_MINUTES = 2;
 
     // 목록용: 지역명 + 최신 위험점수 1건 + 판별대기 건수 + 잔류차량 건수를 한 번에 (예전 LATERAL JOIN 3개와 같음)
     private static final String LIST_SELECT = "select u, r.name,"
@@ -86,13 +85,16 @@ public class UnderpassServiceImpl implements UnderpassService {
     private final ThresholdService thresholdService;
     private final ScopeResolver scopeResolver;
     private final DbClock dbClock;
+    private final com.mbc.puf.stream.StreamPublisher streamPublisher;   // SSE 실시간 이벤트
     private final EntityManager em;
 
     public UnderpassServiceImpl(UnderpassRepository underpassRepository, UnderpassEventRepository eventRepository,
                                 TransitRepository transitRepository,
                                 CameraRepository cameraRepository, RiskScoreRepository riskScoreRepository,
                                 ThresholdService thresholdService, ScopeResolver scopeResolver,
-                                DbClock dbClock, EntityManager em) {
+                                DbClock dbClock, EntityManager em,
+                                com.mbc.puf.stream.StreamPublisher streamPublisher) {
+        this.streamPublisher = streamPublisher;
         this.underpassRepository = underpassRepository;
         this.eventRepository = eventRepository;
         this.transitRepository = transitRepository;
@@ -270,14 +272,18 @@ public class UnderpassServiceImpl implements UnderpassService {
                 .eqIfPresent("t.underpassId", resolved.getUnderpassId())
                 .inIfPresent("u.regionId", resolved.getRegionIds())
                 .eqIfPresent("t.status", status)
-                .carNumIfPresent(vehicle.getCarNum(), "t.carNum")
+                .carNumIfPresent(vehicle.getCarNum(), "t.carNum", "p.correctedNum")   // 원본·정정값 둘 다
                 .periodIfPresent("t.entryAt", period);   // 진입 시각 기준
 
-        String from = " from Transit t join Underpass u on u.id = t.underpassId";
-        return PagedQuery.fetch(em, "select t, u.name" + from, "select count(t)" + from, c,
+        // 입구 인식 기록에 관리자가 정정한 번호가 있으면 화면에는 그 값을 보여준다 (t.carNum 은 출구 매칭용 OCR 원본 그대로)
+        String from = " from Transit t join Underpass u on u.id = t.underpassId"
+                + " left join PlateLog p on p.id = t.entryPlateLogId";
+        return PagedQuery.fetch(em, "select t, u.name, p.correctedNum" + from, "select count(t)" + from, c,
                 " order by t.entryAt desc, t.id desc", Object[].class, row -> {
                     Transit t = (Transit) row[0];
+                    String corrected = (String) row[2];
                     return new TransitHistoryItem(t.getId(), t.getUnderpassId(), (String) row[1], t.getCarNum(),
+                            corrected != null ? corrected : t.getCarNum(),
                             t.getStatus(), t.getEntryAt(), t.getExitAt());
                 }, page.toParams());
     }
@@ -339,13 +345,28 @@ public class UnderpassServiceImpl implements UnderpassService {
         return new PageResponse<>(merged.subList(from, to), pageParams.getPage(), pageParams.getSize(), total);
     }
 
-    // ---- 잔류/장시간 IN_TRANSIT 차량 자동 종료 (스케줄러 전용) ----
+    // ---- 통과 기록 수동 완료 (단건) ----
 
     @Override
     @Transactional
-    public int expireStaleTransits() {
-        var now = dbClock.now();
-        return transitRepository.expireStale(now, now.minusMinutes(AUTO_EXIT_MINUTES));
+    public TransitHistoryItem completeTransit(LoginUser loginUser, Long transitId) {
+        Transit transit = transitRepository.findById(transitId)
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "존재하지 않는 통과 기록입니다. id=" + transitId));
+        Underpass underpass = requireExistingUnderpass(transit.getUnderpassId());
+        requireOwnableRegion(loginUser, underpass.getRegionId());   // 담당 지역 밖이면 403
+
+        if (transit.getStatus() == TransitStatus.EXITED) {
+            throw new BusinessException(HttpStatus.CONFLICT, "이미 통과 완료된 기록입니다.");
+        }
+        // 실제 출구 인식이 있었던 게 아니라 관리자가 확인해서 닫는 것이므로 exit_log_id 는 비워 두고 시각만 남긴다.
+        // 처리한 관리자는 따로 저장하지 않는다 (처리 시각은 exit_at, 담당자는 그 시각의 근무조로 알 수 있음)
+        transit.setStatus(TransitStatus.EXITED);
+        transit.setExitAt(dbClock.now());
+        streamPublisher.publishToAdmins(underpass.getRegionId(), "transit-update",
+                new com.mbc.puf.stream.StreamPayloads.TransitUpdate(underpass.getId(), "EXIT",
+                        transit.getDirection() == null ? null : transit.getDirection().name(), transit.getCarNum()));
+        return new TransitHistoryItem(transit.getId(), transit.getUnderpassId(), underpass.getName(), transit.getCarNum(),
+                transit.getCarNum(), transit.getStatus(), transit.getEntryAt(), transit.getExitAt());
     }
 
     // ---- 내부 메서드 ----

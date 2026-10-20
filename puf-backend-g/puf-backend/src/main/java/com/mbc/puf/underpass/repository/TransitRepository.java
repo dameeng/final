@@ -47,12 +47,4 @@ public interface TransitRepository extends JpaRepository<Transit, Long> {
             + " and t.status in (com.mbc.puf.common.enums.TransitStatus.IN_TRANSIT,"
             + " com.mbc.puf.common.enums.TransitStatus.REMAINING)")
     List<String> findActiveCarNums(@Param("underpassId") Long underpassId);
-
-    // 잔류/장시간 IN_TRANSIT 자동 종료(스케줄러 전용): entry_at 이 cutoff 이전인 IN_TRANSIT/REMAINING 건을 전부 EXITED로.
-    // 실제 출구 인식이 있었던 게 아니므로 exit_log_id 는 비워두고 exit_at 만 처리 시각으로 채운다
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("update Transit t set t.status = com.mbc.puf.common.enums.TransitStatus.EXITED, t.exitAt = :now"
-            + " where t.status in (com.mbc.puf.common.enums.TransitStatus.IN_TRANSIT,"
-            + " com.mbc.puf.common.enums.TransitStatus.REMAINING) and t.entryAt <= :cutoff")
-    int expireStale(@Param("now") LocalDateTime now, @Param("cutoff") LocalDateTime cutoff);
 }
