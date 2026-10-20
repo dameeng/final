@@ -1,0 +1,33 @@
+/* Keep the original customer map/list/detail design with API-backed content. */
+.legacy-live-map .customer-map-canvas{position:absolute;inset:0;width:100%;height:100%;min-height:360px}
+.legacy-live-map .mapw .mtop{z-index:3}
+.legacy-live-map .mapw .pill{display:flex;flex-wrap:wrap;gap:10px}
+.legacy-live-map .mapw .pill span{display:flex;align-items:center;gap:5px;white-space:nowrap}
+.legacy-live-map .mapw .pill i{display:inline-block;width:9px;height:9px;border-radius:50%}
+.legacy-live-map .mapw .kakao-map-controls{top:auto;bottom:20px;right:14px;z-index:4}
+.legacy-live-map .ph select{width:100%;min-height:38px;padding:8px;border:1px solid var(--line);background:var(--surface);color:inherit;font:inherit;font-size:13px}
+.legacy-live-map .ph .refresh-facilities{align-self:end;font-size:12px;min-height:32px;padding:6px 10px}
+.legacy-live-map .detail-badges{display:flex;gap:8px;flex-wrap:wrap}
+.legacy-live-map .detail-extended{display:flex;flex-direction:column;gap:14px;min-width:0}
+.legacy-live-map .detail-extended .weather-value{font-size:14px}
+.legacy-live-map .detail-extended .trend-title{font-size:13px;margin:0 0 8px}
+.legacy-live-map .risk-history-chart{display:block;width:100%;height:auto}
+.legacy-live-map .facility-message{margin:0;padding:16px;font-size:13px;line-height:1.6;overflow-wrap:anywhere}
+.legacy-live-map .facility-message[role=alert]{color:#b42318}
+.legacy-live-map .map-error-note{position:absolute;left:12px;right:64px;top:62px;z-index:3;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:8px;font-size:12px}
+.legacy-live-map .cluster-list-heading{padding:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px}
+.legacy-live-map .app-guidance{margin-top:4px;line-height:1.7}
+.legacy-live-map .app-guidance a{white-space:nowrap}
+.legacy-live-map .alertbar{z-index:3;bottom:72px;font-size:13px}
+.legacy-live-map .lst .it>span:last-child{min-width:0}
+.legacy-live-map .lst .it small{white-space:normal;overflow-wrap:anywhere}
+.legacy-live-map .customer-list-pagination{display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 8px;border-top:1px solid var(--line);margin-top:auto;font-size:13px;background:var(--surface)}
+.legacy-live-map .list-page-buttons{display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:wrap}
+.legacy-live-map .list-page-buttons button{min-width:30px;min-height:34px;padding:5px 8px;border:1px solid var(--line);background:var(--surface);color:inherit;font-size:12px}
+.legacy-live-map .list-page-buttons button[aria-current=page]{background:#225f9b;border-color:#225f9b;color:#fff;font-weight:700}
+.legacy-live-map .list-page-buttons button:disabled{opacity:.4;cursor:default}
+.legacy-live-map .customer-list-pagination small{color:var(--ink-sub,#64748b);font-size:12px}
+.service-mobile .legacy-live-map .app.map-swap-layout{display:flex;flex-direction:column;padding:12px;gap:12px;height:auto;min-height:0}
+.service-mobile .legacy-live-map .app.map-swap-layout>.mapw{width:100%;min-height:380px;height:380px}
+.service-mobile .legacy-live-map .app.map-swap-layout>aside{width:100%;height:auto;max-height:none}
+@media(max-width:600px){.legacy-live-map .mapw .pill{gap:6px;font-size:11px}.legacy-live-map .mapw .mtop{left:8px;right:8px;top:8px}.legacy-live-map .map-weather-widget{max-width:calc(100% - 76px)}}

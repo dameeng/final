@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import '../styles/index.css'
 import {adminSections} from '../data/adminNavigation'
 </script>
@@ -8,10 +8,6 @@ import {adminSections} from '../data/adminNavigation'
     <section class="admin-grid" aria-label="관리자 메뉴">
       <article v-for="section in adminSections" :key="section.title" class="admin-section"><h2>{{ section.title }}</h2><nav><RouterLink v-for="link in section.links" :key="link[1]" :to="link[1]">{{ link[0] }}<span aria-hidden="true">→</span></RouterLink></nav></article>
     </section>
-    <details class="other-pages"><summary>고객·앱 화면 미리보기</summary>
-      <h2>고객 웹</h2><ul><li><RouterLink to="/c-map">지하차도 현황</RouterLink></li><li><RouterLink to="/c-app">서비스·앱 소개</RouterLink></li><li><RouterLink to="/c-notice">알림마당</RouterLink></li><li><RouterLink to="/c-auth">로그인·회원가입</RouterLink></li><li><RouterLink to="/my-home">마이페이지</RouterLink></li></ul>
-      <h2>앱 화면</h2><ul><li><RouterLink to="/c-app-screens">고객 앱 화면</RouterLink></li><li><RouterLink to="/m-app-screens">관리자 앱 화면</RouterLink></li></ul>
-    </details>
   </main>
 </template>
 <style scoped>

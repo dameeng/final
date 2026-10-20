@@ -1,4 +1,5 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
+import AdminSidebarLinks from '../components/AdminSidebarLinks.vue'
 import MenuIcon from '../components/MenuIcon.vue'
 import AdminIdentity from '../components/AdminIdentity.vue'
 import {computed,ref,onMounted,onBeforeUnmount} from 'vue'
@@ -14,7 +15,7 @@ import '../styles/dashboard-fixed.css'
 const root=ref<HTMLElement>();const router=useRouter();let dispose:(()=>void)|undefined
 const facilityExpanded=ref(true)
 const admin=useAdminProfile(),app=useApp()
-const mapRegion=computed(()=>app.account?app.account.regions?.map(region=>region.name).join(' · ')||'담당 지역 미지정':admin.region)
+const mapRegion=computed(()=>app.account?.role==='REGIONAL_ADMIN'?app.account.regions?.map(region=>region.name).join(' · ')||'담당 지역 미지정':admin.region)
 onMounted(()=>{if(!root.value)return;const runtime=makeContext(root.value,router);enhance('admin-dashboard',runtime.ctx);initialize(runtime.ctx);mountClusters(root.value,runtime.ctx,'admin-dashboard');dispose=runtime.dispose})
 onBeforeUnmount(()=>dispose?.())
 </script>
@@ -55,7 +56,7 @@ onBeforeUnmount(()=>dispose?.())
 <a href="/bot-stats"><span>챗봇</span></a>
 <a href="/logs"><span>로그</span></a>
   </nav>
-  <div class="side-bot"><a href="/index">전체 관리자 화면</a><RouterLink to="/admin-app/screen-3">관리자 앱</RouterLink><RouterLink to="/">고객페이지</RouterLink><RouterLink to="/customer-app/screen-5">고객 앱</RouterLink></div>
+  <AdminSidebarLinks/>
 </aside>
 <main class="page">
   <div class="crumb"><span>종합 현황</span><span class="note">샘플 데이터 · 구조 확인용 저충실도 와이어프레임</span></div>

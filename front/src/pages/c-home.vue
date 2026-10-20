@@ -4,7 +4,7 @@ const visionRoadmap=[
   {
     year: '2026',
     title: '안전 정보의 기반을 다지겠습니다',
-    description: '지하차도 통제 현황과 기상 정보를 한곳에서 확인할 수 있는 기본 서비스를 구축하겠습니다.',
+    description: '지하차도 통제 현황을 한곳에서 확인할 수 있는 기본 서비스를 구축하겠습니다.',
   },
   {
     year: '2027',
@@ -14,7 +14,7 @@ const visionRoadmap=[
   {
     year: '2028',
     title: '위험 변화를 더 세심하게 살피겠습니다',
-    description: '축적된 기상·시설 데이터를 활용해 위험 분석의 정확도를 검증하고 개선하겠습니다.',
+    description: '축적된 시설 데이터를 활용해 위험 분석의 정확도를 검증하고 개선하겠습니다.',
   },
   {
     year: '2030',
@@ -43,7 +43,7 @@ const visionRoadmap=[
               <p class="routel-hero-eyebrow">지하차도 안전을 위한 기술, ROUTEL</p>
               <h2><span>다시는 ‘아무도 몰랐다’는 말이 없도록.</span><span class="routel-hero-promise">물이 차오르기 전에, 먼저 알려드리겠습니다.</span></h2>
             </div>
-            <p class="routel-hero-description">지하차도 통제 현황과 기상 정보를 한곳에서 확인하고, 이동 전부터 이동 중까지, 안전한 길을 함께 확인하세요.</p>
+            <p class="routel-hero-description">지하차도 통제 현황을 한곳에서 확인하고, 이동 전부터 이동 중까지, 안전한 길을 함께 확인하세요.</p>
             <div class="routel-hero-actions">
               <RouterLink to="/info/underpasses" class="routel-hero-button routel-hero-button-primary">지하차도 통제 현황</RouterLink>
               <RouterLink to="/info/business" class="routel-hero-button">서비스 소개</RouterLink>
@@ -56,7 +56,7 @@ const visionRoadmap=[
       <div class="routel-services-intro">
         <p class="routel-services-eyebrow">ROUTEL의 역할</p>
         <h2 id="routel-services-title">도로의 상황을 살피고,<br />안전한 이동을 돕습니다.</h2>
-        <p class="routel-services-summary">지하차도 통제 현황과 기상 정보를 연결해, 이동 전부터 이동 중까지 필요한 안전 정보를 안내합니다.</p>
+        <p class="routel-services-summary">지하차도 통제 현황을 바탕으로, 이동 전부터 이동 중까지 필요한 안전 정보를 안내합니다.</p>
       </div>
       <ol class="routel-services-list" role="list">
         <li class="routel-services-item">
@@ -68,13 +68,6 @@ const visionRoadmap=[
         </li>
         <li class="routel-services-item">
           <span class="routel-services-number" aria-hidden="true">02</span>
-          <div>
-            <h3>기상 정보 확인</h3>
-            <p>지역별 기상 정보를 확인하고, 비가 오는 날의 이동을 미리 준비하세요.</p><RouterLink to="/info/weather">자세히 보기 ↗</RouterLink>
-          </div>
-        </li>
-        <li class="routel-services-item">
-          <span class="routel-services-number" aria-hidden="true">03</span>
           <div>
             <h3>필요한 안전 안내 확인</h3>
             <p>공지사항과 이용 안내를 통해 서비스 이용에 필요한 정보를 확인하세요.</p><RouterLink to="/info/notices">자세히 보기 ↗</RouterLink>
