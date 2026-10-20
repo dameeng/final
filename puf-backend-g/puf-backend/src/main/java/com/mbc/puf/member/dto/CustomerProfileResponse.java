@@ -3,6 +3,8 @@ package com.mbc.puf.member.dto;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 /** 고객 마이페이지 내 정보 조회 결과 */
 public class CustomerProfileResponse {
 
@@ -16,6 +18,7 @@ public class CustomerProfileResponse {
     private final String zipcode;
     private final String roadAddress;
     private final String detailAddress;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
     private final LocalDateTime createdAt;
 
     public CustomerProfileResponse(Long id, String loginId, String name, LocalDate birthDate, String email,

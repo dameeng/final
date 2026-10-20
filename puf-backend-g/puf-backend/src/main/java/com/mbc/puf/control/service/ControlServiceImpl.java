@@ -4,6 +4,7 @@ import com.mbc.puf.common.enums.TransferAgency;
 import com.mbc.puf.common.enums.UnderpassCurrentStatus;
 import com.mbc.puf.common.enums.UnderpassEventType;
 import com.mbc.puf.common.exception.BusinessException;
+import com.mbc.puf.common.pdf.ControlNoticeData;
 import com.mbc.puf.common.pdf.TransferPdfGenerator;
 import com.mbc.puf.common.security.LoginUser;
 import com.mbc.puf.common.security.ScopeResolver;
@@ -18,17 +19,26 @@ import com.mbc.puf.control.repository.CtrlTransferCarRepository;
 import com.mbc.puf.control.repository.CtrlTransferRepository;
 import com.mbc.puf.control.repository.ReasonPresetRepository;
 import com.mbc.puf.member.entity.Employee;
+import com.mbc.puf.internal.entity.RiskScore;
+import com.mbc.puf.internal.repository.RiskScoreRepository;
 import com.mbc.puf.member.entity.Manager;
 import com.mbc.puf.member.repository.EmployeeRepository;
 import com.mbc.puf.member.repository.ManagerRegionRepository;
 import com.mbc.puf.member.repository.ManagerRepository;
+import com.mbc.puf.member.repository.ShiftRepository;
 import com.mbc.puf.region.repository.RegionRepository;
+import com.mbc.puf.common.enums.ManagerNotificationCategory;
+import com.mbc.puf.notification.service.NotificationService;
+import com.mbc.puf.stream.StreamPayloads;
+import com.mbc.puf.stream.StreamPublisher;
 import com.mbc.puf.underpass.dto.UnderpassDetailResponse;
 import com.mbc.puf.underpass.entity.Underpass;
 import com.mbc.puf.underpass.entity.UnderpassEvent;
 import com.mbc.puf.underpass.repository.UnderpassEventRepository;
 import com.mbc.puf.underpass.repository.UnderpassRepository;
 import com.mbc.puf.underpass.repository.TransitRepository;
+import jakarta.persistence.EntityManager;
+import org.springframework.data.domain.Limit;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,6 +66,11 @@ public class ControlServiceImpl implements ControlService {
     private final RegionRepository regionRepository;
     private final TransferPdfGenerator pdfGenerator;
     private final ScopeResolver scopeResolver;
+    private final RiskScoreRepository riskScoreRepository;   // 전달서에 적을 이벤트 시점 위험도·강우
+    private final ShiftRepository shiftRepository;           // 전달서에 적을 담당자 근무조
+    private final EntityManager em;                          // 전광판 문구 조회(native)
+    private final StreamPublisher streamPublisher;           // SSE 실시간 이벤트
+    private final NotificationService notificationService;   // 관리자 알림(위험)
 
     public ControlServiceImpl(
             ReasonPresetRepository reasonPresetRepository,
@@ -69,7 +84,12 @@ public class ControlServiceImpl implements ControlService {
             ManagerRegionRepository managerRegionRepository,
             RegionRepository regionRepository,
             TransferPdfGenerator pdfGenerator,
-            ScopeResolver scopeResolver) {
+            ScopeResolver scopeResolver,
+            RiskScoreRepository riskScoreRepository,
+            ShiftRepository shiftRepository,
+            EntityManager em,
+            StreamPublisher streamPublisher,
+            NotificationService notificationService) {
         this.reasonPresetRepository = reasonPresetRepository;
         this.ctrlTransferRepository = ctrlTransferRepository;
         this.ctrlTransferCarRepository = ctrlTransferCarRepository;
@@ -82,6 +102,20 @@ public class ControlServiceImpl implements ControlService {
         this.regionRepository = regionRepository;
         this.pdfGenerator = pdfGenerator;
         this.scopeResolver = scopeResolver;
+        this.riskScoreRepository = riskScoreRepository;
+        this.shiftRepository = shiftRepository;
+        this.em = em;
+        this.streamPublisher = streamPublisher;
+        this.notificationService = notificationService;
+    }
+
+    // 차단/해제 직후: 공개 이벤트(지도·목록 갱신) + 담당 지역 관리자 알림(위험). 커밋 뒤에 전송된다
+    private void publishControlChange(Underpass underpass, UnderpassCurrentStatus status, LoginUser operator) {
+        streamPublisher.publishPublic("control-change", underpass.getRegionId(),
+                new StreamPayloads.ControlChange(underpass.getId(), underpass.getName(), status, LocalDateTime.now()));
+        boolean blocked = status == UnderpassCurrentStatus.BLOCKED;
+        notificationService.notifyManagers(ManagerNotificationCategory.RISK, underpass.getRegionId(),
+                blocked ? "지하차도 통제(차단)" : "지하차도 통제 해제", underpass.getName(), "UNDERPASS", underpass.getId());
     }
 
     // ─────────────────────────── 사유 프리셋 ───────────────────────────
@@ -122,18 +156,17 @@ public class ControlServiceImpl implements ControlService {
 
         // 3) IN_TRANSIT → REMAINING 일괄 처리
         transitRepository.markRemaining(underpassId);
+        publishControlChange(underpass, UnderpassCurrentStatus.BLOCKED, loginUser);
+        streamPublisher.publishToAdmins(underpass.getRegionId(), "transit-update",
+                new StreamPayloads.TransitUpdate(underpassId, "REMAINING", null, null));
 
         // 4) 경찰 이관 기록 저장
         CtrlTransfer transfer = saveTransfer(event.getId(), TransferAgency.POLICE, null, loginUser.id());
 
         // 5) PDF 생성
-        ManagerInfo mgr = managerInfo(loginUser.id());
         LocalDateTime now = transfer.getCreatedAt() != null ? transfer.getCreatedAt() : LocalDateTime.now();
         byte[] pdf = pdfGenerator.generatePolicePdf(
-                underpass.getName(), "차단", reason,
-                mgr.name(), mgr.regionName(),
-                event.getCreatedAt() != null ? event.getCreatedAt() : now,
-                now, null);
+                buildNotice(underpass, event, null, loginUser.id(), null));
 
         // 6) 최신 상태 다시 조회해서 응답 구성
         UnderpassDetailResponse detail = toDetail(underpassRepository.findByIdAndDeletedFalse(underpassId).orElseThrow());
@@ -171,19 +204,15 @@ public class ControlServiceImpl implements ControlService {
         // 2) 지하차도 상태 갱신
         underpass.setCurrentStatus(UnderpassCurrentStatus.NORMAL);
         underpass.setCurrentBlockEventId(null);
+        publishControlChange(underpass, UnderpassCurrentStatus.NORMAL, loginUser);
 
         // 3) 경찰 이관 기록 저장
         CtrlTransfer transfer = saveTransfer(event.getId(), TransferAgency.POLICE, null, loginUser.id());
 
         // 4) PDF 생성
-        ManagerInfo mgr = managerInfo(loginUser.id());
         LocalDateTime now = transfer.getCreatedAt() != null ? transfer.getCreatedAt() : LocalDateTime.now();
-        LocalDateTime blockAt = blockEvent != null && blockEvent.getCreatedAt() != null
-                ? blockEvent.getCreatedAt() : now;
         byte[] pdf = pdfGenerator.generatePolicePdf(
-                underpass.getName(), "해제", reason,
-                mgr.name(), mgr.regionName(),
-                blockAt, now, null);
+                buildNotice(underpass, event, blockEvent, loginUser.id(), null));
 
         UnderpassDetailResponse detail = toDetail(underpassRepository.findByIdAndDeletedFalse(underpassId).orElseThrow());
         String filename = String.format("경찰이관_해제_%s_%s.pdf", underpass.getName(), FILE_DT.format(now));
@@ -257,18 +286,14 @@ public class ControlServiceImpl implements ControlService {
         if (transfer.getAgency() == TransferAgency.POLICE) {
             String eventTypeLabel = event.getEventType() == UnderpassEventType.BLOCK ? "차단" : "해제";
 
-            // 해제 이벤트라면 해당 차단 이벤트의 시각도 참조
-            LocalDateTime blockAt = transferAt;
-            if (event.getEventType() == UnderpassEventType.RELEASE && underpass.getCurrentBlockEventId() != null) {
-                blockAt = eventRepository.findById(underpass.getCurrentBlockEventId())
-                        .map(UnderpassEvent::getCreatedAt).orElse(transferAt);
-            }
+            // 해제 이벤트라면 그 해제 직전의 차단 이벤트를 찾는다 (해제 후에는 current_block_event_id 가 비어 있다)
+            UnderpassEvent blockEvent = event.getEventType() == UnderpassEventType.RELEASE && event.getCreatedAt() != null
+                    ? eventRepository.findFirstByUnderpassIdAndEventTypeAndCreatedAtLessThanEqualOrderByCreatedAtDescIdDesc(
+                            underpass.getId(), UnderpassEventType.BLOCK, event.getCreatedAt()).orElse(null)
+                    : null;
 
             pdf = pdfGenerator.generatePolicePdf(
-                    underpass.getName(), eventTypeLabel, event.getReason(),
-                    mgr.name(), mgr.regionName(),
-                    event.getCreatedAt() != null ? event.getCreatedAt() : blockAt,
-                    transferAt, transfer.getMemo());
+                    buildNotice(underpass, event, blockEvent, transfer.getManagerId(), transfer.getMemo()));
             filename = String.format("경찰이관_%s_%s_%s.pdf", eventTypeLabel, underpass.getName(), FILE_DT.format(transferAt));
         } else {
             List<String> carNums = ctrlTransferCarRepository.findByCtrlTransferId(transferId)
@@ -327,6 +352,59 @@ public class ControlServiceImpl implements ControlService {
                 .orElse("-");
 
         return new ManagerInfo(name, regionName);
+    }
+
+    /**
+     * 통제 정보 전달서에 들어갈 내용을 모은다. 위험도·강우·전광판 문구·근무조는 있는 것만 채우고 없으면 비워 둔다.
+     *
+     * @param event      이 문서가 다루는 이벤트 (BLOCK 또는 RELEASE)
+     * @param blockEvent 해제 문서일 때 그 해제의 짝이 되는 차단 이벤트 (차단 문서면 null)
+     */
+    private ControlNoticeData buildNotice(Underpass underpass, UnderpassEvent event, UnderpassEvent blockEvent,
+                                          Long managerId, String memo) {
+        LocalDateTime at = event.getCreatedAt() != null ? event.getCreatedAt() : LocalDateTime.now();
+
+        // 이벤트 시점 직전에 나온 위험도 예측 1건 (점수 + 강우)
+        Double score = null;
+        Double rain = null;
+        List<RiskScore> scores = riskScoreRepository
+                .findByUnderpassIdAndPredictedAtLessThanEqualOrderByPredictedAtDesc(underpass.getId(), at, Limit.of(1));
+        if (!scores.isEmpty()) {
+            RiskScore rs = scores.get(0);
+            score = rs.getRiskScore() != null ? rs.getRiskScore().doubleValue() : null;
+            rain = rs.getRainfallMm() != null ? rs.getRainfallMm().doubleValue() : null;
+        }
+
+        ManagerInfo mgr = managerInfo(managerId);
+        return new ControlNoticeData(
+                underpass.getName(), underpass.getRoadAddress(),
+                event.getEventType() == UnderpassEventType.BLOCK, at, event.getReason(),
+                score, rain,
+                // 전광판 문구는 통제 시작 문서에만 적는다 (해제 후에는 문구가 바뀌므로 현재 값이 해제 시점과 다를 수 있음)
+                event.getEventType() == UnderpassEventType.BLOCK ? currentDisplayText(underpass.getId()) : null,
+                mgr.name(), mgr.regionName(), shiftLabel(managerId),
+                blockEvent != null ? blockEvent.getCreatedAt() : null,
+                blockEvent != null ? blockEvent.getReason() : null,
+                memo);
+    }
+
+    // 그 지하차도 전광판의 1페이지 문구 (전광판이 없거나 페이지가 비어 있으면 null)
+    private String currentDisplayText(Long underpassId) {
+        List<?> rows = em.createNativeQuery(
+                        "SELECT dp.content FROM display_page dp JOIN pm_equipment pe ON pe.id = dp.equip_id"
+                                + " WHERE pe.underpass_id = :id AND CAST(pe.type AS TEXT) = 'DISPLAY'"
+                                + " ORDER BY dp.page_no, pe.id")
+                .setParameter("id", underpassId).setMaxResults(1).getResultList();
+        return rows.isEmpty() ? null : (String) rows.get(0);
+    }
+
+    // "1조 06:00~14:00" (근무조가 없으면 null)
+    private String shiftLabel(Long managerId) {
+        Manager manager = managerRepository.findById(managerId).orElse(null);
+        if (manager == null || manager.getShiftId() == null) return null;
+        return shiftRepository.findById(manager.getShiftId())
+                .map(sh -> sh.getName() + " " + sh.getStartTime() + "~" + sh.getEndTime())
+                .orElse(null);
     }
 
     private CtrlTransferItem toItem(CtrlTransfer t) {

@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.mbc.puf.common.enums.VerificationPurpose;
 import com.mbc.puf.common.exception.BusinessException;
+import com.mbc.puf.member.dto.PhoneCodeTiming;
 import com.mbc.puf.common.jpa.DbClock;
 import com.mbc.puf.common.sms.SmsSender;
 import com.mbc.puf.common.util.VerificationCodeGenerator;
@@ -40,6 +41,11 @@ public class PhoneVerificationServiceImpl implements PhoneVerificationService {
         this.codeTtlMinutes = codeTtlMinutes;
         this.resendCooldownSeconds = resendCooldownSeconds;
         this.verifiedValidMinutes = verifiedValidMinutes;
+    }
+
+    @Override
+    public PhoneCodeTiming timing() {
+        return new PhoneCodeTiming(codeTtlMinutes * 60, resendCooldownSeconds);
     }
 
     // ==================== 가입 ====================

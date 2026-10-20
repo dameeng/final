@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.mbc.puf.common.exception.BusinessException;
 import com.mbc.puf.common.response.ApiResponse;
 import com.mbc.puf.member.dto.PasswordResetConfirmRequest;
+import com.mbc.puf.member.dto.PhoneCodeTiming;
 import com.mbc.puf.member.dto.PasswordResetRequestRequest;
 import com.mbc.puf.member.dto.PasswordResetVerifyRequest;
 import com.mbc.puf.member.service.PasswordService;
@@ -29,19 +30,19 @@ public class PasswordResetController {
 	}
 
 	@PostMapping("/api/customers/password-reset/request")
-	public ApiResponse<Void> requestForCustomer(@Valid @RequestBody PasswordResetRequestRequest request,
+	public ApiResponse<PhoneCodeTiming> requestForCustomer(@Valid @RequestBody PasswordResetRequestRequest request,
 			HttpServletRequest httpRequest) {
 		Long customerId = passwordService.requestForCustomer(request.getLoginId(), request.getPhone());
 		httpRequest.getSession(true).setAttribute(CUSTOMER_RESET_ID, customerId);
-		return ApiResponse.ok("인증코드를 발송했습니다.", null);
+		return ApiResponse.ok("인증코드를 발송했습니다.", passwordService.codeTiming());
 	}
 
 	@PostMapping("/api/managers/password-reset/request")
-	public ApiResponse<Void> requestForManager(@Valid @RequestBody PasswordResetRequestRequest request,
+	public ApiResponse<PhoneCodeTiming> requestForManager(@Valid @RequestBody PasswordResetRequestRequest request,
 			HttpServletRequest httpRequest) {
 		Long managerId = passwordService.requestForManager(request.getLoginId(), request.getPhone());
 		httpRequest.getSession(true).setAttribute(MANAGER_RESET_ID, managerId);
-		return ApiResponse.ok("인증코드를 발송했습니다.", null);
+		return ApiResponse.ok("인증코드를 발송했습니다.", passwordService.codeTiming());
 	}
 
 	@PostMapping("/api/customers/password-reset/verify")

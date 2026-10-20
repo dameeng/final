@@ -17,6 +17,7 @@ import com.mbc.puf.common.enums.AlertChannel;
 import com.mbc.puf.common.enums.DeliveryStatus;
 import com.mbc.puf.common.exception.BusinessException;
 import com.mbc.puf.common.jpa.DbClock;
+import com.mbc.puf.notification.service.NotificationService;
 import com.mbc.puf.common.query.PagedQuery;
 import com.mbc.puf.common.query.QueryConditions;
 import com.mbc.puf.common.request.PageParams;
@@ -36,16 +37,18 @@ public class NoticeServiceImpl implements NoticeService {
     private final NoticeAlertRepository noticeAlertRepository;
     private final NoticeDeliveryRepository noticeDeliveryRepository;
     private final DbClock dbClock;
+    private final NotificationService notificationService;   // 고객 알림 센터(공지 분류)
     private final EntityManager em;
 
     public NoticeServiceImpl(NoticeRepository noticeRepository,
                              NoticeAlertRepository noticeAlertRepository,
                              NoticeDeliveryRepository noticeDeliveryRepository,
-                             DbClock dbClock, EntityManager em) {
+                             DbClock dbClock, NotificationService notificationService, EntityManager em) {
         this.noticeRepository = noticeRepository;
         this.noticeAlertRepository = noticeAlertRepository;
         this.noticeDeliveryRepository = noticeDeliveryRepository;
         this.dbClock = dbClock;
+        this.notificationService = notificationService;
         this.em = em;
     }
 
@@ -86,6 +89,9 @@ public class NoticeServiceImpl implements NoticeService {
         notice.setImportant(request.isImportant());
         notice.setAuthorId(authorId);
         noticeRepository.saveAndFlush(notice);   // id 확보
+
+        // 고객 알림 센터(공지 분류): 활성 고객 전체에게 한 건씩
+        notificationService.notifyCustomersNewNotice(notice.getId(), notice.getTitle(), notice.isImportant());
 
         // 활성 고객 전체에게 notice_alert 일괄 삽입 (native bulk insert)
         int inserted = noticeAlertRepository.insertForAllActiveCustomers(notice.getId());
