@@ -26,9 +26,9 @@ onBeforeUnmount(()=>dispose?.())
 <div class="field"><label for="f-addr">주소 (선택)</label><div class="row inl-2aca6dadb8"><input id="f-addr" value="부산광역시 해운대구 ○○로 12" /><button type="button" class="btn">주소 검색</button></div></div>
 <div class="row"><button type="button" class="btn primary" data-save="회원정보를 저장했어요">저장</button><button type="button" class="btn">취소</button></div></div></section>
 <section class="card" id="s-pw" hidden><h2>비밀번호 변경</h2><div class="form">
-<div class="field"><label for="p0">현재 비밀번호</label><input id="p0" type="password" /></div>
-<div class="field"><label for="p1">새 비밀번호</label><input id="p1" type="password" /><span class="hint">영문, 숫자, 특수문자 포함 8자 이상</span></div>
-<div class="field"><label for="p2">새 비밀번호 확인</label><input id="p2" type="password" /></div>
+<div class="field"><label for="p0">현재 비밀번호</label><PasswordInput id="p0" /></div>
+<div class="field"><label for="p1">새 비밀번호</label><PasswordInput id="p1" /><span class="hint">영문, 숫자, 특수문자 포함 8자 이상</span></div>
+<div class="field"><label for="p2">새 비밀번호 확인</label><PasswordInput id="p2" /></div>
 <div class="row"><button type="button" class="btn primary" data-save="비밀번호를 변경했어요">변경</button></div></div></section>
 <section class="card" id="s-push" hidden><h2>알림 설정</h2><p class="hint inl-d462248a40">앱 푸시 수신 설정이에요. 알림 내역 화면에서도 같은 설정을 바꿀 수 있어요.</p>
 <label class="sw"><span><strong>푸시 알림 받기</strong><small>끄면 아래 알림도 모두 오지 않아요</small></span><input type="checkbox" id="m" checked /></label>

@@ -9,7 +9,7 @@ const app=useApp()
 const route=useRoute(),router=useRouter()
 const mode=computed(()=>String(route.meta.auth||'login'))
 const form=reactive({loginId:'',phone:'',name:'',email:'',password:'',confirm:'',code:''})
-const loading=ref(false),message=ref(route.query.reset==='done'?'비밀번호가 변경되었습니다. 새 비밀번호로 로그인해 주세요.':''),resetStep=ref('request'),showPassword=ref(false)
+const loading=ref(false),message=ref(route.query.reset==='done'?'비밀번호가 변경되었습니다. 새 비밀번호로 로그인해 주세요.':''),resetStep=ref('request')
 const title=computed(()=>({login:'로그인',signup:'회원가입',reset:'비밀번호 찾기',find:'아이디 찾기'}[mode.value]||'로그인'))
 const phoneParts=reactive(['010','','']),country=ref('+82'),emailLocal=ref(''),emailDomain=ref(''),domainChoice=ref('naver.com')
 const phoneInputs=ref<HTMLInputElement[]>([]),phoneRequested=ref(false),phoneMessage=ref(''),idMessage=ref('')
@@ -38,13 +38,13 @@ async function submit(){
 </script>
 <template><main class="wire-page customer-content auth-page"><h1>{{title}}</h1>
  <form @submit.prevent="submit">
-  <template v-if="mode==='login'"><label>아이디<input v-model.trim="form.loginId" autocomplete="username" required></label><label>비밀번호<input v-model="form.password" :type="showPassword?'text':'password'" autocomplete="current-password" required></label></template>
+  <template v-if="mode==='login'"><label>아이디<input v-model.trim="form.loginId" autocomplete="username" required></label><label>비밀번호<PasswordInput v-model="form.password" autocomplete="current-password" required /></label></template>
   <template v-else-if="mode==='signup'">
    <p class="signup-progress">계정 정보 → 본인 정보·휴대폰 인증 → 가입 신청</p>
    <fieldset><legend>계정 정보</legend>
     <label for="signup-id">아이디</label><div class="auth-input-row"><input id="signup-id" v-model.trim="form.loginId" autocomplete="username" placeholder="영문·숫자 4~20자" pattern="[a-zA-Z0-9_]{4,20}" required><button type="button" :disabled="!form.loginId" @click="checkId">중복 확인</button></div><p v-if="idMessage" role="status">{{idMessage}}</p>
-    <label>비밀번호<input v-model="form.password" :type="showPassword?'text':'password'" autocomplete="new-password" placeholder="8자 이상 입력" minlength="8" required></label>
-    <label>비밀번호 확인<input v-model="form.confirm" :type="showPassword?'text':'password'" autocomplete="new-password" minlength="8" required></label>
+    <label>비밀번호<PasswordInput v-model="form.password" autocomplete="new-password" placeholder="8자 이상 입력" minlength="8" required /></label>
+    <label>비밀번호 확인<PasswordInput v-model="form.confirm" autocomplete="new-password" minlength="8" required /></label>
    </fieldset>
    <fieldset><legend>본인 정보</legend><NationalitySelect v-model="app.signupNationality" name="web-nationality"/><label>이름<input v-model.trim="form.name" autocomplete="name" required></label>
     <div><span id="email-label">이메일</span><div class="auth-email-row" role="group" aria-labelledby="email-label"><input v-model.trim="emailLocal" aria-label="이메일 아이디" placeholder="이메일 아이디" autocomplete="off" pattern="[^\s@]+" required><span>@</span><input :value="domainChoice==='custom'?emailDomain:domainChoice" @input="emailDomain=($event.target as HTMLInputElement).value" :readonly="domainChoice!=='custom'" aria-label="이메일 도메인" placeholder="도메인 입력" pattern="[^\s@]+\.[^\s@]+" required><select v-model="domainChoice" aria-label="이메일 도메인 선택"><option value="naver.com">naver.com</option><option value="gmail.com">gmail.com</option><option value="daum.net">daum.net</option><option value="hanmail.net">hanmail.net</option><option value="nate.com">nate.com</option><option value="custom">직접 입력</option></select></div></div>
@@ -53,9 +53,8 @@ async function submit(){
     <div v-if="phoneComplete" class="phone-verification"><button type="button" @click="requestPhone">{{phoneRequested?'인증번호 다시 받기':'인증번호 받기'}}</button><template v-if="phoneRequested"><label>인증번호<input v-model="form.code" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" autocomplete="one-time-code" placeholder="인증번호 6자리"></label><button type="button" @click="phoneMessage='문자 인증 서비스 연결 후 인증번호를 확인할 수 있습니다.'">인증 확인</button></template><p v-if="phoneMessage" role="status">{{phoneMessage}}</p></div>
    </fieldset>
   </template>
-  <template v-else-if="mode==='reset'"><label v-if="resetStep==='request'">아이디<input v-model.trim="form.loginId" autocomplete="username" required></label><label v-else-if="resetStep==='verify'">인증코드<input v-model.trim="form.code" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" autocomplete="one-time-code" required></label><template v-else><label>새 비밀번호<input v-model="form.password" type="password" minlength="8" autocomplete="new-password" required></label><label>새 비밀번호 확인<input v-model="form.confirm" type="password" minlength="8" autocomplete="new-password" required></label></template></template>
+  <template v-else-if="mode==='reset'"><label v-if="resetStep==='request'">아이디<input v-model.trim="form.loginId" autocomplete="username" required></label><label v-else-if="resetStep==='verify'">인증코드<input v-model.trim="form.code" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" autocomplete="one-time-code" required></label><template v-else><label>새 비밀번호<PasswordInput v-model="form.password" minlength="8" autocomplete="new-password" required /></label><label>새 비밀번호 확인<PasswordInput v-model="form.confirm" minlength="8" autocomplete="new-password" required /></label></template></template>
   <template v-else><label>휴대폰 번호<input v-model.trim="form.phone" type="tel" autocomplete="tel" required></label><label>이름<input v-model.trim="form.name" autocomplete="name" required></label></template>
-  <button v-if="mode==='login'||mode==='signup'" type="button" :aria-pressed="showPassword" @click="showPassword=!showPassword">{{showPassword?'비밀번호 숨기기':'비밀번호 보기'}}</button>
   <button type="submit" :disabled="loading">{{loading?'처리 중…':mode==='reset'?(resetStep==='request'?'인증코드 받기':resetStep==='verify'?'인증 확인':'비밀번호 변경'):title}}</button>
   <p v-if="message" role="status">{{message}}</p>
  </form>

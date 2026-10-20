@@ -1,1 +1,1 @@
-<script setup lang="ts">import Preview from './c-map-preview.vue';import Live from './c-live-map.vue';const live=import.meta.env.VITE_DATA_MODE==='server'</script><template><Live v-if="live"/><Preview v-else/></template>
+<script setup lang="ts">import Live from './c-live-map.vue'</script><template><Live/></template>

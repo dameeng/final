@@ -1,8 +1,8 @@
 <script setup lang="ts">
 
 const principles = [
-  { number: '01', title: '이해하기 쉬운 정보', description: '지하차도의 위치와 통제 여부, 기상 상황을 이용자가 쉽게 살펴볼 수 있는 화면을 지향합니다.' },
-  { number: '02', title: '필요한 정보의 연결', description: '서로 다른 곳에서 확인해야 했던 도로와 기상 정보를 연결해, 이동 전 상황을 살펴보는 과정을 돕습니다.' },
+  { number: '01', title: '이해하기 쉬운 정보', description: '지하차도의 위치와 통제 여부를 이용자가 쉽게 살펴볼 수 있는 화면을 지향합니다.' },
+  { number: '02', title: '필요한 정보의 연결', description: '도로와 시설의 안전 정보를 연결해, 이동 전 상황을 살펴보는 과정을 돕습니다.' },
   { number: '03', title: '꾸준한 확인과 개선', description: '정보의 출처와 갱신 상태를 확인하기 쉬운 방향으로 서비스를 개선하고, 이용자의 의견을 바탕으로 사용성을 높여가겠습니다.' },
 ];
 </script>
@@ -12,7 +12,7 @@ const principles = [
       <p class="routel-company-eyebrow">ABOUT ROUTEL</p>
       <h1>도로의 정보를 연결해,<br />안전한 이동을 돕습니다.</h1>
       <div class="routel-company-lead">
-        <p>ROUTEL은 지하차도 통제 현황과 기상 정보를 한곳에서 확인할 수 있도록 돕는 교통안전 정보 서비스입니다.</p>
+        <p>ROUTEL은 지하차도 통제 현황을 한곳에서 확인할 수 있도록 돕는 교통안전 정보 서비스입니다.</p>
         <p>이동을 준비하는 이용자가 필요한 정보를 쉽게 찾고 이해할 수 있는 서비스를 지향합니다.</p>
       </div>
     </header>
@@ -22,11 +22,11 @@ const principles = [
         <h2 id="company-context-title">이동 전에 필요한 정보,<br />쉽게 확인할 수 있어야 합니다.</h2>
       </div>
       <div class="routel-company-prose">
-        <p>비가 오는 날에는 이동할 구간의 기상 상황과 지하차도 통제 여부를 함께 살펴볼 필요가 있습니다.</p>
+        <p>이동 전에는 이동할 구간의 지하차도 통제 여부를 살펴볼 필요가 있습니다.</p>
         <p>ROUTEL은 이러한 정보를 한곳에서 확인할 수 있도록 연결하고, 복잡한 정보도 이용자가 이해하기 쉬운 형태로 전달하고자 합니다.</p>
       </div>
     </section>
-    <section class="company-services" aria-labelledby="company-services-title"><p class="routel-company-eyebrow">OUR SERVICES</p><h2 id="company-services-title">이동 전에 확인하는 안전 정보</h2><div class="routel-services"><div><h3>지하차도 통제 현황</h3><p>지하차도의 위치와 통제 여부를 지도에서 확인합니다.</p><RouterLink to="/c-map">통제 현황 확인 →</RouterLink></div><div><h3>인근 기상 정보</h3><p>선택한 지하차도의 날씨와 강우량을 함께 살펴봅니다.</p><RouterLink to="/c-map">지하차도별 날씨 확인 →</RouterLink></div><div><h3>안전 안내</h3><p>공지사항과 이용 안내를 통해 필요한 정보를 확인합니다.</p><RouterLink to="/c-notice">알림마당 →</RouterLink></div></div></section>
+    <section class="company-services" aria-labelledby="company-services-title"><p class="routel-company-eyebrow">OUR SERVICES</p><h2 id="company-services-title">이동 전에 확인하는 안전 정보</h2><div class="routel-services"><div><h3>지하차도 통제 현황</h3><p>지하차도의 위치와 통제 여부를 지도에서 확인합니다.</p><RouterLink to="/c-map">통제 현황 확인 →</RouterLink></div><div><h3>안전 안내</h3><p>공지사항과 이용 안내를 통해 필요한 정보를 확인합니다.</p><RouterLink to="/c-notice">알림마당 →</RouterLink></div></div></section>
     <section class="routel-company-principles" aria-labelledby="company-principles-title">
       <p class="routel-company-eyebrow">서비스의 기준</p>
       <h2 id="company-principles-title">정보는 명확하게,<br />이용은 편리하게.</h2>

@@ -10,6 +10,7 @@ import BusanCctvViewer from '../components/BusanCctvViewer.vue'
 const cctvOpen=ref(false),cctvName=ref('')
 import '../styles/c-map.css'
 const root=ref<HTMLElement>();const router=useRouter();let dispose:(()=>void)|undefined;let handlers:Record<string,(event:Event)=>void>={}
+function closeCctv(){(root.value?.querySelector('#pop') as HTMLDialogElement|null)?.close()}
 function handle(id:string,event:Event){handlers[id]?.call(event.currentTarget,event)}
 onMounted(()=>{if(!root.value)return;const runtime=makeContext(root.value,router);dispose=runtime.dispose;runtime.ctx.onCctvOpen=(name:string)=>{cctvName.value=name;cctvOpen.value=true};runtime.ctx.onCctvClose=()=>cctvOpen.value=false;enhance('c-map',runtime.ctx);handlers=initialize(runtime.ctx);mountClusters(root.value,runtime.ctx,'c-map')})
 onBeforeUnmount(()=>dispose?.())
@@ -41,6 +42,7 @@ onBeforeUnmount(()=>dispose?.())
  <header class="cctv-dialog-header"><h2 id="cctv-title"><span id="pn"></span> · CCTV</h2><button type="button" class="cctv-dialog-close" id="px" aria-label="CCTV 닫기" autofocus>닫기 <span aria-hidden="true">×</span></button></header>
  <BusanCctvViewer v-if="cctvOpen" :facility-name="cctvName"/>
  <p id="cctv-description" class="cctv-dialog-caption">부산시에서 제공하는 인근 도로 CCTV를 표시합니다.</p>
+ <footer class="cctv-confirm-footer"><button type="button" @click="closeCctv">확인</button></footer>
 </dialog>
 
 </div></template>

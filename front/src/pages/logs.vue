@@ -1,4 +1,5 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
+import AdminSidebarLinks from '../components/AdminSidebarLinks.vue'
 import MenuIcon from '../components/MenuIcon.vue'
 import AdminIdentity from '../components/AdminIdentity.vue'
 import {ref,onMounted,onBeforeUnmount} from 'vue'
@@ -50,7 +51,7 @@ onBeforeUnmount(()=>dispose?.())
 <a href="/bot-stats"><span>챗봇</span></a>
 <a href="/logs" aria-current="page"><span>로그</span></a>
   </nav>
-  <div class="side-bot"><RouterLink to="/admin-app/screen-3">관리자 앱</RouterLink><RouterLink to="/">고객페이지</RouterLink><RouterLink to="/customer-app/screen-5">고객 앱</RouterLink></div>
+  <AdminSidebarLinks/>
 </aside>
 
 <main class="page">
