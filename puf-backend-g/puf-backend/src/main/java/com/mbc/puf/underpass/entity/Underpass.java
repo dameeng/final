@@ -48,8 +48,17 @@ public class Underpass {
     @Column(name = "width")
     private BigDecimal widthM;
 
-    @Column(name = "water_dist")
-    private BigDecimal waterDistM;     // 인근 하천/바다까지 직선거리(m)
+    @Column(name = "lanes")
+    private Integer lanes;             // 차로수
+
+    @Column(name = "safety_grade")
+    private String safetyGrade;        // 안전등급(A~E), 미실시/불명은 UNKNOWN
+
+    @Column(name = "river_dist")
+    private BigDecimal riverDistM;     // 가까운 하천까지 직선거리(m)
+
+    @Column(name = "sea_dist")
+    private BigDecimal seaDistM;       // 바다(해안선)까지 직선거리(m)
 
     @Column(name = "flood_count")
     private int floodHistoryCount = 0;
@@ -166,12 +175,36 @@ public class Underpass {
         this.widthM = widthM;
     }
 
-    public BigDecimal getWaterDistM() {
-        return waterDistM;
+    public Integer getLanes() {
+        return lanes;
     }
 
-    public void setWaterDistM(BigDecimal waterDistM) {
-        this.waterDistM = waterDistM;
+    public void setLanes(Integer lanes) {
+        this.lanes = lanes;
+    }
+
+    public String getSafetyGrade() {
+        return safetyGrade;
+    }
+
+    public void setSafetyGrade(String safetyGrade) {
+        this.safetyGrade = safetyGrade;
+    }
+
+    public BigDecimal getRiverDistM() {
+        return riverDistM;
+    }
+
+    public void setRiverDistM(BigDecimal riverDistM) {
+        this.riverDistM = riverDistM;
+    }
+
+    public BigDecimal getSeaDistM() {
+        return seaDistM;
+    }
+
+    public void setSeaDistM(BigDecimal seaDistM) {
+        this.seaDistM = seaDistM;
     }
 
     public Long getUpEntryCameraId() {

@@ -2,6 +2,8 @@ package com.mbc.puf.board.dto;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 /** 공지사항 목록의 한 항목. 목록에서는 본문(content)을 내려주지 않는다 */
 public class NoticeListItem {
 
@@ -9,6 +11,7 @@ public class NoticeListItem {
     private String title;
     private boolean important;
     private String authorName;   // manager.name (작성 관리자 이름)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
     private LocalDateTime createdAt;
 
     public NoticeListItem() {

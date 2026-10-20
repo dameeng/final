@@ -312,6 +312,7 @@ function findRegion(row: Json): string {
   const code = text(row.sidoCode || row.regionCode).slice(0, 2);
   const byCode = regions.find((r) => r.codes.includes(code));
   if (byCode) return byCode.id;
+  // Check all province/address aliases when backend regions contain district names.
   for(const candidate of [row.roadAddress,row.address,row.regionName,row.sidoName,row.region]){
     const name=text(candidate).trim();
     const match=regions.find(r=>r.aliases.some(alias=>name===alias||name.startsWith(alias+' ')));

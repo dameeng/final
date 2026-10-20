@@ -19,7 +19,10 @@ public class UnderpassDetailResponse {
     private BigDecimal heightM;     // 높이(m, 층고) — AI 모델 입력값
     private BigDecimal lengthM;
     private BigDecimal widthM;
-    private BigDecimal waterDistM;
+    private Integer lanes;
+    private String safetyGrade;
+    private BigDecimal riverDistM;
+    private BigDecimal seaDistM;
     private int floodHistoryCount;
     private UnderpassCurrentStatus currentStatus;
     private Long currentBlockEventId;
@@ -73,8 +76,17 @@ public class UnderpassDetailResponse {
     public BigDecimal getWidthM() { return widthM; }
     public void setWidthM(BigDecimal widthM) { this.widthM = widthM; }
 
-    public BigDecimal getWaterDistM() { return waterDistM; }
-    public void setWaterDistM(BigDecimal waterDistM) { this.waterDistM = waterDistM; }
+    public Integer getLanes() { return lanes; }
+    public void setLanes(Integer lanes) { this.lanes = lanes; }
+
+    public String getSafetyGrade() { return safetyGrade; }
+    public void setSafetyGrade(String safetyGrade) { this.safetyGrade = safetyGrade; }
+
+    public BigDecimal getRiverDistM() { return riverDistM; }
+    public void setRiverDistM(BigDecimal riverDistM) { this.riverDistM = riverDistM; }
+
+    public BigDecimal getSeaDistM() { return seaDistM; }
+    public void setSeaDistM(BigDecimal seaDistM) { this.seaDistM = seaDistM; }
 
     public BigDecimal getCurrentRiskScore() { return currentRiskScore; }
     public void setCurrentRiskScore(BigDecimal currentRiskScore) { this.currentRiskScore = currentRiskScore; }

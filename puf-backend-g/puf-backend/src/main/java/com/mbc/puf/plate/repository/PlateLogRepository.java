@@ -11,6 +11,12 @@ import com.mbc.puf.plate.entity.PlateLog;
 
 public interface PlateLogRepository extends JpaRepository<PlateLog, Long> {
 
+    // 마감이 지난 판별대기 건의 [판별기록 id, 지하차도 id, 지역 id] (자동처리 전에 조회해 화면에 알리기 위함)
+    @Query("select p.id, u.id, u.regionId from PlateLog p, Camera c, Underpass u"
+            + " where c.id = p.cameraId and u.id = c.underpassId"
+            + " and p.reviewStatus = com.mbc.puf.common.enums.ReviewStatus.PENDING and p.reviewDeadline < :now")
+    java.util.List<Object[]> findExpiredPending(@Param("now") LocalDateTime now);
+
     // 판별대기(PENDING) 중 마감(review_due)이 지난 건을 AUTO_PROCESSED로 일괄 처리 (스케줄러 전용)
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("update PlateLog p set p.reviewStatus = com.mbc.puf.common.enums.ReviewStatus.AUTO_PROCESSED, p.reviewedAt = :now"

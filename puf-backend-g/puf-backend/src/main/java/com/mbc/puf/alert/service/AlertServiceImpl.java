@@ -1,5 +1,7 @@
 package com.mbc.puf.alert.service;
 
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -25,6 +27,7 @@ import com.mbc.puf.common.request.VehicleQuery;
 import com.mbc.puf.common.response.PageResponse;
 import com.mbc.puf.common.security.LoginUser;
 import com.mbc.puf.common.security.ScopeResolver;
+import com.mbc.puf.notification.service.NotificationService;
 
 import jakarta.persistence.EntityManager;
 
@@ -44,14 +47,17 @@ public class AlertServiceImpl implements AlertService {
     private final AlertDeliveryRepository deliveryRepository;
     private final CarRepository carRepository;
     private final ScopeResolver scopeResolver;
+    private final NotificationService notificationService;   // 고객 알림 센터(위험 분류)에도 남긴다
     private final EntityManager em;
 
     public AlertServiceImpl(AlertRepository alertRepository, AlertDeliveryRepository deliveryRepository,
-                            CarRepository carRepository, ScopeResolver scopeResolver, EntityManager em) {
+                            CarRepository carRepository, ScopeResolver scopeResolver,
+                            NotificationService notificationService, EntityManager em) {
         this.alertRepository = alertRepository;
         this.deliveryRepository = deliveryRepository;
         this.carRepository = carRepository;
         this.scopeResolver = scopeResolver;
+        this.notificationService = notificationService;
         this.em = em;
     }
 
@@ -80,6 +86,13 @@ public class AlertServiceImpl implements AlertService {
 
         // alert_delivery 채널 기록 (SMS: 실제 연동 전까지 PENDING)
         insertDelivery(alert.getId(), AlertChannel.SMS, null, DeliveryStatus.PENDING);
+
+        // 고객 알림 센터(위험 분류): 계기 이벤트의 지하차도 이름과 함께 한 건 남긴다
+        List<String> names = em.createQuery("select u.name from UnderpassEvent ue join Underpass u"
+                        + " on u.id = ue.underpassId where ue.id = :id", String.class)
+                .setParameter("id", eventId).getResultList();
+        notificationService.notifyCustomerRisk(customerId, alert.getId(), names.isEmpty() ? null : names.get(0),
+                carNum, alertType);
 
         // 실제 문자 발송 연동 전까지: 긴급재난문자 형식으로 보냈다고 치고 콘솔에 남긴다
         // (회원가입 없이도 번호판 매칭만으로 수신 가능하다는 컨셉이라 "앱 푸시"가 아니라 "문자"로 표기)

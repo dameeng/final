@@ -4,6 +4,7 @@ import com.mbc.puf.board.dto.InquiryCreateRequest;
 import com.mbc.puf.board.dto.InquiryDetailResponse;
 import com.mbc.puf.board.dto.InquiryListItem;
 import com.mbc.puf.board.dto.InquiryReplyRequest;
+import com.mbc.puf.board.dto.InquiryUpdateRequest;
 import com.mbc.puf.common.enums.InquiryStatus;
 import com.mbc.puf.common.request.PeriodQuery;
 import com.mbc.puf.common.response.PageResponse;
@@ -20,6 +21,12 @@ public interface InquiryService {
 
     // 문의 등록
     InquiryDetailResponse createInquiry(Long customerId, InquiryCreateRequest request);
+
+    // 문의 수정. 본인 문의가 아니면 404, 이미 답변이 달렸으면 409
+    InquiryDetailResponse updateMyInquiry(Long customerId, Long id, InquiryUpdateRequest request);
+
+    // 문의 삭제(소프트 삭제). 답변이 있어도 가능하며 답변도 함께 삭제한다. 본인 문의가 아니면 404
+    void deleteMyInquiry(Long customerId, Long id);
 
     // ---- 관리자용 (MP-13 접수의견 처리) ----
 

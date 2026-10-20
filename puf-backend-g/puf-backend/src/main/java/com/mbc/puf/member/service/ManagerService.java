@@ -1,5 +1,6 @@
 package com.mbc.puf.member.service;
 
+import com.mbc.puf.member.dto.PhoneCodeTiming;
 import java.util.List;
 
 import com.mbc.puf.member.dto.AvailabilityResponse;
@@ -21,7 +22,7 @@ public interface ManagerService {
 
     // 가입: 직원 대조 → 직원 명단 번호로 문자 인증 → 아이디/비밀번호 → 승인대기(일정 시간 뒤 자동 승인)
     EmployeeCheckResult checkEmployeeAndSendCode(ManagerEmployeeCheckRequest request);
-    void resendSignupCode(Long employeeId);
+    PhoneCodeTiming resendSignupCode(Long employeeId);
     void verifySignupCode(Long employeeId, String code);
     ManagerSignupResponse signup(Long employeeId, ManagerSignupRequest request);
 

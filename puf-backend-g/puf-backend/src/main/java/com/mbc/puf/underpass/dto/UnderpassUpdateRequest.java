@@ -29,7 +29,11 @@ public class UnderpassUpdateRequest {
     private BigDecimal heightM;     // 높이(m, 층고) — AI 모델 입력값
     private BigDecimal lengthM;
     private BigDecimal widthM;
-    private BigDecimal waterDistM;  // 인근 하천/바다까지 직선거리(m)
+    private Integer lanes;          // 차로수, 선택
+    @Size(max = 10, message = "안전등급은 10자 이하여야 합니다.")
+    private String safetyGrade;     // 안전등급(A~E, 미실시/불명은 UNKNOWN), 선택
+    private BigDecimal riverDistM;  // 가까운 하천까지 직선거리(m), 선택 — AI 모델 입력값
+    private BigDecimal seaDistM;    // 바다까지 직선거리(m), 선택 — AI 모델 입력값
 
     @PositiveOrZero(message = "침수 이력 횟수는 0 이상이어야 합니다.")
     private int floodHistoryCount;
@@ -61,8 +65,17 @@ public class UnderpassUpdateRequest {
     public BigDecimal getWidthM() { return widthM; }
     public void setWidthM(BigDecimal widthM) { this.widthM = widthM; }
 
-    public BigDecimal getWaterDistM() { return waterDistM; }
-    public void setWaterDistM(BigDecimal waterDistM) { this.waterDistM = waterDistM; }
+    public Integer getLanes() { return lanes; }
+    public void setLanes(Integer lanes) { this.lanes = lanes; }
+
+    public String getSafetyGrade() { return safetyGrade; }
+    public void setSafetyGrade(String safetyGrade) { this.safetyGrade = safetyGrade; }
+
+    public BigDecimal getRiverDistM() { return riverDistM; }
+    public void setRiverDistM(BigDecimal riverDistM) { this.riverDistM = riverDistM; }
+
+    public BigDecimal getSeaDistM() { return seaDistM; }
+    public void setSeaDistM(BigDecimal seaDistM) { this.seaDistM = seaDistM; }
 
     public int getFloodHistoryCount() { return floodHistoryCount; }
     public void setFloodHistoryCount(int floodHistoryCount) { this.floodHistoryCount = floodHistoryCount; }

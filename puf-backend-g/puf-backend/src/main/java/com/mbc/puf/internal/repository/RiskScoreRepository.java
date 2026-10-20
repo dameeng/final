@@ -17,4 +17,9 @@ public interface RiskScoreRepository extends JpaRepository<RiskScore, Long> {
     List<RiskScore> findByUnderpassIdAndPredictedAtGreaterThanEqualOrderByPredictedAtDesc(Long underpassId,
                                                                                          LocalDateTime since,
                                                                                          Limit limit);
+
+    // 어떤 시각 이전(포함)에 나온 최근 예측 N개 (최신 먼저). 통제 전달서에 이벤트 시점 점수를 적을 때 쓴다
+    List<RiskScore> findByUnderpassIdAndPredictedAtLessThanEqualOrderByPredictedAtDesc(Long underpassId,
+                                                                                      LocalDateTime at,
+                                                                                      Limit limit);
 }

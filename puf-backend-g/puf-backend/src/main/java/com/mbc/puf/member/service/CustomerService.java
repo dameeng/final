@@ -1,5 +1,6 @@
 package com.mbc.puf.member.service;
 
+import com.mbc.puf.member.dto.PhoneCodeTiming;
 import java.util.List;
 
 import com.mbc.puf.member.dto.AvailabilityResponse;
@@ -20,8 +21,12 @@ public interface CustomerService {
     AvailabilityResponse checkPhone(String phone);
     AvailabilityResponse checkEmail(String email);
 
+    // 로그인한 고객이 정보 수정 중일 때: 본인 계정은 중복 비교에서 제외한다 (excludeCustomerId 가 null 이면 위와 동일)
+    AvailabilityResponse checkPhone(String phone, Long excludeCustomerId);
+    AvailabilityResponse checkEmail(String email, Long excludeCustomerId);
+
     // 가입용 전화번호 인증
-    void sendSignupPhoneCode(String phone);
+    PhoneCodeTiming sendSignupPhoneCode(String phone);
     void verifySignupPhoneCode(String phone, String code);
 
     CustomerSignupResponse signup(CustomerSignupRequest request);

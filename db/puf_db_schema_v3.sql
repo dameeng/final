@@ -5,7 +5,7 @@
 -- ⚠️ 개발 DB 전용. public 스키마를 통째로 지우므로 되돌릴 수 없음. 운영 DB 실행 금지.
 -- 실행 순서: 스키마 리셋 → ENUM → 테이블 → CHECK → FK/인덱스 → 필수 기준행
 -- 약어 사전: cam(카메라) num(번호) addr(주소) dist(거리) lat/lng(위경도) ctrl(통제) pm(예지보전) recog(인식)
--- 단위: height/length/width/water_dist/dist = m, rain* = mm, temp = 섭씨, humidity/rain_prob = %
+-- 단위: height/length/width/river_dist/sea_dist/dist = m, rain* = mm, temp = 섭씨, humidity/rain_prob = %
 -- =====================================================================
 
 DROP SCHEMA public CASCADE;
@@ -32,6 +32,8 @@ CREATE TYPE display_category AS ENUM ('SAFE', 'WARNING', 'DANGER', 'BLOCK', 'REL
 CREATE TYPE pm_equipment_type AS ENUM ('CCTV', 'DISPLAY', 'PUMP'); -- 예지보전 설비 종류(CCTV/전광판/배수펌프)
 CREATE TYPE pm_event_status AS ENUM ('CHECK_NEEDED', 'IN_PROGRESS', 'RESOLVED', 'ETC'); -- 예지보전 처리 상태(확인필요/점검중/조치완료/기타)
 CREATE TYPE inquiry_status AS ENUM ('PENDING', 'ANSWERED'); -- 접수의견 답변 여부(대기/답변완료)
+CREATE TYPE customer_notification_category AS ENUM ('RISK', 'NOTICE', 'INQUIRY'); -- 고객 알림 분류(위험/공지/문의)
+CREATE TYPE manager_notification_category AS ENUM ('RISK', 'EQUIPMENT', 'TASK', 'SYSTEM'); -- 관리자 알림 분류(위험/설비/업무/시스템)
 
 -- 2. 테이블 생성
 
@@ -135,7 +137,10 @@ CREATE TABLE underpass ( -- 지하차도 마스터 테이블
     height DECIMAL(4,2), -- 높이(깊이 개념의 층고, m, AI 모델 입력값)
     length DECIMAL(8,2), -- 길이(m)
     width DECIMAL(6,2), -- 폭(m)
-    water_dist DECIMAL(8,2), -- 인근 하천/바다까지 직선거리(m, AI 모델 입력값)
+    lanes INT, -- 차로수
+    safety_grade VARCHAR(10), -- 안전등급(FMS 등급 A~E, 미실시/불명은 'UNKNOWN')
+    river_dist DECIMAL(10,1), -- 가까운 하천까지 직선거리(m, AI 모델 입력값)
+    sea_dist DECIMAL(10,1), -- 바다(해안선)까지 직선거리(m, AI 모델 입력값)
     flood_count INT NOT NULL DEFAULT 0, -- 침수 이력 횟수
     up_entry_cam_id BIGINT, -- 상행 입구 카메라 아이디
     up_exit_cam_id BIGINT, -- 상행 출구 카메라 아이디
@@ -250,6 +255,36 @@ CREATE TABLE notice_delivery ( -- 공지 알림 채널별 발송 시도 테이�
     token_id BIGINT, -- 푸시 토큰 아이디(푸시 채널일 때만 값 있음, 문자는 NULL)
     status delivery_status NOT NULL, -- 발송 결과
     sent_at TIMESTAMP NOT NULL DEFAULT NOW() -- 발송 시각
+);
+
+CREATE TABLE customer_notification ( -- 고객 알림 센터 테이블(위험/공지/문의를 한 곳에 모아 보여줌, 발송 기록은 alert·notice_alert 가 따로 가짐)
+    id BIGSERIAL PRIMARY KEY, -- 아이디
+    customer_id BIGINT NOT NULL, -- 수신 고객 아이디
+    category customer_notification_category NOT NULL, -- 알림 분류
+    title VARCHAR(100) NOT NULL, -- 알림 제목
+    body VARCHAR(255), -- 알림 내용
+    ref_type VARCHAR(20), -- 눌렀을 때 이동할 대상 종류(ALERT/NOTICE/INQUIRY)
+    ref_id BIGINT, -- 이동할 대상 아이디
+    is_read BOOLEAN NOT NULL DEFAULT FALSE, -- 고객 읽음 여부
+    created_at TIMESTAMP NOT NULL DEFAULT NOW() -- 알림 생성 시각
+);
+
+CREATE TABLE manager_notification ( -- 관리자 알림 센터 테이블(알림 1건 = 1행, 읽음은 manager_notification_read 에 관리자별로 기록)
+    id BIGSERIAL PRIMARY KEY, -- 아이디
+    category manager_notification_category NOT NULL, -- 알림 분류
+    region_id BIGINT, -- 대상 지역 아이디(그 지역 담당 관리자에게만 보임, NULL 이면 모든 관리자)
+    title VARCHAR(100) NOT NULL, -- 알림 제목
+    body VARCHAR(255), -- 알림 내용
+    ref_type VARCHAR(20), -- 눌렀을 때 이동할 대상 종류(UNDERPASS/INQUIRY 등)
+    ref_id BIGINT, -- 이동할 대상 아이디
+    created_at TIMESTAMP NOT NULL DEFAULT NOW() -- 알림 생성 시각
+);
+
+CREATE TABLE manager_notification_read ( -- 관리자별 알림 읽음 기록 테이블(읽은 (알림, 관리자)만 행이 생김)
+    id BIGSERIAL PRIMARY KEY, -- 아이디
+    notification_id BIGINT NOT NULL, -- 알림 아이디
+    manager_id BIGINT NOT NULL, -- 읽은 관리자 아이디
+    read_at TIMESTAMP NOT NULL DEFAULT NOW() -- 읽은 시각
 );
 
 CREATE TABLE ctrl_transfer ( -- 통제정보 이관 기록 테이블(경찰: 차단/해제 시 신호조정 협조, 소방: 관리자가 잔류차량 보고 발송 시). 실제 전송 없이 PDF 출력 + 기록만
@@ -610,6 +645,10 @@ ALTER TABLE alert_delivery ADD CONSTRAINT fk_adelivery_alert FOREIGN KEY (alert_
 ALTER TABLE alert_delivery ADD CONSTRAINT fk_adelivery_token FOREIGN KEY (token_id) REFERENCES device_token(id);
 
 ALTER TABLE notice_alert ADD CONSTRAINT fk_nalert_notice FOREIGN KEY (notice_id) REFERENCES notice(id);
+ALTER TABLE customer_notification ADD CONSTRAINT fk_cnotif_customer FOREIGN KEY (customer_id) REFERENCES customer(id);
+ALTER TABLE manager_notification ADD CONSTRAINT fk_mnotif_region FOREIGN KEY (region_id) REFERENCES region(id);
+ALTER TABLE manager_notification_read ADD CONSTRAINT fk_mnotifread_notif FOREIGN KEY (notification_id) REFERENCES manager_notification(id) ON DELETE CASCADE;
+ALTER TABLE manager_notification_read ADD CONSTRAINT fk_mnotifread_manager FOREIGN KEY (manager_id) REFERENCES manager(id);
 -- (FK 해제) 고객 삭제와 무관하게 로그를 보존하기 위해 customer 참조 FK를 두지 않음: notice_alert.customer_id
 
 ALTER TABLE notice_delivery ADD CONSTRAINT fk_ndelivery_alert FOREIGN KEY (notice_alert_id) REFERENCES notice_alert(id);
@@ -696,6 +735,9 @@ CREATE INDEX idx_transit_underpass_status ON transit (underpass_id, status);
 CREATE INDEX idx_event_underpass_time ON event (underpass_id, created_at);
 CREATE INDEX idx_alert_customer_time ON alert (customer_id, created_at);
 CREATE INDEX idx_notice_alert_customer ON notice_alert (customer_id, is_read);
+CREATE INDEX idx_customer_notification_list ON customer_notification (customer_id, is_read, created_at DESC);
+CREATE INDEX idx_manager_notification_list ON manager_notification (region_id, category, created_at DESC);
+CREATE UNIQUE INDEX uq_manager_notification_read ON manager_notification_read (notification_id, manager_id);
 CREATE INDEX idx_risk_score_underpass_time ON risk_score (underpass_id, predicted_at);
 CREATE INDEX idx_pm_sensor_equip_time ON pm_sensor (equip_id, recorded_at);
 CREATE INDEX idx_pm_score_equip_time ON pm_score (equip_id, predicted_at);

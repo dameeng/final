@@ -2,6 +2,8 @@ package com.mbc.puf.board.dto;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 /** 공지사항 상세 응답 */
 public class NoticeDetailResponse {
 
@@ -11,7 +13,9 @@ public class NoticeDetailResponse {
     private boolean important;
     private Long authorId;
     private String authorName;   // manager.name
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
     private LocalDateTime createdAt;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
     private LocalDateTime updatedAt;
 
     public NoticeDetailResponse() {

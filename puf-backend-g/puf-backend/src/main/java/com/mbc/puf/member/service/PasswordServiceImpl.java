@@ -1,5 +1,6 @@
 package com.mbc.puf.member.service;
 
+import com.mbc.puf.member.dto.PhoneCodeTiming;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -36,6 +37,11 @@ public class PasswordServiceImpl implements PasswordService {
 		this.employeeRepository = employeeRepository;
 		this.phoneVerificationService = phoneVerificationService;
 		this.passwordEncoder = passwordEncoder;
+	}
+
+	@Override
+	public PhoneCodeTiming codeTiming() {
+		return phoneVerificationService.timing();
 	}
 
 	// ==================== 고객 ====================

@@ -1,5 +1,6 @@
 package com.mbc.puf.member.service;
 
+import com.mbc.puf.member.dto.PhoneCodeTiming;
 import java.util.List;
 import java.util.Locale;
 
@@ -61,25 +62,44 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     @Transactional(readOnly = true)
     public AvailabilityResponse checkPhone(String phone) {
+        return checkPhone(phone, null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AvailabilityResponse checkPhone(String phone, Long excludeCustomerId) {
         String target = PhoneNumber.normalize(requireText(phone, "전화번호를 입력해주세요."));
-        return new AvailabilityResponse(!customerRepository.existsByPhoneAndWithdrawnFalse(target));
+        boolean taken = excludeCustomerId == null
+                ? customerRepository.existsByPhoneAndWithdrawnFalse(target)
+                : customerRepository.existsByPhoneAndWithdrawnFalseAndIdNot(target, excludeCustomerId);
+        return new AvailabilityResponse(!taken);
     }
 
     @Override
     @Transactional(readOnly = true)
     public AvailabilityResponse checkEmail(String email) {
+        return checkEmail(email, null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AvailabilityResponse checkEmail(String email, Long excludeCustomerId) {
         String target = normalizeEmail(requireText(email, "이메일을 입력해주세요."));
-        return new AvailabilityResponse(!customerRepository.existsByEmailAndWithdrawnFalse(target));
+        boolean taken = excludeCustomerId == null
+                ? customerRepository.existsByEmailAndWithdrawnFalse(target)
+                : customerRepository.existsByEmailAndWithdrawnFalseAndIdNot(target, excludeCustomerId);
+        return new AvailabilityResponse(!taken);
     }
 
     @Override
     @Transactional
-    public void sendSignupPhoneCode(String phone) {
+    public PhoneCodeTiming sendSignupPhoneCode(String phone) {
         String target = PhoneNumber.normalize(phone);
         if (customerRepository.existsByPhoneAndWithdrawnFalse(target)) {
             throw conflict("이미 가입된 전화번호입니다.");
         }
         phoneVerificationService.sendSignupCode(target);
+        return phoneVerificationService.timing();
     }
 
     @Override

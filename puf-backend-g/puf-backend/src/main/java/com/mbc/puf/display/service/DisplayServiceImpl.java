@@ -26,16 +26,22 @@ public class DisplayServiceImpl implements DisplayService {
     private final DisplayPageRepository pageRepository;
     private final DisplayHistoryRepository historyRepository;
     private final DbClock dbClock;
+    private final jakarta.persistence.EntityManager em;
+    private final com.mbc.puf.stream.StreamPublisher streamPublisher;   // SSE 실시간 이벤트
 
     public DisplayServiceImpl(
             DisplayPresetRepository presetRepository,
             DisplayPageRepository pageRepository,
             DisplayHistoryRepository historyRepository,
-            DbClock dbClock) {
+            DbClock dbClock,
+            jakarta.persistence.EntityManager em,
+            com.mbc.puf.stream.StreamPublisher streamPublisher) {
         this.presetRepository = presetRepository;
         this.pageRepository = pageRepository;
         this.historyRepository = historyRepository;
         this.dbClock = dbClock;
+        this.em = em;
+        this.streamPublisher = streamPublisher;
     }
 
     // ─── 프리셋 조회 ─────────────────────────────────────────────────
@@ -80,6 +86,7 @@ public class DisplayServiceImpl implements DisplayService {
 
         // 최초 생성: oldContent = null
         saveHistory(page.getId(), null, null, page.getContent(), loginUser.id());
+        publishDisplayChange(equipId, page.getPageNo(), "CREATE");
 
         return toItem(page);
     }
@@ -102,6 +109,7 @@ public class DisplayServiceImpl implements DisplayService {
             page.setUpdatedAt(dbClock.now());
 
             saveHistory(page.getId(), null, oldContent, newContent, loginUser.id());
+            publishDisplayChange(equipId, pageNo, "UPDATE");
         }
 
         return toItem(page);
@@ -116,9 +124,23 @@ public class DisplayServiceImpl implements DisplayService {
         pageRepository.delete(page);
         // 삭제된 페이지 뒤에 있는 페이지들의 page_no 를 1씩 내린다
         pageRepository.shiftPageNoDown(equipId, pageNo);
+        publishDisplayChange(equipId, pageNo, "DELETE");
     }
 
     // ─── 내부 헬퍼 ──────────────────────────────────────────────────
+
+    // 전광판 장비가 속한 지하차도의 지역 관리자에게 전광판 변경을 알린다
+    private void publishDisplayChange(Long equipId, Integer pageNo, String action) {
+        List<?> rows = em.createNativeQuery("select u.id, u.region_id from pm_equipment e"
+                        + " join underpass u on u.id = e.underpass_id where e.id = :id")
+                .setParameter("id", equipId).getResultList();
+        if (rows.isEmpty()) {
+            return;
+        }
+        Object[] row = (Object[]) rows.get(0);
+        streamPublisher.publishToAdmins(((Number) row[1]).longValue(), "display-change",
+                new com.mbc.puf.stream.StreamPayloads.DisplayChange(equipId, ((Number) row[0]).longValue(), pageNo, action));
+    }
 
     private DisplayPage requirePage(Long equipId, Integer pageNo) {
         return pageRepository.findByEquipIdAndPageNo(equipId, pageNo)
