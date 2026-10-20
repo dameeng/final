@@ -65,8 +65,6 @@ spring_url.txt
 *.ckpt
 *.safetensors
 *.tflite
-*.joblib
-*.pkl
 
 # Generated OCR results
 /ocr_server/yolo8!/yolo_plate_far/result/
