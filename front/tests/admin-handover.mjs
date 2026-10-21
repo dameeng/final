@@ -1,9 +1,54 @@
-import {chromium} from '@playwright/test';import assert from 'node:assert/strict';
-const b=await chromium.launch({headless:true,executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe'});
-try{const context=await b.newContext({viewport:{width:1440,height:900}}),p=await context.newPage(),errors=[];p.on('pageerror',e=>errors.push(e.message));const modal=p.locator('.admin-handover');
-await p.goto('http://localhost:8282/admin-dashboard');await modal.waitFor({state:'visible'});await modal.getByRole('button',{name:'확인하고 닫기'}).click();await p.reload();await p.locator('.dashboard-fixed-layout').waitFor({state:'attached'});assert(await modal.isHidden());
-await p.locator('#menu-btn').click();await p.getByRole('button',{name:'이전 근무 인수인계',exact:true}).click();await modal.waitFor({state:'visible'});await modal.getByRole('button',{name:'오늘 하루 안 보기'}).click();
-const p2=await context.newPage();await p2.goto('http://localhost:8282/shift-login');await p2.waitForURL('**/admin-dashboard?handover=1');await p2.locator('.dashboard-fixed-layout').waitFor({state:'attached'});assert(await p2.locator('.admin-handover').isHidden());await p2.close();
-await p.evaluate(()=>{localStorage.setItem('routel-handover-hide:guest:regional','2000-01-01');sessionStorage.clear()});await p.reload();await modal.waitFor({state:'visible'});await modal.getByRole('button',{name:'미처리 점검 대상 보기',exact:false}).click();await p.waitForURL('**/pm-queue?pending=1');await p.waitForTimeout(150);assert.equal(await p.locator('#qtbl tr[data-st="done"]:visible').count(),0);
-await p.setViewportSize({width:360,height:740});await p.goto('http://localhost:8282/admin-dashboard');await p.locator('#menu-btn').click();await p.getByRole('button',{name:'이전 근무 인수인계',exact:true}).click();await modal.waitFor({state:'visible'});const r=await modal.boundingBox();assert(r.width<=360&&r.x>=0&&r.y>=0);await p.keyboard.press('Escape');assert(await modal.isHidden());assert.deepEqual(errors,[]);console.log('PASS automatic handover, session close, daily hide across tabs, expiry, reopening, pending link, mobile and Escape');
-}finally{await b.close()}
+import { chromium } from '@playwright/test'
+import assert from 'node:assert/strict'
+const b = await chromium.launch({
+  headless: true,
+  executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe',
+})
+try {
+  const context = await b.newContext({ viewport: { width: 1440, height: 900 } }),
+    p = await context.newPage(),
+    errors = []
+  p.on('pageerror', (e) => errors.push(e.message))
+  const modal = p.locator('.admin-handover')
+  await p.goto('http://localhost:8282/admin-dashboard')
+  await modal.waitFor({ state: 'visible' })
+  await modal.getByRole('button', { name: '확인하고 닫기' }).click()
+  await p.reload()
+  await p.locator('.dashboard-fixed-layout').waitFor({ state: 'attached' })
+  assert(await modal.isHidden())
+  await p.locator('#menu-btn').click()
+  await p.getByRole('button', { name: '이전 근무 인수인계', exact: true }).click()
+  await modal.waitFor({ state: 'visible' })
+  await modal.getByRole('button', { name: '오늘 하루 안 보기' }).click()
+  const p2 = await context.newPage()
+  await p2.goto('http://localhost:8282/shift-login')
+  await p2.waitForURL('**/admin-dashboard?handover=1')
+  await p2.locator('.dashboard-fixed-layout').waitFor({ state: 'attached' })
+  assert(await p2.locator('.admin-handover').isHidden())
+  await p2.close()
+  await p.evaluate(() => {
+    localStorage.setItem('routel-handover-hide:guest:regional', '2000-01-01')
+    sessionStorage.clear()
+  })
+  await p.reload()
+  await modal.waitFor({ state: 'visible' })
+  await modal.getByRole('button', { name: '미처리 점검 대상 보기', exact: false }).click()
+  await p.waitForURL('**/pm-queue?pending=1')
+  await p.waitForTimeout(150)
+  assert.equal(await p.locator('#qtbl tr[data-st="done"]:visible').count(), 0)
+  await p.setViewportSize({ width: 360, height: 740 })
+  await p.goto('http://localhost:8282/admin-dashboard')
+  await p.locator('#menu-btn').click()
+  await p.getByRole('button', { name: '이전 근무 인수인계', exact: true }).click()
+  await modal.waitFor({ state: 'visible' })
+  const r = await modal.boundingBox()
+  assert(r.width <= 360 && r.x >= 0 && r.y >= 0)
+  await p.keyboard.press('Escape')
+  assert(await modal.isHidden())
+  assert.deepEqual(errors, [])
+  console.log(
+    'PASS automatic handover, session close, daily hide across tabs, expiry, reopening, pending link, mobile and Escape',
+  )
+} finally {
+  await b.close()
+}

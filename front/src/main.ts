@@ -1,8 +1,9 @@
-import {registerPwa} from './runtime/pwa'
-import {createApp} from 'vue'
-import {createPinia} from 'pinia'
+import { registerPwa } from './runtime/pwa'
+import { createApp } from 'vue'
+import { createPinia } from 'pinia'
 import App from './App.vue'
 import PasswordInput from './components/PasswordInput.vue'
+import UiIcon from './components/UiIcon.vue'
 import router from './router'
 import './styles/shared.css'
 import './styles/meeting-layout.css'
@@ -18,6 +19,12 @@ import './styles/customer-responsive.css'
 import './styles/customer-map-viewport.css'
 import './styles/admin-restored.css'
 import './styles/app-restored.css'
-createApp(App).component('PasswordInput',PasswordInput).use(createPinia()).use(router).mount('#app')
+import './styles/ui-icons.css'
+createApp(App)
+  .component('PasswordInput', PasswordInput)
+  .component('UiIcon', UiIcon)
+  .use(createPinia())
+  .use(router)
+  .mount('#app')
 
 registerPwa()

@@ -1,9 +1,87 @@
-import {chromium} from '@playwright/test';import assert from 'node:assert/strict';const b=await chromium.launch({headless:true,executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe'});
-try{const p=await b.newPage(),errors=[];p.on('pageerror',e=>errors.push(e.message));
-const snapshot=selector=>p.locator(selector).evaluateAll(els=>els.map(el=>{const r=el.getBoundingClientRect(),s=getComputedStyle(el);return {text:el.textContent,x:r.x,y:r.y,w:r.width,h:r.height,font:s.fontSize,weight:s.fontWeight,border:s.borderBottomWidth,padding:s.padding}}));
-for(const width of [1440,390]){await p.setViewportSize({width,height:900});for(const path of ['/notifications','/verify','/logs','/pm-equipment','/pm-queue','/fac-detail']){await p.goto('http://localhost:8282'+path);await p.waitForTimeout(150);const selector=await p.locator('.tabs button:visible').count()?'.tabs button:visible':'.chips .chip:visible';const controls=p.locator(selector);if(await controls.count()){const before=await snapshot(selector);for(let index=0;index<await controls.count();index++){await controls.nth(index).click();await p.waitForTimeout(40);assert.deepEqual(await snapshot(selector),before,'unstable controls '+path+' at '+width)}}assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false)}}
-for(const width of [1440,390]){await p.setViewportSize({width,height:900});await p.goto('http://localhost:8282/fac-detail');await p.locator('#tabs a').first().waitFor();const before=await snapshot('#tabs a');for(const tab of await p.locator('#tabs a').all()){await tab.click();assert.deepEqual(await snapshot('#tabs a'),before,'facility tab movement at '+width)}}
-await p.setViewportSize({width:1440,height:900});let before;
-for(const path of ['/pm-equipment','/pm-queue','/pm-history','/pm-settings']){await p.goto('http://localhost:8282'+path);const rect=await p.locator('.tabs').boundingBox();if(before)assert(Math.abs(rect.y-before.y)<2,'maintenance tabs moved between pages');before=rect}
-assert.deepEqual(errors,[]);console.log('PASS box tabs/filters keep position, size, weight and borders after every selection; maintenance route alignment; mobile overflow');
-}finally{await b.close()}
+import { chromium } from '@playwright/test'
+import assert from 'node:assert/strict'
+const b = await chromium.launch({
+  headless: true,
+  executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe',
+})
+try {
+  const p = await b.newPage(),
+    errors = []
+  p.on('pageerror', (e) => errors.push(e.message))
+  const snapshot = (selector) =>
+    p.locator(selector).evaluateAll((els) =>
+      els.map((el) => {
+        const r = el.getBoundingClientRect(),
+          s = getComputedStyle(el)
+        return {
+          text: el.textContent,
+          x: r.x,
+          y: r.y,
+          w: r.width,
+          h: r.height,
+          font: s.fontSize,
+          weight: s.fontWeight,
+          border: s.borderBottomWidth,
+          padding: s.padding,
+        }
+      }),
+    )
+  for (const width of [1440, 390]) {
+    await p.setViewportSize({ width, height: 900 })
+    for (const path of [
+      '/notifications',
+      '/verify',
+      '/logs',
+      '/pm-equipment',
+      '/pm-queue',
+      '/fac-detail',
+    ]) {
+      await p.goto('http://localhost:8282' + path)
+      await p.waitForTimeout(150)
+      const selector = (await p.locator('.tabs button:visible').count())
+        ? '.tabs button:visible'
+        : '.chips .chip:visible'
+      const controls = p.locator(selector)
+      if (await controls.count()) {
+        const before = await snapshot(selector)
+        for (let index = 0; index < (await controls.count()); index++) {
+          await controls.nth(index).click()
+          await p.waitForTimeout(40)
+          assert.deepEqual(
+            await snapshot(selector),
+            before,
+            'unstable controls ' + path + ' at ' + width,
+          )
+        }
+      }
+      assert.equal(
+        await p.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1),
+        false,
+      )
+    }
+  }
+  for (const width of [1440, 390]) {
+    await p.setViewportSize({ width, height: 900 })
+    await p.goto('http://localhost:8282/fac-detail')
+    await p.locator('#tabs a').first().waitFor()
+    const before = await snapshot('#tabs a')
+    for (const tab of await p.locator('#tabs a').all()) {
+      await tab.click()
+      assert.deepEqual(await snapshot('#tabs a'), before, 'facility tab movement at ' + width)
+    }
+  }
+  await p.setViewportSize({ width: 1440, height: 900 })
+  let before
+  for (const path of ['/pm-equipment', '/pm-queue', '/pm-history', '/pm-settings']) {
+    await p.goto('http://localhost:8282' + path)
+    const rect = await p.locator('.tabs').boundingBox()
+    if (before) assert(Math.abs(rect.y - before.y) < 2, 'maintenance tabs moved between pages')
+    before = rect
+  }
+  assert.deepEqual(errors, [])
+  console.log(
+    'PASS box tabs/filters keep position, size, weight and borders after every selection; maintenance route alignment; mobile overflow',
+  )
+} finally {
+  await b.close()
+}

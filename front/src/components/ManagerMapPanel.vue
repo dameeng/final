@@ -1,29 +1,432 @@
 ﻿<script setup lang="ts">
 import RiskLevelBadge from './RiskLevelBadge.vue'
-import {nextTick,ref,watch} from 'vue'
-type Facility={id:string;name:string;address:string;riskScore:number|null;rainfallMm:number|null;currentWaterCm?:number|null;remainingCount?:number|null;pendingReviewCount?:number|null}
-const props=defineProps<{facility:Facility|null;cluster:Facility[];state:string;riskLevel?:string;control:string;observed:string;loading:boolean;error:string;weather?:{temperature?:number|null;condition?:string};weatherLoading:boolean;weatherError:string;chartSeries?:ReturnType<typeof import('../utils/risk-chart').riskChartSeries>;riskPoints:string;forecastPoints?:string;forecastError?:string;canControl:boolean}>()
-const expanded=defineModel<boolean>('expanded',{default:true}),panel=ref<HTMLElement>(),body=ref<HTMLElement>()
-function scrollPanel(event:WheelEvent){
- if(event.ctrlKey||!event.deltaY)return
- let remaining=event.deltaY*(event.deltaMode===1?16:event.deltaMode===2?(body.value?.clientHeight||window.innerHeight):1)
- const scroll=(element:Element)=>{const before=element.scrollTop;element.scrollTop+=remaining;remaining-=element.scrollTop-before}
- if(expanded.value&&body.value)scroll(body.value)
- // At either edge, continue in the surrounding page instead of trapping the wheel.
- let ancestor=panel.value?.parentElement
- while(ancestor&&Math.abs(remaining)>.5){
-  if(/auto|scroll/.test(getComputedStyle(ancestor).overflowY))scroll(ancestor)
-  ancestor=ancestor.parentElement
- }
- if(Math.abs(remaining)>.5&&document.scrollingElement)scroll(document.scrollingElement)
- event.preventDefault()
+import { nextTick, ref, watch } from 'vue'
+type Facility = {
+  id: string
+  name: string
+  address: string
+  riskScore: number | null
+  rainfallMm: number | null
+  currentWaterCm?: number | null
+  remainingCount?: number | null
+  pendingReviewCount?: number | null
+}
+const props = defineProps<{
+  facility: Facility | null
+  cluster: Facility[]
+  state: string
+  riskLevel?: string
+  control: string
+  observed: string
+  loading: boolean
+  error: string
+  weather?: { temperature?: number | null; condition?: string }
+  weatherLoading: boolean
+  weatherError: string
+  chartSeries?: ReturnType<typeof import('../utils/risk-chart').riskChartSeries>
+  riskPoints: string
+  forecastPoints?: string
+  forecastError?: string
+  canControl: boolean
+}>()
+const expanded = defineModel<boolean>('expanded', { default: true }),
+  panel = ref<HTMLElement>(),
+  body = ref<HTMLElement>()
+function scrollPanel(event: WheelEvent) {
+  if (event.ctrlKey || !event.deltaY) return
+  let remaining =
+    event.deltaY *
+    (event.deltaMode === 1
+      ? 16
+      : event.deltaMode === 2
+        ? body.value?.clientHeight || window.innerHeight
+        : 1)
+  const scroll = (element: Element) => {
+    const before = element.scrollTop
+    element.scrollTop += remaining
+    remaining -= element.scrollTop - before
+  }
+  if (expanded.value && body.value) scroll(body.value)
+  // At either edge, continue in the surrounding page instead of trapping the wheel.
+  let ancestor = panel.value?.parentElement
+  while (ancestor && Math.abs(remaining) > 0.5) {
+    if (/auto|scroll/.test(getComputedStyle(ancestor).overflowY)) scroll(ancestor)
+    ancestor = ancestor.parentElement
+  }
+  if (Math.abs(remaining) > 0.5 && document.scrollingElement) scroll(document.scrollingElement)
+  event.preventDefault()
 }
 
-defineEmits<{select:[id:string];clear:[];control:[index:number];cctv:[]}>()
-watch(()=>props.facility?.id,async id=>{if(id){await nextTick();panel.value?.focus({preventScroll:true})}})
+defineEmits<{ select: [id: string]; clear: []; control: [index: number]; cctv: [] }>()
+watch(
+  () => props.facility?.id,
+  async (id) => {
+    if (id) {
+      await nextTick()
+      panel.value?.focus({ preventScroll: true })
+    }
+  },
+)
 </script>
-<template><section ref="panel" @wheel.stop="scrollPanel" class="manager-map-panel" aria-label="선택 시설" tabindex="-1"><header><h2>{{cluster.length&&!facility?'묶음 시설 '+cluster.length+'곳':'선택 시설'}}</h2><button type="button" :aria-expanded="expanded" aria-controls="manager-map-panel-body" @click="expanded=!expanded">{{expanded?'상세 접기 ▴':'상세 펼치기 ▾'}}</button></header><div v-if="facility" class="manager-facility-heading"><strong>{{facility.name}}</strong><p>{{facility.address||'주소 미제공'}}</p><div><RiskLevelBadge :value="riskLevel||state"/><span>{{control}}</span><button type="button" aria-label="시설 선택 해제" @click="$emit('clear')">×</button></div></div><div ref="body" v-show="expanded" id="manager-map-panel-body" class="manager-panel-body"><template v-if="facility"><p v-if="loading" role="status">최신 상태 조회 중…</p><p v-if="error" role="alert">{{error}}</p><div class="manager-risk"><strong>{{facility.riskScore===null?'—':facility.riskScore.toFixed(1)}}<small>점</small></strong><span>위험 점수</span></div><div class="manager-gauge"><b :style="{width:Math.max(0,Math.min(100,facility.riskScore||0))+'%'}"></b></div><dl><dt>현재 수위</dt><dd>{{facility.currentWaterCm??'—'}} cm</dd><dt>강우량</dt><dd>{{facility.rainfallMm??'—'}} mm</dd><dt>잔류 차량</dt><dd>{{facility.remainingCount??'—'}}대</dd><dt>판별 대기</dt><dd>{{facility.pendingReviewCount??'—'}}건</dd><dt>관측 시각</dt><dd>{{observed}}</dd></dl><div class="manager-weather"><b>시설 위치 날씨</b><p v-if="weatherLoading">날씨 조회 중…</p><p v-else-if="weatherError">{{weatherError}}</p><p v-else>{{weather?.condition||'기상 상태 미제공'}} · {{weather?.temperature??'—'}}°C</p></div><details><summary>관측 기록</summary><svg v-if="riskPoints||forecastPoints" viewBox="0 0 300 130" role="img" aria-label="선택 시설 위험도 관측 기록"><path d="M20 10V110H280" fill="none" stroke="#c9ced6"/><line v-if="chartSeries?.boundary!=null" :x1="chartSeries.boundary" :x2="chartSeries.boundary" y1="10" y2="110" stroke="#c9ced6" stroke-dasharray="2 3"/><text v-for="tick in chartSeries?.ticks" :key="tick.x" :x="tick.x" y="126" text-anchor="middle" font-size="9" fill="currentColor">{{tick.label}}</text><circle v-if="chartSeries?.lastObserved" :cx="chartSeries.lastObserved.x" :cy="chartSeries.lastObserved.y" r="3" fill="#225f9b"/><path v-if="chartSeries?.carryPath" :d="chartSeries.carryPath" fill="none" stroke="#225f9b" stroke-opacity=".5" stroke-width="2" stroke-dasharray="2 3"/><path :d="chartSeries?.observedPath" fill="none" stroke="#225f9b" stroke-width="3"/><path v-if="chartSeries?.forecastPath" :d="chartSeries.forecastPath" fill="none" stroke="#225f9b" stroke-width="3" stroke-dasharray="6 4"/></svg><p v-else>조회된 관측 기록이 없습니다.</p><p v-if="forecastPoints">실선: 관측 · 점선: 향후 3시간 예측</p><p v-if="chartSeries?.carryPath" class="sub">엷은 점선: 최근 관측값을 현재까지 유지 (추가 관측 아님)</p><p v-if="forecastError">{{forecastError}}</p></details><p class="manager-assignment">{{canControl?'담당 시설':'담당 외 시설 · 통제 권한 없음'}}</p><div class="manager-control-actions"><button type="button" :disabled="!canControl||loading||!!error||control==='통제 중'" @click="$emit('control',0)">통제</button><button type="button" :disabled="!canControl||loading||!!error||control!=='통제 중'" @click="$emit('control',1)">통제 해제</button></div><button type="button" @click="$emit('cctv')">주변 CCTV 보기</button><RouterLink :to="'/fac-detail?id='+facility.id">시설 상세 →</RouterLink></template><ul v-else-if="cluster.length" class="manager-cluster-options"><li v-for="row in cluster" :key="row.id"><button type="button" @click="$emit('select',row.id)">{{row.name}} <span aria-hidden="true">›</span></button></li></ul><p v-else class="manager-selection-hint">지도에서 마커를 누르면 해당 시설의 상세 정보가 표시됩니다.</p></div></section></template>
+<template>
+  <section
+    ref="panel"
+    @wheel.stop="scrollPanel"
+    class="manager-map-panel"
+    aria-label="선택 시설"
+    tabindex="-1"
+    ><header
+      ><h2>{{cluster.length&&!facility?'묶음 시설 '+cluster.length+'곳':'선택 시설'}}</h2
+      ><button
+        type="button"
+        :aria-expanded="expanded"
+        aria-controls="manager-map-panel-body"
+        @click="expanded=!expanded"
+        >{{expanded?'상세 접기 ▴':'상세 펼치기 ▾'}}</button
+      ></header
+    ><div v-if="facility" class="manager-facility-heading"
+      ><strong>{{facility.name}}</strong
+      ><p>{{facility.address||'주소 미제공'}}</p
+      ><div
+        ><RiskLevelBadge :value="riskLevel||state" /><span>{{control}}</span
+        ><button class="ui-icon-button" type="button" aria-label="시설 선택 해제" @click="$emit('clear')">
+          <UiIcon name="close" />
+        </button></div
+      ></div
+    ><div ref="body" v-show="expanded" id="manager-map-panel-body" class="manager-panel-body"
+      ><template v-if="facility"
+        ><p v-if="loading" role="status">최신 상태 조회 중…</p
+        ><p v-if="error" role="alert">{{error}}</p
+        ><div class="manager-risk"
+          ><strong
+            >{{facility.riskScore===null?'—':facility.riskScore.toFixed(1)
+            }}<small>점</small></strong
+          ><span>위험 점수</span></div
+        ><div class="manager-gauge"
+          ><b :style="{width:Math.max(0,Math.min(100,facility.riskScore||0))+'%'}"></b></div
+        ><dl
+          ><dt>현재 수위</dt><dd>{{facility.currentWaterCm??'—'}} cm</dd><dt>강우량</dt
+          ><dd>{{facility.rainfallMm??'—'}} mm</dd><dt>잔류 차량</dt
+          ><dd>{{facility.remainingCount??'—'}}대</dd><dt>판별 대기</dt
+          ><dd>{{facility.pendingReviewCount??'—'}}건</dd><dt>관측 시각</dt
+          ><dd>{{observed}}</dd></dl
+        ><div class="manager-weather"
+          ><b>시설 위치 날씨</b><p v-if="weatherLoading">날씨 조회 중…</p
+          ><p v-else-if="weatherError">{{weatherError}}</p
+          ><p v-else
+            >{{weather?.condition||'기상 상태 미제공'}} · {{weather?.temperature??'—'}}°C</p
+          ></div
+        ><details
+          ><summary>관측 기록</summary
+          ><svg
+            v-if="riskPoints||forecastPoints"
+            viewBox="0 0 300 130"
+            role="img"
+            aria-label="선택 시설 위험도 관측 기록"
+          >
+            <path d="M20 10V110H280" fill="none" stroke="#c9ced6" />
+            <line
+              v-if="chartSeries?.boundary!=null"
+              :x1="chartSeries.boundary"
+              :x2="chartSeries.boundary"
+              y1="10"
+              y2="110"
+              stroke="#c9ced6"
+              stroke-dasharray="2 3"
+            />
+            <text
+              v-for="tick in chartSeries?.ticks"
+              :key="tick.x"
+              :x="tick.x"
+              y="126"
+              text-anchor="middle"
+              font-size="9"
+              fill="currentColor"
+            >
+              {{tick.label}}
+            </text>
+            <circle
+              v-if="chartSeries?.lastObserved"
+              :cx="chartSeries.lastObserved.x"
+              :cy="chartSeries.lastObserved.y"
+              r="3"
+              fill="#225f9b"
+            />
+            <path
+              v-if="chartSeries?.carryPath"
+              :d="chartSeries.carryPath"
+              fill="none"
+              stroke="#225f9b"
+              stroke-opacity=".5"
+              stroke-width="2"
+              stroke-dasharray="2 3"
+            />
+            <path :d="chartSeries?.observedPath" fill="none" stroke="#225f9b" stroke-width="3" />
+            <path
+              v-if="chartSeries?.forecastPath"
+              :d="chartSeries.forecastPath"
+              fill="none"
+              stroke="#225f9b"
+              stroke-width="3"
+              stroke-dasharray="6 4"
+            /></svg
+          ><p v-else>조회된 관측 기록이 없습니다.</p
+          ><p v-if="forecastPoints">실선: 관측 · 점선: 향후 3시간 예측</p
+          ><p v-if="chartSeries?.carryPath" class="sub"
+            >엷은 점선: 최근 관측값을 현재까지 유지 (추가 관측 아님)</p
+          ><p v-if="forecastError">{{forecastError}}</p></details
+        ><p class="manager-assignment">{{canControl?'담당 시설':'담당 외 시설 · 통제 권한 없음'}}</p
+        ><div class="manager-control-actions"
+          ><button
+            type="button"
+            :disabled="!canControl||loading||!!error||control!=='정상 운영'"
+            @click="$emit('control',0)"
+            >통제</button
+          ><button
+            type="button"
+            :disabled="!canControl||loading||!!error||control!=='통제 중'"
+            @click="$emit('control',1)"
+            >통제 해제</button
+          ></div
+        ><button type="button" @click="$emit('cctv')">주변 CCTV 보기</button
+        ><RouterLink :to="'/fac-detail?id='+facility.id">시설 상세 →</RouterLink></template
+      ><ul v-else-if="cluster.length" class="manager-cluster-options"
+        ><li v-for="row in cluster" :key="row.id"
+          ><button type="button" @click="$emit('select',row.id)"
+            >{{row.name}} <span aria-hidden="true">›</span></button
+          ></li
+        ></ul
+      ><p v-else class="manager-selection-hint"
+        >지도에서 마커를 누르면 해당 시설의 상세 정보가 표시됩니다.</p
+      ></div
+    ></section
+  >
+</template>
 <style scoped>
-.manager-map-panel{position:absolute;top:58px;right:12px;z-index:7;width:300px;max-width:calc(100% - 24px);max-height:calc(100% - 70px);display:flex;flex-direction:column;background:var(--surface,#fff);border:1px solid var(--line,#c9ced6);border-radius:10px;box-shadow:0 4px 18px #14283e24;font-size:13px;overflow:hidden;outline:none}.manager-map-panel>header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px;border-bottom:1px solid var(--line);flex-shrink:0}.manager-map-panel h2{font-size:14px;margin:0}.manager-map-panel button,.manager-map-panel a{border:1px solid var(--line);border-radius:5px;background:var(--surface);color:inherit;min-height:34px;padding:6px 10px;font:inherit;text-decoration:none}.manager-map-panel header button{font-size:11px;white-space:nowrap}.manager-facility-heading{padding:12px 12px 0;flex-shrink:0}.manager-facility-heading>strong{font-size:17px;line-height:1.5}.manager-facility-heading p{font-size:11px;margin:4px 0 8px;line-height:1.5;color:var(--ink-sub,#64748b)}.manager-facility-heading>div{display:flex;align-items:center;gap:8px;font-size:11px;margin-bottom:10px}.manager-facility-heading>div>button{margin-left:auto;border:0;min-height:26px;padding:0 5px;font-size:18px}.manager-state{padding:3px 7px;border-radius:4px}.manager-state.safe{background:#e1f3ea;color:#1b7f5c}.manager-state.warning{background:#fff1d6;color:#965000}.manager-state.danger{background:#fde7e7;color:#a32424}.manager-panel-body{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:auto;padding:0 12px 12px;display:flex;flex-direction:column;gap:12px}.manager-panel-body>*{flex-shrink:0}.manager-panel-body[style*="display: none"]{display:none!important}.manager-risk{display:flex;align-items:baseline;justify-content:space-between}.manager-risk strong{font-size:28px}.manager-risk strong small{font-size:13px;margin-left:3px}.manager-risk>span{font-size:11px;color:var(--ink-sub,#64748b)}.manager-gauge{height:8px;background:#e5eaf0;border-radius:4px;overflow:hidden}.manager-gauge b{display:block;height:100%;background:#225f9b}.manager-panel-body dl{display:grid;grid-template-columns:76px minmax(0,1fr);gap:8px;margin:0;font-size:12px}.manager-panel-body dt{color:var(--ink-sub,#64748b)}.manager-panel-body dd{margin:0;overflow-wrap:anywhere}.manager-weather b,.manager-panel-body summary{font-size:12px}.manager-weather p{font-size:12px;margin:5px 0 0;line-height:1.5}.manager-panel-body summary{cursor:pointer}.manager-panel-body svg{display:block;width:100%}.manager-control-actions{display:flex;gap:8px}.manager-control-actions>button{flex:1}.manager-control-actions>button:first-child{background:#225f9b;border-color:#225f9b;color:#fff}.manager-map-panel button:disabled{opacity:.45;cursor:default}.manager-panel-body>a{text-align:center}.manager-cluster-options{list-style:none;padding:0;margin:0}.manager-cluster-options button{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:42px;text-align:left;border:0;border-bottom:1px solid var(--line);border-radius:0}.manager-selection-hint{font-size:12px;line-height:1.8;margin:12px 0 0;color:var(--ink-sub,#64748b)}
-@container(max-width:600px){.manager-map-panel{top:auto;bottom:12px;max-height:48%;width:calc(100% - 24px)}.manager-map-panel>header{padding:8px 12px}.manager-facility-heading{padding-top:8px}.manager-facility-heading>strong{font-size:15px}.manager-facility-heading p{display:none}.manager-facility-heading>div{margin-top:5px;margin-bottom:6px}}
+.manager-map-panel {
+  position: absolute;
+  top: 58px;
+  right: 12px;
+  z-index: 7;
+  width: 300px;
+  max-width: calc(100% - 24px);
+  max-height: calc(100% - 70px);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface,#fff);
+  border: 1px solid var(--line,#c9ced6);
+  border-radius: 10px;
+  box-shadow: 0 4px 18px #14283e24;
+  font-size: 13px;
+  overflow: hidden;
+  outline: none;
+}
+.manager-map-panel>header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.manager-map-panel h2 {
+  font-size: 14px;
+  margin: 0;
+}
+.manager-map-panel button,.manager-map-panel a {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--surface);
+  color: inherit;
+  min-height: 34px;
+  padding: 6px 10px;
+  font: inherit;
+  text-decoration: none;
+}
+.manager-map-panel header button {
+  font-size: 11px;
+  white-space: nowrap;
+}
+.manager-facility-heading {
+  padding: 12px 12px 0;
+  flex-shrink: 0;
+}
+.manager-facility-heading>strong {
+  font-size: 17px;
+  line-height: 1.5;
+}
+.manager-facility-heading p {
+  font-size: 11px;
+  margin: 4px 0 8px;
+  line-height: 1.5;
+  color: var(--ink-sub,#64748b);
+}
+.manager-facility-heading>div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  margin-bottom: 10px;
+}
+.manager-facility-heading>div>button {
+  margin-left: auto;
+  border: 0;
+  min-height: 26px;
+  padding: 0 5px;
+  font-size: 18px;
+}
+.manager-state {
+  padding: 3px 7px;
+  border-radius: 4px;
+}
+.manager-state.safe {
+  background: #e1f3ea;
+  color: #1b7f5c;
+}
+.manager-state.warning {
+  background: #fff1d6;
+  color: #965000;
+}
+.manager-state.danger {
+  background: #fde7e7;
+  color: #a32424;
+}
+.manager-panel-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: auto;
+  padding: 0 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.manager-panel-body>* {
+  flex-shrink: 0;
+}
+.manager-panel-body[style*="display: none"] {
+  display: none!important;
+}
+.manager-risk {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.manager-risk strong {
+  font-size: 28px;
+}
+.manager-risk strong small {
+  font-size: 13px;
+  margin-left: 3px;
+}
+.manager-risk>span {
+  font-size: 11px;
+  color: var(--ink-sub,#64748b);
+}
+.manager-gauge {
+  height: 8px;
+  background: #e5eaf0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.manager-gauge b {
+  display: block;
+  height: 100%;
+  background: #225f9b;
+}
+.manager-panel-body dl {
+  display: grid;
+  grid-template-columns: 76px minmax(0,1fr);
+  gap: 8px;
+  margin: 0;
+  font-size: 12px;
+}
+.manager-panel-body dt {
+  color: var(--ink-sub,#64748b);
+}
+.manager-panel-body dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.manager-weather b,.manager-panel-body summary {
+  font-size: 12px;
+}
+.manager-weather p {
+  font-size: 12px;
+  margin: 5px 0 0;
+  line-height: 1.5;
+}
+.manager-panel-body summary {
+  cursor: pointer;
+}
+.manager-panel-body svg {
+  display: block;
+  width: 100%;
+}
+.manager-control-actions {
+  display: flex;
+  gap: 8px;
+}
+.manager-control-actions>button {
+  flex: 1;
+}
+.manager-control-actions>button:first-child {
+  background: #225f9b;
+  border-color: #225f9b;
+  color: #fff;
+}
+.manager-map-panel button:disabled {
+  opacity: .45;
+  cursor: default;
+}
+.manager-panel-body>a {
+  text-align: center;
+}
+.manager-cluster-options {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.manager-cluster-options button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 42px;
+  text-align: left;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+}
+.manager-selection-hint {
+  font-size: 12px;
+  line-height: 1.8;
+  margin: 12px 0 0;
+  color: var(--ink-sub,#64748b);
+}
+@container (max-width:600px) {
+  .manager-map-panel {
+    top: auto;
+    bottom: 12px;
+    max-height: 48%;
+    width: calc(100% - 24px);
+  }
+  .manager-map-panel>header {
+    padding: 8px 12px;
+  }
+  .manager-facility-heading {
+    padding-top: 8px;
+  }
+  .manager-facility-heading>strong {
+    font-size: 15px;
+  }
+  .manager-facility-heading p {
+    display: none;
+  }
+  .manager-facility-heading>div {
+    margin-top: 5px;
+    margin-bottom: 6px;
+  }
+}
 </style>
