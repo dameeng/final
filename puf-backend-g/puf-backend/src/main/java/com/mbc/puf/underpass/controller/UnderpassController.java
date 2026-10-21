@@ -36,10 +36,13 @@ import com.mbc.puf.underpass.dto.UnderpassUpdateRequest;
 import com.mbc.puf.underpass.service.UnderpassService;
 import com.mbc.puf.internal.dto.RiskScoreTrendItem;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 /** 지하차도 등록·관리 및 차단/해제(MP-10). 목록·상세 조회(CP-05~07)는 로그인 없이 공개,
  *  나머지는 관리자 전용(메서드별 @PreAuthorize) */
+@Tag(name = "지하차도", description = "목록·상세는 공개, 등록·수정·삭제는 담당 지역 관리자(차단·해제는 '통제' 태그의 /api/control)")
 @RestController
 @RequestMapping("/api/underpasses")
 public class UnderpassController {
@@ -52,26 +55,32 @@ public class UnderpassController {
 
     /**
      * 지하차도 목록. 로그인 없이 공개(CP-05~07), 관리자도 동일 API 사용.
-     *  regionId : 선택 필터, 안 주면 전체 지역 대상
+     *  scope    : ALL(전체, 기본) / MINE(내 담당 지역만, 관리자 전용). 지도 마커는 ALL, 관리자 시설 목록은 MINE
+     *  regionId : 선택 필터, 안 주면 전체 지역 대상 (scope=MINE 이면 내 담당 지역 중에서만)
      *  keyword  : 이름 검색 (없으면 전체)
      *  status   : NORMAL/BLOCKED 선택 필터
      *  sort     : NAME(가나다순, 기본) / RISK_SCORE(최신 위험점수 높은 순) / LATEST(최근 등록순)
      *  page, size : 공통 Page 조건. 지도에 한 번에 뿌리는 용도가 있어서 이 목록만 size 최대 500
      */
+    @Operation(summary = "지하차도 목록", description = "scope=MINE 이면 로그인한 관리자의 담당 지역만. 각 항목의 manageable 이 false 면 내 시설이 아니므로 차단·수정 버튼을 막아주세요")
     @GetMapping
     public ApiResponse<PageResponse<UnderpassListItem>> list(
+            @AuthenticationPrincipal LoginUser loginUser,
+            @RequestParam(name = "scope", defaultValue = "ALL") UnderpassService.ListScope scope,
             @RequestParam(name = "regionId", required = false) Long regionId,
             @RequestParam(name = "keyword", required = false) String keyword,
             @RequestParam(name = "status", required = false) UnderpassCurrentStatus status,
             @RequestParam(name = "sort", defaultValue = "NAME") UnderpassService.Sort sort,
             @ModelAttribute PageQuery page) {
-        return ApiResponse.ok(underpassService.getUnderpassList(regionId, keyword, status, sort, page));
+        return ApiResponse.ok(underpassService.getUnderpassList(loginUser, scope, regionId, keyword, status, sort, page));
     }
 
     // 지하차도 상세. 로그인 없이 공개(CP-05~07)
+    @Operation(summary = "지하차도 상세", description = "manageable 로 내가 관리할 수 있는 시설인지 알 수 있다")
     @GetMapping("/{id}")
-    public ApiResponse<UnderpassDetailResponse> detail(@PathVariable("id") Long id) {
-        return ApiResponse.ok(underpassService.getUnderpass(id));
+    public ApiResponse<UnderpassDetailResponse> detail(@AuthenticationPrincipal LoginUser loginUser,
+                                                       @PathVariable("id") Long id) {
+        return ApiResponse.ok(underpassService.getUnderpass(loginUser, id));
     }
 
     // 위험도 추이 (MP-05). 로그인 없이 공개.
@@ -84,6 +93,13 @@ public class UnderpassController {
             @RequestParam(name = "limit", required = false) Integer limit,
             @RequestParam(name = "hours", required = false) Integer hours) {
         return ApiResponse.ok(underpassService.getRiskScoreTrend(id, limit, hours));
+    }
+
+    // 위험도 미래 예측 (그래프의 미래 구간). 과거 구간은 위 risk-scores 로 받아 이어 그린다.
+    // 응답: [{targetAt, riskScore, rainfallMm, predictedAt}] 시간 오름차순, 지금 시(時) 이후만
+    @GetMapping("/{id}/risk-forecast")
+    public ApiResponse<List<com.mbc.puf.internal.dto.RiskForecastItem>> riskForecast(@PathVariable("id") Long id) {
+        return ApiResponse.ok(underpassService.getRiskForecast(id));
     }
 
     // 지하차도 등록 (201 Created). REGIONAL_ADMIN은 본인 담당 지역만 선택 가능
@@ -113,22 +129,6 @@ public class UnderpassController {
     public ApiResponse<Void> delete(@AuthenticationPrincipal LoginUser loginUser, @PathVariable("id") Long id) {
         underpassService.deleteUnderpass(loginUser, id);
         return ApiResponse.ok("지하차도가 삭제되었습니다.", null);
-    }
-
-    // 차단 (MP-10). 이미 BLOCKED면 409. REGIONAL_ADMIN은 본인 담당 지역만 가능
-    @PreAuthorize("hasRole('REGIONAL_ADMIN')")
-    @PostMapping("/{id}/block")
-    public ApiResponse<UnderpassDetailResponse> block(@AuthenticationPrincipal LoginUser loginUser,
-                                                        @PathVariable("id") Long id) {
-        return ApiResponse.ok("지하차도가 차단되었습니다.", underpassService.blockUnderpass(loginUser, id));
-    }
-
-    // 해제 (MP-10). 이미 NORMAL이면 409. REGIONAL_ADMIN은 본인 담당 지역만 가능
-    @PreAuthorize("hasRole('REGIONAL_ADMIN')")
-    @PostMapping("/{id}/release")
-    public ApiResponse<UnderpassDetailResponse> release(@AuthenticationPrincipal LoginUser loginUser,
-                                                          @PathVariable("id") Long id) {
-        return ApiResponse.ok("지하차도가 해제되었습니다.", underpassService.releaseUnderpass(loginUser, id));
     }
 
     // 상행/하행 입·출구 카메라 지정 (MP-10-1). 네 자리를 한 번에 보내고 null 이면 지정 해제.
@@ -164,6 +164,15 @@ public class UnderpassController {
         return ApiResponse.ok(underpassService.getTransitHistory(loginUser, scope, status, vehicle, period, page));
     }
 
+    /** 통과 기록 1건 수동 완료(통과 완료 처리). 이미 완료면 409, 담당 지역 밖이면 403 */
+    @PreAuthorize("hasRole('REGIONAL_ADMIN')")
+    @PostMapping("/transits/{transitId}/complete")
+    public ApiResponse<TransitHistoryItem> completeTransit(
+            @AuthenticationPrincipal LoginUser loginUser,
+            @PathVariable("transitId") Long transitId) {
+        return ApiResponse.ok("통과 완료로 처리했습니다.", underpassService.completeTransit(loginUser, transitId));
+    }
+
     /**
      * 제어이력(MP-16: 차단/해제/위험도 변화 + 전광판 조작 통합, 최신순).
      *  kind              : "EVENT"(차단/해제/위험도 변화만) / "DISPLAY"(전광판 조작만), 안 주면 전체
@@ -173,12 +182,13 @@ public class UnderpassController {
     @PreAuthorize("hasRole('REGIONAL_ADMIN')")
     @GetMapping("/{id}/events")
     public ApiResponse<PageResponse<ControlHistoryItem>> events(
+            @AuthenticationPrincipal LoginUser loginUser,
             @PathVariable("id") Long id,
             @RequestParam(name = "kind", required = false) String kind,
             @ModelAttribute PeriodQuery period,
             @ModelAttribute PageQuery page) {
         period.validate();
-        return ApiResponse.ok(underpassService.getControlHistory(id, kind, period, page));
+        return ApiResponse.ok(underpassService.getControlHistory(loginUser, id, kind, period, page));
     }
 
 }

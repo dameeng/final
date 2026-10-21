@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 import org.apache.catalina.connector.ClientAbortException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -56,8 +57,45 @@ public class GlobalExceptionHandler {
 
     // JSON 문법 오류, 잘못된 enum 값, 타입 불일치 등 요청 본문을 읽지 못한 경우
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ApiResponse<Void>> handleNotReadable(HttpMessageNotReadableException e) {
-        return ResponseEntity.badRequest().body(ApiResponse.error("요청 본문 형식이 올바르지 않습니다."));
+    public ResponseEntity<ApiResponse<Void>> handleNotReadable(HttpMessageNotReadableException e,
+                                                               HttpServletRequest request) {
+        // 어느 항목이 문제인지 알 수 있도록 Jackson 이 알려주는 필드 경로를 메시지에 붙인다 (예: heightM)
+        String field = null;
+        Throwable cause = e.getCause();
+        if (cause instanceof tools.jackson.databind.exc.MismatchedInputException mie && !mie.getPath().isEmpty()) {
+            field = mie.getPath().stream()
+                    .map(ref -> ref.getPropertyName() != null ? ref.getPropertyName() : "[" + ref.getIndex() + "]")
+                    .collect(Collectors.joining("."));
+        }
+        // 운영 중 원인을 바로 찾을 수 있게 어떤 요청이 왜 실패했는지 로그로 남긴다
+        log.warn("요청 본문을 읽지 못했습니다: {} {} (field={}, cause={})", request.getMethod(), request.getRequestURI(),
+                field, cause == null ? e.getMessage() : cause.getClass().getSimpleName());
+        String message = field == null ? "요청 본문 형식이 올바르지 않습니다."
+                : "요청 본문 형식이 올바르지 않습니다. (" + field + ")";
+        return ResponseEntity.badRequest().body(ApiResponse.error(message));
+    }
+
+    // DB 제약 위반(길이·범위 초과, 중복, 참조 오류 등). 500 대신 원인을 알 수 있는 상태코드로 응답하고 원인은 로그에 남긴다.
+    // 입력 검증(@Valid)에서 못 걸러낸 값이 여기로 온다
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDataIntegrity(DataIntegrityViolationException e,
+                                                                 HttpServletRequest request) {
+        Throwable root = e.getMostSpecificCause();
+        String detail = root.getMessage() == null ? "" : root.getMessage();
+        log.warn("DB 제약 위반: {} {} - {}", request.getMethod(), request.getRequestURI(), detail);
+        if (detail.contains("numeric field overflow")) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("숫자 값이 허용 범위를 넘었습니다. 입력값을 확인해주세요."));
+        }
+        if (detail.contains("value too long")) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("입력한 글자 수가 허용 범위를 넘었습니다. 입력값을 확인해주세요."));
+        }
+        if (detail.contains("duplicate key")) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error("이미 등록된 값입니다."));
+        }
+        if (detail.contains("foreign key")) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error("연결된 데이터가 있어 처리할 수 없습니다."));
+        }
+        return ResponseEntity.badRequest().body(ApiResponse.error("저장할 수 없는 값입니다. 입력값을 확인해주세요."));
     }
 
     // 경로/쿼리 파라미터 타입 오류 (예: /api/regions/abc)

@@ -1,5 +1,6 @@
 package com.mbc.puf.board.dto;
 
+import com.mbc.puf.common.enums.NoticeCategory;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -13,6 +14,8 @@ public class NoticeUpdateRequest {
     @NotBlank(message = "내용은 필수입니다.")
     private String content;
 
+    private NoticeCategory category;   // INFO/MAINTENANCE/UPDATE/URGENT, 안 보내면 INFO
+
     private boolean important;
 
     public NoticeUpdateRequest() {
@@ -23,6 +26,9 @@ public class NoticeUpdateRequest {
 
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }
+
+    public NoticeCategory getCategory() { return category; }
+    public void setCategory(NoticeCategory category) { this.category = category; }
 
     public boolean isImportant() { return important; }
     public void setImportant(boolean important) { this.important = important; }

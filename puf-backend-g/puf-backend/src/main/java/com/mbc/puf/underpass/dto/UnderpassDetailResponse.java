@@ -13,6 +13,7 @@ public class UnderpassDetailResponse {
     private Long id;
     private String name;
     private Long regionId;
+    private boolean manageable;   // 로그인한 관리자가 이 시설을 관리할 수 있는지(담당 지역이면 true)
     private String roadAddress;
     private BigDecimal latitude;
     private BigDecimal longitude;
@@ -24,6 +25,8 @@ public class UnderpassDetailResponse {
     private BigDecimal riverDistM;
     private BigDecimal seaDistM;
     private int floodHistoryCount;
+    private boolean earlyBlock;          // 선제 차단 대상(수위 5cm 에서 차단. 침수 이력이 있어도 5cm)
+    private BigDecimal currentWaterCm;   // 수위계 최신값(cm)
     private UnderpassCurrentStatus currentStatus;
     private Long currentBlockEventId;
     private RiskLevel currentRiskLevel;
@@ -43,6 +46,9 @@ public class UnderpassDetailResponse {
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 
+    public boolean isManageable() { return manageable; }
+    public void setManageable(boolean manageable) { this.manageable = manageable; }
+
     public Long getRegionId() { return regionId; }
     public void setRegionId(Long regionId) { this.regionId = regionId; }
 
@@ -60,6 +66,12 @@ public class UnderpassDetailResponse {
 
     public BigDecimal getLengthM() { return lengthM; }
     public void setLengthM(BigDecimal lengthM) { this.lengthM = lengthM; }
+
+    public boolean isEarlyBlock() { return earlyBlock; }
+    public void setEarlyBlock(boolean earlyBlock) { this.earlyBlock = earlyBlock; }
+
+    public BigDecimal getCurrentWaterCm() { return currentWaterCm; }
+    public void setCurrentWaterCm(BigDecimal currentWaterCm) { this.currentWaterCm = currentWaterCm; }
 
     public int getFloodHistoryCount() { return floodHistoryCount; }
     public void setFloodHistoryCount(int floodHistoryCount) { this.floodHistoryCount = floodHistoryCount; }

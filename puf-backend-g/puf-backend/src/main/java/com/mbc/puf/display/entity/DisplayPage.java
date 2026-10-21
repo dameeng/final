@@ -30,7 +30,7 @@ public class DisplayPage {
     @Column(name = "preset_id")
     private Long presetId;   // 직접 입력이면 NULL
 
-    @Column(name = "updated_by", nullable = false)
+    @Column(name = "updated_by")
     private Long updatedBy;
 
     @Column(name = "updated_at", nullable = false)

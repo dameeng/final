@@ -31,7 +31,7 @@ public class DisplayHistory {
     @Column(name = "new_content", nullable = false, length = 100)
     private String newContent;
 
-    @Column(name = "changed_by", nullable = false)
+    @Column(name = "changed_by")
     private Long changedBy;
 
     @Generated

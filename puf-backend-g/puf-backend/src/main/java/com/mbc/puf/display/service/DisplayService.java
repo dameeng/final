@@ -13,7 +13,7 @@ public interface DisplayService {
     List<DisplayPresetItem> getPresets(DisplayCategory category);
 
     /** 특정 전광판(equip_id) 의 페이지 목록 (page_no 오름차순) */
-    List<DisplayPageItem> getPages(Long equipId);
+    List<DisplayPageItem> getPages(LoginUser loginUser, Long equipId);
 
     /**
      * 페이지 신규 생성 (해당 equip_id 에서 max(page_no)+1 자동 부여).

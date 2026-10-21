@@ -4,7 +4,9 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.data.domain.Limit;
 import org.springframework.http.HttpStatus;
@@ -65,7 +67,6 @@ public class UnderpassServiceImpl implements UnderpassService {
     private static final int HOURS_SAFETY_LIMIT = 3000;
     // 잔류/장시간 IN_TRANSIT 차량을 자동으로 "통과완료" 처리하기까지 기다리는 시간(분). 2026-10-01 확정값
     // (※ 새 DB 구조 단계에서 이 타이머는 삭제 예정 — 소방 보고 흐름과 충돌)
-    private static final int AUTO_EXIT_MINUTES = 2;
 
     // 목록용: 지역명 + 최신 위험점수 1건 + 판별대기 건수 + 잔류차량 건수를 한 번에 (예전 LATERAL JOIN 3개와 같음)
     private static final String LIST_SELECT = "select u, r.name,"
@@ -84,13 +85,19 @@ public class UnderpassServiceImpl implements UnderpassService {
     private final ThresholdService thresholdService;
     private final ScopeResolver scopeResolver;
     private final DbClock dbClock;
+    private final com.mbc.puf.stream.StreamPublisher streamPublisher;   // SSE 실시간 이벤트
     private final EntityManager em;
+    private final com.mbc.puf.internal.repository.RiskForecastRepository riskForecastRepository;
 
     public UnderpassServiceImpl(UnderpassRepository underpassRepository, UnderpassEventRepository eventRepository,
                                 TransitRepository transitRepository,
                                 CameraRepository cameraRepository, RiskScoreRepository riskScoreRepository,
                                 ThresholdService thresholdService, ScopeResolver scopeResolver,
-                                DbClock dbClock, EntityManager em) {
+                                DbClock dbClock, EntityManager em,
+                                com.mbc.puf.stream.StreamPublisher streamPublisher,
+                                com.mbc.puf.internal.repository.RiskForecastRepository riskForecastRepository) {
+        this.riskForecastRepository = riskForecastRepository;
+        this.streamPublisher = streamPublisher;
         this.underpassRepository = underpassRepository;
         this.eventRepository = eventRepository;
         this.transitRepository = transitRepository;
@@ -106,13 +113,24 @@ public class UnderpassServiceImpl implements UnderpassService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<UnderpassListItem> getUnderpassList(Long regionId, String keyword,
-                                                            UnderpassCurrentStatus status, Sort sort,
-                                                            PageQuery page) {
+    public PageResponse<UnderpassListItem> getUnderpassList(LoginUser loginUser, ListScope scope, Long regionId,
+                                                            String keyword, UnderpassCurrentStatus status,
+                                                            Sort sort, PageQuery page) {
         PageParams pageParams = page.toParams(UNDERPASS_LIST_MAX_SIZE);
-        QueryConditions c = new QueryConditions()
-                .add("u.deleted = false")
-                .eqIfPresent("u.regionId", regionId)          // 안 주면 전체 지역
+        QueryConditions c = new QueryConditions().add("u.deleted = false");
+        if (scope == ListScope.MINE) {
+            // 내 담당 지역만. 관리자가 아니면 거절, regionId 를 주면 그 지역이 내 담당일 때만(아니면 403)
+            if (loginUser == null) {
+                throw new BusinessException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다. 다시 로그인해주세요.");
+            }
+            if (!loginUser.isManager()) {
+                throw new BusinessException(HttpStatus.FORBIDDEN, "scope=MINE 은 관리자만 사용할 수 있습니다.");
+            }
+            c.inIfPresent("u.regionId", scopeResolver.regionsOf(loginUser, regionId));
+        } else {
+            c.eqIfPresent("u.regionId", regionId);        // 안 주면 전체 지역
+        }
+        c
                 .eqIfPresent("u.currentStatus", status)       // NORMAL/BLOCKED
                 .containsIfPresent(keyword, "u.name");        // 이름 검색
 
@@ -121,14 +139,17 @@ public class UnderpassServiceImpl implements UnderpassService {
             case RISK_SCORE -> " order by riskScore desc nulls last, u.name asc, u.id asc";
             case LATEST -> " order by u.createdAt desc, u.id desc";
         };
+        Set<Long> mine = myRegionIds(loginUser);   // 목록의 각 시설을 내가 관리할 수 있는지(manageable) 표시용
         return PagedQuery.fetch(em, LIST_SELECT, "select count(u) from Underpass u", c, orderBy,
-                Object[].class, this::toListItem, pageParams);
+                Object[].class, row -> toListItem(row, mine), pageParams);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public UnderpassDetailResponse getUnderpass(Long id) {
-        return toDetail(requireExistingUnderpass(id));
+    public UnderpassDetailResponse getUnderpass(LoginUser loginUser, Long id) {
+        UnderpassDetailResponse detail = toDetail(requireExistingUnderpass(id));
+        detail.setManageable(myRegionIds(loginUser).contains(detail.getRegionId()));
+        return detail;
     }
 
     @Override
@@ -145,6 +166,18 @@ public class UnderpassServiceImpl implements UnderpassService {
         List<RiskScoreTrendItem> items = new ArrayList<>(recent.stream().map(UnderpassServiceImpl::toTrendItem).toList());
         Collections.reverse(items);   // DB에서는 최신순으로 가져왔으니, 그래프용으로 시간 오름차순으로 뒤집는다
         return items;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<com.mbc.puf.internal.dto.RiskForecastItem> getRiskForecast(Long id) {
+        requireExistingUnderpass(id);   // 존재하지 않으면 404
+        // 지금 시각이 속한 시(時)부터 보여준다 (예: 14:25 이면 14:00 시점부터)
+        java.time.LocalDateTime from = dbClock.now().truncatedTo(java.time.temporal.ChronoUnit.HOURS);
+        return riskForecastRepository.findByUnderpassIdAndTargetAtGreaterThanEqualOrderByTargetAtAsc(id, from).stream()
+                .map(f -> new com.mbc.puf.internal.dto.RiskForecastItem(f.getTargetAt(), f.getRiskScore(),
+                        f.getRainfallMm(), f.getPredictedAt()))
+                .toList();
     }
 
     // ---- 등록/수정/삭제: REGIONAL_ADMIN은 본인 담당 지역만 ----
@@ -167,11 +200,13 @@ public class UnderpassServiceImpl implements UnderpassService {
         underpass.setSafetyGrade(request.getSafetyGrade());
         underpass.setRiverDistM(request.getRiverDistM());
         underpass.setSeaDistM(request.getSeaDistM());
-        underpass.setFloodHistoryCount(request.getFloodHistoryCount());
+        underpass.setFloodHistoryCount(request.getFloodHistoryCount() == null ? 0 : request.getFloodHistoryCount());   // 안 보내면 0
+        underpass.setEarlyBlock(Boolean.TRUE.equals(request.getEarlyBlock()));
         underpass.setCurrentStatus(UnderpassCurrentStatus.NORMAL);   // 등록 시 항상 정상 상태로 고정
         underpassRepository.saveAndFlush(underpass);
 
-        thresholdService.createDefaultThresholds(underpass.getId(), loginUser.id());   // SAFE/WARNING/DANGER 3행 기본 생성
+        thresholdService.createDefaultThresholds(underpass.getId(), loginUser.id());   // 안전/관심/주의 3행 기본 생성
+        streamPublisher.dataChangedPublic(underpass.getRegionId(), "underpass", "CREATE", underpass.getId());
         return toDetail(reload(underpass));
     }
 
@@ -195,7 +230,13 @@ public class UnderpassServiceImpl implements UnderpassService {
         underpass.setSafetyGrade(request.getSafetyGrade());
         underpass.setRiverDistM(request.getRiverDistM());
         underpass.setSeaDistM(request.getSeaDistM());
-        underpass.setFloodHistoryCount(request.getFloodHistoryCount());
+        if (request.getEarlyBlock() != null) {   // 안 보내면 기존 값 유지
+            underpass.setEarlyBlock(request.getEarlyBlock());
+        }
+        if (request.getFloodHistoryCount() != null) {   // 안 보내면 기존 값 유지
+            underpass.setFloodHistoryCount(request.getFloodHistoryCount());
+        }
+        streamPublisher.dataChangedPublic(underpass.getRegionId(), "underpass", "UPDATE", underpass.getId());
         return toDetail(reload(underpass));
     }
 
@@ -205,42 +246,7 @@ public class UnderpassServiceImpl implements UnderpassService {
         Underpass underpass = requireExistingUnderpass(id);
         requireOwnableRegion(loginUser, underpass.getRegionId());
         underpass.setDeleted(true);
-    }
-
-    // ---- 차단/해제 (MP-10): REGIONAL_ADMIN은 본인 담당 지역만 ----
-
-    @Override
-    @Transactional
-    public UnderpassDetailResponse blockUnderpass(LoginUser loginUser, Long id) {
-        Underpass underpass = requireExistingUnderpass(id);
-        requireOwnableRegion(loginUser, underpass.getRegionId());
-        if (underpass.getCurrentStatus() == UnderpassCurrentStatus.BLOCKED) {
-            throw new BusinessException(HttpStatus.CONFLICT, "이미 차단된 지하차도입니다.");
-        }
-
-        UnderpassEvent event = saveOperatorEvent(id, UnderpassEventType.BLOCK, loginUser.id());
-        underpass.setCurrentStatus(UnderpassCurrentStatus.BLOCKED);
-        underpass.setCurrentBlockEventId(event.getId());
-
-        // 차단 시점에 안에 있던(IN_TRANSIT) 차량을 REMAINING으로 일괄 처리.
-        // (일괄 UPDATE는 실행 전에 위 변경을 먼저 DB에 반영한 뒤 영속성 컨텍스트를 비우므로, 응답은 다시 읽어서 만든다)
-        transitRepository.markRemaining(id);
-        return toDetail(requireExistingUnderpass(id));
-    }
-
-    @Override
-    @Transactional
-    public UnderpassDetailResponse releaseUnderpass(LoginUser loginUser, Long id) {
-        Underpass underpass = requireExistingUnderpass(id);
-        requireOwnableRegion(loginUser, underpass.getRegionId());
-        if (underpass.getCurrentStatus() == UnderpassCurrentStatus.NORMAL) {
-            throw new BusinessException(HttpStatus.CONFLICT, "이미 정상 상태인 지하차도입니다.");
-        }
-
-        saveOperatorEvent(id, UnderpassEventType.RELEASE, loginUser.id());
-        underpass.setCurrentStatus(UnderpassCurrentStatus.NORMAL);
-        underpass.setCurrentBlockEventId(null);   // 해제되면 차단 이벤트 연결도 비운다
-        return toDetail(underpass);
+        streamPublisher.dataChangedPublic(underpass.getRegionId(), "underpass", "DELETE", underpass.getId());
     }
 
     // ---- 상행/하행 입·출구 카메라 지정 (MP-10-1): 담당 지역만 ----
@@ -268,6 +274,7 @@ public class UnderpassServiceImpl implements UnderpassService {
         underpass.setUpExitCameraId(request.getUpExitCameraId());
         underpass.setDownEntryCameraId(request.getDownEntryCameraId());
         underpass.setDownExitCameraId(request.getDownExitCameraId());
+        streamPublisher.dataChangedPublic(underpass.getRegionId(), "underpass", "UPDATE", underpass.getId());
         return toDetail(underpass);
     }
 
@@ -284,23 +291,28 @@ public class UnderpassServiceImpl implements UnderpassService {
                 .eqIfPresent("t.underpassId", resolved.getUnderpassId())
                 .inIfPresent("u.regionId", resolved.getRegionIds())
                 .eqIfPresent("t.status", status)
-                .carNumIfPresent(vehicle.getCarNum(), "t.carNum")
+                .carNumIfPresent(vehicle.getCarNum(), "t.carNum", "p.correctedNum")   // 원본·정정값 둘 다
                 .periodIfPresent("t.entryAt", period);   // 진입 시각 기준
 
-        String from = " from Transit t join Underpass u on u.id = t.underpassId";
-        return PagedQuery.fetch(em, "select t, u.name" + from, "select count(t)" + from, c,
+        // 입구 인식 기록에 관리자가 정정한 번호가 있으면 화면에는 그 값을 보여준다 (t.carNum 은 출구 매칭용 OCR 원본 그대로)
+        String from = " from Transit t join Underpass u on u.id = t.underpassId"
+                + " left join PlateLog p on p.id = t.entryPlateLogId";
+        return PagedQuery.fetch(em, "select t, u.name, p.correctedNum" + from, "select count(t)" + from, c,
                 " order by t.entryAt desc, t.id desc", Object[].class, row -> {
                     Transit t = (Transit) row[0];
+                    String corrected = (String) row[2];
                     return new TransitHistoryItem(t.getId(), t.getUnderpassId(), (String) row[1], t.getCarNum(),
+                            corrected != null ? corrected : t.getCarNum(),
                             t.getStatus(), t.getEntryAt(), t.getExitAt());
                 }, page.toParams());
     }
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<ControlHistoryItem> getControlHistory(Long id, String kind, PeriodQuery period,
-                                                              PageQuery page) {
+    public PageResponse<ControlHistoryItem> getControlHistory(LoginUser loginUser, Long id, String kind,
+                                                              PeriodQuery period, PageQuery page) {
         Underpass underpass = requireExistingUnderpass(id);
+        scopeResolver.resolve(loginUser, ScopeQuery.of(null, id));   // 담당 지역 밖의 제어이력은 볼 수 없다(403)
         PageParams pageParams = page.toParams();
 
         // 이벤트와 전광판 조작을 각각 "이번 페이지까지 필요한 만큼"만 최신순으로 가져와서 합친 뒤 잘라낸다
@@ -352,18 +364,41 @@ public class UnderpassServiceImpl implements UnderpassService {
         return new PageResponse<>(merged.subList(from, to), pageParams.getPage(), pageParams.getSize(), total);
     }
 
-    // ---- 잔류/장시간 IN_TRANSIT 차량 자동 종료 (스케줄러 전용) ----
+    // ---- 통과 기록 수동 완료 (단건) ----
 
     @Override
     @Transactional
-    public int expireStaleTransits() {
-        var now = dbClock.now();
-        return transitRepository.expireStale(now, now.minusMinutes(AUTO_EXIT_MINUTES));
+    public TransitHistoryItem completeTransit(LoginUser loginUser, Long transitId) {
+        Transit transit = transitRepository.findById(transitId)
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "존재하지 않는 통과 기록입니다. id=" + transitId));
+        Underpass underpass = requireExistingUnderpass(transit.getUnderpassId());
+        requireOwnableRegion(loginUser, underpass.getRegionId());   // 담당 지역 밖이면 403
+
+        if (transit.getStatus() == TransitStatus.EXITED) {
+            throw new BusinessException(HttpStatus.CONFLICT, "이미 통과 완료된 기록입니다.");
+        }
+        // 실제 출구 인식이 있었던 게 아니라 관리자가 확인해서 닫는 것이므로 exit_log_id 는 비워 두고 시각만 남긴다.
+        // 처리한 관리자는 따로 저장하지 않는다 (처리 시각은 exit_at, 담당자는 그 시각의 근무조로 알 수 있음)
+        transit.setStatus(TransitStatus.EXITED);
+        transit.setExitAt(dbClock.now());
+        streamPublisher.publishToAdmins(underpass.getRegionId(), "transit-update",
+                new com.mbc.puf.stream.StreamPayloads.TransitUpdate(underpass.getId(), "EXIT",
+                        transit.getDirection() == null ? null : transit.getDirection().name(), transit.getCarNum()));
+        return new TransitHistoryItem(transit.getId(), transit.getUnderpassId(), underpass.getName(), transit.getCarNum(),
+                transit.getCarNum(), transit.getStatus(), transit.getEntryAt(), transit.getExitAt());
     }
 
     // ---- 내부 메서드 ----
 
-    // 삭제되지 않은 지하차도, 없으면 404 (지역 제한 없음 — 조회는 관리자 모두 허용)
+    // 로그인한 관리자의 담당 지역 id 집합. 비로그인·고객이면 빈 집합
+    private Set<Long> myRegionIds(LoginUser loginUser) {
+        if (loginUser == null || !loginUser.isManager()) {
+            return Set.of();
+        }
+        return new HashSet<>(scopeResolver.myRegionIds(loginUser));
+    }
+
+    // 삭제되지 않은 지하차도, 없으면 404 (지역 제한 없음 — 상세·목록은 공개 조회)
     private Underpass requireExistingUnderpass(Long id) {
         return underpassRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "존재하지 않는 지하차도입니다. id=" + id));
@@ -390,15 +425,6 @@ public class UnderpassServiceImpl implements UnderpassService {
         return entity;
     }
 
-    // 차단/해제 이벤트 기록 (operatorId 필수, 위험도 값은 비움)
-    private UnderpassEvent saveOperatorEvent(Long underpassId, UnderpassEventType type, Long operatorId) {
-        UnderpassEvent event = new UnderpassEvent();
-        event.setUnderpassId(underpassId);
-        event.setEventType(type);
-        event.setOperatorId(operatorId);
-        return eventRepository.saveAndFlush(event);
-    }
-
     private static java.time.LocalDateTime toLocalDateTime(Object value) {
         return (value instanceof java.sql.Timestamp ts) ? ts.toLocalDateTime() : (java.time.LocalDateTime) value;
     }
@@ -416,13 +442,14 @@ public class UnderpassServiceImpl implements UnderpassService {
     }
 
     // row = [Underpass, 지역명, 최신 위험점수, 판별대기 건수, 잔류차량 건수]
-    private UnderpassListItem toListItem(Object[] row) {
+    private UnderpassListItem toListItem(Object[] row, Set<Long> mine) {
         Underpass u = (Underpass) row[0];
         UnderpassListItem item = new UnderpassListItem();
         item.setId(u.getId());
         item.setName(u.getName());
         item.setRegionId(u.getRegionId());
         item.setRegionName((String) row[1]);
+        item.setManageable(mine.contains(u.getRegionId()));
         item.setRoadAddress(u.getRoadAddress());
         item.setLatitude(u.getLatitude());
         item.setLongitude(u.getLongitude());
@@ -447,6 +474,8 @@ public class UnderpassServiceImpl implements UnderpassService {
         d.setHeightM(u.getHeightM());
         d.setLengthM(u.getLengthM());
         d.setFloodHistoryCount(u.getFloodHistoryCount());
+        d.setEarlyBlock(u.isEarlyBlock());
+        d.setCurrentWaterCm(u.getCurrentWaterCm());
         d.setCurrentStatus(u.getCurrentStatus());
         d.setCurrentBlockEventId(u.getCurrentBlockEventId());
         d.setCurrentRiskLevel(u.getCurrentRiskLevel());

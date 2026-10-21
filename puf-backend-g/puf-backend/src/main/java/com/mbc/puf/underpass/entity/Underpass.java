@@ -63,6 +63,10 @@ public class Underpass {
     @Column(name = "flood_count")
     private int floodHistoryCount = 0;
 
+    // 선제 차단 대상(관리자 지정). 침수 이력이 있거나 true 면 수위 5cm 에서 차단, 아니면 15cm
+    @Column(name = "early_block")
+    private boolean earlyBlock = false;
+
     // 상행/하행 입·출구 카메라. 입출구 매칭(transit)과 방향(UP/DOWN) 판정에 쓴다
     @Column(name = "up_entry_cam_id")
     private Long upEntryCameraId;
@@ -89,6 +93,9 @@ public class Underpass {
     @Column(name = "risk_score")
     private BigDecimal currentRiskScore = BigDecimal.ZERO;   // 최신 위험점수 캐시(FastAPI 수신 때마다 갱신)
 
+    @Column(name = "water_cm")
+    private BigDecimal currentWaterCm = BigDecimal.ZERO;   // 수위계 최신값 캐시(cm)
+
     @Column(name = "is_deleted")
     private boolean deleted = false;
 
@@ -97,6 +104,22 @@ public class Underpass {
     private LocalDateTime createdAt;
 
     public Underpass() {
+    }
+
+    public boolean isEarlyBlock() {
+        return earlyBlock;
+    }
+
+    public void setEarlyBlock(boolean earlyBlock) {
+        this.earlyBlock = earlyBlock;
+    }
+
+    public BigDecimal getCurrentWaterCm() {
+        return currentWaterCm;
+    }
+
+    public void setCurrentWaterCm(BigDecimal currentWaterCm) {
+        this.currentWaterCm = currentWaterCm;
     }
 
     public Long getId() {

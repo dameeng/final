@@ -34,9 +34,12 @@ public class ThresholdServiceImpl implements ThresholdService {
     private final EntityManager em;
 
     private final ScopeResolver scopeResolver;
+    private final com.mbc.puf.stream.StreamPublisher streamPublisher;   // SSE 실시간 이벤트
 
     public ThresholdServiceImpl(ThresholdRepository thresholdRepository, ThresholdHistoryRepository historyRepository,
-                                UnderpassRepository underpassRepository, DbClock dbClock, EntityManager em, ScopeResolver scopeResolver) {
+                                UnderpassRepository underpassRepository, DbClock dbClock, EntityManager em, ScopeResolver scopeResolver,
+                                com.mbc.puf.stream.StreamPublisher streamPublisher) {
+        this.streamPublisher = streamPublisher;
         this.scopeResolver = scopeResolver;
         this.thresholdRepository = thresholdRepository;
         this.historyRepository = historyRepository;
@@ -72,6 +75,7 @@ public class ThresholdServiceImpl implements ThresholdService {
         recordHistory(current.getId(), oldValue, request.getRiskScoreMin(), loginUser.id());
         em.flush();
         em.refresh(current);   // DB에 저장된 값(DECIMAL(5,2): 45 → 45.00)으로 응답 — 예전과 같게
+        streamPublisher.dataChangedToAdmins(underpass.getRegionId(), "threshold", "UPDATE", underpassId);   // id 는 지하차도 id
         return toResponse(current);
     }
 
@@ -82,8 +86,8 @@ public class ThresholdServiceImpl implements ThresholdService {
     public void createDefaultThresholds(Long underpassId, Long createdBy) {
         // AI 모델의 표시점수 경계(0/40/70)를 기본값으로 사용. 지하차도별로 관리자가 이후 조정 가능
         insertOne(underpassId, RiskLevel.SAFE, new BigDecimal("0.00"), createdBy);
-        insertOne(underpassId, RiskLevel.WARNING, new BigDecimal("40.00"), createdBy);
-        insertOne(underpassId, RiskLevel.DANGER, new BigDecimal("70.00"), createdBy);
+        insertOne(underpassId, RiskLevel.INTEREST, new BigDecimal("40.00"), createdBy);
+        insertOne(underpassId, RiskLevel.CAUTION, new BigDecimal("70.00"), createdBy);
     }
 
     private void insertOne(Long underpassId, RiskLevel level, BigDecimal riskScoreMin, Long createdBy) {

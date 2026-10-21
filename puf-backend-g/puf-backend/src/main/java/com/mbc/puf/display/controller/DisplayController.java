@@ -46,7 +46,7 @@ public class DisplayController {
     @GetMapping("/presets")
     @PreAuthorize("isAuthenticated() and principal.manager")
     public ResponseEntity<ApiResponse<List<DisplayPresetItem>>> getPresets(
-            @RequestParam(required = false) DisplayCategory category) {
+            @RequestParam(name = "category", required = false) DisplayCategory category) {
         return ResponseEntity.ok(ApiResponse.ok("전광판 프리셋 목록입니다.", displayService.getPresets(category)));
     }
 
@@ -58,8 +58,10 @@ public class DisplayController {
      */
     @GetMapping("/equipments/{equipId}/pages")
     @PreAuthorize("isAuthenticated() and principal.manager")
-    public ResponseEntity<ApiResponse<List<DisplayPageItem>>> getPages(@PathVariable Long equipId) {
-        return ResponseEntity.ok(ApiResponse.ok("전광판 페이지 목록입니다.", displayService.getPages(equipId)));
+    public ResponseEntity<ApiResponse<List<DisplayPageItem>>> getPages(
+            @AuthenticationPrincipal LoginUser loginUser,
+            @PathVariable("equipId") Long equipId) {
+        return ResponseEntity.ok(ApiResponse.ok("전광판 페이지 목록입니다.", displayService.getPages(loginUser, equipId)));
     }
 
     // ── 페이지 생성 ────────────────────────────────────────────────
@@ -72,7 +74,7 @@ public class DisplayController {
     @PreAuthorize("isAuthenticated() and principal.manager")
     public ResponseEntity<ApiResponse<DisplayPageItem>> createPage(
             @AuthenticationPrincipal LoginUser loginUser,
-            @PathVariable Long equipId,
+            @PathVariable("equipId") Long equipId,
             @Valid @RequestBody DisplayPageSaveRequest request) {
         DisplayPageItem item = displayService.createPage(loginUser, equipId, request);
         return ResponseEntity.ok(ApiResponse.ok("전광판 페이지가 추가되었습니다.", item));
@@ -88,8 +90,8 @@ public class DisplayController {
     @PreAuthorize("isAuthenticated() and principal.manager")
     public ResponseEntity<ApiResponse<DisplayPageItem>> updatePage(
             @AuthenticationPrincipal LoginUser loginUser,
-            @PathVariable Long equipId,
-            @PathVariable Integer pageNo,
+            @PathVariable("equipId") Long equipId,
+            @PathVariable("pageNo") Integer pageNo,
             @Valid @RequestBody DisplayPageSaveRequest request) {
         DisplayPageItem item = displayService.updatePage(loginUser, equipId, pageNo, request);
         return ResponseEntity.ok(ApiResponse.ok("전광판 페이지가 수정되었습니다.", item));
@@ -105,8 +107,8 @@ public class DisplayController {
     @PreAuthorize("isAuthenticated() and principal.manager")
     public ResponseEntity<ApiResponse<Void>> deletePage(
             @AuthenticationPrincipal LoginUser loginUser,
-            @PathVariable Long equipId,
-            @PathVariable Integer pageNo) {
+            @PathVariable("equipId") Long equipId,
+            @PathVariable("pageNo") Integer pageNo) {
         displayService.deletePage(loginUser, equipId, pageNo);
         return ResponseEntity.ok(ApiResponse.ok("전광판 페이지가 삭제되었습니다.", null));
     }

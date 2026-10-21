@@ -7,8 +7,10 @@ public class RegionRiskLevelItem {
     private Long regionId;
     private String regionName;
     private long safeCount;
-    private long warningCount;
-    private long dangerCount;
+    private long interestCount;
+    private long cautionCount;
+    private long alertCount;
+    private long severeCount;
     private long totalCount;
 
     public RegionRiskLevelItem() {
@@ -23,11 +25,17 @@ public class RegionRiskLevelItem {
     public long getSafeCount() { return safeCount; }
     public void setSafeCount(long safeCount) { this.safeCount = safeCount; }
 
-    public long getWarningCount() { return warningCount; }
-    public void setWarningCount(long warningCount) { this.warningCount = warningCount; }
+    public long getInterestCount() { return interestCount; }
+    public void setInterestCount(long interestCount) { this.interestCount = interestCount; }
 
-    public long getDangerCount() { return dangerCount; }
-    public void setDangerCount(long dangerCount) { this.dangerCount = dangerCount; }
+    public long getCautionCount() { return cautionCount; }
+    public void setCautionCount(long cautionCount) { this.cautionCount = cautionCount; }
+
+    public long getAlertCount() { return alertCount; }
+    public void setAlertCount(long alertCount) { this.alertCount = alertCount; }
+
+    public long getSevereCount() { return severeCount; }
+    public void setSevereCount(long severeCount) { this.severeCount = severeCount; }
 
     public long getTotalCount() { return totalCount; }
     public void setTotalCount(long totalCount) { this.totalCount = totalCount; }

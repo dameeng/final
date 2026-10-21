@@ -19,7 +19,6 @@ import com.mbc.puf.common.response.PageResponse;
 import com.mbc.puf.common.util.LikePattern;
 import com.mbc.puf.common.util.SearchKeyword;
 import com.mbc.puf.member.dto.CustomerListItem;
-import com.mbc.puf.member.dto.CustomerProfileUpdateRequest;
 import com.mbc.puf.member.entity.Customer;
 import com.mbc.puf.member.repository.CustomerRepository;
 
@@ -30,12 +29,10 @@ public class CustomerSearchServiceImpl implements CustomerSearchService {
 
     private final CustomerRepository customerRepository;
     private final CarRepository carRepository;
-    private final CustomerService customerService;
     private final EntityManager em;
 
     public CustomerSearchServiceImpl(CustomerRepository customerRepository, CarRepository carRepository,
-                                     CustomerService customerService, EntityManager em) {
-        this.customerService = customerService;
+                                     EntityManager em) {
         this.customerRepository = customerRepository;
         this.carRepository = carRepository;
         this.em = em;
@@ -99,18 +96,5 @@ public class CustomerSearchServiceImpl implements CustomerSearchService {
                         carNums.getOrDefault(x.getId(), List.of()), x.getCreatedAt(), x.isWithdrawn()))
                 .toList();
         return new PageResponse<>(items, customers.getPage(), customers.getSize(), customers.getTotalItems());
-    }
-
-    // 관리자 수정·강제 탈퇴는 고객 본인 경로와 같은 규칙을 쓰도록 CustomerService 에 맡긴다
-    @Override
-    @Transactional
-    public void updateCustomer(Long customerId, CustomerProfileUpdateRequest request) {
-        customerService.updateByAdmin(customerId, request);
-    }
-
-    @Override
-    @Transactional
-    public void forceWithdraw(Long customerId) {
-        customerService.forceWithdraw(customerId);
     }
 }

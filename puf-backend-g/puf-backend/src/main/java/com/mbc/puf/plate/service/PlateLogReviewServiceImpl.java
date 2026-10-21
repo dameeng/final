@@ -125,6 +125,11 @@ public class PlateLogReviewServiceImpl implements PlateLogReviewService {
         List<Car> matchedCars = carRepository.findActiveByCarNum(correctedNum);
         Long carId = matchedCars.isEmpty() ? null : matchedCars.get(0).getId();
 
+        // 대기 중인 건만 정정할 수 있다 (이미 확인됐거나 자동 마감된 건은 고칠 수 없다)
+        if (plateLog.getReviewStatus() != ReviewStatus.PENDING) {
+            throw new BusinessException(HttpStatus.CONFLICT, "판별 대기 중인 기록만 정정할 수 있습니다. 현재 상태: " + plateLog.getReviewStatus());
+        }
+
         var now = dbClock.now();
         plateLog.setCorrectedNum(correctedNum);
         plateLog.setCarId(carId);
@@ -133,25 +138,13 @@ public class PlateLogReviewServiceImpl implements PlateLogReviewService {
         plateLog.setReviewedBy(loginUser.id());
         plateLog.setReviewedAt(now);
 
-        // 정정으로 새로 매칭된 차량이 있으면, 자동 판정 때와 같은 조건(camera_role 기준)일 때 새로 알림을 보낸다.
-        // 원래 detected_num으로는 못 찾았던 차주에게 뒤늦게라도 알려주는 것
-        // (카메라가 삭제된 상태면 알림은 건너뛴다 — 예전과 동일)
+        // 정정으로 새로 매칭된 차량이 있으면, 자동 인식 때와 같은 규칙으로 알림을 보낸다 (차단 중이면 사유 포함).
+        // 원래 detected_num으로는 못 찾았던 차주에게 뒤늦게라도 알려주는 것 (카메라가 삭제된 상태면 건너뛴다)
         if (carId != null && !camera.isDeleted()) {
-            if (camera.getCameraRole() == CameraRole.APPROACH_LPR
-                    && (underpass.getCurrentRiskLevel() == RiskLevel.WARNING
-                        || underpass.getCurrentRiskLevel() == RiskLevel.DANGER)) {
-                eventRepository.findFirstByUnderpassIdAndEventTypeOrderByCreatedAtDescIdDesc(underpass.getId(),
-                                UnderpassEventType.RISK_LEVEL_UP)
-                        .ifPresent(e -> matchedCars.forEach(
-                                car -> alertService.sendPredictiveAlert(e.getId(), car.getId(), correctedNum)));
-            } else if (camera.getCameraRole() == CameraRole.FINAL_LPR
-                    && underpass.getCurrentStatus() == UnderpassCurrentStatus.BLOCKED
-                    && underpass.getCurrentBlockEventId() != null) {
-                for (Car car : matchedCars) {
-                    alertService.sendRoiFinalAlert(underpass.getCurrentBlockEventId(), car.getId(), correctedNum);
-                }
-            }
+            alertService.sendAlertsForPlate(underpass, camera.getCameraRole(), matchedCars, correctedNum);
         }
+
+        streamPublisher.dataChangedToAdmins(underpass.getRegionId(), "plate-log", "UPDATE", id);
 
         // 대기열에서 빠졌음을 같은 지역 관리자 화면에 알린다
         streamPublisher.publishToAdmins(underpass.getRegionId(), "plate-queue-done",
@@ -159,6 +152,26 @@ public class PlateLogReviewServiceImpl implements PlateLogReviewService {
                         plateLog.getDetectedNum(), plateLog.getConfidence(), ReviewStatus.CONFIRMED, null, null));
 
         return new PlateLogReviewResponse(id, correctedNum, carId, ReviewStatus.CONFIRMED, loginUser.id(), now);
+    }
+
+    // 자동 마감된 건: 인식된 번호(detected_num) 그대로 등록 차량과 매칭되면 이때 알림을 보낸다.
+    // 판별 대기 중에는 알림을 미뤄 두었으므로, 마감과 수동 판별 완료가 알림의 두 가지 발송 시점이다.
+    // 알림 조건(차단 중인지, 위험도가 몇 단계인지)은 마감하는 지금 상태 기준으로 AlertService 가 판단한다
+    private void sendAlertOnAutoClose(Long plateLogId) {
+        PlateLog plateLog = plateLogRepository.findById(plateLogId).orElse(null);
+        if (plateLog == null || plateLog.getDetectedNum() == null) {
+            return;
+        }
+        Camera camera = cameraRepository.findById(plateLog.getCameraId()).orElse(null);
+        if (camera == null || camera.isDeleted()) {
+            return;
+        }
+        Underpass underpass = underpassRepository.findByIdAndDeletedFalse(camera.getUnderpassId()).orElse(null);
+        if (underpass == null) {
+            return;
+        }
+        List<Car> cars = carRepository.findActiveByCarNum(CarNumber.normalize(plateLog.getDetectedNum()));
+        alertService.sendAlertsForPlate(underpass, camera.getCameraRole(), cars, plateLog.getDetectedNum());
     }
 
     @Override
@@ -172,6 +185,8 @@ public class PlateLogReviewServiceImpl implements PlateLogReviewService {
         }
         plateLogRepository.autoProcessExpired(now);
         for (Object[] row : expired) {
+            sendAlertOnAutoClose((Long) row[0]);
+            streamPublisher.dataChangedToAdmins((Long) row[2], "plate-log", "UPDATE", (Long) row[0]);
             streamPublisher.publishToAdmins((Long) row[2], "plate-queue-done",
                     new com.mbc.puf.stream.StreamPayloads.PlateQueue((Long) row[0], (Long) row[1], null, null, null,
                             ReviewStatus.AUTO_PROCESSED, null, null));

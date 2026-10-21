@@ -42,6 +42,14 @@ import com.mbc.puf.notification.service.NotificationService;
 import com.mbc.puf.stream.StreamPayloads;
 import com.mbc.puf.stream.StreamPublisher;
 import com.mbc.puf.internal.repository.RiskScoreRepository;
+import com.mbc.puf.internal.repository.RiskForecastRepository;
+import com.mbc.puf.internal.dto.RiskForecastCreateRequest;
+import com.mbc.puf.internal.dto.RiskForecastIngestResponse;
+import com.mbc.puf.internal.repository.WaterLevelRepository;
+import com.mbc.puf.internal.entity.WaterLevel;
+import com.mbc.puf.internal.dto.WaterLevelCreateRequest;
+import com.mbc.puf.internal.dto.WaterLevelResponse;
+import com.mbc.puf.risk.RiskLevelService;
 import com.mbc.puf.plate.entity.PlateLog;
 import com.mbc.puf.plate.repository.PlateLogRepository;
 import com.mbc.puf.threshold.entity.Threshold;
@@ -66,6 +74,9 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 	// 출구 보조 매칭(숫자만 같은 번호)을 허용할 입구 인식 후 시간(초). 같은 숫자의 다른 차와 잘못 짝짓지 않게 짧게 둔다
 	private static final long SIMILAR_MATCH_WINDOW_SEC = 60;
 
+	// 같은 카메라·같은 번호를 중복으로 보고 건너뛰는 시간(초)
+	private static final long DUPLICATE_WINDOW_SEC = 30;
+
 	// detected_num은 DB에서 NOT NULL이라, OCR이 아예 못 읽은 경우(null) 저장용으로 대신 넣는 값
 	private static final String FAILED_PLACEHOLDER = "FAILED";
 
@@ -87,6 +98,9 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 	private final NotificationService notificationService;   // 관리자 알림(위험도 변화, 판별 대기)
 	private final StreamPublisher streamPublisher;           // SSE 실시간 이벤트
 	private final DbClock dbClock;                           // 판별 마감까지 남은 시간 계산(DB 시계)
+	private final WaterLevelRepository waterLevelRepository;   // 수위계 측정값 저장
+	private final RiskLevelService riskLevelService;           // 점수·수위로 단계 판정 + 자동 차단
+	private final RiskForecastRepository riskForecastRepository;   // 위험도 미래 예측 저장
 
 	// 첨부파일 저장 위치. application.properties의 file.upload-dir (board 도메인 첨부와 같은 설정을 공유)
 	@Value("${file.upload-dir}")
@@ -96,7 +110,12 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 			UnderpassRepository underpassRepository, UnderpassEventRepository eventRepository,
 			TransitRepository transitRepository, ThresholdRepository thresholdRepository,
 			CameraRepository cameraRepository, CarRepository carRepository, AlertService alertService,
-			NotificationService notificationService, StreamPublisher streamPublisher, DbClock dbClock) {
+			NotificationService notificationService, StreamPublisher streamPublisher, DbClock dbClock,
+			WaterLevelRepository waterLevelRepository, RiskLevelService riskLevelService,
+			RiskForecastRepository riskForecastRepository) {
+		this.riskForecastRepository = riskForecastRepository;
+		this.waterLevelRepository = waterLevelRepository;
+		this.riskLevelService = riskLevelService;
 		this.riskScoreRepository = riskScoreRepository;
 		this.plateLogRepository = plateLogRepository;
 		this.underpassRepository = underpassRepository;
@@ -131,28 +150,37 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 
 		riskScoreRepository.save(riskScore);
 
-		RiskLevel levelBefore = underpass.getCurrentRiskLevel();
-		updateRiskLevel(underpass, request.getRiskScore());
+		// 최신 점수를 반영하고, 점수와 수위를 같이 보고 단계를 다시 정한다 (단계 변화 이벤트·알림, 자동 차단까지 여기서)
+		underpass.setCurrentRiskScore(request.getRiskScore());
+		riskLevelService.reevaluate(underpass);
 
 		// 실시간: 점수는 갱신될 때마다(등급 그대로여도) 공개로 보낸다
 		streamPublisher.publishPublic("risk-update", underpass.getRegionId(),
 				new StreamPayloads.RiskUpdate(underpass.getId(), request.getRiskScore(), underpass.getCurrentRiskLevel(),
 						request.getRainfall1hMm(), request.getPredictedAt()));
 
-		// 등급이 바뀐 순간에만: 공개 이벤트 + 담당 지역 관리자 알림(위험)
-		if (underpass.getCurrentRiskLevel() != levelBefore) {
-			boolean up = underpass.getCurrentRiskLevel().ordinal() > levelBefore.ordinal();
-			streamPublisher.publishPublic("risk-level-change", underpass.getRegionId(),
-					new StreamPayloads.RiskLevelChange(underpass.getId(), underpass.getName(), levelBefore,
-							underpass.getCurrentRiskLevel(), up ? "UP" : "DOWN", request.getRiskScore()));
-			notificationService.notifyManagers(ManagerNotificationCategory.RISK, underpass.getRegionId(),
-					up ? "위험도 상승" : "위험도 하락",
-					underpass.getName() + ": " + levelBefore.getDbValue() + " → " + underpass.getCurrentRiskLevel().getDbValue(),
-					"UNDERPASS", underpass.getId());
-		}
-
 		return new RiskScoreResponse(riskScore.getId(), riskScore.getUnderpassId(), riskScore.getRiskScore(),
 				riskScore.getPredictedAt());
+	}
+
+	@Override
+	@Transactional
+	public RiskForecastIngestResponse receiveRiskForecast(RiskForecastCreateRequest request) {
+		Underpass underpass = underpassRepository.findByIdAndDeletedFalse(request.getUnderpassId())
+				.orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST,
+						"존재하지 않는 지하차도입니다. underpassId=" + request.getUnderpassId()));
+
+		// 같은 시점은 덮어쓰고, 이미 지난 시점 행은 지운다 (예측 계산 시각 이전 시점)
+		for (RiskForecastCreateRequest.Item item : request.getItems()) {
+			riskForecastRepository.upsert(underpass.getId(), item.getRiskScore(), item.getRainfallMm(),
+					item.getRainfall1hMm(), item.getRainfall3hMm(), item.getRainfall6hMm(), item.getRainfall12hMm(),
+					item.getRainfall24hMm(), item.getTargetAt(), request.getPredictedAt());
+		}
+		riskForecastRepository.deletePast(underpass.getId(), request.getPredictedAt());
+
+		// 실시간: 예측 그래프를 다시 그리라고 알린다 (id 는 지하차도 id)
+		streamPublisher.dataChangedPublic(underpass.getRegionId(), "risk-forecast", "UPDATE", underpass.getId());
+		return new RiskForecastIngestResponse(underpass.getId(), request.getItems().size());
 	}
 
 	@Override
@@ -161,6 +189,23 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 		Camera camera = cameraRepository.findByIdAndDeletedFalse(request.getCameraId()).orElse(null);
 		if (camera == null) {
 			throw new BusinessException(HttpStatus.BAD_REQUEST, "존재하지 않는 카메라입니다. cameraId=" + request.getCameraId());
+		}
+
+		// 같은 카메라에서 같은 번호가 30초 안에 또 들어오면 저장하지 않고 건너뛴다 (정차·서행 중 연속 인식, 중복 알림 방지).
+		// 응답은 먼저 저장된 기록을 그대로 돌려준다. 번호를 못 읽은 건(null)은 비교 대상이 아니다
+		if (request.getDetectedNum() != null && request.getDetectedAt() != null) {
+			PlateLog duplicate = plateLogRepository
+					.findFirstByCameraIdAndDetectedNumAndDetectedAtBetweenOrderByDetectedAtDesc(request.getCameraId(),
+							request.getDetectedNum(), request.getDetectedAt().minusSeconds(DUPLICATE_WINDOW_SEC),
+							request.getDetectedAt())
+					.orElse(null);
+			if (duplicate != null) {
+				log.info("번호판 중복 인식 건너뜀 (카메라 {}, {}초 이내): {}", request.getCameraId(), DUPLICATE_WINDOW_SEC,
+						request.getDetectedNum());
+				return new PlateLogResponse(duplicate.getId(), duplicate.getCameraId(), duplicate.getRecognitionStatus(),
+						duplicate.getCarId(), duplicate.getReviewStatus(), duplicate.getImagePath(),
+						duplicate.getDetectedAt());
+			}
 		}
 
 		// 같은 번호를 여러 고객이 등록할 수 있다(가족 공유 차량). 삭제한 차량·탈퇴 고객의 차량은 빠진다.
@@ -217,32 +262,11 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 			boolean matched = carId != null && (recognitionStatus == RecognitionStatus.SUCCESS
 					|| recognitionStatus == RecognitionStatus.LOW_CONFIDENCE);
 
-			// PREDICTIVE 알림: APPROACH_LPR(원거리 접근로) 카메라가 매칭했는데, 그 지하차도 위험도가
-			// 지금 WARNING/DANGER면 "아직 시간 있을 때" 경고로 발송
-			if (matched && camera.getCameraRole() == CameraRole.APPROACH_LPR
-					&& (underpass.getCurrentRiskLevel() == RiskLevel.WARNING
-							|| underpass.getCurrentRiskLevel() == RiskLevel.DANGER)) {
-				// 알림 로그에 남길 계기 이벤트: "지금 이 단계로 올라간" 가장 최근 RISK_LEVEL_UP 행
-				// (currentRiskLevel 자체는 컬럼에서 바로 읽고, 이 조회는 event_id 확보용으로만 쓴다)
-				UnderpassEvent latestRiskUpEvent = eventRepository
-						.findFirstByUnderpassIdAndEventTypeOrderByCreatedAtDescIdDesc(underpass.getId(),
-								UnderpassEventType.RISK_LEVEL_UP)
-						.orElse(null);
-				if (latestRiskUpEvent != null) {
-					for (Car car : matchedCars) {
-						alertService.sendPredictiveAlert(latestRiskUpEvent.getId(), car.getId(), storedDetectedNum);
-					}
-				}
-			}
-
-			// FINAL 알림: FINAL_LPR(입구 바로 앞, 마지막으로 돌아갈 수 있는 지점) 카메라가 매칭했는데
-			// 그 지하차도가 지금 BLOCKED면, 진입 직전 최후 확인으로 그 차주에게 발송
-			if (matched && camera.getCameraRole() == CameraRole.FINAL_LPR
-					&& underpass.getCurrentStatus() == UnderpassCurrentStatus.BLOCKED
-					&& underpass.getCurrentBlockEventId() != null) {
-				for (Car car : matchedCars) {
-					alertService.sendRoiFinalAlert(underpass.getCurrentBlockEventId(), car.getId(), storedDetectedNum);
-				}
+			// 알림: 접근 카메라면 선제(PREDICTIVE), 입구 직전 카메라면 최종(FINAL). 조건 판단과 차단 사유 포함은 AlertService 가 한다.
+			// 판별 대기(PENDING)로 들어간 건은 여기서 보내지 않는다 — 자동 마감되거나 수동 판별이 끝나는 시점에 한 번만 보낸다
+			// (대기 중에는 이 번호가 맞는지 아직 모르고, 마감될지 정정될지도 모르기 때문)
+			if (matched && plateLog.getReviewStatus() != ReviewStatus.PENDING) {
+				alertService.sendAlertsForPlate(underpass, camera.getCameraRole(), matchedCars, storedDetectedNum);
 			}
 		}
 
@@ -281,44 +305,29 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 		}
 	}
 
-	// risk_score를 threshold와 대조해서 단계를 매기고, 지금 저장된 단계(underpass.current_risk_level)와
-	// 달라졌을 때만 상태를 갱신 + 이벤트를 남긴다. 오르면 RISK_LEVEL_UP, 내리면 RISK_LEVEL_DOWN으로
-	// 기록해서 추이를 전부 추적할 수 있게 한다. 같으면 아무 것도 하지 않는다(이벤트 남발 방지).
-	// 알림은 여기서 안 보내고, APPROACH_LPR 카메라가 이 단계를 감지했을 때(receivePlateLog) 보낸다
-	// — "이미 들어간 차"가 아니라 "접근 중인 차"에게 경고하는 게 맞아서
-	private void updateRiskLevel(Underpass underpass, BigDecimal riskScore) {
-		Long underpassId = underpass.getId();
-		List<Threshold> thresholds = thresholdRepository.findByUnderpassIdOrderByRiskScoreMinAsc(underpassId);
-		RiskLevel newLevel = determineRiskLevel(thresholds, riskScore);
-		RiskLevel currentLevel = underpass.getCurrentRiskLevel();
+	// 수위계 측정값 수신: 저장 → 최신 수위 캐시 갱신 → 단계 재판정(경계 이상이면 자동 차단)
+	@Override
+	@Transactional
+	public WaterLevelResponse receiveWaterLevel(WaterLevelCreateRequest request) {
+		Underpass underpass = underpassRepository.findByIdAndDeletedFalse(request.getUnderpassId())
+				.orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST,
+						"존재하지 않는 지하차도입니다. underpassId=" + request.getUnderpassId()));
 
-		underpass.setCurrentRiskScore(riskScore);   // 점수는 단계 변화와 상관없이 매번 최신값으로 갱신
+		WaterLevel water = new WaterLevel();
+		water.setUnderpassId(request.getUnderpassId());
+		water.setLevelCm(request.getLevelCm());
+		water.setMeasuredAt(request.getMeasuredAt());
+		waterLevelRepository.save(water);
 
-		if (newLevel == currentLevel) {
-			return; // 단계 변화가 없으면 단계 갱신도, 이벤트 기록도 하지 않는다
-		}
+		underpass.setCurrentWaterCm(request.getLevelCm());
+		boolean autoBlocked = riskLevelService.reevaluate(underpass);
 
-		underpass.setCurrentRiskLevel(newLevel);
+		streamPublisher.publishPublic("water-update", underpass.getRegionId(),
+				new StreamPayloads.WaterUpdate(underpass.getId(), request.getLevelCm(), underpass.getCurrentRiskLevel(),
+						request.getMeasuredAt()));
 
-		UnderpassEvent event = new UnderpassEvent();
-		event.setUnderpassId(underpassId);
-		event.setEventType(newLevel.ordinal() > currentLevel.ordinal() ? UnderpassEventType.RISK_LEVEL_UP
-				: UnderpassEventType.RISK_LEVEL_DOWN);
-		event.setRiskLevel(newLevel);
-		event.setRiskScoreAtEvent(riskScore);
-		eventRepository.save(event);
-	}
-
-	// thresholds는 risk_score_min 오름차순(SAFE→WARNING→DANGER)이므로, riskScore 이상인 것 중 가장
-	// 마지막(=가장 높은) 단계를 쓴다
-	private RiskLevel determineRiskLevel(List<Threshold> thresholds, BigDecimal riskScore) {
-		RiskLevel level = RiskLevel.SAFE;
-		for (Threshold threshold : thresholds) {
-			if (riskScore.compareTo(threshold.getRiskScoreMin()) >= 0) {
-				level = threshold.getLevel();
-			}
-		}
-		return level;
+		return new WaterLevelResponse(water.getId(), underpass.getId(), request.getLevelCm(), request.getMeasuredAt(),
+				underpass.getCurrentRiskLevel(), underpass.getCurrentStatus(), autoBlocked);
 	}
 
 	private void processTransit(Underpass underpass, Camera camera, PlateLog plateLog,

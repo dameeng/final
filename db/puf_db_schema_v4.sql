@@ -1,5 +1,5 @@
 -- =====================================================================
--- PUF DB 리셋 + 스키마 생성 v3 (ENUM / TABLE / CHECK / FK / INDEX) — 시드는 필수 기준행만
+-- PUF DB 리셋 + 스키마 생성 v4 (ENUM / TABLE / CHECK / FK / INDEX) — 시드는 필수 기준행만
 -- v3 변경 요약: 최고관리자 폐지(manager_region N:M), 근무조/인수인계, 전화번호 인증, 알림 구조 분리(alert/delivery/device_token),
 --              전광판 페이지/프리셋, 통제정보 이관, 예지보전(pm_*), 챗봇(chat_*), 날씨 실데이터 테이블, 컬럼/테이블명 축약
 -- ⚠️ 개발 DB 전용. public 스키마를 통째로 지우므로 되돌릴 수 없음. 운영 DB 실행 금지.
@@ -20,20 +20,24 @@ CREATE TYPE recognition_status AS ENUM ('SUCCESS', 'LOW_CONFIDENCE', 'FAIL', 'UN
 CREATE TYPE review_status AS ENUM ('NONE', 'PENDING', 'CONFIRMED', 'AUTO_PROCESSED'); -- 수동 검토 상태(필요없음/대기중/확인완료/자동처리)
 CREATE TYPE underpass_current_status AS ENUM ('NORMAL', 'BLOCKED'); -- 지하차도 현재 상태(정상/차단)
 CREATE TYPE underpass_event_type AS ENUM ('RISK_LEVEL_UP', 'RISK_LEVEL_DOWN', 'BLOCK', 'RELEASE'); -- 지하차도 이벤트 종류(위험도상승/위험도하강/차단/해제)
-CREATE TYPE risk_level AS ENUM ('안전', '주의', '위험'); -- 위험도 단계
+CREATE TYPE risk_level AS ENUM ('안전', '관심', '주의', '경계', '심각'); -- 침수 위험도 5단계(행안부 표준 단계. 경계 이상은 수위 기준, 경계부터 자동 차단)
+CREATE TYPE pm_level AS ENUM ('안전', '주의', '위험'); -- 예지보전 설비 단계(침수 위험도 5단계와 별개)
 CREATE TYPE alert_type AS ENUM ('PREDICTIVE', 'FINAL'); -- 알림 종류(사전예측/진입직전 최후확인)
 CREATE TYPE alert_channel AS ENUM ('PUSH_WEB', 'PUSH_APP', 'SMS'); -- 알림 발송 채널(웹푸시/앱푸시/문자)
-CREATE TYPE delivery_status AS ENUM ('SUCCESS', 'FAIL'); -- 채널별 발송 결과
+CREATE TYPE delivery_status AS ENUM ('PENDING', 'SUCCESS', 'FAIL'); -- 채널별 발송 결과(발송대기/성공/실패. 실제 발송 연동 전에는 PENDING 으로 기록)
 CREATE TYPE device_platform AS ENUM ('WEB', 'APP'); -- 푸시 토큰 발급 환경
 CREATE TYPE transit_status AS ENUM ('IN_TRANSIT', 'EXITED', 'REMAINING'); -- 지하차도 통과 상태(진입중/정상통과/잔류)
 CREATE TYPE transit_direction AS ENUM ('UP', 'DOWN'); -- 통행 방향(상행/하행)
 CREATE TYPE transfer_agency AS ENUM ('POLICE', 'FIRE'); -- 통제정보 이관 대상(경찰/소방서)
-CREATE TYPE display_category AS ENUM ('SAFE', 'WARNING', 'DANGER', 'BLOCK', 'RELEASE'); -- 전광판 프리셋 문구 분류(위험도 3단계/차단/해제)
+CREATE TYPE display_category AS ENUM ('SAFE', 'INTEREST', 'CAUTION', 'BLOCK', 'RELEASE'); -- 전광판 프리셋 문구 분류(안전/관심/주의/차단/해제. 경계·심각은 차단 문구 사용)
 CREATE TYPE pm_equipment_type AS ENUM ('CCTV', 'DISPLAY', 'PUMP'); -- 예지보전 설비 종류(CCTV/전광판/배수펌프)
 CREATE TYPE pm_event_status AS ENUM ('CHECK_NEEDED', 'IN_PROGRESS', 'RESOLVED', 'ETC'); -- 예지보전 처리 상태(확인필요/점검중/조치완료/기타)
 CREATE TYPE inquiry_status AS ENUM ('PENDING', 'ANSWERED'); -- 접수의견 답변 여부(대기/답변완료)
 CREATE TYPE customer_notification_category AS ENUM ('RISK', 'NOTICE', 'INQUIRY'); -- 고객 알림 분류(위험/공지/문의)
 CREATE TYPE manager_notification_category AS ENUM ('RISK', 'EQUIPMENT', 'TASK', 'SYSTEM'); -- 관리자 알림 분류(위험/설비/업무/시스템)
+CREATE TYPE notice_category AS ENUM ('INFO', 'MAINTENANCE', 'UPDATE', 'URGENT'); -- 공지 분류(안내/점검/업데이트/긴급)
+CREATE TYPE faq_category AS ENUM ('USAGE', 'NOTIFICATION', 'VEHICLE', 'ACCOUNT', 'ETC'); -- FAQ 분류(이용 방법/알림·푸시/차량·번호판/계정/기타)
+CREATE TYPE reason_type AS ENUM ('BLOCK', 'RELEASE'); -- 통제 사유 프리셋 구분(차단/해제)
 
 -- 2. 테이블 생성
 
@@ -142,6 +146,7 @@ CREATE TABLE underpass ( -- 지하차도 마스터 테이블
     river_dist DECIMAL(10,1), -- 가까운 하천까지 직선거리(m, AI 모델 입력값)
     sea_dist DECIMAL(10,1), -- 바다(해안선)까지 직선거리(m, AI 모델 입력값)
     flood_count INT NOT NULL DEFAULT 0, -- 침수 이력 횟수
+    early_block BOOLEAN NOT NULL DEFAULT FALSE, -- 선제 차단 대상 여부(관리자 지정. 침수 이력이 있거나 true면 수위 5cm에서 차단, 아니면 15cm)
     up_entry_cam_id BIGINT, -- 상행 입구 카메라 아이디
     up_exit_cam_id BIGINT, -- 상행 출구 카메라 아이디
     down_entry_cam_id BIGINT, -- 하행 입구 카메라 아이디
@@ -150,6 +155,7 @@ CREATE TABLE underpass ( -- 지하차도 마스터 테이블
     block_event_id BIGINT, -- 차단 중이면 그 차단 이벤트 아이디
     risk_level risk_level NOT NULL DEFAULT '안전', -- 현재 위험도 단계(FastAPI 수신 시마다 갱신, 오르내림 둘 다 반영)
     risk_score DECIMAL(5,2) NOT NULL DEFAULT 0, -- 현재 위험도 점수(0~100, 최신값 캐시)
+    water_cm DECIMAL(5,1) NOT NULL DEFAULT 0, -- 현재 수위(cm, 수위계 최신값 캐시)
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE, -- 삭제 여부(소프트 삭제)
     created_at TIMESTAMP NOT NULL DEFAULT NOW() -- 등록일
 );
@@ -210,13 +216,24 @@ CREATE TABLE event ( -- 지하차도 이벤트 테이블(위험도상승/위험�
     type underpass_event_type NOT NULL, -- 이벤트 종류
     risk_level risk_level, -- 위험도 단계(RISK_LEVEL_UP/DOWN일 때만 값 있음)
     score DECIMAL(5,2), -- 이벤트 발생 시점의 위험도 점수(0~100, RISK_LEVEL_UP/DOWN일 때만)
-    operator_id BIGINT, -- 실행한 관리자 아이디(BLOCK/RELEASE일 때만)
+    water_cm DECIMAL(5,1), -- 이벤트 발생 시점의 수위(cm, 수위 때문에 단계가 바뀌었거나 자동 차단된 경우)
+    operator_id BIGINT, -- 실행한 관리자 아이디(수동 BLOCK/RELEASE일 때만, 자동 차단이면 NULL)
+    is_auto BOOLEAN NOT NULL DEFAULT FALSE, -- 시스템 자동 처리 여부(수위 기준 자동 차단)
     reason VARCHAR(200), -- 사유(BLOCK/RELEASE 시 프리셋 선택 또는 직접 입력)
     created_at TIMESTAMP NOT NULL DEFAULT NOW() -- 발생 시각
 );
 
+CREATE TABLE water_level ( -- 수위계 측정값 테이블(지하차도당 센서 1개의 단일값, cm)
+    id BIGSERIAL PRIMARY KEY, -- 아이디
+    underpass_id BIGINT NOT NULL, -- 지하차도 아이디
+    level_cm DECIMAL(5,1) NOT NULL CHECK (level_cm >= 0), -- 측정 수위(cm)
+    measured_at TIMESTAMP NOT NULL, -- 측정 시각
+    created_at TIMESTAMP NOT NULL DEFAULT NOW() -- 수신(저장) 시각
+);
+
 CREATE TABLE reason_preset ( -- 이벤트 사유 프리셋 테이블
     id BIGSERIAL PRIMARY KEY, -- 아이디
+    type reason_type NOT NULL, -- 구분(BLOCK 차단 사유 / RELEASE 해제 사유)
     content VARCHAR(200) NOT NULL -- 사유 문구
 );
 
@@ -292,7 +309,8 @@ CREATE TABLE ctrl_transfer ( -- 통제정보 이관 기록 테이블(경찰: 차
     event_id BIGINT NOT NULL, -- 계기가 된 차단/해제 이벤트 아이디
     agency transfer_agency NOT NULL, -- 이관 대상 기관
     memo TEXT, -- 비고
-    manager_id BIGINT NOT NULL, -- 발송 처리한 관리자 아이디
+    manager_id BIGINT, -- 발송 처리한 관리자 아이디(자동 차단으로 생긴 경찰 이관이면 NULL)
+    snapshot JSONB, -- 이관 시점 내용 스냅샷(점수·수위·강우·전광판 문구·차량번호 등. PDF 재출력 시 그대로 사용)
     created_at TIMESTAMP NOT NULL DEFAULT NOW() -- 발송 시각
 );
 
@@ -314,7 +332,7 @@ CREATE TABLE display_page ( -- 전광판 페이지 테이블(전광판 1대가 �
     page_no INT NOT NULL, -- 페이지 순서
     content VARCHAR(100) NOT NULL, -- 표출 문구(프리셋 선택 또는 직접 입력)
     preset_id BIGINT, -- 사용한 프리셋 아이디(직접 입력이면 NULL)
-    updated_by BIGINT NOT NULL, -- 마지막 수정 관리자 아이디(차단/해제 자동 전환 시 해당 조작 관리자)
+    updated_by BIGINT, -- 마지막 수정 관리자 아이디(수동 차단/해제 전환 시 해당 관리자, 자동 차단이면 NULL)
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(), -- 마지막 수정 시각
     UNIQUE (equip_id, page_no)
 );
@@ -325,7 +343,7 @@ CREATE TABLE display_history ( -- 전광판 페이지 수정 이력 테이블
     event_id BIGINT, -- 계기가 된 차단/해제 이벤트 아이디(수동 수정이면 NULL)
     old_content VARCHAR(100), -- 변경 전 문구(최초 생성이면 NULL)
     new_content VARCHAR(100) NOT NULL, -- 변경 후 문구
-    changed_by BIGINT NOT NULL, -- 변경한 관리자 아이디
+    changed_by BIGINT, -- 변경한 관리자 아이디(자동 차단에 의한 전환이면 NULL)
     changed_at TIMESTAMP NOT NULL DEFAULT NOW() -- 변경 시각
 );
 
@@ -438,7 +456,7 @@ CREATE TABLE pm_score ( -- 예지보전 위험도 점수 테이블(FastAPI 계�
 CREATE TABLE pm_threshold ( -- 설비별 예지보전 임계치 테이블
     id BIGSERIAL PRIMARY KEY, -- 아이디
     equip_id BIGINT NOT NULL, -- 설비 아이디
-    level risk_level NOT NULL, -- 임계치 단계
+    level pm_level NOT NULL, -- 임계치 단계
     min_score DECIMAL(5,2) NOT NULL, -- 해당 단계로 판정되는 점수 하한값(0~100)
     updated_by BIGINT NOT NULL, -- 마지막 수정 관리자 아이디
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(), -- 마지막 수정 시각
@@ -457,7 +475,7 @@ CREATE TABLE pm_threshold_history ( -- 예지보전 임계치 변경 이력 테�
 CREATE TABLE pm_event ( -- 예지보전 이벤트 테이블(점검 목록 역할, 상태로 처리 진행 관리)
     id BIGSERIAL PRIMARY KEY, -- 아이디
     equip_id BIGINT NOT NULL, -- 설비 아이디
-    level risk_level NOT NULL, -- 넘은 임계치 단계
+    level pm_level NOT NULL, -- 넘은 임계치 단계
     score DECIMAL(5,2) NOT NULL, -- 이벤트 발생 시점 점수
     status pm_event_status NOT NULL DEFAULT 'CHECK_NEEDED', -- 처리 상태
     created_at TIMESTAMP NOT NULL DEFAULT NOW() -- 발생 시각
@@ -509,7 +527,9 @@ CREATE TABLE notice ( -- 공지사항 테이블
     id BIGSERIAL PRIMARY KEY, -- 아이디
     title VARCHAR(200) NOT NULL, -- 제목
     content TEXT NOT NULL, -- 내용
-    is_important BOOLEAN NOT NULL DEFAULT FALSE, -- 중요공지 여부(TRUE면 고객 전체에 notice_alert 일괄발송)
+    category notice_category NOT NULL DEFAULT 'INFO', -- 분류(안내/점검/업데이트/긴급)
+    is_important BOOLEAN NOT NULL DEFAULT FALSE, -- 중요공지 여부(목록 맨 위 고정 + 알림에 [긴급] 표시)
+    send_push BOOLEAN NOT NULL DEFAULT FALSE, -- 등록 시 고객 알림 발송 여부(TRUE면 고객 전체에 notice_alert 일괄발송)
     manager_id BIGINT NOT NULL, -- 작성 관리자 아이디
     view_count INT NOT NULL DEFAULT 0, -- 조회수(중복 방지는 백엔드 쿠키/세션)
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE, -- 삭제 여부(소프트 삭제)
@@ -527,8 +547,10 @@ CREATE TABLE notice_attachment ( -- 공지사항 첨부파일 테이블
 
 CREATE TABLE faq ( -- 자주묻는질문 테이블(질문/답변 1행 구성)
     id BIGSERIAL PRIMARY KEY, -- 아이디
+    category faq_category NOT NULL DEFAULT 'ETC', -- 분류(이용 방법/알림·푸시/차량·번호판/계정/기타)
     question TEXT NOT NULL, -- 질문
     answer TEXT NOT NULL, -- 답변
+    sort_order INT NOT NULL DEFAULT 0, -- 표시 순서(작을수록 위)
     manager_id BIGINT NOT NULL, -- 작성 관리자 아이디
     view_count INT NOT NULL DEFAULT 0, -- 조회수(중복 방지는 백엔드 쿠키/세션)
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE, -- 삭제 여부(소프트 삭제)
@@ -579,7 +601,8 @@ ALTER TABLE event
 ADD CONSTRAINT chk_event_cond
 CHECK (
     (type IN ('RISK_LEVEL_UP', 'RISK_LEVEL_DOWN') AND risk_level IS NOT NULL AND score IS NOT NULL) OR
-    (type IN ('BLOCK', 'RELEASE') AND operator_id IS NOT NULL)
+    (type = 'RELEASE' AND operator_id IS NOT NULL AND is_auto = FALSE) OR
+    (type = 'BLOCK' AND ((operator_id IS NOT NULL AND is_auto = FALSE) OR (operator_id IS NULL AND is_auto = TRUE)))
 );
 
 -- 푸시 채널은 토큰 필수, 문자는 토큰 없음
@@ -624,6 +647,8 @@ ALTER TABLE underpass ADD CONSTRAINT fk_underpass_down_exit_cam FOREIGN KEY (dow
 ALTER TABLE underpass ADD CONSTRAINT fk_underpass_block_event FOREIGN KEY (block_event_id) REFERENCES event(id);
 
 ALTER TABLE camera ADD CONSTRAINT fk_camera_underpass FOREIGN KEY (underpass_id) REFERENCES underpass(id);
+
+ALTER TABLE water_level ADD CONSTRAINT fk_water_level_underpass FOREIGN KEY (underpass_id) REFERENCES underpass(id);
 
 ALTER TABLE car ADD CONSTRAINT fk_car_customer FOREIGN KEY (customer_id) REFERENCES customer(id);
 
@@ -739,6 +764,7 @@ CREATE INDEX idx_customer_notification_list ON customer_notification (customer_i
 CREATE INDEX idx_manager_notification_list ON manager_notification (region_id, category, created_at DESC);
 CREATE UNIQUE INDEX uq_manager_notification_read ON manager_notification_read (notification_id, manager_id);
 CREATE INDEX idx_risk_score_underpass_time ON risk_score (underpass_id, predicted_at);
+CREATE INDEX idx_water_level_underpass_time ON water_level (underpass_id, measured_at);
 CREATE INDEX idx_pm_sensor_equip_time ON pm_sensor (equip_id, recorded_at);
 CREATE INDEX idx_pm_score_equip_time ON pm_score (equip_id, predicted_at);
 CREATE INDEX idx_pm_event_equip_status ON pm_event (equip_id, status);

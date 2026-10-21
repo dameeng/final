@@ -16,6 +16,13 @@ import com.mbc.puf.alert.repository.AlertRepository;
 import com.mbc.puf.car.entity.Car;
 import com.mbc.puf.car.repository.CarRepository;
 import com.mbc.puf.common.enums.AlertChannel;
+import com.mbc.puf.common.enums.CameraRole;
+import com.mbc.puf.common.enums.RiskLevel;
+import com.mbc.puf.common.enums.UnderpassCurrentStatus;
+import com.mbc.puf.common.enums.UnderpassEventType;
+import com.mbc.puf.underpass.entity.Underpass;
+import com.mbc.puf.underpass.entity.UnderpassEvent;
+import com.mbc.puf.underpass.repository.UnderpassEventRepository;
 import com.mbc.puf.common.enums.AlertType;
 import com.mbc.puf.common.enums.DeliveryStatus;
 import com.mbc.puf.common.query.PagedQuery;
@@ -49,10 +56,13 @@ public class AlertServiceImpl implements AlertService {
     private final ScopeResolver scopeResolver;
     private final NotificationService notificationService;   // 고객 알림 센터(위험 분류)에도 남긴다
     private final EntityManager em;
+    private final UnderpassEventRepository eventRepository;   // 선제 알림의 계기(위험도 상승) 이벤트 조회
 
     public AlertServiceImpl(AlertRepository alertRepository, AlertDeliveryRepository deliveryRepository,
                             CarRepository carRepository, ScopeResolver scopeResolver,
-                            NotificationService notificationService, EntityManager em) {
+                            NotificationService notificationService, EntityManager em,
+                            UnderpassEventRepository eventRepository) {
+        this.eventRepository = eventRepository;
         this.alertRepository = alertRepository;
         this.deliveryRepository = deliveryRepository;
         this.carRepository = carRepository;
@@ -75,6 +85,27 @@ public class AlertServiceImpl implements AlertService {
                 .ifPresent(car -> insert(eventId, car.getCustomerId(), carId, carNum, AlertType.FINAL));
     }
 
+    @Override
+    @Transactional
+    public void sendAlertsForPlate(Underpass underpass, CameraRole role, List<Car> cars, String carNum) {
+        if (cars == null || cars.isEmpty()) {
+            return;
+        }
+        boolean blocked = underpass.getCurrentStatus() == UnderpassCurrentStatus.BLOCKED
+                && underpass.getCurrentBlockEventId() != null;
+        if (role == CameraRole.APPROACH_LPR && (blocked || underpass.getCurrentRiskLevel().atLeast(RiskLevel.INTEREST))) {
+            // 차단 중이면 차단 이벤트(사유가 있음)를 계기로, 아니면 지금 단계로 올라간 가장 최근 상승 이벤트를 계기로 한다
+            Long eventId = blocked ? underpass.getCurrentBlockEventId()
+                    : eventRepository.findFirstByUnderpassIdAndEventTypeOrderByCreatedAtDescIdDesc(underpass.getId(),
+                            UnderpassEventType.RISK_LEVEL_UP).map(UnderpassEvent::getId).orElse(null);
+            if (eventId != null) {
+                cars.forEach(car -> sendPredictiveAlert(eventId, car.getId(), carNum));
+            }
+        } else if (role == CameraRole.FINAL_LPR && blocked) {
+            cars.forEach(car -> sendRoiFinalAlert(underpass.getCurrentBlockEventId(), car.getId(), carNum));
+        }
+    }
+
     private void insert(Long eventId, Long customerId, Long carId, String carNum, AlertType alertType) {
         Alert alert = new Alert();
         alert.setEventId(eventId);
@@ -88,11 +119,12 @@ public class AlertServiceImpl implements AlertService {
         insertDelivery(alert.getId(), AlertChannel.SMS, null, DeliveryStatus.PENDING);
 
         // 고객 알림 센터(위험 분류): 계기 이벤트의 지하차도 이름과 함께 한 건 남긴다
-        List<String> names = em.createQuery("select u.name from UnderpassEvent ue join Underpass u"
-                        + " on u.id = ue.underpassId where ue.id = :id", String.class)
+        List<Object[]> info = em.createQuery("select u.name, ue.reason, ue.eventType from UnderpassEvent ue join Underpass u"
+                        + " on u.id = ue.underpassId where ue.id = :id", Object[].class)
                 .setParameter("id", eventId).getResultList();
-        notificationService.notifyCustomerRisk(customerId, alert.getId(), names.isEmpty() ? null : names.get(0),
-                carNum, alertType);
+        String underpassName = info.isEmpty() ? null : (String) info.get(0)[0];
+        String reason = info.isEmpty() ? null : (String) info.get(0)[1];
+        notificationService.notifyCustomerRisk(customerId, alert.getId(), underpassName, carNum, alertType, reason);
 
         // 실제 문자 발송 연동 전까지: 긴급재난문자 형식으로 보냈다고 치고 콘솔에 남긴다
         // (회원가입 없이도 번호판 매칭만으로 수신 가능하다는 컨셉이라 "앱 푸시"가 아니라 "문자"로 표기)
@@ -142,11 +174,14 @@ public class AlertServiceImpl implements AlertService {
                 .eqIfPresent("a.alertType", alertType)
                 .periodIfPresent("a.sentAt", period);
 
-        return PagedQuery.fetch(em, "select a, u.name, c.phone" + MY_FROM, "select count(a)" + MY_FROM, c,
+        return PagedQuery.fetch(em, "select a, u.name, c.phone, ue.eventType, ue.reason" + MY_FROM,
+                "select count(a)" + MY_FROM, c,
                 " order by a.sentAt desc, a.id desc", Object[].class, row -> {
                     Alert a = (Alert) row[0];
+                    // 계기 이벤트가 차단이면 "통제 중", 그 사유가 있으면 문구에 같이 넣는다
+                    boolean blocked = row[3] == UnderpassEventType.BLOCK;
                     return new MyAlertItem(a.getId(), (String) row[1], a.getCarNum(), (String) row[2],
-                            a.getAlertType(), a.getSentAt());
+                            a.getAlertType(), a.getSentAt(), blocked, (String) row[4]);
                 }, page.toParams());
     }
 }

@@ -16,8 +16,11 @@ import com.mbc.puf.internal.dto.PlateLogCreateRequest;
 import com.mbc.puf.internal.dto.PlateLogResponse;
 import com.mbc.puf.internal.dto.RiskScoreCreateRequest;
 import com.mbc.puf.internal.dto.RiskScoreResponse;
+import com.mbc.puf.internal.dto.WaterLevelCreateRequest;
+import com.mbc.puf.internal.dto.WaterLevelResponse;
 import com.mbc.puf.internal.service.InternalIngestService;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 /**
@@ -25,6 +28,7 @@ import jakarta.validation.Valid;
  * 그 검사는 InternalApiKeyInterceptor(WebConfigurer에 등록)가 담당한다 —
  * SecurityConfig에서 이 경로는 permitAll로 열려 있는 대신 인터셉터가 대신 막는 구조
  */
+@Tag(name = "내부 수신(FastAPI·수위계)", description = "X-Internal-Api-Key 헤더로 인증. 위험점수·수위·번호판 인식 결과 수신")
 @RestController
 @RequestMapping("/api/internal")
 public class InternalController {
@@ -40,6 +44,21 @@ public class InternalController {
     public ResponseEntity<ApiResponse<RiskScoreResponse>> receiveRiskScore(
             @Valid @RequestBody RiskScoreCreateRequest request) {
         RiskScoreResponse response = internalIngestService.receiveRiskScore(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(response));
+    }
+
+    // 위험도 미래 예측 수신 (한 지하차도의 앞으로 몇 시간치). 프런트의 위험점수 예측 그래프가 읽는다
+    @PostMapping("/risk-forecasts")
+    public ResponseEntity<ApiResponse<com.mbc.puf.internal.dto.RiskForecastIngestResponse>> receiveRiskForecast(
+            @Valid @RequestBody com.mbc.puf.internal.dto.RiskForecastCreateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(internalIngestService.receiveRiskForecast(request)));
+    }
+
+    // 수위계 측정값 수신 (지하차도당 센서 1개의 단일값, cm). 수위가 차단 기준에 닿으면 이 호출 안에서 자동 차단까지 일어난다
+    @PostMapping("/water-levels")
+    public ResponseEntity<ApiResponse<WaterLevelResponse>> receiveWaterLevel(
+            @Valid @RequestBody WaterLevelCreateRequest request) {
+        WaterLevelResponse response = internalIngestService.receiveWaterLevel(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(response));
     }
 

@@ -37,8 +37,14 @@ public class UnderpassEvent {
     @Column(name = "score")
     private BigDecimal riskScoreAtEvent;
 
+    @Column(name = "water_cm")
+    private BigDecimal waterCm;   // 이벤트 시점 수위(cm). 수위 때문에 단계가 바뀌었거나 자동 차단이면 값 있음
+
     @Column(name = "operator_id")
     private Long operatorId;
+
+    @Column(name = "is_auto")
+    private boolean auto = false;   // 시스템 자동 처리(수위 기준 자동 차단)이면 true, operatorId 는 NULL
 
     @Column(name = "reason")
     private String reason;   // 차단/해제 사유 (프리셋 문구 또는 직접 입력, 위험도 이벤트는 NULL)
@@ -84,6 +90,22 @@ public class UnderpassEvent {
 
     public void setRiskScoreAtEvent(BigDecimal riskScoreAtEvent) {
         this.riskScoreAtEvent = riskScoreAtEvent;
+    }
+
+    public BigDecimal getWaterCm() {
+        return waterCm;
+    }
+
+    public void setWaterCm(BigDecimal waterCm) {
+        this.waterCm = waterCm;
+    }
+
+    public boolean isAuto() {
+        return auto;
+    }
+
+    public void setAuto(boolean auto) {
+        this.auto = auto;
     }
 
     public Long getOperatorId() {

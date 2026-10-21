@@ -28,9 +28,12 @@ public class CameraServiceImpl implements CameraService {
     private final EntityManager em;
 
     private final ScopeResolver scopeResolver;
+    private final com.mbc.puf.stream.StreamPublisher streamPublisher;   // SSE 실시간 이벤트
 
     public CameraServiceImpl(CameraRepository cameraRepository, UnderpassRepository underpassRepository,
-                             EntityManager em, ScopeResolver scopeResolver) {
+                             EntityManager em, ScopeResolver scopeResolver,
+                             com.mbc.puf.stream.StreamPublisher streamPublisher) {
+        this.streamPublisher = streamPublisher;
         this.scopeResolver = scopeResolver;
         this.cameraRepository = cameraRepository;
         this.underpassRepository = underpassRepository;
@@ -66,6 +69,7 @@ public class CameraServiceImpl implements CameraService {
         camera.setLatitude(request.getLatitude());
         camera.setLongitude(request.getLongitude());
         cameraRepository.saveAndFlush(camera);
+        streamPublisher.dataChangedToAdmins(underpass.getRegionId(), "camera", "CREATE", camera.getId());
         return toResponse(reload(camera));
     }
 
@@ -82,6 +86,7 @@ public class CameraServiceImpl implements CameraService {
         camera.setDistanceM(request.getDistanceM());
         camera.setLatitude(request.getLatitude());
         camera.setLongitude(request.getLongitude());
+        streamPublisher.dataChangedToAdmins(underpass.getRegionId(), "camera", "UPDATE", camera.getId());
         return toResponse(reload(camera));
     }
 
@@ -92,6 +97,7 @@ public class CameraServiceImpl implements CameraService {
         Underpass underpass = requireExistingUnderpass(underpassId);
         requireOwnableRegion(loginUser, underpass.getRegionId());
         camera.setDeleted(true);   // 소프트 삭제 (plate_log 참조 보존용)
+        streamPublisher.dataChangedToAdmins(underpass.getRegionId(), "camera", "DELETE", camera.getId());
     }
 
     // ---- 내부 메서드 ----
