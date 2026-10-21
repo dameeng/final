@@ -166,7 +166,7 @@ public class StreamHub {
         send(c, SseEmitter.event().name("connected").reconnectTime(3000).data(data, MediaType.APPLICATION_JSON));
     }
 
-    // 한 연결에 전송. 같은 emitter 에 동시에 쓰지 않도록 잠그고, 실패하면 연결을 정리한다
+    // 한 연결에 전송. 같은 emitter 에 동시에 쓰지 않도록 잠그고, 실패하면 연결을 정리한다!
     private void send(Connection c, SseEmitter.SseEventBuilder builder) {
         try {
             synchronized (c) {

@@ -149,7 +149,7 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("서버 오류가 발생했습니다."));
     }
 
-    // 그 밖의 모든 예외
+    // 그 밖의 모든 예외!
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleException(Exception e) {
         // Spring MVC 자체 예외(없는 URL 404, 허용 안 되는 메서드 405 등)는 원래 상태코드를 유지
