@@ -112,6 +112,26 @@ INSERT INTO car (customer_id, car_num) VALUES
 (9, '64차5501'), (9, '17카9923'),
 (10, '73타2278');
 
+-- 7-1. 시연용 차량 — AI 서버 roi.mp4 에 나오는 번호 (ocr_server/자동차영상/번호판_목록.txt, test/결과 영상 기준)
+--      Spring 은 번호가 정확히 같아야 매칭하므로 OCR 이 한글을 다르게 읽는 번호는 둘 다 같은 고객에게 등록
+--      customer01: 실행할 때마다 같은 번호로 읽힌 차(12고1252/19저0362/117머1687) -> 로그인해서 알림 확인용
+INSERT INTO car (customer_id, car_num) VALUES
+(1, '12고1252'), (1, '19저0362'), (1, '117머1687'),
+(2, '821루4545'), (2, '50마2269'),
+(3, '285수8896'), (3, '09무0867'),
+(4, '33보6383'), (4, '127보7725'),
+(5, '51소3396'), (5, '386부6716'),
+(6, '04다5872'), (6, '204로1201'),
+(7, '01가7454'), (7, '50주3712'), (7, '50수3712'),   -- 50주/50수 둘 중 하나로 읽힘
+(8, '256어9101'), (8, '231어4584'),
+(9, '381구8437'), (9, '109가5726'),
+(10, '259가8906');
+
+-- 7-2. 입구/출구 영상 차량 중 한글이 다르게 읽히는 번호 (52로/52모 둘 중 하나로 읽힘)
+--      입구(카메라 1, 3)·출구(2, 4)도 APPROACH_LPR/FINAL_LPR 이라 이 차는 입구/출구 영상에서도 알림이 나가요
+INSERT INTO car (customer_id, car_num) VALUES
+(10, '52로0979'), (10, '52모0979');
+
 -- =====================================================================
 -- 8. underpass — 부산 지하차도 45개소 (busan_underpass_master 엑셀 기준)
 --    region_id는 region.name으로 조회(id 값에 의존하지 않음). 카메라 참조는 아래 10번에서 UPDATE
@@ -182,6 +202,16 @@ CROSS JOIN (VALUES
   (5, 'CCTV',        NULL,  0,       0)
 ) AS s(slot, role, dist, dlat, dlng)
 ORDER BY u.id, s.slot;
+
+-- 9-1. 시연용 roi 카메라 2대 (AI 서버 roi.mp4, config.CAMERAS 의 226/227) — 금호지하차도(id 1) 소속
+--      id 를 직접 적지 않음: 위 225대 바로 뒤라 BIGSERIAL 이 226(APPROACH_LPR), 227(FINAL_LPR) 을 줌
+--      아래 10번의 입구/출구 칸에는 넣지 않음 -> 통과 기록 없이 알림만
+INSERT INTO camera (underpass_id, role, stream_url, dist, lat, lng)
+SELECT u.id, s.role::camera_role, 'rtsp://cam-roi-' || s.slot || '.puf.local/stream', s.dist, u.lat, u.lng
+FROM underpass u
+CROSS JOIN (VALUES (1, 'APPROACH_LPR', 200), (2, 'FINAL_LPR', 50)) AS s(slot, role, dist)
+WHERE u.id = 1
+ORDER BY s.slot;
 
 -- =====================================================================
 -- 10. underpass 카메라 참조 UPDATE (위 카메라 ID 배치 규칙 그대로)
@@ -363,9 +393,9 @@ INSERT INTO device_token (customer_id, token, platform) VALUES
 -- shift:        1=주간, 2=오후, 3=야간
 -- manager:      1~16 (login: manager01~16)
 -- customer:     1~10 (login: customer01~10)
--- car:          1~14 (고객당 1~2대)
+-- car:          1~14 (고객당 1~2대) + 15~37 시연용(roi 영상 21대 + 52로/52모0979)
 -- underpass:    1~45 (엑셀 순서: 강서구 → 금정구 → 기장군 → … → 해운대구)
--- camera:       1~225 (지하차도당 5대)
+-- camera:       1~225 (지하차도당 5대) + 226 roi APPROACH_LPR, 227 roi FINAL_LPR (금호지하차도)
 -- pm_equipment: 1~135 (지하차도당 3대: CCTV/DISPLAY/PUMP)
 --   DISPLAY 설비 ID: (지하차도 id - 1) * 3 + 2  (2, 5, 8, ...)
 -- threshold:    1~135 (지하차도당 3단계)
