@@ -28,7 +28,7 @@ import tools.jackson.databind.JsonNode;
  * 시연용 가짜 기상청·침수모델·수위계를 10초마다 한 번씩 돌린다 (puf.demo.enabled=true 일 때만).
  *
  *  - 호우 시나리오 중인 지역: 10초마다 새 값 (기상청 관측·예보 → 침수모델 점수·예측 → 수위계)
- *  - 그 밖의 지역: 잔잔한 값을 설정한 주기마다 (기본: 관측·점수 5분, 수위 5분, 예보·예측 10분)
+ *  - 그 밖의 지역: 설정한 주기마다 갱신 (기본: 관측·점수 5분, 수위 5분, 예보·예측 10분). 점수는 안전 ~ 주의 사이를 조금씩 오르내림
  *
  * 침수모델·수위계는 실제와 똑같이 HTTP 로 내부 API(/api/internal/**)를 호출한다.
  * 시나리오는 선택한 지역에만 적용되므로 다른 지역에는 알림이 가지 않는다.
@@ -55,6 +55,12 @@ public class DemoStubScheduler {
     private final int calmWaterEvery;
     private final int calmForecastEvery;
 
+    // 평상시 위험점수가 조금씩 오르내리게 하는 값 (지하차도별 현재값). 안전 ~ 주의 사이를 왔다갔다 한다
+    private final double calmMaxScore;
+    private final double calmStep;
+    private final Map<Long, Double> calmScores = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Random random = new java.util.Random();
+
     private long tickCount = 0;
 
     public DemoStubScheduler(DemoScenarioState state, DemoScenarioService scenarioService, DemoInternalApi api,
@@ -62,7 +68,9 @@ public class DemoStubScheduler {
                              StreamPublisher streamPublisher,
                              @Value("${puf.demo.calm-score-minutes:5}") int calmScoreMinutes,
                              @Value("${puf.demo.calm-water-minutes:5}") int calmWaterMinutes,
-                             @Value("${puf.demo.calm-forecast-minutes:10}") int calmForecastMinutes) {
+                             @Value("${puf.demo.calm-forecast-minutes:10}") int calmForecastMinutes,
+                             @Value("${puf.demo.calm-max-score:75}") double calmMaxScore,
+                             @Value("${puf.demo.calm-step:10}") double calmStep) {
         this.state = state;
         this.scenarioService = scenarioService;
         this.api = api;
@@ -73,6 +81,17 @@ public class DemoStubScheduler {
         this.calmScoreEvery = ticks(calmScoreMinutes);
         this.calmWaterEvery = ticks(calmWaterMinutes);
         this.calmForecastEvery = ticks(calmForecastMinutes);
+        this.calmMaxScore = calmMaxScore;
+        this.calmStep = calmStep;
+    }
+
+    // 평상시 점수: 중간값(35) 쪽으로 살짝 끌려가면서 매번 조금씩(±calmStep 정도) 움직인다. 바닥은 baseline, 위는 calmMaxScore
+    private double nextCalmScore(Long uid, double baseline) {
+        double cur = calmScores.getOrDefault(uid, baseline);
+        double next = cur + 0.08 * (35 - cur) + random.nextGaussian() * calmStep;
+        next = Math.max(baseline, Math.min(calmMaxScore, next));
+        calmScores.put(uid, next);
+        return next;
     }
 
     // 분 → tick 횟수 (최소 1)
@@ -168,7 +187,7 @@ public class DemoStubScheduler {
             score = state.nextScore(uid, target, baseline);
         } else {
             state.resetScore(uid);
-            score = baseline + (System.currentTimeMillis() / 60000 + uid) % 3;   // 잔잔한 값이 조금씩 움직이게
+            score = nextCalmScore(uid, baseline);   // 평상시에도 안전 ~ 주의 사이를 조금씩 왔다갔다
         }
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("underpassId", uid);
