@@ -49,6 +49,9 @@ public class UnderpassEvent {
     @Column(name = "reason")
     private String reason;   // 차단/해제 사유 (프리셋 문구 또는 직접 입력, 위험도 이벤트는 NULL)
 
+    @Column(name = "reason_note")
+    private String reasonNote;   // 사유에 덧붙인 상세 사유 (관리자가 따로 적은 글, 없으면 NULL)
+
     @Generated   // DB 기본값(NOW())으로 INSERT 시 채워지고, 저장 직후 값을 다시 읽어온다
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -126,5 +129,13 @@ public class UnderpassEvent {
 
     public void setReason(String reason) {
         this.reason = reason;
+    }
+
+    public String getReasonNote() {
+        return reasonNote;
+    }
+
+    public void setReasonNote(String reasonNote) {
+        this.reasonNote = reasonNote;
     }
 }

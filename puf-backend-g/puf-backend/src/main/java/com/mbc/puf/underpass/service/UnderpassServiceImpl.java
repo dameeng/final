@@ -325,9 +325,13 @@ public class UnderpassServiceImpl implements UnderpassService {
             QueryConditions c = new QueryConditions().add("e.underpassId = ?", id).periodIfPresent("e.createdAt", period);
             merged.addAll(top(c, "select e from UnderpassEvent e", " order by e.createdAt desc, e.id desc",
                     UnderpassEvent.class, needed).stream()
-                    .map(e -> new ControlHistoryItem("EVENT", id, underpass.getName(), e.getEventType(),
-                            e.getRiskLevel(), e.getRiskScoreAtEvent(), e.getReason(), null, e.getOperatorId(),
-                            e.getCreatedAt()))
+                    .map(e -> {
+                        ControlHistoryItem item = new ControlHistoryItem("EVENT", id, underpass.getName(), e.getEventType(),
+                                e.getRiskLevel(), e.getRiskScoreAtEvent(), e.getReason(), null, e.getOperatorId(),
+                                e.getCreatedAt());
+                        item.setReasonNote(e.getReasonNote());
+                        return item;
+                    })
                     .toList());
             total += count(c, "select count(e) from UnderpassEvent e");
         }

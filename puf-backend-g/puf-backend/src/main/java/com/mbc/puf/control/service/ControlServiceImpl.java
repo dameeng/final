@@ -159,9 +159,10 @@ public class ControlServiceImpl implements ControlService {
         }
 
         String reason = resolveReason(request, ReasonType.BLOCK);
+        String reasonNote = resolveReasonNote(request);   // 프리셋이 '기타'인데 상세 사유가 없으면 여기서 400
         DisplayChoice displayChoice = resolveDisplay(request, DisplayCategory.BLOCK);   // 잘못된 요청은 차단하기 전에 걸러낸다
 
-        BlockOutcome out = doBlock(underpass, loginUser.id(), false, reason, null, displayChoice);
+        BlockOutcome out = doBlock(underpass, loginUser.id(), false, reason, reasonNote, null, displayChoice);
 
         // PDF 생성 + 최신 상태 다시 조회해서 응답 구성
         LocalDateTime now = out.transfer().getCreatedAt() != null ? out.transfer().getCreatedAt() : LocalDateTime.now();
@@ -186,14 +187,14 @@ public class ControlServiceImpl implements ControlService {
         BigDecimal block = riskPolicy.blockCm(underpass);
         String reason = "수위 " + waterCm.stripTrailingZeros().toPlainString() + "cm — 차단 기준 "
                 + block.stripTrailingZeros().toPlainString() + "cm 도달(자동 차단)";
-        doBlock(underpass, null, true, reason, waterCm, null);
+        doBlock(underpass, null, true, reason, null, waterCm, null);
     }
 
     private record BlockOutcome(UnderpassEvent event, CtrlTransfer transfer, ControlNoticeData notice) {}
 
     // 수동/자동 차단이 같이 쓰는 본체. operatorId 가 NULL 이면 자동 차단
-    private BlockOutcome doBlock(Underpass underpass, Long operatorId, boolean auto, String reason, BigDecimal waterCm,
-                                 DisplayChoice displayChoice) {
+    private BlockOutcome doBlock(Underpass underpass, Long operatorId, boolean auto, String reason, String reasonNote,
+                                 BigDecimal waterCm, DisplayChoice displayChoice) {
         Long underpassId = underpass.getId();
 
         // 1) 차단 이벤트 저장
@@ -204,6 +205,7 @@ public class ControlServiceImpl implements ControlService {
         event.setAuto(auto);
         event.setWaterCm(waterCm);
         event.setReason(reason);
+        event.setReasonNote(reasonNote);
         eventRepository.saveAndFlush(event);
 
         // 2) 지하차도 상태 갱신
@@ -251,6 +253,7 @@ public class ControlServiceImpl implements ControlService {
                 : null;
 
         String reason = resolveReason(request, ReasonType.RELEASE);
+        String reasonNote = resolveReasonNote(request);
         DisplayChoice displayChoice = resolveDisplay(request, DisplayCategory.RELEASE);
 
         // 1) 해제 이벤트 저장
@@ -259,6 +262,7 @@ public class ControlServiceImpl implements ControlService {
         event.setEventType(UnderpassEventType.RELEASE);
         event.setOperatorId(loginUser.id());
         event.setReason(reason);
+        event.setReasonNote(reasonNote);
         eventRepository.saveAndFlush(event);
 
         // 2) 지하차도 상태 갱신
@@ -398,6 +402,24 @@ public class ControlServiceImpl implements ControlService {
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "존재하지 않는 지하차도입니다. id=" + id));
     }
 
+    /** 프리셋 문구가 이것이면 '기타'로 보고, 상세 사유를 꼭 적게 한다 */
+    private static final String OTHER_REASON = "기타";
+
+    /** 사유에 덧붙인 상세 사유. 공백뿐이면 없는 것으로 본다. 프리셋이 '기타'인데 비어 있으면 400 */
+    private String resolveReasonNote(BlockRequest request) {
+        if (request == null) return null;
+        String note = request.getReasonNote() == null ? null : request.getReasonNote().trim();
+        if (note != null && note.isEmpty()) note = null;
+        if (note == null && request.getPresetId() != null) {
+            boolean other = reasonPresetRepository.findById(request.getPresetId())
+                    .map(p -> OTHER_REASON.equals(p.getContent().trim())).orElse(false);
+            if (other) {
+                throw new BusinessException(HttpStatus.BAD_REQUEST, "사유가 '기타'일 때는 상세 사유(reasonNote)를 입력해 주세요.");
+            }
+        }
+        return note;
+    }
+
     /** 프리셋 또는 직접 입력 사유 결정 */
     private String resolveReason(BlockRequest request, ReasonType expectedType) {
         if (request == null) return null;
@@ -496,13 +518,14 @@ public class ControlServiceImpl implements ControlService {
         ManagerInfo mgr = managerInfo(managerId);
         return new ControlNoticeData(
                 underpass.getName(), underpass.getRoadAddress(),
-                event.getEventType() == UnderpassEventType.BLOCK, at, event.getReason(),
+                event.getEventType() == UnderpassEventType.BLOCK, at, event.getReason(), event.getReasonNote(),
                 score, rain,
                 // 전광판 문구는 통제 시작 문서에만 적는다 (해제 후에는 문구가 바뀌므로 현재 값이 해제 시점과 다를 수 있음)
                 event.getEventType() == UnderpassEventType.BLOCK ? currentDisplayText(underpass.getId()) : null,
                 mgr.name(), mgr.regionName(), shiftLabel(managerId),
                 blockEvent != null ? blockEvent.getCreatedAt() : null,
                 blockEvent != null ? blockEvent.getReason() : null,
+                blockEvent != null ? blockEvent.getReasonNote() : null,
                 memo);
     }
 
@@ -592,14 +615,14 @@ public class ControlServiceImpl implements ControlService {
         } catch (RuntimeException e) {
             return base;
         }
-        return new ControlNoticeData(base.underpassName(), base.address(), base.blockEvent(), base.eventAt(), base.reason(),
+        return new ControlNoticeData(base.underpassName(), base.address(), base.blockEvent(), base.eventAt(), base.reason(), base.reasonNote(),
                 m.get("riskScore") instanceof Number v ? Double.valueOf(v.doubleValue()) : base.riskScore(),
                 m.get("rainfallMm") instanceof Number v ? Double.valueOf(v.doubleValue()) : base.rainfallMm(),
                 m.get("displayText") instanceof String t ? t : base.displayText(),
                 m.get("managerName") instanceof String t ? t : base.managerName(),
                 m.get("managerRegion") instanceof String t ? t : base.managerRegion(),
                 m.get("shiftLabel") instanceof String t ? t : base.shiftLabel(),
-                base.blockAt(), base.blockReason(), base.memo());
+                base.blockAt(), base.blockReason(), base.blockReasonNote(), base.memo());
     }
 
     /**
