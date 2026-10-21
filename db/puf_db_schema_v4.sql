@@ -29,7 +29,7 @@ CREATE TYPE device_platform AS ENUM ('WEB', 'APP'); -- 푸시 토큰 발급 환�
 CREATE TYPE transit_status AS ENUM ('IN_TRANSIT', 'EXITED', 'REMAINING'); -- 지하차도 통과 상태(진입중/정상통과/잔류)
 CREATE TYPE transit_direction AS ENUM ('UP', 'DOWN'); -- 통행 방향(상행/하행)
 CREATE TYPE transfer_agency AS ENUM ('POLICE', 'FIRE'); -- 통제정보 이관 대상(경찰/소방서)
-CREATE TYPE display_category AS ENUM ('SAFE', 'INTEREST', 'CAUTION', 'BLOCK', 'RELEASE'); -- 전광판 프리셋 문구 분류(안전/관심/주의/차단/해제. 경계·심각은 차단 문구 사용)
+CREATE TYPE display_category AS ENUM ('SAFE', 'WATCH', 'CAUTION', 'BLOCK', 'RELEASE'); -- 전광판 프리셋 문구 분류(안전/관심/주의/차단/해제. 경계·심각은 차단 문구 사용)
 CREATE TYPE pm_equipment_type AS ENUM ('CCTV', 'DISPLAY', 'PUMP'); -- 예지보전 설비 종류(CCTV/전광판/배수펌프)
 CREATE TYPE pm_event_status AS ENUM ('CHECK_NEEDED', 'IN_PROGRESS', 'RESOLVED', 'ETC'); -- 예지보전 처리 상태(확인필요/점검중/조치완료/기타)
 CREATE TYPE inquiry_status AS ENUM ('PENDING', 'ANSWERED'); -- 접수의견 답변 여부(대기/답변완료)

@@ -64,7 +64,7 @@ public class RiskPolicy {
             return RiskLevel.CAUTION;
         }
         if (waterCm.compareTo(blockCm.divide(BigDecimal.valueOf(3), 2, java.math.RoundingMode.HALF_UP)) >= 0) {
-            return RiskLevel.INTEREST;
+            return RiskLevel.WATCH;
         }
         return RiskLevel.SAFE;
     }

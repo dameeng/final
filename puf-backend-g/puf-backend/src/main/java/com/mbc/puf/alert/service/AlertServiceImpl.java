@@ -93,7 +93,7 @@ public class AlertServiceImpl implements AlertService {
         }
         boolean blocked = underpass.getCurrentStatus() == UnderpassCurrentStatus.BLOCKED
                 && underpass.getCurrentBlockEventId() != null;
-        if (role == CameraRole.APPROACH_LPR && (blocked || underpass.getCurrentRiskLevel().atLeast(RiskLevel.INTEREST))) {
+        if (role == CameraRole.APPROACH_LPR && (blocked || underpass.getCurrentRiskLevel().atLeast(RiskLevel.WATCH))) {
             // 차단 중이면 차단 이벤트(사유가 있음)를 계기로, 아니면 지금 단계로 올라간 가장 최근 상승 이벤트를 계기로 한다
             Long eventId = blocked ? underpass.getCurrentBlockEventId()
                     : eventRepository.findFirstByUnderpassIdAndEventTypeOrderByCreatedAtDescIdDesc(underpass.getId(),

@@ -271,7 +271,7 @@ INSERT INTO reason_preset (type, content) VALUES
 -- =====================================================================
 INSERT INTO display_preset (category, content) VALUES
 ('SAFE',     '안전 — 통행 가능합니다'),
-('INTEREST', '관심 — 비 내리는 중, 안전운전하세요'),
+('WATCH', '관심 — 비 내리는 중, 안전운전하세요'),
 ('CAUTION',  '주의 — 수위 상승 중, 서행하세요'),
 ('BLOCK',   '차단 — 통행 금지, 우회도로 이용'),
 ('RELEASE', '해제 — 통행이 재개되었습니다');
@@ -372,7 +372,7 @@ INSERT INTO device_token (customer_id, token, platform) VALUES
 -- pm_threshold: 1~405 (설비당 3단계)
 -- weather_area: 1~16 (부산 16구군)
 -- reason_preset:  1~10
--- display_preset: 1~5 (SAFE/INTEREST/CAUTION/BLOCK/RELEASE)
+-- display_preset: 1~5 (SAFE/WATCH/CAUTION/BLOCK/RELEASE)
 -- faq:          1~5
 -- notice:       1~3
 -- device_token: 1~12
