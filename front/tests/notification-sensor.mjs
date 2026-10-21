@@ -1,30 +1,43 @@
-import {chromium} from '@playwright/test';
-import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
-const browser=await chromium.launch({headless:true,executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe'});
-try{
- const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
- await page.goto('http://localhost:8282/pm-equipment');
- await page.locator('#f-type').selectOption({label:'수위센서'});
- await page.waitForTimeout(100);
- assert.equal(await page.locator('#tbl tbody tr:visible').count(),1);
- await page.locator('.row-open[data-i="10"]').click();
- await page.locator('#p-title').filter({hasText:'W-11'}).waitFor();
- assert.match(await page.locator('#p-reasons').innerText(),/수위/);
- await page.locator('#peek-close').click();
- await page.locator('#bell-btn').click();await page.locator('#bell-pop').waitFor();
- await page.locator('h1').click();assert.equal(await page.locator('#bell-pop').isVisible(),false);
- await page.locator('#bell-btn').click();
- await page.locator('#bell-pop .notification-title').nth(1).click();
- await page.waitForURL('**/pm-equipment?equipment=P-01');
- await page.locator('#peek:not([hidden])').waitFor();
- assert.match(await page.locator('#p-title').innerText(),/P-01/);
- await page.goto('http://localhost:8282/pm-settings');
- await page.locator('#ttabs [data-t="수위센서"]').click();
- assert.match(await page.locator('#mrows').innerText(),/수위 측정 편차/);
- assert.equal(await page.locator('#wsum').innerText(),'100');
- const map=readFileSync('src/pages/c-live-map.vue','utf8'),weather=readFileSync('src/pages/c-weather.vue','utf8');
- assert(!/polling\s*=\s*setInterval|REFRESH_INTERVAL_MS/.test(map));
- assert(!/setInterval\([^;]*refresh/s.test(weather));
- assert.deepEqual(errors,[]);console.log('PASS sensor filter/drawer/settings; notification title navigation/outside close; no automatic data refresh');
-}finally{await browser.close()}
+import { chromium } from '@playwright/test'
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+const browser = await chromium.launch({
+  headless: true,
+  executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe',
+})
+try {
+  const page = await browser.newPage()
+  const errors = []
+  page.on('pageerror', (e) => errors.push(e.message))
+  await page.goto('http://localhost:8282/pm-equipment')
+  await page.locator('#f-type').selectOption({ label: '수위센서' })
+  await page.waitForTimeout(100)
+  assert.equal(await page.locator('#tbl tbody tr:visible').count(), 1)
+  await page.locator('.row-open[data-i="10"]').click()
+  await page.locator('#p-title').filter({ hasText: 'W-11' }).waitFor()
+  assert.match(await page.locator('#p-reasons').innerText(), /수위/)
+  await page.locator('#peek-close').click()
+  await page.locator('#bell-btn').click()
+  await page.locator('#bell-pop').waitFor()
+  await page.locator('h1').click()
+  assert.equal(await page.locator('#bell-pop').isVisible(), false)
+  await page.locator('#bell-btn').click()
+  await page.locator('#bell-pop .notification-title').nth(1).click()
+  await page.waitForURL('**/pm-equipment?equipment=P-01')
+  await page.locator('#peek:not([hidden])').waitFor()
+  assert.match(await page.locator('#p-title').innerText(), /P-01/)
+  await page.goto('http://localhost:8282/pm-settings')
+  await page.locator('#ttabs [data-t="수위센서"]').click()
+  assert.match(await page.locator('#mrows').innerText(), /수위 측정 편차/)
+  assert.equal(await page.locator('#wsum').innerText(), '100')
+  const map = readFileSync('src/pages/c-live-map.vue', 'utf8'),
+    weather = readFileSync('src/pages/c-weather.vue', 'utf8')
+  assert(!/polling\s*=\s*setInterval|REFRESH_INTERVAL_MS/.test(map))
+  assert(!/setInterval\([^;]*refresh/s.test(weather))
+  assert.deepEqual(errors, [])
+  console.log(
+    'PASS sensor filter/drawer/settings; notification title navigation/outside close; no automatic data refresh',
+  )
+} finally {
+  await browser.close()
+}

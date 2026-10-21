@@ -1,1 +1,15 @@
-<template><main class="wire-page customer-content"><h1>서비스 소개</h1><section><h2>지하차도 통제 현황 확인</h2><p>이동 전 지하차도의 위치와 통제 여부를 확인합니다.</p><RouterLink to="/c-map">통제 현황 확인</RouterLink></section><section><h2>안전 안내</h2><p>공지와 이용 안내를 통해 필요한 정보를 확인합니다.</p><RouterLink to="/c-notice">알림마당</RouterLink></section></main></template>
+<template>
+  <main class="wire-page customer-content">
+    <h1>서비스 소개</h1>
+    <section>
+      <h2>지하차도 통제 현황 확인</h2>
+      <p>이동 전 지하차도의 위치와 통제 여부를 확인합니다.</p>
+      <RouterLink to="/c-map">통제 현황 확인</RouterLink>
+    </section>
+    <section>
+      <h2>안전 안내</h2>
+      <p>공지와 이용 안내를 통해 필요한 정보를 확인합니다.</p>
+      <RouterLink to="/c-notice">알림마당</RouterLink>
+    </section>
+  </main>
+</template>

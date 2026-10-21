@@ -1,15 +1,148 @@
 <script setup lang="ts">
-import {computed,ref,watch} from 'vue'
+import { computed, ref, watch } from 'vue'
 import BackendLayout from '../components/BackendLayout.vue'
-import {useApp} from '../stores/app'
-import {useAdminProfile} from '../stores/adminProfile'
-const app=useApp(),admin=useAdminProfile(),region=computed(()=>app.account?.regions?.map(r=>r.name).join(' · ')||admin.region)
-const roles=[{id:'community',name:'관할 주민센터',role:'읍·면·동 현장 행정 담당자'},{id:'police',name:'지역 경찰관',role:'관할 지구대·파출소 순찰팀'},{id:'civilian',name:'민간 조력자',role:'자율방재단·통장·유지보수업체'}]
-const empty=()=>roles.map(r=>({...r,organization:'',nameOfPerson:'',phone:''})),contacts=ref(empty()),message=ref('')
-function load(){contacts.value=empty();message.value='';try{const saved=JSON.parse(localStorage.getItem('routel-jurisdiction-contacts:'+region.value)||'null');if(Array.isArray(saved))contacts.value=empty().map(row=>{const value=saved.find(s=>s.id===row.id);return {...row,...Object.fromEntries(['organization','nameOfPerson','phone'].map(key=>[key,typeof value?.[key]==='string'?value[key]:'']))}})}catch{message.value='저장된 연락처를 불러오지 못했습니다.'}}
-watch(region,load,{immediate:true})
-function save(){try{localStorage.setItem('routel-jurisdiction-contacts:'+region.value,JSON.stringify(contacts.value));message.value='연락처를 이 브라우저에 저장했습니다.'}catch{message.value='저장하지 못했습니다. 브라우저 저장 공간을 확인해 주세요.'}}
-const phoneLink=(value:string)=>'tel:'+value.replace(/[^\d+]/g,'')
+import { useApp } from '../stores/app'
+import { useAdminProfile } from '../stores/adminProfile'
+const app = useApp(),
+  admin = useAdminProfile(),
+  region = computed(() => app.account?.regions?.map((r) => r.name).join(' · ') || admin.region)
+const roles = [
+  { id: 'community', name: '관할 주민센터', role: '읍·면·동 현장 행정 담당자' },
+  { id: 'police', name: '지역 경찰관', role: '관할 지구대·파출소 순찰팀' },
+  { id: 'civilian', name: '민간 조력자', role: '자율방재단·통장·유지보수업체' },
+]
+const empty = () => roles.map((r) => ({ ...r, organization: '', nameOfPerson: '', phone: '' })),
+  contacts = ref(empty()),
+  message = ref('')
+function load() {
+  contacts.value = empty()
+  message.value = ''
+  try {
+    const saved = JSON.parse(
+      localStorage.getItem('routel-jurisdiction-contacts:' + region.value) || 'null',
+    )
+    if (Array.isArray(saved))
+      contacts.value = empty().map((row) => {
+        const value = saved.find((s) => s.id === row.id)
+        return {
+          ...row,
+          ...Object.fromEntries(
+            ['organization', 'nameOfPerson', 'phone'].map((key) => [
+              key,
+              typeof value?.[key] === 'string' ? value[key] : '',
+            ]),
+          ),
+        }
+      })
+  } catch {
+    message.value = '저장된 연락처를 불러오지 못했습니다.'
+  }
+}
+watch(region, load, { immediate: true })
+function save() {
+  try {
+    localStorage.setItem(
+      'routel-jurisdiction-contacts:' + region.value,
+      JSON.stringify(contacts.value),
+    )
+    message.value = '연락처를 이 브라우저에 저장했습니다.'
+  } catch {
+    message.value = '저장하지 못했습니다. 브라우저 저장 공간을 확인해 주세요.'
+  }
+}
+const phoneLink = (value: string) => 'tel:' + value.replace(/[^\d+]/g, '')
 </script>
-<template><BackendLayout :standard-menu="true"><section class="contacts-page"><h1>관할 담당자 연락처</h1><p>{{region}} · 도로관리청 담당자를 지원하는 관할 연락처입니다.</p><p class="contacts-note">입력한 연락처는 이 브라우저에 지역별로 저장됩니다.</p><form @submit.prevent="save"><section v-for="contact in contacts" :key="contact.id" class="contact-card"><h2>{{contact.name}}</h2><p>{{contact.role}}</p><div class="contact-fields"><label>소속<input v-model="contact.organization" maxlength="100" placeholder="기관·단체명"></label><label>담당자<input v-model="contact.nameOfPerson" maxlength="40" placeholder="담당자 이름"></label><label>연락처<input v-model="contact.phone" type="tel" maxlength="30" placeholder="전화번호"></label></div><a v-if="contact.phone.replace(/\D/g,'').length>=3" :href="phoneLink(contact.phone)">전화 걸기</a><span v-else class="contacts-note">연락처 미등록</span></section><div class="contact-save"><p role="status">{{message}}</p><button type="submit">연락처 저장</button></div></form></section></BackendLayout></template>
-<style scoped>.contacts-page{max-width:1100px;margin:auto}.contacts-page h1{font-size:24px}.contacts-note{font-size:13px;color:var(--ink-sub,#64748b)}.contact-card{padding:24px;margin:20px 0;border:1px solid var(--line,#cbd5e1);border-radius:10px;background:var(--surface,#fff)}h2{font-size:18px;margin:0 0 8px}.contact-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:20px 0}.contact-fields label{display:grid;gap:8px;min-width:0;font-size:14px}input{min-width:0;width:100%;padding:10px;border:1px solid var(--line,#cbd5e1);background:var(--surface,#fff);color:inherit}.contact-save{display:flex;justify-content:space-between;align-items:center;gap:16px}button{padding:12px 20px;font-size:14px}@media(max-width:650px){.contact-fields{grid-template-columns:1fr}.contact-card{padding:18px}.contact-save{flex-wrap:wrap}}</style>
+<template>
+  <BackendLayout :standard-menu="true">
+    <section class="contacts-page">
+      <h1>관할 담당자 연락처</h1>
+      <p>{{region}} · 도로관리청 담당자를 지원하는 관할 연락처입니다.</p>
+      <p class="contacts-note">입력한 연락처는 이 브라우저에 지역별로 저장됩니다.</p>
+      <form @submit.prevent="save">
+        <section v-for="contact in contacts" :key="contact.id" class="contact-card">
+          <h2>{{contact.name}}</h2>
+          <p>{{contact.role}}</p>
+          <div class="contact-fields">
+            <label>소속<input v-model="contact.organization" maxlength="100" placeholder="기관·단체명" />
+            </label>
+            <label>담당자<input v-model="contact.nameOfPerson" maxlength="40" placeholder="담당자 이름" />
+            </label>
+            <label>연락처<input v-model="contact.phone" type="tel" maxlength="30" placeholder="전화번호" />
+            </label>
+          </div>
+          <a v-if="contact.phone.replace(/\D/g,'').length>=3" :href="phoneLink(contact.phone)">전화 걸기</a>
+          <span v-else class="contacts-note">연락처 미등록</span>
+        </section>
+        <div class="contact-save">
+          <p role="status">{{message}}</p>
+          <button type="submit">연락처 저장</button>
+        </div>
+      </form>
+    </section>
+  </BackendLayout>
+</template>
+<style scoped>
+.contacts-page {
+  max-width: 1100px;
+  margin: auto;
+}
+.contacts-page h1 {
+  font-size: 24px;
+}
+.contacts-note {
+  font-size: 13px;
+  color: var(--ink-sub,#64748b);
+}
+.contact-card {
+  padding: 24px;
+  margin: 20px 0;
+  border: 1px solid var(--line,#cbd5e1);
+  border-radius: 10px;
+  background: var(--surface,#fff);
+}
+h2 {
+  font-size: 18px;
+  margin: 0 0 8px;
+}
+.contact-fields {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 16px;
+  margin: 20px 0;
+}
+.contact-fields label {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  font-size: 14px;
+}
+input {
+  min-width: 0;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--line,#cbd5e1);
+  background: var(--surface,#fff);
+  color: inherit;
+}
+.contact-save {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+button {
+  padding: 12px 20px;
+  font-size: 14px;
+}
+@media (max-width:650px) {
+  .contact-fields {
+    grid-template-columns: 1fr;
+  }
+  .contact-card {
+    padding: 18px;
+  }
+  .contact-save {
+    flex-wrap: wrap;
+  }
+}
+</style>

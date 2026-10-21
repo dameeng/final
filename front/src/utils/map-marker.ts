@@ -1,4 +1,11 @@
-export function mapMarkerSvg(color:string,fill=.94,count?:number,selected=false,assigned=false,dashed=true){
- const stroke=selected?'#174f88':assigned?'#344b61':'#526175'
- return `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44" aria-hidden="true"><style>@keyframes selection{0%,100%{stroke-opacity:1}50%{stroke-opacity:.35}}.selected{animation:selection 1.2s ease-in-out infinite}@media(prefers-reduced-motion:reduce){.selected{animation:none}}</style>${selected?'<circle cx="22" cy="22" r="21" fill="none" stroke="white" stroke-width="2"/>':''}<circle cx="22" cy="22" r="16" fill="${color}" fill-opacity="${fill.toFixed(3)}"/><circle ${selected?'class="selected"':''} cx="22" cy="22" r="19" fill="none" stroke="${stroke}" stroke-width="${selected?2.8:1.8}" ${dashed||selected?'stroke-dasharray="3 3"':''}/>${count===undefined?'':`<text x="22" y="22" dy=".35em" text-anchor="middle" fill="#ffffff" font-family="Arial,sans-serif" font-size="14" font-weight="700">${count}</text>`}</svg>`
+export function mapMarkerSvg(
+  color: string,
+  fill = 0.94,
+  count?: number,
+  selected = false,
+  assigned = false,
+  dashed = true,
+) {
+  const stroke = selected ? '#174f88' : assigned ? '#344b61' : '#526175'
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44" aria-hidden="true"><style>@keyframes selection{0%,100%{stroke-opacity:1}50%{stroke-opacity:.35}}.selected{animation:selection 1.2s ease-in-out infinite}@media(prefers-reduced-motion:reduce){.selected{animation:none}}</style>${selected ? '<circle cx="22" cy="22" r="21" fill="none" stroke="white" stroke-width="2"/>' : ''}<circle cx="22" cy="22" r="16" fill="${color}" fill-opacity="${fill.toFixed(3)}"/><circle ${selected ? 'class="selected"' : ''} cx="22" cy="22" r="19" fill="none" stroke="${stroke}" stroke-width="${selected ? 2.8 : 1.8}" ${dashed || selected ? 'stroke-dasharray="3 3"' : ''}/>${count === undefined ? '' : `<text x="22" y="22" dy=".35em" text-anchor="middle" fill="#ffffff" font-family="Arial,sans-serif" font-size="14" font-weight="700">${count}</text>`}</svg>`
 }

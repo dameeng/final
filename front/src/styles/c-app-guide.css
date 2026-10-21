@@ -1,27 +1,654 @@
-.app-guide-page{--ag-ink:#183b38;--ag-muted:#647975;--ag-green:#26675a;--ag-accent:#f29159;--ag-bg:#f3f6f0;color:var(--ag-ink);font-family:inherit}
-.app-guide-hero{position:relative;display:grid;grid-template-columns:1.1fr 1fr;align-items:center;gap:24px;min-height:640px;padding:56px 48px;background:var(--ag-bg);border-radius:24px;overflow:hidden}
-.app-guide-page .app-guide-eyebrow{display:flex;align-items:center;gap:8px;font-size:10px;font-weight:700;letter-spacing:1.5px;line-height:1.6;color:var(--ag-green);margin:0 0 28px}.app-guide-eyebrow>span{width:7px;height:7px;border-radius:50%;background:var(--ag-green)}
-.app-guide-kicker{font-size:13px;font-weight:600;margin:0 0 14px;color:var(--ag-muted)}
-.app-guide-page .app-guide-hero h1{font-size:clamp(32px,3.3vw,54px);letter-spacing:-2px;line-height:1.25;margin:0 0 24px;font-weight:750;word-break:keep-all}
-.app-guide-lead{font-size:16px;line-height:1.9;color:var(--ag-muted);margin:0 0 28px;word-break:keep-all}
-.app-guide-actions{display:flex;flex-wrap:wrap;gap:10px}.app-guide-button{display:inline-flex;align-items:center;justify-content:center;gap:16px;padding:14px 18px;border-radius:9px;text-decoration:none;font-size:13px;font-weight:600;min-height:48px;transition:background .15s,transform .15s}.app-guide-button:hover{transform:translateY(-2px)}.app-guide-button.primary{background:var(--ag-green);color:#fff}.app-guide-button.secondary{border:1px solid #b4c5bd;color:var(--ag-ink);background:transparent}.app-guide-button>span{font-size:18px}
-.app-guide-hero-tags{display:flex;gap:14px;flex-wrap:wrap;margin-top:32px;font-size:11px;color:var(--ag-muted)}.app-guide-hero-tags span::before{content:'✓';color:var(--ag-green);margin-right:5px}
-.app-guide-visual{position:relative;min-height:530px;display:flex;flex-direction:column;align-items:center;justify-content:center;isolation:isolate}
-.app-guide-orbit{position:absolute;border-radius:50%;z-index:-1}.app-guide-orbit.orbit-one{width:380px;height:380px;background:#e4ebdc;top:75px;left:50%;transform:translateX(-50%)}.app-guide-orbit.orbit-two{width:280px;height:280px;border:1px solid #cedcc9;top:130px;left:50%;transform:translateX(-50%)}
-.app-guide-phone{width:248px;max-width:100%;padding:13px 10px 10px;background:#fff;border:6px solid #213c38;border-radius:36px;box-shadow:15px 25px 45px #193f3529;position:relative;transform:rotate(5deg);overflow:hidden;color:#213c38}
-.app-guide-phone-notch{width:74px;height:18px;background:#213c38;border-radius:0 0 12px 12px;position:absolute;top:0;left:50%;transform:translateX(-50%)}
-.app-guide-phone-top{display:flex;justify-content:space-between;align-items:center;margin:22px 7px 18px;font-size:14px;letter-spacing:.3px}.app-guide-phone-top b>span{color:var(--ag-accent);font-size:9px;margin-left:3px}
-.app-guide-phone-heading{padding:0 7px 14px}.app-guide-phone-heading small{font-size:10px;color:#7f9189}.app-guide-phone-heading h2{font-size:17px;margin:6px 0 0;font-weight:700}
-.app-guide-phone-map{position:relative;border-radius:12px;overflow:hidden}.app-guide-phone-map>svg{width:100%;height:auto;display:block}.app-guide-map-chip{position:absolute;top:10px;left:10px;background:#fff;border-radius:20px;padding:7px 12px;font-size:9px;box-shadow:0 3px 10px #234a3820;display:flex;gap:20px}
-.app-guide-phone-info{position:relative;margin:-20px 8px 0;padding:14px 12px;background:#fff;border-radius:12px;box-shadow:0 4px 18px #153e3914;display:grid;grid-template-columns:auto 1fr;gap:8px 6px;align-items:center;min-height:75px}.app-guide-phone-info b{font-size:10px}.app-guide-phone-info small{grid-column:1/-1;font-size:9px;color:#778b85}.app-guide-mini-badge{font-size:8px;border-radius:5px;padding:4px 6px;background:#e7f3eb;color:#16734f}.app-guide-mini-badge.orange{background:#fff0dd;color:#ae631c}
-.app-guide-phone-nav{display:flex;justify-content:space-around;padding:20px 0 5px;font-size:9px;color:#8d9995}.app-guide-phone-nav .active{color:#26675a;font-weight:700}
-.app-guide-floating-note{position:absolute;top:32px;left:-5px;z-index:2;border-radius:10px;background:#fff;padding:13px 16px;box-shadow:0 8px 24px #1b403413;font-size:11px;display:flex;align-items:center;gap:8px;transform:rotate(-4deg)}.app-guide-status-dot{width:8px;height:8px;background:#16805d;border-radius:50%}.app-guide-preview-caption{font-size:10px;color:var(--ag-muted);margin:22px 0 0}
-.app-guide-feature-section{padding:76px 24px 64px}.app-guide-section-heading{text-align:center}.app-guide-page .app-guide-section-heading .app-guide-eyebrow{justify-content:center;margin-bottom:14px}.app-guide-page .app-guide-section-heading h2{font-size:32px;line-height:1.4;letter-spacing:-1px;margin:0 0 16px;word-break:keep-all}.app-guide-section-heading>p:last-child{font-size:14px;color:var(--ag-muted)}
-.app-guide-feature-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:36px 0 16px}.app-guide-feature-tabs button{display:flex;align-items:center;gap:12px;text-align:left;border:1px solid #d9e2dc;border-radius:12px;padding:20px 16px;background:transparent;color:var(--ag-muted);font-size:14px}.app-guide-feature-tabs button>span{font-size:11px;color:#879b91}.app-guide-feature-tabs button svg{margin-left:auto;flex-shrink:0}.app-guide-feature-tabs button[aria-pressed=true]{background:var(--ag-green);border-color:var(--ag-green);color:#fff}.app-guide-feature-tabs button[aria-pressed=true]>span{color:#bbd6cc}
-.app-guide-feature-detail{display:flex;align-items:center;gap:24px;padding:28px;border:1px solid #d9e2dc;border-radius:14px;min-height:142px}.app-guide-feature-number{font-size:48px;font-weight:700;letter-spacing:-2px;color:#d4dfd6}.app-guide-feature-detail>div{flex:1}.app-guide-feature-detail h3{font-size:20px;margin:0 0 10px}.app-guide-feature-detail p{font-size:13px;line-height:1.8;margin:0;color:var(--ag-muted);word-break:keep-all}.app-guide-feature-detail>a{flex-shrink:0;font-size:12px;text-decoration:none;color:var(--ag-green)}
-.app-guide-install{background:#edf3ee;border-radius:22px;padding:48px;display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;scroll-margin-top:24px}.app-guide-page .app-guide-install .app-guide-eyebrow{margin-bottom:14px}.app-guide-page .app-guide-install h2{font-size:30px;letter-spacing:-1px;line-height:1.4;margin:0 0 18px;word-break:keep-all}.app-guide-install>div>p:not(.app-guide-eyebrow){font-size:13px;color:var(--ag-muted);line-height:1.9;margin-bottom:24px}.app-guide-install-panel{padding:24px;background:#fff;border-radius:16px;color:#213c38}.app-guide-platforms{display:flex;gap:4px;border-bottom:1px solid #e4eae5;padding-bottom:12px}.app-guide-platforms button{border:0;background:transparent;color:#7a8b84;padding:8px 16px;font-size:13px;border-radius:6px}.app-guide-platforms button[aria-pressed=true]{background:#edf3ee;color:#26675a;font-weight:700}.app-guide-install-panel ol{padding:0;margin:20px 0;list-style:none;display:grid;gap:18px}.app-guide-install-panel li{display:flex;gap:12px;align-items:start}.app-guide-install-panel li>span{color:#6a927e;font-size:11px;padding-top:4px}.app-guide-install-panel li p{font-size:12px;line-height:1.8;margin:0;word-break:keep-all}.app-guide-store-status{font-size:11px;color:#83938c;margin:0;padding-top:14px;border-top:1px solid #e4eae5}
-:root[data-theme=dark] .app-guide-page{--ag-ink:#e0ebe5;--ag-muted:#a3b6ac;--ag-green:#90c8ad;--ag-bg:#222f2b}.app-guide-page .app-guide-button.primary{background:#26675a;color:#fff}:root[data-theme=dark] .app-guide-install{background:#222f2b}:root[data-theme=dark] .app-guide-orbit.orbit-one{background:#304338}:root[data-theme=dark] .app-guide-orbit.orbit-two{border-color:#40574b}:root[data-theme=dark] .app-guide-floating-note{background:#304338;color:#e0ebe5}:root[data-theme=dark] .app-guide-feature-tabs button[aria-pressed=true]{background:#26675a;color:#fff;border-color:#26675a}:root[data-theme=dark] .app-guide-feature-detail,:root[data-theme=dark] .app-guide-feature-tabs button{border-color:#40574b}
-@media(max-width:1150px){.app-guide-hero{padding:36px 28px}.app-guide-page .app-guide-hero h1{font-size:38px}.app-guide-visual{min-height:480px}.app-guide-phone{width:220px}.app-guide-floating-note{left:-20px;font-size:10px;padding:10px}.app-guide-install{padding:32px;gap:24px}.app-guide-feature-detail{flex-wrap:wrap}.app-guide-feature-detail>a{margin-left:auto}.app-guide-feature-tabs button{gap:8px;padding:16px 12px}}
-@media(max-width:850px){.app-guide-hero{grid-template-columns:minmax(0,1fr);padding:32px 24px;gap:24px}.app-guide-hero-copy{text-align:center}.app-guide-hero-copy .app-guide-eyebrow,.app-guide-actions,.app-guide-hero-tags{justify-content:center}.app-guide-visual{min-height:470px}.app-guide-floating-note{left:calc(50% - 150px);top:10px}.app-guide-orbit.orbit-one{width:320px;height:320px}.app-guide-feature-section{padding:48px 0}.app-guide-feature-tabs{grid-template-columns:minmax(0,1fr)}.app-guide-page .app-guide-section-heading h2{font-size:27px}.app-guide-install{grid-template-columns:minmax(0,1fr);padding:28px 24px}.app-guide-page .app-guide-install h2{font-size:27px}}
-@media(max-width:500px){.app-guide-hero{padding:24px 12px;border-radius:14px}.app-guide-page .app-guide-hero h1{font-size:28px;letter-spacing:-1px}.app-guide-page .app-guide-eyebrow{font-size:8px;letter-spacing:1px}.app-guide-lead{font-size:13px}.app-guide-button{font-size:11px;padding:12px 10px;gap:6px;width:100%}.app-guide-hero-tags{font-size:10px;gap:8px}.app-guide-visual{min-height:430px}.app-guide-phone{width:186px;border-width:5px;border-radius:28px;padding:12px 7px 8px;transform:rotate(2deg)}.app-guide-floating-note{position:relative;top:auto;left:auto;margin-bottom:16px;font-size:9px}.app-guide-orbit.orbit-one{width:220px;height:220px;top:90px}.app-guide-orbit.orbit-two{width:180px;height:180px;top:110px}.app-guide-page .app-guide-section-heading h2{font-size:22px}.app-guide-section-heading>p:last-child{font-size:12px}.app-guide-feature-detail{padding:18px 14px;gap:12px}.app-guide-feature-number{font-size:30px}.app-guide-feature-detail h3{font-size:16px}.app-guide-feature-detail p{font-size:12px}.app-guide-feature-detail>div{flex-basis:100%}.app-guide-feature-tabs button{font-size:12px}.app-guide-install{padding:24px 14px;border-radius:14px}.app-guide-page .app-guide-install h2{font-size:22px}.app-guide-install-panel{padding:16px 12px}.app-guide-platforms button{font-size:12px;padding:8px}.app-guide-phone-heading h2{font-size:14px}}
-@media(prefers-reduced-motion:reduce){.app-guide-button{transition:none}.app-guide-button:hover{transform:none}}
+.app-guide-page {
+  --ag-ink: #183b38;
+  --ag-muted: #647975;
+  --ag-green: #26675a;
+  --ag-accent: #f29159;
+  --ag-bg: #f3f6f0;
+  color: var(--ag-ink);
+  font-family: inherit;
+}
+.app-guide-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  align-items: center;
+  gap: 24px;
+  min-height: 640px;
+  padding: 56px 48px;
+  background: var(--ag-bg);
+  border-radius: 24px;
+  overflow: hidden;
+}
+.app-guide-page .app-guide-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  line-height: 1.6;
+  color: var(--ag-green);
+  margin: 0 0 28px;
+}
+.app-guide-eyebrow>span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ag-green);
+}
+.app-guide-kicker {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 14px;
+  color: var(--ag-muted);
+}
+.app-guide-page .app-guide-hero h1 {
+  font-size: clamp(32px,3.3vw,54px);
+  letter-spacing: -2px;
+  line-height: 1.25;
+  margin: 0 0 24px;
+  font-weight: 750;
+  word-break: keep-all;
+}
+.app-guide-lead {
+  font-size: 16px;
+  line-height: 1.9;
+  color: var(--ag-muted);
+  margin: 0 0 28px;
+  word-break: keep-all;
+}
+.app-guide-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.app-guide-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 14px 18px;
+  border-radius: 9px;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  min-height: 48px;
+  transition:
+    background .15s,transform .15s;
+}
+.app-guide-button:hover {
+  transform: translateY(-2px);
+}
+.app-guide-button.primary {
+  background: var(--ag-green);
+  color: #fff;
+}
+.app-guide-button.secondary {
+  border: 1px solid #b4c5bd;
+  color: var(--ag-ink);
+  background: transparent;
+}
+.app-guide-button>span {
+  font-size: 18px;
+}
+.app-guide-hero-tags {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 32px;
+  font-size: 11px;
+  color: var(--ag-muted);
+}
+.app-guide-hero-tags span::before {
+  content: '✓';
+  color: var(--ag-green);
+  margin-right: 5px;
+}
+.app-guide-visual {
+  position: relative;
+  min-height: 530px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  isolation: isolate;
+}
+.app-guide-orbit {
+  position: absolute;
+  border-radius: 50%;
+  z-index: -1;
+}
+.app-guide-orbit.orbit-one {
+  width: 380px;
+  height: 380px;
+  background: #e4ebdc;
+  top: 75px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.app-guide-orbit.orbit-two {
+  width: 280px;
+  height: 280px;
+  border: 1px solid #cedcc9;
+  top: 130px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.app-guide-phone {
+  width: 248px;
+  max-width: 100%;
+  padding: 13px 10px 10px;
+  background: #fff;
+  border: 6px solid #213c38;
+  border-radius: 36px;
+  box-shadow: 15px 25px 45px #193f3529;
+  position: relative;
+  transform: rotate(5deg);
+  overflow: hidden;
+  color: #213c38;
+}
+.app-guide-phone-notch {
+  width: 74px;
+  height: 18px;
+  background: #213c38;
+  border-radius: 0 0 12px 12px;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.app-guide-phone-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 22px 7px 18px;
+  font-size: 14px;
+  letter-spacing: .3px;
+}
+.app-guide-phone-top b>span {
+  color: var(--ag-accent);
+  font-size: 9px;
+  margin-left: 3px;
+}
+.app-guide-phone-heading {
+  padding: 0 7px 14px;
+}
+.app-guide-phone-heading small {
+  font-size: 10px;
+  color: #7f9189;
+}
+.app-guide-phone-heading h2 {
+  font-size: 17px;
+  margin: 6px 0 0;
+  font-weight: 700;
+}
+.app-guide-phone-map {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.app-guide-phone-map>svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.app-guide-map-chip {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: #fff;
+  border-radius: 20px;
+  padding: 7px 12px;
+  font-size: 9px;
+  box-shadow: 0 3px 10px #234a3820;
+  display: flex;
+  gap: 20px;
+}
+.app-guide-phone-info {
+  position: relative;
+  margin: -20px 8px 0;
+  padding: 14px 12px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 18px #153e3914;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 6px;
+  align-items: center;
+  min-height: 75px;
+}
+.app-guide-phone-info b {
+  font-size: 10px;
+}
+.app-guide-phone-info small {
+  grid-column: 1/-1;
+  font-size: 9px;
+  color: #778b85;
+}
+.app-guide-mini-badge {
+  font-size: 8px;
+  border-radius: 5px;
+  padding: 4px 6px;
+  background: #e7f3eb;
+  color: #16734f;
+}
+.app-guide-mini-badge.orange {
+  background: #fff0dd;
+  color: #ae631c;
+}
+.app-guide-phone-nav {
+  display: flex;
+  justify-content: space-around;
+  padding: 20px 0 5px;
+  font-size: 9px;
+  color: #8d9995;
+}
+.app-guide-phone-nav .active {
+  color: #26675a;
+  font-weight: 700;
+}
+.app-guide-floating-note {
+  position: absolute;
+  top: 32px;
+  left: -5px;
+  z-index: 2;
+  border-radius: 10px;
+  background: #fff;
+  padding: 13px 16px;
+  box-shadow: 0 8px 24px #1b403413;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transform: rotate(-4deg);
+}
+.app-guide-status-dot {
+  width: 8px;
+  height: 8px;
+  background: #16805d;
+  border-radius: 50%;
+}
+.app-guide-preview-caption {
+  font-size: 10px;
+  color: var(--ag-muted);
+  margin: 22px 0 0;
+}
+.app-guide-feature-section {
+  padding: 76px 24px 64px;
+}
+.app-guide-section-heading {
+  text-align: center;
+}
+.app-guide-page .app-guide-section-heading .app-guide-eyebrow {
+  justify-content: center;
+  margin-bottom: 14px;
+}
+.app-guide-page .app-guide-section-heading h2 {
+  font-size: 32px;
+  line-height: 1.4;
+  letter-spacing: -1px;
+  margin: 0 0 16px;
+  word-break: keep-all;
+}
+.app-guide-section-heading>p:last-child {
+  font-size: 14px;
+  color: var(--ag-muted);
+}
+.app-guide-feature-tabs {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 12px;
+  margin: 36px 0 16px;
+}
+.app-guide-feature-tabs button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  border: 1px solid #d9e2dc;
+  border-radius: 12px;
+  padding: 20px 16px;
+  background: transparent;
+  color: var(--ag-muted);
+  font-size: 14px;
+}
+.app-guide-feature-tabs button>span {
+  font-size: 11px;
+  color: #879b91;
+}
+.app-guide-feature-tabs button svg {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.app-guide-feature-tabs button[aria-pressed=true] {
+  background: var(--ag-green);
+  border-color: var(--ag-green);
+  color: #fff;
+}
+.app-guide-feature-tabs button[aria-pressed=true]>span {
+  color: #bbd6cc;
+}
+.app-guide-feature-detail {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 28px;
+  border: 1px solid #d9e2dc;
+  border-radius: 14px;
+  min-height: 142px;
+}
+.app-guide-feature-number {
+  font-size: 48px;
+  font-weight: 700;
+  letter-spacing: -2px;
+  color: #d4dfd6;
+}
+.app-guide-feature-detail>div {
+  flex: 1;
+}
+.app-guide-feature-detail h3 {
+  font-size: 20px;
+  margin: 0 0 10px;
+}
+.app-guide-feature-detail p {
+  font-size: 13px;
+  line-height: 1.8;
+  margin: 0;
+  color: var(--ag-muted);
+  word-break: keep-all;
+}
+.app-guide-feature-detail>a {
+  flex-shrink: 0;
+  font-size: 12px;
+  text-decoration: none;
+  color: var(--ag-green);
+}
+.app-guide-install {
+  background: #edf3ee;
+  border-radius: 22px;
+  padding: 48px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: center;
+  scroll-margin-top: 24px;
+}
+.app-guide-page .app-guide-install .app-guide-eyebrow {
+  margin-bottom: 14px;
+}
+.app-guide-page .app-guide-install h2 {
+  font-size: 30px;
+  letter-spacing: -1px;
+  line-height: 1.4;
+  margin: 0 0 18px;
+  word-break: keep-all;
+}
+.app-guide-install>div>p:not(.app-guide-eyebrow) {
+  font-size: 13px;
+  color: var(--ag-muted);
+  line-height: 1.9;
+  margin-bottom: 24px;
+}
+.app-guide-install-panel {
+  padding: 24px;
+  background: #fff;
+  border-radius: 16px;
+  color: #213c38;
+}
+.app-guide-platforms {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid #e4eae5;
+  padding-bottom: 12px;
+}
+.app-guide-platforms button {
+  border: 0;
+  background: transparent;
+  color: #7a8b84;
+  padding: 8px 16px;
+  font-size: 13px;
+  border-radius: 6px;
+}
+.app-guide-platforms button[aria-pressed=true] {
+  background: #edf3ee;
+  color: #26675a;
+  font-weight: 700;
+}
+.app-guide-install-panel ol {
+  padding: 0;
+  margin: 20px 0;
+  list-style: none;
+  display: grid;
+  gap: 18px;
+}
+.app-guide-install-panel li {
+  display: flex;
+  gap: 12px;
+  align-items: start;
+}
+.app-guide-install-panel li>span {
+  color: #6a927e;
+  font-size: 11px;
+  padding-top: 4px;
+}
+.app-guide-install-panel li p {
+  font-size: 12px;
+  line-height: 1.8;
+  margin: 0;
+  word-break: keep-all;
+}
+.app-guide-store-status {
+  font-size: 11px;
+  color: #83938c;
+  margin: 0;
+  padding-top: 14px;
+  border-top: 1px solid #e4eae5;
+}
+:root[data-theme=dark] .app-guide-page {
+  --ag-ink: #e0ebe5;
+  --ag-muted: #a3b6ac;
+  --ag-green: #90c8ad;
+  --ag-bg: #222f2b;
+}
+.app-guide-page .app-guide-button.primary {
+  background: #26675a;
+  color: #fff;
+}
+:root[data-theme=dark] .app-guide-install {
+  background: #222f2b;
+}
+:root[data-theme=dark] .app-guide-orbit.orbit-one {
+  background: #304338;
+}
+:root[data-theme=dark] .app-guide-orbit.orbit-two {
+  border-color: #40574b;
+}
+:root[data-theme=dark] .app-guide-floating-note {
+  background: #304338;
+  color: #e0ebe5;
+}
+:root[data-theme=dark] .app-guide-feature-tabs button[aria-pressed=true] {
+  background: #26675a;
+  color: #fff;
+  border-color: #26675a;
+}
+:root[data-theme=dark] .app-guide-feature-detail,:root[data-theme=dark] .app-guide-feature-tabs button {
+  border-color: #40574b;
+}
+@media (max-width:1150px) {
+  .app-guide-hero {
+    padding: 36px 28px;
+  }
+  .app-guide-page .app-guide-hero h1 {
+    font-size: 38px;
+  }
+  .app-guide-visual {
+    min-height: 480px;
+  }
+  .app-guide-phone {
+    width: 220px;
+  }
+  .app-guide-floating-note {
+    left: -20px;
+    font-size: 10px;
+    padding: 10px;
+  }
+  .app-guide-install {
+    padding: 32px;
+    gap: 24px;
+  }
+  .app-guide-feature-detail {
+    flex-wrap: wrap;
+  }
+  .app-guide-feature-detail>a {
+    margin-left: auto;
+  }
+  .app-guide-feature-tabs button {
+    gap: 8px;
+    padding: 16px 12px;
+  }
+}
+@media (max-width:850px) {
+  .app-guide-hero {
+    grid-template-columns: minmax(0,1fr);
+    padding: 32px 24px;
+    gap: 24px;
+  }
+  .app-guide-hero-copy {
+    text-align: center;
+  }
+  .app-guide-hero-copy .app-guide-eyebrow,.app-guide-actions,.app-guide-hero-tags {
+    justify-content: center;
+  }
+  .app-guide-visual {
+    min-height: 470px;
+  }
+  .app-guide-floating-note {
+    left: calc(50% - 150px);
+    top: 10px;
+  }
+  .app-guide-orbit.orbit-one {
+    width: 320px;
+    height: 320px;
+  }
+  .app-guide-feature-section {
+    padding: 48px 0;
+  }
+  .app-guide-feature-tabs {
+    grid-template-columns: minmax(0,1fr);
+  }
+  .app-guide-page .app-guide-section-heading h2 {
+    font-size: 27px;
+  }
+  .app-guide-install {
+    grid-template-columns: minmax(0,1fr);
+    padding: 28px 24px;
+  }
+  .app-guide-page .app-guide-install h2 {
+    font-size: 27px;
+  }
+}
+@media (max-width:500px) {
+  .app-guide-hero {
+    padding: 24px 12px;
+    border-radius: 14px;
+  }
+  .app-guide-page .app-guide-hero h1 {
+    font-size: 28px;
+    letter-spacing: -1px;
+  }
+  .app-guide-page .app-guide-eyebrow {
+    font-size: 8px;
+    letter-spacing: 1px;
+  }
+  .app-guide-lead {
+    font-size: 13px;
+  }
+  .app-guide-button {
+    font-size: 11px;
+    padding: 12px 10px;
+    gap: 6px;
+    width: 100%;
+  }
+  .app-guide-hero-tags {
+    font-size: 10px;
+    gap: 8px;
+  }
+  .app-guide-visual {
+    min-height: 430px;
+  }
+  .app-guide-phone {
+    width: 186px;
+    border-width: 5px;
+    border-radius: 28px;
+    padding: 12px 7px 8px;
+    transform: rotate(2deg);
+  }
+  .app-guide-floating-note {
+    position: relative;
+    top: auto;
+    left: auto;
+    margin-bottom: 16px;
+    font-size: 9px;
+  }
+  .app-guide-orbit.orbit-one {
+    width: 220px;
+    height: 220px;
+    top: 90px;
+  }
+  .app-guide-orbit.orbit-two {
+    width: 180px;
+    height: 180px;
+    top: 110px;
+  }
+  .app-guide-page .app-guide-section-heading h2 {
+    font-size: 22px;
+  }
+  .app-guide-section-heading>p:last-child {
+    font-size: 12px;
+  }
+  .app-guide-feature-detail {
+    padding: 18px 14px;
+    gap: 12px;
+  }
+  .app-guide-feature-number {
+    font-size: 30px;
+  }
+  .app-guide-feature-detail h3 {
+    font-size: 16px;
+  }
+  .app-guide-feature-detail p {
+    font-size: 12px;
+  }
+  .app-guide-feature-detail>div {
+    flex-basis: 100%;
+  }
+  .app-guide-feature-tabs button {
+    font-size: 12px;
+  }
+  .app-guide-install {
+    padding: 24px 14px;
+    border-radius: 14px;
+  }
+  .app-guide-page .app-guide-install h2 {
+    font-size: 22px;
+  }
+  .app-guide-install-panel {
+    padding: 16px 12px;
+  }
+  .app-guide-platforms button {
+    font-size: 12px;
+    padding: 8px;
+  }
+  .app-guide-phone-heading h2 {
+    font-size: 14px;
+  }
+}
+@media (prefers-reduced-motion:reduce) {
+  .app-guide-button {
+    transition: none;
+  }
+  .app-guide-button:hover {
+    transform: none;
+  }
+}
