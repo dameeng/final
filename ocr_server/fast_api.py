@@ -14,49 +14,70 @@ from datetime import datetime
 
 import cv2
 import numpy as np
-from fastapi import FastAPI, File, Form, Header, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, Header, HTTPException, Query, UploadFile
 from fastapi.responses import Response, StreamingResponse
 
 import config
 import spring
-from plate_ocr import CameraWorker, create_reader, draw, reset_sync, to_jpg   # 번호판 인식 (YOLO + OCR)
+from plate_ocr import CameraWorker, create_reader, draw, to_jpg   # 번호판 인식 (YOLO + OCR)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(name)s] %(message)s", datefmt="%H:%M:%S")
 log = logging.getLogger("server")
 
 workers = {}                       # 서버가 켜질 때 한 번만 만들어 두는 모델/작업들
-cameras = {}                       # 카메라 id -> CameraWorker
-plate_job = {"stop": None, "startedAt": None}   # 카메라 작업 멈추는 신호 (None 이면 꺼져 있음) + 시작 시각
+cameras = {}                       # 돌고 있는 카메라: CAMERAS 의 id -> CameraWorker
+plate_jobs = {}                    # 돌고 있는 카메라: CAMERAS 의 id -> {"stop": 멈추는 신호, "startedAt": 시작 시각}
 plate_lock = threading.Lock()      # 시작/정지 버튼을 연달아 눌러도 꼬이지 않게
 
 
-def start_plate():
-    """카메라 전부 새로 만들어서 같이 시작 (영상은 처음부터). 이미 돌고 있으면 그대로 두고 False"""
+def _source_id(camera_id):
+    """버튼의 카메라 id -> CAMERAS 의 id (영상). SEND_AS 에 적힌 id 면 그 영상 (3 -> 1). 모르는 id 면 None"""
+    if camera_id in config.CAMERAS:
+        return camera_id
+    return next((sid for sid, targets in config.SEND_AS.items() if camera_id in targets), None)
+
+
+def _targets(camera_id=None):
+    """시작/정지할 CAMERAS id 목록. camera_id 가 없으면 전부"""
+    if camera_id is None:
+        return list(config.CAMERAS)
+    sid = _source_id(camera_id)
+    if sid is None:
+        raise HTTPException(404, f"AI 서버에 연결된 카메라가 아니에요: {camera_id} (config.CAMERAS / SEND_AS 확인)")
+    return [sid]
+
+
+def start_plate(ids):
+    """카메라를 새로 만들어서 시작 (영상은 처음부터). 이미 돌고 있는 카메라는 그대로. 새로 시작한 id 목록을 돌려줘요"""
+    started = []
     with plate_lock:
-        if plate_job["stop"] is not None:
-            return False
-        stop = threading.Event()
-        reset_sync()
-        cameras.clear()
-        for camera_id, source in config.CAMERAS.items():
-            cameras[camera_id] = CameraWorker(camera_id, source, workers["plate"])
+        for camera_id in ids:
+            if camera_id in plate_jobs:
+                continue
+            stop = threading.Event()
+            cameras[camera_id] = CameraWorker(camera_id, config.CAMERAS[camera_id], workers["plate"])
             cameras[camera_id].start(stop)
-        plate_job.update(stop=stop, startedAt=time.time())
-        log.info("카메라 인식 시작: %s", list(cameras))
-        return True
+            plate_jobs[camera_id] = {"stop": stop, "startedAt": time.time()}
+            started.append(camera_id)
+    if started:
+        log.info("카메라 인식 시작: %s", started)
+    return started
 
 
-def stop_plate():
-    """카메라 작업 멈춤. 이미 꺼져 있으면 False"""
+def stop_plate(ids):
+    """카메라 작업 멈춤. 꺼져 있던 카메라는 건너뜀. 멈춘 id 목록을 돌려줘요"""
+    stopped = []
     with plate_lock:
-        stop = plate_job["stop"]
-        if stop is None:
-            return False
-        stop.set()                 # 스레드는 하던 탐지/전송을 마치고 1초 안팎으로 끝나요
-        cameras.clear()            # 스트림은 404 -> 멈춘 화면이 계속 보이지 않게
-        plate_job.update(stop=None, startedAt=None)
-        log.info("카메라 인식 정지")
-        return True
+        for camera_id in ids:
+            job = plate_jobs.pop(camera_id, None)
+            if job is None:
+                continue
+            job["stop"].set()          # 스레드는 하던 탐지/전송을 마치고 1초 안팎으로 끝나요
+            cameras.pop(camera_id, None)   # 스트림은 404 -> 멈춘 화면이 계속 보이지 않게
+            stopped.append(camera_id)
+    if stopped:
+        log.info("카메라 인식 정지: %s", stopped)
+    return stopped
 
 
 @asynccontextmanager
@@ -65,12 +86,12 @@ async def lifespan(app: FastAPI):
     workers["plate"] = create_reader()   # CPU 면 따로 띄운 프로세스에서 인식 (스트림 안 끊기게)
     log.info("번호판 모델(YOLO + OCR) 로드 완료")
     if config.PLATE_ENABLED:
-        start_plate()
+        start_plate(_targets())
     else:
-        log.info("카메라 인식은 꺼 둠 -> POST /control/plate/start 로 시작 (프론트 실행 버튼)")
+        log.info("카메라 인식은 꺼 둠 -> POST /control/plate/start?cameraId=... 로 시작 (프론트 실행 버튼)")
     yield
     # ===== 서버 끌 때 =====
-    stop_plate()
+    stop_plate(_targets())
 
 
 app = FastAPI(title="ROUTEL AI Server", lifespan=lifespan)
@@ -79,7 +100,7 @@ app = FastAPI(title="ROUTEL AI Server", lifespan=lifespan)
 @app.get("/health", summary="서버 상태")
 def health():
     return {"status": "ok", "spring": config.SPRING_URL, "loaded": list(workers),
-            "plateRunning": plate_job["stop"] is not None,
+            "plateRunning": list(plate_jobs),
             "cameras": {cid: c.running for cid, c in cameras.items()}}
 
 
@@ -90,27 +111,38 @@ def _check_key(key):
 
 
 def _plate_state():
-    started = plate_job["startedAt"]
-    return {"running": started is not None,
-            "runningSec": round(time.time() - started, 1) if started else None,
-            "cameras": [{"cameraId": c.camera_id, "running": c.running, "error": c.error} for c in cameras.values()]}
+    """CAMERAS 전부 (꺼진 것 포함). running = 실행 버튼이 눌려 있음, videoOpen = 영상이 실제로 열려서 돌고 있음"""
+    now = time.time()
+    items = []
+    for camera_id, source in config.CAMERAS.items():
+        job, cam = plate_jobs.get(camera_id), cameras.get(camera_id)
+        items.append({"cameraId": camera_id, "sendAs": config.SEND_AS.get(camera_id, [camera_id]), "source": source,
+                      "running": job is not None,
+                      "runningSec": round(now - job["startedAt"], 1) if job else None,
+                      "videoOpen": cam.running if cam else False, "error": cam.error if cam else None})
+    return {"running": bool(plate_jobs), "cameras": items}
 
 
-@app.get("/control/plate", summary="카메라 인식이 돌고 있는지 (버튼 상태 표시용)")
+@app.get("/control/plate", summary="카메라별로 인식이 돌고 있는지 (버튼 상태 표시용)")
 def control_plate_state():
     return _plate_state()
 
 
-@app.post("/control/plate/start", summary="영상 처음부터 재생 + 번호판 인식/전송 시작")
-def control_plate_start(x_internal_api_key: str = Header(None)):
+@app.post("/control/plate/start", summary="영상 처음부터 재생 + 번호판 인식/전송 시작 (돌던 다른 영상은 자동 정지. cameraId 없으면 전부)")
+def control_plate_start(cameraId: int = Query(None, description="CAMERAS 또는 SEND_AS 의 카메라 id (3 -> 입구 영상)"),
+                        x_internal_api_key: str = Header(None)):
     _check_key(x_internal_api_key)
-    return {"started": start_plate(), **_plate_state()}
+    ids = _targets(cameraId)
+    # 영상은 한 번에 하나만: 다른 화면에서 실행을 누르면 돌던 영상은 멈춤 (cameraId 없이 전부 시작할 때는 그대로)
+    stopped = stop_plate([i for i in list(plate_jobs) if i not in ids]) if cameraId is not None else []
+    return {"started": start_plate(ids), "stopped": stopped, **_plate_state()}
 
 
-@app.post("/control/plate/stop", summary="영상 + 번호판 인식/전송 정지")
-def control_plate_stop(x_internal_api_key: str = Header(None)):
+@app.post("/control/plate/stop", summary="영상 + 번호판 인식/전송 정지 (cameraId 없으면 전부)")
+def control_plate_stop(cameraId: int = Query(None, description="CAMERAS 또는 SEND_AS 의 카메라 id"),
+                       x_internal_api_key: str = Header(None)):
     _check_key(x_internal_api_key)
-    return {"stopped": stop_plate(), **_plate_state()}
+    return {"stopped": stop_plate(_targets(cameraId)), **_plate_state()}
 
 
 # ---------------- 번호판 ----------------
@@ -186,12 +218,17 @@ def demo_recognize(role: str = Form(...), file: UploadFile = File(...)):
 
 
 # ---------------- 관리자 CCTV 화면용 실시간 영상 ----------------
+def _find(camera_id):
+    """카메라 id 로 돌고 있는 영상 찾기. SEND_AS 에 적힌 id 면 그 영상 (3 -> 1번 영상)"""
+    return cameras.get(_source_id(camera_id))
+
+
 def _camera(camera_id):
-    cam = cameras.get(camera_id)
+    cam = _find(camera_id)
     if cam is None:
-        if plate_job["stop"] is None:
-            raise HTTPException(404, "카메라 인식이 꺼져 있어요 (POST /control/plate/start 로 시작)")
-        raise HTTPException(404, f"AI 서버에 연결된 카메라가 아니에요: {camera_id} (config.CAMERAS 확인)")
+        if _source_id(camera_id) is not None:
+            raise HTTPException(404, f"카메라 {camera_id} 인식이 꺼져 있어요 (POST /control/plate/start?cameraId={camera_id} 로 시작)")
+        raise HTTPException(404, f"AI 서버에 연결된 카메라가 아니에요: {camera_id} (config.CAMERAS / SEND_AS 확인)")
     return cam
 
 
@@ -205,7 +242,7 @@ async def stream(camera_id: int):
         waiter = (asyncio.get_running_loop(), asyncio.Event())
         cam.waiters.add(waiter)
         try:
-            while cameras.get(camera_id) is cam:     # 정지(또는 다시 시작)하면 이 스트림은 끝 -> 프론트가 새로 연결
+            while _find(camera_id) is cam:     # 정지(또는 다시 시작)하면 이 스트림은 끝 -> 프론트가 새로 연결
                 cam.last_view = time.time()          # "누가 보고 있음" 표시 -> 카메라가 화면(jpg)을 만들기 시작
                 jpg = cam.jpg
                 if jpg is not None and jpg is not last:

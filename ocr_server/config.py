@@ -38,38 +38,45 @@ FONT_PATH = os.environ.get("FONT_PATH", r"C:\Windows\Fonts\malgun.ttf")
 # 지정 안 하면 AI 서버 폴더 안의 자동차영상 폴더에서 찾아요
 VIDEO_DIR = os.environ.get("VIDEO_DIR", os.path.join(HERE, "자동차영상"))
 
-# 카메라 id (DB underpass_camera.id) -> 영상.  파일 이름이면 VIDEO_DIR 에서 찾고, rtsp:// 주소도 가능
-#   1 = 월계3지하차도 APPROACH_LPR(300m 전, 입구 지정)
-#   2 = 월계3지하차도 ROI_LPR(30m 전, 출구 지정)
-# 통과 테스트: front_1(입구)에서 찍힌 차가 1~8초 뒤 back_1(출구)에 나와서 "통과 완료"까지 확인 가능
-# 카메라 id 확인 SQL: SELECT c.id, u.name, c.camera_role FROM underpass_camera c JOIN underpass u ON u.id = c.underpass_id ORDER BY c.id;
-# 시연: 카메라 1(입구)만, front_1 장면 30초 영상 (출구 카메라 2를 쓰려면 2: "back_1.mp4" 를 다시 추가)
+# 카메라 id (DB camera.id) -> 영상.  파일 이름이면 VIDEO_DIR 에서 찾고, rtsp:// 주소도 가능
+#   카메라마다 실행 버튼(POST /control/plate/start?cameraId=...)을 눌러야 그 영상이 처음부터 재생되고 인식/전송 시작
+#   1   = 입구 영상 (상행 입구 APPROACH_LPR. 하행 입구 3 으로도 보냄)
+#   2   = 출구 영상 (상행 출구 FINAL_LPR. 하행 출구 4 로도 보냄)
+#   226 = roi 영상을 APPROACH_LPR 로 (사전예측 알림. APPROACH 버튼)
+#   227 = roi 영상을 FINAL_LPR 로 (최종 알림. ROI 버튼)
+#     226, 227 은 임시 id -> DB 에 roi 용 카메라를 만들고 나서 실제 id 로 바꾸기
+#     둘 다 켜면 같은 영상을 두 번 인식해요 (하나씩 켜는 걸 생각하고 나눔)
+# 시연: 입구/출구 영상으로 통과 완료, roi 영상으로 알림
+# 카메라 id 확인 SQL: SELECT c.id, u.name, c.role FROM camera c JOIN underpass u ON u.id = c.underpass_id ORDER BY c.id;
+#   seed 기준 지하차도 N 의 카메라: (N-1)*5 + 1 상행입구, +2 상행출구, +3 하행입구, +4 하행출구, +5 CCTV
 CAMERAS = {
-    1: "KakaoTalk_20261002_140817269.mp4",
+    1: "입구.mp4",
+    2: "출구.mp4",
+    226: "roi.mp4",
+    227: "roi.mp4",
+}
+
+# 영상 하나의 인식 결과를 여러 카메라 id 로 보내기 (CAMERAS 의 id -> 보낼 카메라 id 목록). 없는 카메라는 자기 id 로만
+#   인식은 영상마다 한 번만 하고 전송만 여러 번 -> Spring 에는 카메라가 따로 있는 것처럼 보여요
+#   1, 3 = 상행/하행 입구(APPROACH_LPR), 2, 4 = 상행/하행 출구(FINAL_LPR)
+#   roi 용 226, 227 은 따로 켜고 끄려고 CAMERAS 에 나눠 넣어서 여기 없음
+#     -> DB 에서 지하차도의 입구/출구 칸(up_entry_cam_id 등)에는 넣지 않기: 통과 기록 없이 알림만 나가요
+# 실행/정지 버튼과 CCTV 화면도 목록에 있는 id 로 쓰면 같은 영상이에요 (start?cameraId=3, /stream/3 = 입구 영상)
+# 주의: 신뢰도 0.6 미만(Spring 판별대기 기준)으로 읽은 번호는 보낸 카메라 수만큼 판별대기가 생겨요
+SEND_AS = {
+    1: [1, 3],
+    2: [2, 4],
 }
 
 # 카메라별로 화면 위쪽 몇 %는 번호판 탐지를 건너뛸지 (0.28 = 위 28%). 없는 카메라는 0 (전체 탐지)
-#   front 영상: 위쪽은 번호판이 너무 작아 거의 못 읽음(맞게 읽는 비율 4~14%) -> 잘라내면 탐지가 약 20% 빨라짐
-#   back 영상: 위쪽 번호판도 커서 잘 읽힘 -> 자르지 않음
-DETECT_SKIP_TOP = {
-    1: 0.28,
-}
+DETECT_SKIP_TOP = {}
 
-# 카메라별로 영상을 몇 초 늦게 시작할지 (영상 파일만). 없는 카메라는 0
-#   back_1 은 front_1 보다 차가 너무 빨리 지나가서, 입구에서 확정(2번 읽기)되기 전에 출구에서 먼저 찍힘
-#   -> 4.5초 늦춰서 입구 -> 출구 순서가 확실하게 나오게 함 (통과 완료가 더 많이 생김)
-VIDEO_DELAY_SEC = {
-    2: 4.5,
-}
-# 영상 파일들은 항상 같이 처음으로 돌아가요 (가장 긴 영상 + 딜레이 기준).
-# 짧은 영상은 끝나면 마지막 화면에서 기다렸다가 같이 다시 시작 -> 몇 바퀴를 돌아도 입구/출구 시간 차가 그대로
+# 카메라별로 실행 버튼을 누르고 몇 초 뒤에 영상을 시작할지 (영상 파일만). 없는 카메라는 0
+VIDEO_DELAY_SEC = {}
+# 영상 파일은 실행 버튼을 누른 순간부터 카메라마다 따로 재생돼요. 끝나면 (딜레이만큼 기다렸다가) 처음부터 다시
 
 # 카메라별로 영상의 몇 초까지만 번호를 전송할지 (영상 파일만). 없는 카메라는 끝까지 전송
-#   front_1(316.7초)이 back_1(302.1초)보다 길어서, 입구 영상 296초 이후에 나온 차는 출구 영상에 장면이 없음
-#   -> 보내면 통과 완료가 안 되고 "통과 중"으로만 남아서 안 보냄
-VIDEO_SEND_UNTIL_SEC = {
-    1: 296,
-}
+VIDEO_SEND_UNTIL_SEC = {}
 
 # 카메라마다 몇 초에 한 번 탐지할지. 그래픽카드 PC는 0.3 (출구 카메라는 차가 빨리 지나가서 1초면 한 번밖에 못 읽음)
 # 그래픽카드 없는 PC는 run.bat 이 0.5 + INFER_THREADS=4 를 넣어줘요.
@@ -99,17 +106,19 @@ RESEND_SEC = 60           # 같은 카메라에서 같은 번호는 이 시간 �
 TRACK_SKIP_OCR = os.environ.get("TRACK_SKIP_OCR", "1") == "1"
 TRACK_MAX_DIST = 0.6
 
-# 출구 카메라 -> 같은 지하차도의 입구 카메라.
+# 출구 영상 -> 같은 지하차도의 입구 영상 (CAMERAS 의 id).
 # 출구에서 읽은 번호의 숫자 부분이 최근 EXIT_MATCH_SEC 초 안에 입구에서 보낸 번호와 같으면
 # 입구에서 보낸 번호 그대로 바로 전송 (한글 한 글자를 다르게 읽어도 통과 완료가 되게, 한 번만 읽어도 되게)
+#   SEND_AS 로 상행(1->2)/하행(3->4) 같은 영상을 쓰니 이 한 줄로 둘 다 맞춰져요
+#   출구 영상에 차가 입구보다 먼저 나오면 맞추기가 안 돼요 -> 그럴 땐 VIDEO_DELAY_SEC 로 출구를 늦게 시작
 EXIT_OF = {
     2: 1,
 }
 EXIT_MATCH_SEC = 30
 
 # ===== 시연 페이지 (front2) =====
-# 버튼 -> 카메라 id (DB underpass_camera.id). 사진을 이 카메라에서 찍힌 것처럼 Spring 에 보내요
-#   1 = 월계3지하차도 APPROACH_LPR, 2 = 월계3지하차도 ROI_LPR
+# 버튼 -> 카메라 id (DB camera.id). 사진을 이 카메라에서 찍힌 것처럼 Spring 에 보내요
+#   1 = 상행 입구 APPROACH_LPR, 2 = 상행 출구 FINAL_LPR (예전 이름 ROI_LPR. 버튼 이름은 프론트와 맞춰 ROI 그대로)
 DEMO_CAMERAS = {
     "APPROACH": 1,
     "ROI": 2,
@@ -119,7 +128,7 @@ DEMO_CAMERAS = {
 # 영상 풀기(디코딩)를 그래픽으로 할지. 내장 그래픽 노트북은 CPU 가 더 빨라서 기본 0 (1 = 그래픽)
 VIDEO_HW_DECODE = os.environ.get("VIDEO_HW_DECODE", "0") == "1"
 STREAM_FPS = int(os.environ.get("STREAM_FPS", "24"))   # 초당 몇 장 보낼지. 원본 영상이 24fps 라 12 면 끊겨 보임 (CPU 측정: 12 -> 10.7fps, 24 -> 19.8fps, 탐지는 약 20% 줄어듦)
-STREAM_WIDTH = 960        # 화면 가로 크기(px). 원본 1920 -> 960 으로 줄여서 보냄
+STREAM_WIDTH = 960        # 화면 가로 크기(px). 이보다 넓으면 줄여서 보냄 (roi 1920 -> 960, 세로 영상 입구/출구 1080 -> 960)
 STREAM_QUALITY = 70       # jpg 화질 (0~100)
 # CPU 에서는 탐지가 1~2초 걸려서, 화면을 이만큼 늦게 보여주고 앞뒤 탐지 사이 네모 위치를 계산해서 그려요
 # (탐지 간격 + 탐지 시간보다 커야 네모가 번호판을 잘 따라가요. 그래픽카드 PC면 2로 줄여도 됨)
