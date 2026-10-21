@@ -1,0 +1,8 @@
+<script setup lang="ts">
+import {computed} from 'vue'
+const props=defineProps<{value?:unknown}>()
+const levels:Record<string,[string,string]>={SAFE:['안전','safe'],NORMAL:['안전','safe'],WATCH:['관심','watch'],CAUTION:['주의','caution'],WARNING:['주의','caution'],ALERT:['경계','alert'],SEVERE:['심각','severe'],DANGER:['위험','alert'],'정상':['안전','safe'],'안전':['안전','safe'],'관심':['관심','watch'],'주의':['주의','caution'],'경고':['주의','caution'],'경계':['경계','alert'],'심각':['심각','severe'],'위험':['위험','alert']}
+const level=computed(()=>levels[String(props.value||'').toUpperCase()]||['미확인','unknown'])
+</script>
+<template><span class="risk-level-badge" :class="'risk-level-badge--'+level[1]">{{level[0]}}</span></template>
+<style scoped>.risk-level-badge{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;flex:none;padding:3px 8px;border-radius:4px;font-size:12px;line-height:18px;white-space:nowrap;background:#edf0f4;color:#526175}.risk-level-badge--safe{background:#e1f3ea;color:#1b7f5c}.risk-level-badge--watch{background:#eef3d8;color:#65732d}.risk-level-badge--caution{background:#fff1d6;color:#965000}.risk-level-badge--alert{background:#fce7dc;color:#a14621}.risk-level-badge--severe{background:#fde3e9;color:#a32446}</style>

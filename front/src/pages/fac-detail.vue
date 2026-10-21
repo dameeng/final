@@ -83,7 +83,7 @@ onBeforeUnmount(()=>dispose?.())
 <tr><td><strong>P-01</strong></td><td>배수펌프</td><td><span class="badge danger">위험</span> <strong>82</strong></td><td>10:42</td><td><span class="stat new">점검 대기</span></td><td><a class="btn sm" href="/pm-equipment-detail">예지보전 상세 →</a></td></tr>
 <tr><td><strong>D-11</strong></td><td>전광판</td><td><span class="badge safe">안전</span> <strong>22</strong></td><td>10:42</td><td><span class="sub">-</span></td><td><a class="btn sm" href="/pm-equipment-detail">예지보전 상세 →</a></td></tr>
 <tr><td><strong>C-12</strong></td><td>CCTV</td><td><span class="badge safe">안전</span> <strong>18</strong></td><td>10:41</td><td><span class="sub">-</span></td><td><a class="btn sm" href="/pm-equipment-detail">예지보전 상세 →</a></td></tr></tbody></table></div>
-<p class="sub">설비의 점검 등록과 기준 설정은 예지보전 메뉴에서 해요. 설비 정보는 읽기 전용이에요.</p></section>
+<p class="sub">설비의 점검 등록은 예지보전 메뉴에서 해요. 설비 정보는 읽기 전용이에요.</p></section>
 
 <section class="sec" id="s-sign" aria-label="전광판">
 <div class="grid2">

@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import './styles/customer-app-shell.css'
+import {useBackendStream} from './composables/useBackendEvents'
+import AdminAppNav from './components/AdminAppNav.vue'
+import AdminAppHeader from './components/AdminAppHeader.vue'
 import PwaStatus from './components/PwaStatus.vue'
 import {watch,computed} from 'vue'
 import {useRoute,useRouter} from 'vue-router'
@@ -23,6 +26,7 @@ import CustomerPageLayout from './components/CustomerPageLayout.vue'
 import PublicChatbot from './components/PublicChatbot.vue'
 import {mobileInteractions} from './runtime/mobileInteractions'
 import {useApp} from './stores/app'
+useBackendStream()
 const app=useApp();watch(()=>app.theme,t=>document.documentElement.dataset.theme=t,{immediate:true})
 const route=useRoute(),router=useRouter()
 const customer=computed(()=>!route.path.startsWith('/customer-app/')&&(route.path==='/'||/^\/(?:c-|info\/|my-|login|signup|password-reset|find-id)/.test(route.path)))
@@ -38,12 +42,13 @@ const serviceComponent=computed(()=>{
  if(path==='/admin-app/screen-3')return AdminAppOverview
  if(path==='/admin-dashboard')return ServiceDashboard
  if(['/admin-profile','/admin-app/screen-14','/my-home','/my-account','/my-withdraw'].includes(path)||/^\/customer-app\/account\/(profile|emergency|settings|withdraw)$/.test(path))return ServiceAccount
- if(resourceRoutes[path]||path.startsWith('/admin-data/'))return ServiceResource
+ if(resourceRoutes[path]||path.startsWith('/admin-data/')||/^\/admin-app\/(ocr|reviews|transits)$/.test(path))return ServiceResource
  return null
 })
+const managerApp=computed(()=>route.path.startsWith('/admin-app/')&&!['/admin-app/screen-1','/admin-app/signup','/admin-app/password-reset'].includes(route.path))
 const appService=computed(()=>!!serviceComponent.value&&/^\/(admin|customer)-app\//.test(route.path))
 const cleanups=new Map<HTMLElement,()=>void>()
 function mounted(vnode:VNode){const el=vnode.el as HTMLElement;if(!serviceComponent.value&&(route.path.startsWith('/customer-app/')||route.path.startsWith('/admin-app/')))cleanups.set(el,mobileInteractions(el,route.path,router,app))}
 function unmounted(vnode:VNode){const el=vnode.el as HTMLElement;cleanups.get(el)?.();cleanups.delete(el)}
 </script>
-<template><div :class="{'customer-shell':customer,'service-mobile':appService,'admin-shell':!customer&&!route.path.startsWith('/admin-app/')&&!route.path.startsWith('/customer-app/')}"><PwaStatus v-if="/^\/(admin|customer)-app\//.test(route.path)"/><AdminHandover v-if="app.account?.role==='REGIONAL_ADMIN'"/><CustomerHeader v-if="customer"/><RouterView v-slot="{Component}"><CustomerPageLayout v-if="customer"><MyPageLayout v-if="route.path.startsWith('/my-')"><component :is="serviceComponent||Component" :key="$route.path" @vue:mounted="mounted" @vue:unmounted="unmounted"/></MyPageLayout><component v-else :is="serviceComponent||Component" :key="$route.path" @vue:mounted="mounted" @vue:unmounted="unmounted"/></CustomerPageLayout><ServiceAppLayout v-else-if="appService"><component :is="serviceComponent" :key="$route.path"/></ServiceAppLayout><component v-else :is="serviceComponent||Component" :key="$route.path" @vue:mounted="mounted" @vue:unmounted="unmounted"/></RouterView><CustomerFooter v-if="customer"/><PublicChatbot v-if="customer"/></div></template>
+<template><div :class="{'manager-app-shell':managerApp,'customer-shell':customer,'service-mobile':appService,'admin-shell':!customer&&!route.path.startsWith('/admin-app/')&&!route.path.startsWith('/customer-app/')}"><AdminAppHeader v-if="managerApp"/><PwaStatus :hide-install="managerApp" v-if="/^\/(admin|customer)-app\//.test(route.path)"/><AdminHandover v-if="app.account?.role==='REGIONAL_ADMIN'"/><CustomerHeader v-if="customer"/><RouterView v-slot="{Component}"><CustomerPageLayout v-if="customer"><MyPageLayout v-if="route.path.startsWith('/my-')"><component :is="serviceComponent||Component" :key="$route.path" @vue:mounted="mounted" @vue:unmounted="unmounted"/></MyPageLayout><component v-else :is="serviceComponent||Component" :key="$route.path" @vue:mounted="mounted" @vue:unmounted="unmounted"/></CustomerPageLayout><ServiceAppLayout v-else-if="appService"><component :is="serviceComponent" :key="$route.path"/></ServiceAppLayout><component v-else :is="serviceComponent||Component" :key="$route.path" @vue:mounted="mounted" @vue:unmounted="unmounted"/></RouterView><AdminAppNav v-if="managerApp"/><CustomerFooter v-if="customer"/><PublicChatbot v-if="customer"/></div></template>

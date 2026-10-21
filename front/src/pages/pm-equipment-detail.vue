@@ -57,7 +57,7 @@ onBeforeUnmount(()=>dispose?.())
 <main class="page">
   <div class="crumb"><span>예지보전 &gt; <a href="/pm-equipment" class="inl-36ec741785">설비</a> &gt; <strong class="inl-7891572d91">P-01</strong></span><span class="note"></span></div>
 <div class="page-head"><h1>설비 상세</h1><div class="row"><a class="btn" href="/pm-equipment">← 목록으로</a><button type="button" class="btn">이전 설비</button><button type="button" class="btn">다음 설비</button></div></div>
-<nav class="tabs" aria-label="예지보전 탭"><a href="/pm-equipment" aria-current="page">설비</a><a href="/pm-queue">점검 대상·알림 <span class="count">3</span></a><a href="/pm-history">점검 이력</a><a href="/pm-settings">기준 설정</a></nav>
+<nav class="tabs" aria-label="예지보전 탭"><a href="/pm-equipment" aria-current="page">설비</a><a href="/pm-queue">점검 대상·알림 <span class="count">3</span></a><a href="/pm-history">점검 이력</a></nav>
 <main class="inl-2b1e4d1ddb">
 <section class="card inl-2ef6307469" aria-label="설비 요약">
 <div><div class="sub">배수펌프</div><h2 class="inl-dd55ef68ea">P-01 · 초량1지하차도</h2>

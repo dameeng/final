@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import {riskChartSeries,riskTimestamp} from '../utils/risk-chart'
+import {useRiskChartClock} from '../composables/useRiskChartClock'
+import {useBackendEvents} from '../composables/useBackendEvents'
+import {appendRiskHistory} from '../services/streamUpdates'
 import { onBeforeUnmount, onMounted, ref, computed, watch } from 'vue'
 import { displayDate, dateParts } from '../utils/display-date'
 import HourlyForecast from '../components/HourlyForecast.vue'
@@ -38,7 +42,7 @@ function facilityState(f: Facility) {
 }
 function pickFacility(f: Facility, scroll = true) {
   selectedFacilityId.value = String(f.id)
-  rainfall.value = null; riskPoints.value = []; rainfallStale.value = false
+  rainfall.value = null; riskPoints.value = []; riskForecast.value=[]; rainfallStale.value = false
   location.value = {lat:Number(f.latitude),lng:Number(f.longitude)}
   if(map){const maps=(window as any).kakao.maps;map.relayout();map.setLevel(5);map.setCenter(new maps.LatLng(location.value.lat,location.value.lng))}
   void refresh()
@@ -51,21 +55,19 @@ const riskPoints = ref<RiskPoint[]>([])
 // 시간별 예보 그래프와 같은 모양으로, 그래프 영역 폭에 맞춰 좌표를 계산합니다.
 const riskChartEl = ref<HTMLElement | null>(null)
 const riskChartWidth = ref(680)
+const riskClock=useRiskChartClock(),riskForecast=ref<Record<string,any>[]>([])
 const riskChart = computed(() => {
-  const width = Math.max(320, riskChartWidth.value)
-  const rows = riskPoints.value.filter(p=>Date.parse(p.predictedAt)>=Date.parse(riskPoints.value.at(-1)?.predictedAt||'')-12*3600000)
-  const y = (score: number) => 28 + (100 - Math.max(0, Math.min(100, score))) / 100 * 172
-  const points = rows.map((item, index) => ({
-    x: rows.length === 1 ? width / 2 : 56 + index / Math.max(1, rows.length - 1) * (width - 84),
-    y: y(Number(item.riskScore)), score: Number(item.riskScore), time: item.predictedAt,
-  }))
-  const ticks = [0, 25, 50, 75, 100].map(value => ({ y: y(value), label: value }))
-  // 시각 라벨은 폭에 맞춰 최대 6개만 표시합니다.
-  const step = Math.max(1, Math.ceil(rows.length / Math.max(2, Math.floor(width / 110))))
-  const labels = points.filter((_, index) => index % step === 0 || index === points.length - 1)
-  return { width, points, ticks, labels, path: points.map((p, i) => `${i ? 'L' : 'M'} ${p.x} ${p.y}`).join(' ') }
+ const width=Math.max(320,riskChartWidth.value),last=Math.max(...riskPoints.value.map(row=>riskTimestamp(row.predictedAt)))
+ const rows=riskPoints.value.filter(row=>riskTimestamp(row.predictedAt)>=last-12*3600000)
+ const series=riskChartSeries(rows,riskForecast.value,56,width-84,200,172,{now:riskClock.value})
+ const ticks=[0,25,50,75,100].map(value=>({y:200-value/100*172,label:value}))
+ const step=Math.max(1,Math.ceil(series.samples.length/Math.max(2,Math.floor(width/110))))
+ return {width,points:series.samples,ticks,labels:series.samples.filter((_,index)=>index%step===0||index===series.samples.length-1),path:series.observedPath,forecastPath:series.forecastPath,carryPath:series.carryPath}
 })
-const timeLabel = (value: string) => { const time = dateParts(value)?.time; return time ? `${time.slice(0, 2)}시` : value }
+async function fetchRiskForecast(signal?:AbortSignal){const id=selectedFacilityId.value;if(!id)return;try{const response=await fetch(`/api/underpasses/${id}/risk-forecast`,{signal,credentials:'include',cache:'no-store'});if(!response.ok)throw new Error();const result=await response.json();if(!signal?.aborted&&id===selectedFacilityId.value)riskForecast.value=Array.isArray(result.data)?result.data:[]}catch{if(!signal?.aborted&&id===selectedFacilityId.value)riskForecast.value=[]}}
+useBackendEvents(({name,data})=>{if(name==='risk-update'&&String(data.underpassId)===selectedFacilityId.value)riskPoints.value=appendRiskHistory(riskPoints.value,data,500);else if(name==='connected')void refresh();else if(name==='data-changed'&&data.resource==='risk-forecast'&&String(data.id)===selectedFacilityId.value)void fetchRiskForecast(request?.signal)})
+
+const timeLabel = (value: string) => dateParts(value)?.time || value
 const loading = ref(false)
 const error = ref('')
 const mapError = ref('')
@@ -155,20 +157,15 @@ async function refresh() {
         ((Number(b.latitude) - location.value.lat) ** 2 + (Number(b.longitude) - location.value.lng) ** 2))[0]
       selectedFacilityId.value = String(near!.id)
     }
-    if (!selectedFacilityId.value) { rainfall.value = null; riskPoints.value = []; await weatherLoad; return }
+    if (!selectedFacilityId.value) { rainfall.value = null; riskPoints.value = []; riskForecast.value=[]; await weatherLoad; return }
     const response = await fetch(`/api/underpasses/${selectedFacilityId.value}/risk-scores?hours=24`, { signal: current.signal, cache: 'no-store' })
     if (!response.ok) throw new Error('강수량 기록을 받아오지 못했습니다.')
     const body = await response.json()
     if (active && request === current) {
       const rows: RiskPoint[] = Array.isArray(body.data) ? body.data : []
       rainfall.value = rows.at(-1) ?? null
-      // 최근 24시간 기록을 시간 단위로 묶어 각 시간의 마지막 기록만 그래프에 씁니다(시간 오름차순 응답).
-      const hourly = new Map<string, RiskPoint>()
-      for (const item of rows) {
-        if (!Number.isFinite(Number(item.riskScore))) continue
-        hourly.set(String(item.predictedAt).slice(0, 13), item)
-      }
-      riskPoints.value = [...hourly.values()]
+      riskPoints.value=rows
+      await fetchRiskForecast(current.signal)
       rainfallStale.value=false
     }
     await weatherLoad
@@ -184,7 +181,7 @@ async function refresh() {
 function choose(name: string, lat: number, lng: number) {
   pickVersion++
   if(!Number.isFinite(lat)||!Number.isFinite(lng)){error.value="지역 좌표 연결 확인 필요";return}
-  weather.value=null;rainfall.value=null;riskPoints.value=[];weatherStale.value=false;rainfallStale.value=false
+  weather.value=null;rainfall.value=null;riskPoints.value=[];riskForecast.value=[];weatherStale.value=false;rainfallStale.value=false
   selected.value = name
   location.value = { lat, lng }
   selectedFacilityId.value = ''
@@ -329,16 +326,16 @@ onBeforeUnmount(() => { active = false; riskChartResize?.disconnect(); lookupTim
       <h3 class="weather-risk-title">위험도 추이 · 최근 12시간</h3>
 
       <div ref="riskChartEl" class="weather-risk-chart">
-        <svg v-if="riskPoints.length > 1" class="weather-risk-trend" :width="riskChart.width" height="240" :viewBox="`0 0 ${riskChart.width} 240`" role="img" aria-label="선택한 지하차도 위험점수 추이 꺾은선 그래프">
+        <svg v-if="riskChart.points.length" class="weather-risk-trend" :width="riskChart.width" height="240" :viewBox="`0 0 ${riskChart.width} 240`" role="img" aria-label="선택한 지하차도 위험점수 추이 꺾은선 그래프">
           <g v-for="tick in riskChart.ticks" :key="tick.label" class="weather-risk-grid">
             <line x1="48" :x2="riskChart.width - 20" :y1="tick.y" :y2="tick.y" />
             <text x="38" :y="tick.y + 4" text-anchor="end">{{ tick.label }}</text>
           </g>
-          <path class="weather-risk-line" :d="riskChart.path" />
+          <path class="weather-risk-line" :d="riskChart.path" /><path v-if="riskChart.forecastPath" class="weather-risk-line" :d="riskChart.forecastPath" stroke-dasharray="6 4"/><path v-if="riskChart.carryPath" class="weather-risk-line" :d="riskChart.carryPath" stroke-dasharray="2 3" opacity=".5"/>
           <circle v-for="(point, index) in riskChart.points" :key="index" class="weather-risk-dot" :cx="point.x" :cy="point.y" r="3.5"><title>{{ displayDate(point.time) }} · {{ point.score.toFixed(2) }}점</title></circle>
           <text v-for="(point, index) in riskChart.labels" :key="'t' + index" class="weather-risk-time" :x="point.x" y="226" text-anchor="middle">{{ timeLabel(point.time) }}</text>
         </svg>
-        <p v-else>위험점수 기록이 두 건 이상이면 추이를 표시합니다.</p>
+        <p v-else>표시할 위험점수 기록이 없습니다.</p><p v-if="riskChart.forecastPath">실선: 관측 · 점선: 향후 3시간 예측</p><p v-if="riskChart.carryPath">엷은 점선: 최근 관측값을 현재까지 유지 (추가 관측 아님)</p>
       </div>
     </section>
     <div class="weather-overview">

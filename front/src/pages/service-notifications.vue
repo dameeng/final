@@ -3,8 +3,10 @@ import {onBeforeUnmount,onMounted,ref,watch} from 'vue'
 import {useRoute} from 'vue-router'
 import {useCustomerNotifications,notificationCategories,notificationCategory,type CustomerNotification} from '../stores/customerNotifications'
 import {displayDate} from '../utils/display-date'
+import {useBackendEvents} from '../composables/useBackendEvents'
 import NotificationSettings from '../components/NotificationSettings.vue'
 const route=useRoute(),notifications=useCustomerNotifications(),rows=ref<CustomerNotification[]>([]),page=ref(1),pages=ref(1),total=ref(0),category=ref(''),unreadOnly=ref(false),loading=ref(false),busy=ref(false),error=ref(''),expanded=ref<number|null>(null)
+useBackendEvents(({name,data})=>{if(name==='connected'){void refresh();return}if(name!=='notification-new')return;notifications.ingest(data);if(category.value&&category.value!==data.category)return;if(page.value!==1){void load();return}const previous=rows.value.find(item=>item.id===data.id);if(!previous){total.value++;pages.value=Math.max(1,Math.ceil(total.value/20))}rows.value=[{...data,read:previous?.read??false} as CustomerNotification,...rows.value.filter(item=>item.id!==data.id)].slice(0,20)})
 let alive=true,sequence=0
 async function load(){const version=++sequence;loading.value=true;error.value='';try{const result=await notifications.list({page:page.value,category:category.value,unreadOnly:unreadOnly.value});if(!alive||version!==sequence)return;rows.value=result.items;pages.value=Math.max(1,result.totalPages);total.value=result.totalItems;if(page.value>pages.value){page.value=pages.value;void load()}}catch(e){if(alive&&version===sequence)error.value=(e as Error).message}finally{if(alive&&version===sequence)loading.value=false}}
 async function open(item:CustomerNotification){if(expanded.value===item.id){expanded.value=null;return}expanded.value=item.id;if(!item.read){try{await notifications.read(item.id);if(alive)item.read=true}catch(e){if(alive)error.value=(e as Error).message}}}

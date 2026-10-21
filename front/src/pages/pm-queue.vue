@@ -56,7 +56,7 @@ onBeforeUnmount(()=>dispose?.())
 
 <main class="page">
   <div class="crumb"><span>예지보전 &gt; <strong class="inl-7891572d91">점검 대상·알림</strong></span><span class="note"></span></div>
-<div class="page-head"><h1>예지보전</h1><div class="row"></div></div><nav class="tabs" aria-label="예지보전 탭"><a href="/pm-equipment">설비</a><a href="/pm-queue" aria-current="page">점검 대상·알림 <span class="count">3</span></a><a href="/pm-history">점검 이력</a><a href="/pm-settings">기준 설정</a></nav>
+<div class="page-head"><h1>예지보전</h1><div class="row"></div></div><nav class="tabs" aria-label="예지보전 탭"><a href="/pm-equipment">설비</a><a href="/pm-queue" aria-current="page">점검 대상·알림 <span class="count">3</span></a><a href="/pm-history">점검 이력</a></nav>
 <div class="filters">
 <div class="chips" id="qchips" role="group" aria-label="처리 상태"><button type="button" class="chip" data-st="" aria-pressed="true">전체 <span class="sub">6</span></button><button type="button" class="chip" data-st="new" aria-pressed="false">신규 <span class="sub">3</span></button><button type="button" class="chip" data-st="ack" aria-pressed="false">확인 <span class="sub">1</span></button><button type="button" class="chip" data-st="work" aria-pressed="false">점검 중 <span class="sub">1</span></button><button type="button" class="chip" data-st="done" aria-pressed="false">조치 완료 <span class="sub">1</span></button></div>
 <select aria-label="발생 사유"><option>사유 전체</option><option>위험 진입</option><option>주의 진입</option><option>급상승</option><option>데이터 미수신</option></select>

@@ -56,7 +56,7 @@ onBeforeUnmount(()=>dispose?.())
 
 <main class="page">
   <div class="crumb"><span>예지보전 &gt; <strong class="inl-7891572d91">점검 이력</strong></span><span class="note"></span></div>
-<div class="page-head"><h1>예지보전</h1><div class="row"><button type="button" class="btn" id="h-reg">점검 직접 등록</button></div></div><nav class="tabs" aria-label="예지보전 탭"><a href="/pm-equipment">설비</a><a href="/pm-queue">점검 대상·알림 <span class="count">3</span></a><a href="/pm-history" aria-current="page">점검 이력</a><a href="/pm-settings">기준 설정</a></nav>
+<div class="page-head"><h1>예지보전</h1><div class="row"><button type="button" class="btn" id="h-reg">점검 직접 등록</button></div></div><nav class="tabs" aria-label="예지보전 탭"><a href="/pm-equipment">설비</a><a href="/pm-queue">점검 대상·알림 <span class="count">3</span></a><a href="/pm-history" aria-current="page">점검 이력</a></nav>
 <div class="filters" role="search">
 <select id="h-type" aria-label="설비 유형"><option value="">유형 전체</option><option>배수펌프</option><option>전광판</option><option>CCTV</option><option>수위센서</option></select>
 <select aria-label="조치 유형"><option>조치 유형 전체</option><option>현장 점검</option><option>부품 교체</option><option>설정 조정</option><option>원격 확인</option><option>이상 없음</option></select>

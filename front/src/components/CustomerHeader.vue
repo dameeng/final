@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import {ref,watch,onMounted,onBeforeUnmount} from 'vue'
+import {computed,ref,watch,onMounted,onBeforeUnmount} from 'vue'
 import {RouterLink,useRoute} from 'vue-router'
 import {useApp} from '../stores/app'
 import NotificationBell from './NotificationBell.vue'
+import CustomerLogout from './CustomerLogout.vue'
 const app=useApp()
+const customerSignedIn=computed(()=>app.account?.role==='customer')
 const route=useRoute(),opened=ref(false),headerRoot=ref<HTMLElement>()
 watch(()=>route.fullPath,()=>opened.value=false)
 function outside(event:PointerEvent){if(!headerRoot.value?.contains(event.target as Node))opened.value=false}
@@ -31,9 +33,9 @@ const menus=[
    </nav>
    <nav class="customer-member-nav" aria-label="회원 메뉴">
     <RouterLink to="/info/app-guide#install" class="header-download"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 16v4h14v-4"/></svg>앱 다운로드</RouterLink>
-    <NotificationBell v-if="app.account?.role==='customer'&&!['/login','/signup','/c-auth','/password-reset','/find-id'].includes(route.path)" @opened="opened=false"/>
-    <RouterLink v-if="app.account" to="/my-home" class="header-mypage">마이페이지</RouterLink>
-    <template v-if="!app.account"><RouterLink to="/login">로그인</RouterLink><RouterLink to="/signup">회원가입</RouterLink></template>
+    <NotificationBell v-if="customerSignedIn&&!['/login','/signup','/c-auth','/password-reset','/find-id'].includes(route.path)" @opened="opened=false"/>
+    <template v-if="customerSignedIn"><RouterLink to="/my-home" class="header-mypage">마이페이지</RouterLink><CustomerLogout/></template>
+    <template v-else><RouterLink to="/login">로그인</RouterLink><RouterLink to="/signup">회원가입</RouterLink></template>
     <button type="button" aria-label="라이트·다크 모드 전환" @click="app.themeToggle()">◐</button>
    </nav>
   </div>
