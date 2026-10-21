@@ -88,3 +88,102 @@ def flood_predict(req: PredictRequest):
     p = predictor.predict([req.model_dump()])[0]
     return {"riskScore": p["riskScore"], "riskLevel": p["riskLevel"],
             "levelName": LEVEL_NAMES.get(p["riskLevel"]), "calculatedAt": now_iso()}
+
+# ---------- 새 모델 실험용 API ----------
+from pathlib import Path
+from functools import lru_cache
+
+import joblib
+import numpy as np
+import pandas as pd
+from fastapi import HTTPException
+from pydantic import Field, ConfigDict
+
+
+class ExperimentalPredictRequest(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+        allow_inf_nan=False,
+    )
+
+    rain_now: float = Field(ge=0)
+    rain_1h: float = Field(ge=0)
+    rain_3h: float = Field(ge=0)
+    rain_6h: float = Field(ge=0)
+    rain_24h: float = Field(ge=0)
+    rain_max_1h_24h: float = Field(ge=0)
+    rain_prev3d: float = Field(ge=0)
+    rain_trend: float
+
+    forecast_rain_1h: float = Field(ge=0)
+    forecast_rain_3h: float = Field(ge=0)
+    forecast_rain_6h: float = Field(ge=0)
+
+    underpass_height: float = Field(
+        gt=0,
+        description="차량 통과 높이(m), 지하차도 깊이나 고도가 아님",
+    )
+    underpass_length: float = Field(gt=0)
+    pump_risk_score: float = Field(ge=0, le=100)
+    dist_river_m: float = Field(ge=0)
+    dist_sea_m: float = Field(ge=0)
+
+
+@lru_cache(maxsize=1)
+def load_experimental_model():
+    import json
+
+    folder = (
+        Path(__file__).resolve().parent
+        / "models"
+        / "experimental_v2_height"
+    )
+
+    with (folder / "metadata.json").open(
+        encoding="utf-8"
+    ) as file:
+        metadata = json.load(file)
+
+    model = joblib.load(folder / "model.joblib")
+    columns = metadata["features"]
+
+    if list(model.feature_names_in_) != columns:
+        raise ValueError("모델과 입력 컬럼 순서가 다릅니다.")
+
+    return model, columns
+
+
+@app.post("/flood/experimental/predict")
+def experimental_predict(req: ExperimentalPredictRequest):
+    """합성 데이터로 학습한 실험 모델. Spring으로 전송하지 않음."""
+    try:
+        model, columns = load_experimental_model()
+    except Exception:
+        log.exception("실험 모델 로드 실패")
+        raise HTTPException(
+            status_code=503,
+            detail="실험 모델 파일과 metadata.json을 확인해주세요.",
+        )
+
+    values = req.model_dump()
+
+    if not (
+        values["forecast_rain_1h"]
+        <= values["forecast_rain_3h"]
+        <= values["forecast_rain_6h"]
+    ):
+        raise HTTPException(
+            status_code=422,
+            detail="예측 누적 강수량은 1h <= 3h <= 6h여야 합니다.",
+        )
+
+    frame = pd.DataFrame([values], columns=columns)
+    score = float(np.clip(model.predict(frame)[0], 0, 100))
+
+    return {
+        "riskScore": round(score, 2),
+        "experimental": True,
+        "modelVersion": "experimental_v2_height",
+        "calculatedAt": now_iso(),
+        "notice": "합성 점수 재현 모델이며 실제 침수 확률이 아닙니다.",
+    }
