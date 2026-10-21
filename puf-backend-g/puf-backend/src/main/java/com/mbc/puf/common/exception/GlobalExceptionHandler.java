@@ -18,6 +18,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.FieldError;
 import org.springframework.web.ErrorResponse;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -134,8 +135,8 @@ public class GlobalExceptionHandler {
     // 클라이언트가 응답을 받기 전에 연결을 끊은 경우(새로고침/탭 닫기, 느린 네트워크에서 중도 이탈 등).
     // 이미 끊긴 연결이라 응답을 쓰려고 해도 또 예외가 날 뿐이라 응답은 시도하지 않고 로그만 남긴다.
     // 운영 중 흔히 발생하는 정상적인 상황이라 WARN 수준으로 조용히 처리(스택트레이스까지는 안 남김)
-    @ExceptionHandler(ClientAbortException.class)
-    public void handleClientAbort(ClientAbortException e) {
+    @ExceptionHandler({ ClientAbortException.class, AsyncRequestNotUsableException.class })
+    public void handleClientAbort(Exception e) {
         log.warn("클라이언트가 응답을 받기 전에 연결을 끊었습니다: {}", e.getMessage());
     }
 
