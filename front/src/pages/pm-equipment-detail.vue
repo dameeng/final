@@ -55,33 +55,29 @@ onBeforeUnmount(()=>dispose?.())
 </aside>
 
 <main class="page">
-  <div class="crumb"><span>예지보전 &gt; <a href="/pm-equipment" class="inl-36ec741785">설비</a> &gt; <strong class="inl-7891572d91">P-01</strong></span><span class="note"></span></div>
+  <div class="crumb"><span>예지보전 &gt; <a href="/pm-equipment" class="inl-36ec741785">설비</a> &gt; <strong class="inl-7891572d91">설비</strong></span><span class="note"></span></div>
 <div class="page-head"><h1>설비 상세</h1><div class="row"><a class="btn" href="/pm-equipment">← 목록으로</a><button type="button" class="btn">이전 설비</button><button type="button" class="btn">다음 설비</button></div></div>
 <nav class="tabs" aria-label="예지보전 탭"><a href="/pm-equipment" aria-current="page">설비</a><a href="/pm-queue">점검 대상·알림 <span class="count">3</span></a><a href="/pm-history">점검 이력</a></nav>
 <main class="inl-2b1e4d1ddb">
 <section class="card inl-2ef6307469" aria-label="설비 요약">
-<div><div class="sub">배수펌프</div><h2 class="inl-dd55ef68ea">P-01 · 초량1지하차도</h2>
-<div class="row inl-8a77e5a311"><span class="badge danger">위험</span><strong class="inl-881f70f973">82</strong><span class="sub">/ 100</span><span class="sub">· 7일 전 48 → ▲ 34</span></div></div>
-<div class="kv2 inl-fe26a223c2"><div><small>마지막 수신</small><strong>10:42</strong></div><div><small>최근 점검일</small><strong>0000-00-00</strong></div><div><small>7일 오류 횟수</small><strong>7회</strong></div><div><small>점검 상태</small><strong>점검 대기</strong></div></div>
-<div class="row"><a class="btn" href="#">지하차도로 이동</a><button type="button" class="btn primary" id="d-reg">점검 등록</button></div>
+<div><div class="sub">&nbsp;</div><h2 class="inl-dd55ef68ea">불러오는 중…</h2>
+<div class="row inl-8a77e5a311"><span class="badge safe">-</span><strong class="inl-881f70f973">-</strong><span class="sub">/ 100</span><span class="sub"></span></div></div>
+<div class="kv2 inl-fe26a223c2"><div><small>마지막 수신</small><strong>-</strong></div><div><small>최근 점검일</small><strong>-</strong></div><div><small>사유</small><strong>-</strong></div><div><small>점검 상태</small><strong>-</strong></div></div>
+<div class="row"><a class="btn" href="#">지하차도로 이동</a><button type="button" class="btn primary" id="d-reg">점검 등록</button><button type="button" class="btn" id="d-block" hidden>지하차도 차단</button></div>
 </section>
 <section class="card" aria-label="추이">
 <div class="row inl-a562f4fd76"><h2>추이 · 최근 7일</h2>
-<div class="chips" id="mtabs" role="group" aria-label="지표 선택"><button type="button" class="chip" data-m="score" aria-pressed="true">위험 점수</button><button type="button" class="chip" data-m="cur" aria-pressed="false">모터 전류 상승률</button><button type="button" class="chip" data-m="vib" aria-pressed="false">진동</button><button type="button" class="chip" data-m="err" aria-pressed="false">기동 오류</button></div></div>
+<div class="chips" id="mtabs" role="group" aria-label="지표 선택"><button type="button" class="chip" data-m="score" aria-pressed="true">위험 점수</button></div></div>
 <svg class="chart inl-8a77e5a311" id="trend" viewBox="0 0 1100 240" role="img" aria-label="최근 7일 추이"></svg>
 </section>
 <div class="split">
 <section class="card inl-11009c2d21" aria-label="판단 근거"><h2 class="inl-fdf33f2304">판단 근거</h2>
 <div class="tbl-wrap inl-bb0c09db77"><table class="tbl inl-512bf91e30"><thead><tr><th>항목</th><th>현재 값</th><th>기준</th><th>기여 점수</th><th>판정</th></tr></thead><tbody>
-<tr><td>모터 전류 상승</td><td>34%</td><td>20% 초과</td><td>+30</td><td><strong>기준 초과</strong></td></tr>
-<tr><td>기동 오류 횟수</td><td>7회 / 24시간</td><td>5회 이상</td><td>+25</td><td><strong>기준 초과</strong></td></tr>
-<tr><td>배수 응답 지연</td><td>24초</td><td>30초 이상</td><td>+15</td><td>주의</td></tr>
-<tr><td>진동 증가</td><td>5.8</td><td>7 이상</td><td>+12</td><td>주의</td></tr>
-<tr class="inl-99dc03c66e"><td colspan="3"><strong>합계</strong></td><td><strong>82</strong></td><td><strong>위험</strong></td></tr>
+<tr><td colspan="5" class="sub">불러오는 중…</td></tr>
 </tbody></table></div>
-<p class="ro inl-d870e82bc1"><strong>권장 조치</strong> · 펌프 모터와 배수 경로 점검을 권장합니다. </p></section>
+<p class="ro inl-d870e82bc1"><strong>권장 조치</strong> · </p></section>
 <section class="card inl-ade4ba0c4a" aria-label="점검 이력"><div class="row inl-a562f4fd76"><h2>최근 점검 이력</h2><a href="/pm-history" class="inl-dea29d3fa0">전체 보기</a></div>
-<ul class="list inl-56f4356299"><li class="inl-06c8b5ed41"><span class="sub">0000-00-00 · ○○○</span><span>조치 내용</span></li><li class="inl-06c8b5ed41"><span class="sub">0000-00-00 · ○○○</span><span>조치 내용</span></li></ul></section>
+<ul class="list inl-56f4356299"><li class="inl-06c8b5ed41"><span class="sub">불러오는 중…</span></li></ul></section>
 </div></main>
 <dialog id="reg" aria-labelledby="reg-t">
 <form method="dialog" id="reg-form">

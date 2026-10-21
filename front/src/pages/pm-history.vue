@@ -58,18 +58,13 @@ onBeforeUnmount(()=>dispose?.())
   <div class="crumb"><span>예지보전 &gt; <strong class="inl-7891572d91">점검 이력</strong></span><span class="note"></span></div>
 <div class="page-head"><h1>예지보전</h1><div class="row"><button type="button" class="btn" id="h-reg">점검 직접 등록</button></div></div><nav class="tabs" aria-label="예지보전 탭"><a href="/pm-equipment">설비</a><a href="/pm-queue">점검 대상·알림 <span class="count">3</span></a><a href="/pm-history" aria-current="page">점검 이력</a></nav>
 <div class="filters" role="search">
-<select id="h-type" aria-label="설비 유형"><option value="">유형 전체</option><option>배수펌프</option><option>전광판</option><option>CCTV</option><option>수위센서</option></select>
+<select id="h-type" aria-label="설비 유형"><option value="">유형 전체</option><option>배수펌프</option><option>전광판</option><option>CCTV</option></select>
 <select aria-label="조치 유형"><option>조치 유형 전체</option><option>현장 점검</option><option>부품 교체</option><option>설정 조정</option><option>원격 확인</option><option>이상 없음</option></select>
 <input type="date" aria-label="시작일" class="inl-99fb937df8" /> <span>~</span> <input type="date" aria-label="종료일" class="inl-99fb937df8" />
 <input type="search" id="h-q" placeholder="설비 ID, 지하차도 검색" aria-label="검색" />
 </div>
 <div class="tbl-wrap"><table class="tbl inl-cefd76a396" id="htbl"><thead><tr><th>일시</th><th>설비</th><th>지하차도</th><th>조치 유형</th><th>조치 내용</th><th>등록자</th><th>결과</th><th>점검 전 → 후</th></tr></thead><tbody>
-<tr data-text="P-06 부산진시장지하차도" data-type="배수펌프"><td><button type="button" class="link row-open" data-i="0">2026-10-11 09:40</button></td><td><a class="link" href="/pm-equipment-detail">P-06</a><div class="sub">배수펌프</div></td><td>부산진시장지하차도</td><td>부품 교체</td><td>흡입 필터 교체 후 시운전</td><td>○○○</td><td>정상 복구</td><td class="inl-86abdab991">72 → <strong>24</strong></td></tr>
-<tr data-text="P-04 범천지하차도" data-type="배수펌프"><td><button type="button" class="link row-open" data-i="1">2026-10-10 16:20</button></td><td><a class="link" href="/pm-equipment-detail">P-04</a><div class="sub">배수펌프</div></td><td>범천지하차도</td><td>현장 점검</td><td>벨트 장력 확인, 윤활</td><td>○○○</td><td>추가 점검 필요</td><td class="inl-86abdab991">58 → <strong>49</strong></td></tr>
-<tr data-text="D-07 센텀1지하차도" data-type="전광판"><td><button type="button" class="link row-open" data-i="2">2026-10-09 11:05</button></td><td><a class="link" href="/pm-equipment-detail">D-07</a><div class="sub">전광판</div></td><td>센텀1지하차도</td><td>설정 조정</td><td>통신 재접속 간격 조정</td><td>○○○</td><td>정상 복구</td><td class="inl-86abdab991">51 → <strong>23</strong></td></tr>
-<tr data-text="C-05 문현지하차도" data-type="CCTV"><td><button type="button" class="link row-open" data-i="3">2026-10-08 14:30</button></td><td><a class="link" href="/pm-equipment-detail">C-05</a><div class="sub">CCTV</div></td><td>문현지하차도</td><td>원격 확인</td><td>네트워크 재부팅</td><td>○○○</td><td>정상 복구</td><td class="inl-86abdab991">47 → <strong>30</strong></td></tr>
-<tr data-text="P-01 초량1지하차도" data-type="배수펌프"><td><button type="button" class="link row-open" data-i="4">2026-10-06 10:00</button></td><td><a class="link" href="/pm-equipment-detail">P-01</a><div class="sub">배수펌프</div></td><td>초량1지하차도</td><td>이상 없음</td><td>정기 점검, 이상 없음</td><td>○○○</td><td>정상 복구</td><td class="inl-86abdab991">33 → <strong>33</strong></td></tr>
-<tr data-text="C-08 좌동지하차도" data-type="CCTV"><td><button type="button" class="link row-open" data-i="5">2026-10-04 15:45</button></td><td><a class="link" href="/pm-equipment-detail">C-08</a><div class="sub">CCTV</div></td><td>좌동지하차도</td><td>현장 점검</td><td>렌즈 청소</td><td>○○○</td><td>정상 복구</td><td class="inl-86abdab991">44 → <strong>19</strong></td></tr>
+<tr><td colspan="8" class="sub">불러오는 중…</td></tr>
 </tbody></table></div>
 <p class="sub">점검 이력은 예지보전에서만 등록합니다. 로그 탭의 ‘설비·점검’에서도 읽기 전용으로 볼 수 있어요. 점검 전 → 후 점수로 조치 효과를 확인합니다.</p>
 <aside id="peek" class="drawer" hidden aria-label="점검 이력 요약">

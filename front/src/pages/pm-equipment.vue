@@ -58,27 +58,17 @@ onBeforeUnmount(()=>dispose?.())
   <div class="crumb"><span>예지보전 &gt; <strong class="inl-7891572d91">설비</strong></span><span class="note"></span></div>
 <div class="page-head"><h1>예지보전</h1><div class="row"></div></div><nav class="tabs" aria-label="예지보전 탭"><a href="/pm-equipment" aria-current="page">설비</a><a href="/pm-queue">점검 대상·알림 <span class="count">3</span></a><a href="/pm-history">점검 이력</a></nav>
 <div class="filters" role="search">
-<select id="f-type" aria-label="설비 유형"><option value="">유형 전체</option><option>배수펌프</option><option>전광판</option><option>CCTV</option><option>수위센서</option></select>
+<select id="f-type" aria-label="설비 유형"><option value="">유형 전체</option><option>배수펌프</option><option>전광판</option><option>CCTV</option></select>
 <div class="chips" role="group" aria-label="위험 단계"><button type="button" class="chip" data-lv="" aria-pressed="true">전체</button><button type="button" class="chip" data-lv="위험" aria-pressed="false">위험</button><button type="button" class="chip" data-lv="주의" aria-pressed="false">주의</button><button type="button" class="chip" data-lv="안전" aria-pressed="false">안전</button></div>
 <input type="search" id="f-q" placeholder="설비 ID, 지하차도 검색" aria-label="검색" />
-<span class="sub inl-6d00061700" id="f-count">총 11개</span>
+<span class="sub inl-6d00061700" id="f-count">총 0개</span>
 </div>
 <div class="tbl-wrap"><table class="tbl" id="tbl">
-<thead><tr><th>설비</th><th>유형</th><th>지하차도</th><th>위험 점수</th><th>7일 변화</th><th>마지막 수신</th><th>점검 상태</th></tr></thead>
+<thead><tr><th>설비</th><th>유형</th><th>지하차도</th><th>위험 점수</th><th>24시간 변화</th><th>마지막 수신</th><th>점검 상태</th></tr></thead>
 <tbody>
-<tr data-type="배수펌프" data-lv="위험" data-text="P-01 초량1지하차도"><td><button type="button" class="link row-open" data-i="0">P-01</button></td><td>배수펌프</td><td>초량1지하차도</td><td><span class="badge danger">위험</span> <strong>82</strong></td><td>▲ 34</td><td>10:42</td><td><span class="stat new">점검 대기</span></td></tr>
-<tr data-type="CCTV" data-lv="주의" data-text="C-02 초량2지하차도"><td><button type="button" class="link row-open" data-i="1">C-02</button></td><td>CCTV</td><td>초량2지하차도</td><td><span class="badge warn">주의</span> <strong>61</strong></td><td>▲ 12</td><td>10:41</td><td><span class="stat new">점검 대기</span></td></tr>
-<tr data-type="전광판" data-lv="주의" data-text="D-03 우장춘지하차도"><td><button type="button" class="link row-open" data-i="2">D-03</button></td><td>전광판</td><td>우장춘지하차도</td><td><span class="badge warn">주의</span> <strong>55</strong></td><td>▲ 9</td><td>10:42</td><td><span class="stat new">점검 대기</span></td></tr>
-<tr data-type="배수펌프" data-lv="주의" data-text="P-04 범천지하차도"><td><button type="button" class="link row-open" data-i="3">P-04</button></td><td>배수펌프</td><td>범천지하차도</td><td><span class="badge warn">주의</span> <strong>48</strong></td><td>▲ 15</td><td>10:40</td><td><span class="sub">-</span></td></tr>
-<tr data-type="CCTV" data-lv="안전" data-text="C-05 문현지하차도"><td><button type="button" class="link row-open" data-i="4">C-05</button></td><td>CCTV</td><td>문현지하차도</td><td><span class="badge safe">안전</span> <strong>31</strong></td><td>▲ 1</td><td>09:12</td><td><span class="sub">-</span></td></tr>
-<tr data-type="배수펌프" data-lv="안전" data-text="P-06 부산진시장지하차도"><td><button type="button" class="link row-open" data-i="5">P-06</button></td><td>배수펌프</td><td>부산진시장지하차도</td><td><span class="badge safe">안전</span> <strong>28</strong></td><td>▲ 2</td><td>10:42</td><td><span class="sub">-</span></td></tr>
-<tr data-type="전광판" data-lv="안전" data-text="D-07 센텀1지하차도"><td><button type="button" class="link row-open" data-i="6">D-07</button></td><td>전광판</td><td>센텀1지하차도</td><td><span class="badge safe">안전</span> <strong>24</strong></td><td>▲ 2</td><td>10:42</td><td><span class="sub">-</span></td></tr>
-<tr data-type="CCTV" data-lv="안전" data-text="C-08 좌동지하차도"><td><button type="button" class="link row-open" data-i="7">C-08</button></td><td>CCTV</td><td>좌동지하차도</td><td><span class="badge safe">안전</span> <strong>19</strong></td><td>–</td><td>10:41</td><td><span class="sub">-</span></td></tr>
-<tr data-type="배수펌프" data-lv="안전" data-text="P-09 수영강변지하차도"><td><button type="button" class="link row-open" data-i="8">P-09</button></td><td>배수펌프</td><td>수영강변지하차도</td><td><span class="badge safe">안전</span> <strong>17</strong></td><td>▼ 1</td><td>10:42</td><td><span class="sub">-</span></td></tr>
-<tr data-type="전광판" data-lv="안전" data-text="D-10 ★★지하차도"><td><button type="button" class="link row-open" data-i="9">D-10</button></td><td>전광판</td><td>★★지하차도</td><td><span class="badge safe">안전</span> <strong>12</strong></td><td>▼ 2</td><td>10:42</td><td><span class="sub">-</span></td></tr>
-<tr data-type="수위센서" data-lv="주의" data-text="W-11 초량1지하차도"><td><button type="button" class="link row-open" data-i="10">W-11</button></td><td>수위센서</td><td>초량1지하차도</td><td><span class="badge warn">주의</span> <strong>58</strong></td><td>▲ 28</td><td>10:42</td><td>-</td></tr>
+<tr><td colspan="7" class="sub">불러오는 중…</td></tr>
 </tbody></table></div>
-<p class="sub">점수 구간: 0~39 안전 · 40~69 주의 · 70 이상 위험</p>
+<p class="sub">위험 점수는 1분마다 다시 계산돼요. 주의·위험 기준 점수는 설비마다 달라요 (설비 상세에서 확인).</p>
 
 <aside id="peek" class="drawer" hidden aria-label="설비 요약">
 <div class="dh"><div><div class="sub" id="p-type"></div><h2 id="p-title" class="inl-85d138b8f7"></h2>
