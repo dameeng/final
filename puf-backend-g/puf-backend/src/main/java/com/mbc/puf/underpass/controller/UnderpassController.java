@@ -87,7 +87,6 @@ public class UnderpassController {
     //  limit : 안 주면 기본 개수(hours 없으면 24개, hours 있으면 넉넉한 안전 상한)
     //  hours : 주면 "최근 N시간" 범위로 거른다(스케줄러가 분 단위로 쌓는 구조라, 시간 단위 화면에선
     //          limit만으로는 "최근 N개 ≒ 최근 N분"이 돼버리므로 시간 범위를 직접 지정하고 싶을 때 사용)
-    @Operation(summary = "위험점수 추이 (과거)", description = "로그인 불필요. limit=가져올 개수, hours=최근 N시간(주면 시간 범위로 거름). 예측 그래프의 과거 구간이고, 미래 구간은 GET /{id}/risk-forecast 와 이어서 그린다.")
     @GetMapping("/{id}/risk-scores")
     public ApiResponse<List<RiskScoreTrendItem>> riskScoreTrend(
             @PathVariable("id") Long id,
@@ -98,14 +97,12 @@ public class UnderpassController {
 
     // 위험도 미래 예측 (그래프의 미래 구간). 과거 구간은 위 risk-scores 로 받아 이어 그린다.
     // 응답: [{targetAt, riskScore, rainfallMm, predictedAt}] 시간 오름차순, 지금 시(時) 이후만
-    @Operation(summary = "위험점수 예측 (미래)", description = "로그인 불필요. 앞으로 몇 시간치 [{targetAt, riskScore, rainfallMm, predictedAt}] 를 시간 오름차순으로 준다(지금 시 이후만). 침수모델이 보낸 값이고 시연 중에는 가짜 모델 값이다.")
     @GetMapping("/{id}/risk-forecast")
     public ApiResponse<List<com.mbc.puf.internal.dto.RiskForecastItem>> riskForecast(@PathVariable("id") Long id) {
         return ApiResponse.ok(underpassService.getRiskForecast(id));
     }
 
     // 지하차도 등록 (201 Created). REGIONAL_ADMIN은 본인 담당 지역만 선택 가능
-    @Operation(summary = "지하차도 등록", description = "담당 지역에만 등록할 수 있다(201). earlyBlock=true 면 수위 5cm 에서 차단하는 조기 차단 대상이 된다.")
     @PreAuthorize("hasRole('REGIONAL_ADMIN')")
     @PostMapping
     public ResponseEntity<ApiResponse<UnderpassDetailResponse>> create(
@@ -117,7 +114,6 @@ public class UnderpassController {
     }
 
     // 지하차도 정보 수정 (current_status 제외). REGIONAL_ADMIN은 본인 담당 지역 것만 가능
-    @Operation(summary = "지하차도 정보 수정", description = "담당 지역 것만 수정할 수 있다. 차단 상태는 여기서 바꿀 수 없고 /api/control 의 차단·해제를 쓴다.")
     @PreAuthorize("hasRole('REGIONAL_ADMIN')")
     @PutMapping("/{id}")
     public ApiResponse<UnderpassDetailResponse> update(
@@ -128,7 +124,6 @@ public class UnderpassController {
     }
 
     // 지하차도 삭제 (소프트 삭제). REGIONAL_ADMIN은 본인 담당 지역 것만 가능
-    @Operation(summary = "지하차도 삭제", description = "소프트 삭제. 담당 지역 것만 삭제할 수 있다.")
     @PreAuthorize("hasRole('REGIONAL_ADMIN')")
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@AuthenticationPrincipal LoginUser loginUser, @PathVariable("id") Long id) {
@@ -138,7 +133,6 @@ public class UnderpassController {
 
     // 상행/하행 입·출구 카메라 지정 (MP-10-1). 네 자리를 한 번에 보내고 null 이면 지정 해제.
     // 이 지하차도 소속 카메라가 아니거나 한 카메라를 두 자리에 겹쳐 지정하면 400
-    @Operation(summary = "입·출구 카메라 지정", description = "상행·하행 입구/출구 네 자리를 한 번에 보내고, null 이면 지정을 해제한다. 이 지하차도 소속 카메라가 아니거나 한 카메라를 두 자리에 겹쳐 지정하면 400.")
     @PreAuthorize("hasRole('REGIONAL_ADMIN')")
     @PutMapping("/{id}/gate-cameras")
     public ApiResponse<UnderpassDetailResponse> assignGateCameras(
@@ -157,7 +151,6 @@ public class UnderpassController {
      *  startDate~endDate     : 공통 Period 조건 (진입일 기준, endDate 당일 포함)
      *  page, size            : 공통 Page 조건
      */
-    @Operation(summary = "통과 기록 목록", description = "잔류차량 목록은 status=REMAINING. 차량번호 표시는 displayCarNum(정정값이 있으면 정정값). 담당 지역으로 고정되고 밖의 시설을 지정하면 403, 로그인 필수. 검색 carNum 은 원본·정정값 둘 다 찾는다.")
     @PreAuthorize("hasRole('REGIONAL_ADMIN')")
     @GetMapping("/transits")
     public ApiResponse<PageResponse<TransitHistoryItem>> transits(
@@ -172,7 +165,6 @@ public class UnderpassController {
     }
 
     /** 통과 기록 1건 수동 완료(통과 완료 처리). 이미 완료면 409, 담당 지역 밖이면 403 */
-    @Operation(summary = "통과 기록 수동 완료", description = "통과 기록 1건을 통과 완료(EXITED)로 처리하고 처리 시각을 남긴다. 이미 완료면 409, 담당 밖이면 403, 없으면 404. SSE transit-update(EXIT)가 나간다.")
     @PreAuthorize("hasRole('REGIONAL_ADMIN')")
     @PostMapping("/transits/{transitId}/complete")
     public ApiResponse<TransitHistoryItem> completeTransit(
@@ -187,7 +179,6 @@ public class UnderpassController {
      *  startDate~endDate : 공통 Period 조건 (endDate 당일 포함)
      *  page, size        : 공통 Page 조건 (예전엔 List 전체 반환)
      */
-    @Operation(summary = "제어 이력", description = "차단·해제·위험도 변화와 전광판 조작을 합친 이력(최신순). kind=EVENT 면 차단/해제/위험도 변화만, DISPLAY 면 전광판 조작만, 생략하면 전체.")
     @PreAuthorize("hasRole('REGIONAL_ADMIN')")
     @GetMapping("/{id}/events")
     public ApiResponse<PageResponse<ControlHistoryItem>> events(

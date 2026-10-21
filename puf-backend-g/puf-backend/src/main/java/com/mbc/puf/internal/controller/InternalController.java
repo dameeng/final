@@ -20,7 +20,6 @@ import com.mbc.puf.internal.dto.WaterLevelCreateRequest;
 import com.mbc.puf.internal.dto.WaterLevelResponse;
 import com.mbc.puf.internal.service.InternalIngestService;
 
-import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
@@ -41,7 +40,6 @@ public class InternalController {
     }
 
     // 위험도 예측 결과 수신
-    @Operation(summary = "위험점수 수신 (침수모델)", description = "점수를 저장하고 임계치와 수위로 단계를 판정한다. 단계가 바뀌면 이벤트·관리자 알림·SSE 가 나간다(201).")
     @PostMapping("/risk-scores")
     public ResponseEntity<ApiResponse<RiskScoreResponse>> receiveRiskScore(
             @Valid @RequestBody RiskScoreCreateRequest request) {
@@ -50,7 +48,6 @@ public class InternalController {
     }
 
     // 위험도 미래 예측 수신 (한 지하차도의 앞으로 몇 시간치). 프런트의 위험점수 예측 그래프가 읽는다
-    @Operation(summary = "위험점수 예측 수신 (침수모델)", description = "한 지하차도의 앞으로 몇 시간치 예측을 보낸다. 같은 시점은 덮어쓰고 지난 시점은 지운다(201). 프런트의 예측 그래프가 읽는다.")
     @PostMapping("/risk-forecasts")
     public ResponseEntity<ApiResponse<com.mbc.puf.internal.dto.RiskForecastIngestResponse>> receiveRiskForecast(
             @Valid @RequestBody com.mbc.puf.internal.dto.RiskForecastCreateRequest request) {
@@ -58,7 +55,6 @@ public class InternalController {
     }
 
     // 수위계 측정값 수신 (지하차도당 센서 1개의 단일값, cm). 수위가 차단 기준에 닿으면 이 호출 안에서 자동 차단까지 일어난다
-    @Operation(summary = "수위 수신 (수위계)", description = "지하차도당 센서 1개의 단일값(cm). 수위가 차단 기준에 닿으면 이 호출 안에서 자동 차단(이벤트·전광판·경찰 이관·알림)까지 일어난다. 응답에 riskLevel, status, autoBlocked 가 있다.")
     @PostMapping("/water-levels")
     public ResponseEntity<ApiResponse<WaterLevelResponse>> receiveWaterLevel(
             @Valid @RequestBody WaterLevelCreateRequest request) {
@@ -68,7 +64,6 @@ public class InternalController {
 
     // 번호판 인식 결과 수신. multipart/form-data로 받는다 —
     // "request" 파트(JSON, PlateLogCreateRequest)는 필수, "image" 파트(감지 순간 캡처 이미지)는 선택
-    @Operation(summary = "번호판 인식 결과 수신 (OCR)", description = "multipart: request(JSON)는 필수, image 는 선택. 같은 카메라에서 같은 번호가 직전 30초 안에 저장돼 있으면 새로 저장하지 않고 먼저 저장된 기록을 돌려준다. 신뢰도가 낮으면 판별 대기열에 오른다.")
     @PostMapping(value = "/plate-logs", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<PlateLogResponse>> receivePlateLog(
             @Valid @RequestPart("request") PlateLogCreateRequest request,
@@ -78,7 +73,6 @@ public class InternalController {
     }
 
     // 헬스체크. 저장용 테이블이 없어 우선 200 응답만 반환 (계약 3-3)
-    @Operation(summary = "헬스체크", description = "키만 확인하고 200 OK 를 돌려준다.")
     @GetMapping("/health")
     public ApiResponse<Void> health() {
         return ApiResponse.ok("OK", null);

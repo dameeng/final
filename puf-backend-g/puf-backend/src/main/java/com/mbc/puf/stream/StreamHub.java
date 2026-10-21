@@ -166,7 +166,7 @@ public class StreamHub {
         send(c, SseEmitter.event().name("connected").reconnectTime(3000).data(data, MediaType.APPLICATION_JSON));
     }
 
-    // 한 연결에 전송. 같은 emitter 에 동시에 쓰지 않도록 잠그고, 실패하면 연결을 정리한다!
+    // 한 연결에 전송. 같은 emitter 에 동시에 쓰지 않도록 잠그고, 실패하면 연결을 정리한다
     private void send(Connection c, SseEmitter.SseEventBuilder builder) {
         try {
             synchronized (c) {
@@ -175,7 +175,7 @@ public class StreamHub {
         } catch (IOException | IllegalStateException e) {
             connections.remove(c);
             try {
-                c.emitter.complete();   // completeWithError 는 에러 디스패치를 일으켜 GlobalExceptionHandler 가 SSE 응답에 JSON 을 쓰려다 또 실패한다
+                c.emitter.completeWithError(e);
             } catch (Exception ignored) {
                 // 이미 닫힌 연결
             }
