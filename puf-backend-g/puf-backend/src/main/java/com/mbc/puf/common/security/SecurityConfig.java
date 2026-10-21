@@ -56,6 +56,8 @@ public class SecurityConfig {
 								"/api/underpasses/*/risk-scores", "/api/underpasses/*/risk-forecast").permitAll()
 						// ---- 로그인 없이 조회 가능한 통제현황 통계 (MP-06/08, CP 지도 화면의 통계 위젯) ----
 						.requestMatchers(HttpMethod.GET, "/api/dashboard/status-summary", "/api/dashboard/region-status").permitAll()
+						// ---- 로그인 없이 조회 가능한 부산시 교통 CCTV (지하차도 상세의 주변 CCTV 보기) ----
+						.requestMatchers(HttpMethod.GET, "/api/busan-cctvs", "/api/busan-cctvs/nearby").permitAll()
 						// ---- 로그인 없이 조회 가능한 날씨 (CP-08) ----
 						.requestMatchers(HttpMethod.GET, "/api/weather").permitAll()
 						// ---- API 문서(Swagger UI) 화면과 문서 JSON. 화면만 열릴 뿐이고, 화면에서 실제 API를 호출할 때는
