@@ -12,6 +12,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -27,7 +28,7 @@ import tools.jackson.databind.JsonNode;
  * 시연용 가짜 기상청·침수모델·수위계를 10초마다 한 번씩 돌린다 (puf.demo.enabled=true 일 때만).
  *
  *  - 호우 시나리오 중인 지역: 10초마다 새 값 (기상청 관측·예보 → 침수모델 점수·예측 → 수위계)
- *  - 그 밖의 지역: 1분마다 잔잔한 값 (예보·예측은 10분마다, 수위는 5분마다)
+ *  - 그 밖의 지역: 설정한 주기마다 갱신 (기본: 관측·점수 5분, 수위 5분, 예보·예측 10분). 점수는 안전 ~ 주의 사이를 조금씩 오르내림
  *
  * 침수모델·수위계는 실제와 똑같이 HTTP 로 내부 API(/api/internal/**)를 호출한다.
  * 시나리오는 선택한 지역에만 적용되므로 다른 지역에는 알림이 가지 않는다.
@@ -38,9 +39,7 @@ public class DemoStubScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(DemoStubScheduler.class);
 
-    private static final int CALM_SCORE_EVERY = 6;      // 10초 × 6 = 1분
-    private static final int CALM_WATER_EVERY = 30;     // 5분
-    private static final int CALM_FORECAST_EVERY = 60;  // 10분
+    private static final int TICK_SECONDS = 10;         // @Scheduled 주기와 같아야 한다
     private static final int FORECAST_HOURS = 6;        // 위험도 미래 예측: 앞으로 6시간
 
     private final DemoScenarioState state;
@@ -51,11 +50,27 @@ public class DemoStubScheduler {
     private final DbClock dbClock;
     private final StreamPublisher streamPublisher;
 
+    // 시나리오 밖(평상시) 지역의 갱신 주기. application.properties 의 puf.demo.calm-*-minutes 로 조절한다
+    private final int calmScoreEvery;
+    private final int calmWaterEvery;
+    private final int calmForecastEvery;
+
+    // 평상시 위험점수가 조금씩 오르내리게 하는 값 (지하차도별 현재값). 안전 ~ 주의 사이를 왔다갔다 한다
+    private final double calmMaxScore;
+    private final double calmStep;
+    private final Map<Long, Double> calmScores = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Random random = new java.util.Random();
+
     private long tickCount = 0;
 
     public DemoStubScheduler(DemoScenarioState state, DemoScenarioService scenarioService, DemoInternalApi api,
                              KmaClient kmaClient, WeatherCollectService weatherCollect, DbClock dbClock,
-                             StreamPublisher streamPublisher) {
+                             StreamPublisher streamPublisher,
+                             @Value("${puf.demo.calm-score-minutes:5}") int calmScoreMinutes,
+                             @Value("${puf.demo.calm-water-minutes:5}") int calmWaterMinutes,
+                             @Value("${puf.demo.calm-forecast-minutes:10}") int calmForecastMinutes,
+                             @Value("${puf.demo.calm-max-score:75}") double calmMaxScore,
+                             @Value("${puf.demo.calm-step:10}") double calmStep) {
         this.state = state;
         this.scenarioService = scenarioService;
         this.api = api;
@@ -63,9 +78,28 @@ public class DemoStubScheduler {
         this.weatherCollect = weatherCollect;
         this.dbClock = dbClock;
         this.streamPublisher = streamPublisher;
+        this.calmScoreEvery = ticks(calmScoreMinutes);
+        this.calmWaterEvery = ticks(calmWaterMinutes);
+        this.calmForecastEvery = ticks(calmForecastMinutes);
+        this.calmMaxScore = calmMaxScore;
+        this.calmStep = calmStep;
     }
 
-    @Scheduled(initialDelay = 15_000, fixedDelay = 10_000)
+    // 평상시 점수: 중간값(35) 쪽으로 살짝 끌려가면서 매번 조금씩(±calmStep 정도) 움직인다. 바닥은 baseline, 위는 calmMaxScore
+    private double nextCalmScore(Long uid, double baseline) {
+        double cur = calmScores.getOrDefault(uid, baseline);
+        double next = cur + 0.08 * (35 - cur) + random.nextGaussian() * calmStep;
+        next = Math.max(baseline, Math.min(calmMaxScore, next));
+        calmScores.put(uid, next);
+        return next;
+    }
+
+    // 분 → tick 횟수 (최소 1)
+    private static int ticks(int minutes) {
+        return Math.max(1, minutes * 60 / TICK_SECONDS);
+    }
+
+    @Scheduled(initialDelay = 15_000, fixedDelay = TICK_SECONDS * 1000L)
     public void tick() {
         try {
             run();
@@ -76,9 +110,9 @@ public class DemoStubScheduler {
 
     private void run() {
         long n = tickCount++;
-        boolean calmScore = n % CALM_SCORE_EVERY == 0;
-        boolean calmWater = n % CALM_WATER_EVERY == 0;
-        boolean calmForecast = n % CALM_FORECAST_EVERY == 0;
+        boolean calmScore = n % calmScoreEvery == 0;
+        boolean calmWater = n % calmWaterEvery == 0;
+        boolean calmForecast = n % calmForecastEvery == 0;
 
         // 시나리오가 끝났거나 중지됐으면 전체를 잔잔한 값으로 한 번 되돌린다 (수위 0, 점수 평소 값, 예보 평소 값)
         if (state.finished()) {
@@ -153,7 +187,7 @@ public class DemoStubScheduler {
             score = state.nextScore(uid, target, baseline);
         } else {
             state.resetScore(uid);
-            score = baseline + (System.currentTimeMillis() / 60000 + uid) % 3;   // 잔잔한 값이 조금씩 움직이게
+            score = nextCalmScore(uid, baseline);   // 평상시에도 안전 ~ 주의 사이를 조금씩 왔다갔다
         }
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("underpassId", uid);
