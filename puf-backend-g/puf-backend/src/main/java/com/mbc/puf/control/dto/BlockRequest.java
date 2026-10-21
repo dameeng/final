@@ -2,7 +2,7 @@ package com.mbc.puf.control.dto;
 
 import jakarta.validation.constraints.Size;
 
-/** 지하차도 차단 요청 (사유는 선택) */
+/** 지하차도 차단/해제 요청 (사유와 전광판 문구는 모두 선택) */
 public class BlockRequest {
 
     private Long presetId;   // 프리셋 선택 시 (직접 입력이면 null)
@@ -10,9 +10,20 @@ public class BlockRequest {
     @Size(max = 200, message = "사유는 200자 이내로 입력해 주세요.")
     private String reason;   // 직접 입력 시 (프리셋 선택이면 null)
 
+    private Long displayPresetId;   // 전광판 문구를 프리셋에서 고를 때 (display_preset 의 id. 차단이면 BLOCK, 해제면 RELEASE 분류만 가능)
+
+    @Size(max = 100, message = "전광판 문구는 100자 이내로 입력해 주세요.")
+    private String displayContent;  // 전광판 문구를 직접 입력할 때 (있으면 프리셋보다 우선). 둘 다 없으면 기본 프리셋 문구
+
     public Long getPresetId() { return presetId; }
     public void setPresetId(Long presetId) { this.presetId = presetId; }
 
     public String getReason() { return reason; }
     public void setReason(String reason) { this.reason = reason; }
+
+    public Long getDisplayPresetId() { return displayPresetId; }
+    public void setDisplayPresetId(Long displayPresetId) { this.displayPresetId = displayPresetId; }
+
+    public String getDisplayContent() { return displayContent; }
+    public void setDisplayContent(String displayContent) { this.displayContent = displayContent; }
 }
