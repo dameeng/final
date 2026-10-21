@@ -175,7 +175,7 @@ public class StreamHub {
         } catch (IOException | IllegalStateException e) {
             connections.remove(c);
             try {
-                c.emitter.completeWithError(e);
+                c.emitter.complete();   // completeWithError 는 에러 디스패치를 일으켜 GlobalExceptionHandler 가 SSE 응답에 JSON 을 쓰려다 또 실패한다
             } catch (Exception ignored) {
                 // 이미 닫힌 연결
             }
