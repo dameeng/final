@@ -8,7 +8,7 @@ package com.mbc.puf.common.enums;
  */
 public enum RiskLevel implements DbEnum {
     SAFE("안전"),
-    INTEREST("관심"),
+    WATCH("관심"),
     CAUTION("주의"),
     ALERT("경계"),
     SEVERE("심각");

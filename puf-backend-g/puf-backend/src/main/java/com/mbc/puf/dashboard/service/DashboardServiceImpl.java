@@ -236,7 +236,7 @@ public class DashboardServiceImpl implements DashboardService {
                 SELECT r.id   AS region_id,
                        r.name AS region_name,
                        COUNT(u.id) FILTER (WHERE u.risk_level = '안전') AS safe_count,
-                       COUNT(u.id) FILTER (WHERE u.risk_level = '관심') AS interest_count,
+                       COUNT(u.id) FILTER (WHERE u.risk_level = '관심') AS watch_count,
                        COUNT(u.id) FILTER (WHERE u.risk_level = '주의') AS caution_count,
                        COUNT(u.id) FILTER (WHERE u.risk_level = '경계') AS alert_count,
                        COUNT(u.id) FILTER (WHERE u.risk_level = '심각') AS severe_count,
