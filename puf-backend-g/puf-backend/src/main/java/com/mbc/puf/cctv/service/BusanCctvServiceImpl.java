@@ -50,7 +50,7 @@ public class BusanCctvServiceImpl implements BusanCctvService {
     private volatile List<BusanCctvResponse> cache = List.of();
     private volatile long loadedAt = 0;
 
-    public BusanCctvServiceImpl(@Value("${puf.busan-cctv.url:https://apis.data.go.kr/6260000/BusanITSCCTV}") String endpoint,
+    public BusanCctvServiceImpl(@Value("${puf.busan-cctv.url:https://apis.data.go.kr/6260000/BusanITSCCTV/CCTVList}") String endpoint,
                                 @Value("${puf.busan-cctv.service-key:}") String serviceKey,
                                 @Value("${puf.busan-cctv.refresh-hours:6}") long refreshHours,
                                 @Value("${puf.ocr-server.timeout-seconds:10}") long timeoutSeconds,
