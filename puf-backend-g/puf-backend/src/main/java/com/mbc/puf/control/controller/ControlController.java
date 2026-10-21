@@ -68,8 +68,11 @@ public class ControlController {
     /**
      * POST /api/control/underpasses/{id}/block
      * 지하차도 차단 + 경찰 이관 PDF 반환.
-     * 요청 body: { presetId, reason } — 둘 다 없으면 사유 null (PDF에 '-' 로 표시).
+     * 요청 body (모두 선택): { presetId, reason, displayPresetId, displayContent }
+     *  - 사유: presetId(프리셋) 또는 reason(직접 입력). 둘 다 없으면 null (PDF에 '-' 로 표시).
+     *  - 전광판 문구: displayContent(직접 입력, 100자) 또는 displayPresetId(차단 문구 프리셋). 둘 다 없으면 기본 차단 문구.
      */
+    @Operation(summary = "지하차도 차단", description = "경찰 이관 PDF 를 돌려준다. body(모두 선택): presetId/reason = 사유(프리셋 또는 직접 입력), displayPresetId/displayContent = 전광판 문구(프리셋 또는 직접 입력, 직접 입력이 우선, 둘 다 없으면 기본 차단 문구)")
     @PostMapping("/underpasses/{id}/block")
     @PreAuthorize("isAuthenticated() and principal.manager")
     public ResponseEntity<byte[]> block(
@@ -85,8 +88,9 @@ public class ControlController {
 
     /**
      * POST /api/control/underpasses/{id}/release
-     * 지하차도 해제 + 경찰 이관 PDF 반환.
+     * 지하차도 해제 + 경찰 이관 PDF 반환. body 는 차단과 같고, 전광판 문구는 해제 문구 프리셋만 고를 수 있다.
      */
+    @Operation(summary = "지하차도 해제", description = "경찰 이관 PDF 를 돌려준다. body 는 차단과 같고, 전광판 문구는 해제 문구 프리셋만 고를 수 있다")
     @PostMapping("/underpasses/{id}/release")
     @PreAuthorize("isAuthenticated() and principal.manager")
     public ResponseEntity<byte[]> release(
@@ -105,6 +109,7 @@ public class ControlController {
      * 소방 이관 (잔류차량 목록 제출) + PDF 반환.
      * 관리자가 잔류차량 확인 후 직접 버튼을 눌러 제출하는 수동 방식.
      */
+    @Operation(summary = "소방 이관", description = "잔류차량 번호 목록과 메모를 제출하면 소방 이관 기록을 저장하고 PDF 를 돌려준다. 관리자가 직접 누르는 수동 방식이며 실제 전송은 하지 않는다. SSE data-changed(fire-transfer)가 나간다.")
     @PostMapping("/underpasses/{id}/fire-transfer")
     @PreAuthorize("isAuthenticated() and principal.manager")
     public ResponseEntity<byte[]> fireTransfer(
@@ -122,6 +127,7 @@ public class ControlController {
      * GET /api/control/underpasses/{id}/transfers
      * 특정 지하차도의 이관 기록 목록 (최신순).
      */
+    @Operation(summary = "이관 기록 목록", description = "그 지하차도의 경찰·소방 이관 기록을 최신순으로 준다. 자동 차단 건은 처리자가 없고 '시스템(자동 차단)' 으로 표시된다.")
     @GetMapping("/underpasses/{id}/transfers")
     @PreAuthorize("isAuthenticated() and principal.manager")
     public ResponseEntity<ApiResponse<List<CtrlTransferItem>>> getTransferHistory(
@@ -137,6 +143,7 @@ public class ControlController {
      * GET /api/control/transfers/{transferId}/pdf
      * 저장된 이관 기록으로 동일 PDF 재생성 (재출력).
      */
+    @Operation(summary = "이관 PDF 재출력", description = "저장된 이관 기록(당시 값 스냅샷)으로 같은 PDF 를 다시 만들어 준다.")
     @GetMapping("/transfers/{transferId}/pdf")
     @PreAuthorize("isAuthenticated() and principal.manager")
     public ResponseEntity<byte[]> redownloadPdf(@AuthenticationPrincipal LoginUser loginUser,

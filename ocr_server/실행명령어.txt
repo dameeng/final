@@ -189,9 +189,11 @@ npm run dev
 AI 서버는 켜기만 하면 모델만 올려두고 기다려요. 프론트 "실행" 버튼(Spring 경유)을 누르거나,
 버튼이 아직 없으면 PowerShell 에서 직접:
 
-Invoke-RestMethod -Method Post -Uri "http://localhost:8000/control/plate/start" -Headers @{"X-Internal-Api-Key"="dev-internal-key-change-me"}
+Invoke-RestMethod -Method Post -Uri "http://localhost:8000/control/plate/start?cameraId=1" -Headers @{"X-Internal-Api-Key"="dev-internal-key-change-me"}
 
-  정지:  주소 끝의 start 를 stop 으로
+  정지:  주소의 start 를 stop 으로
+  ※ cameraId: 1 = 입구 영상, 2 = 출구 영상, 226 = roi(APPROACH), 227 = roi(FINAL). 빼면 전부 시작/정지
+  ※ 한 번에 영상 하나만: 다른 cameraId 로 start 하면 돌던 영상은 자동으로 멈춰요
   ※ 다른 PC 에서 보낼 때는 localhost 대신 [AI서버IP]
   ※ 예전처럼 켜자마자 바로 돌게 하려면 5번에서 $env:PLATE_ENABLED = "1" (CMD: set "PLATE_ENABLED=1")
 

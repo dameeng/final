@@ -292,35 +292,8 @@ def _video_path(source):
     return os.path.join(config.VIDEO_DIR, source) if not os.path.isabs(source) else source
 
 
-_sync = {"epoch": None, "period": None}   # 영상 파일 카메라들이 같이 쓰는 시작 시각 / 한 바퀴 길이
-_sync_lock = threading.Lock()
-
-
-def _sync_clock():
-    """모든 영상 파일이 같이 처음으로 돌아가도록 공통 시작 시각과 한 바퀴 길이(가장 긴 영상 + 딜레이)를 정해요"""
-    with _sync_lock:
-        if _sync["epoch"] is None:
-            period = 1.0
-            for cid, source in config.CAMERAS.items():
-                if "://" in source:
-                    continue
-                cap = cv2.VideoCapture(_video_path(source))
-                if cap.isOpened():
-                    fps = cap.get(cv2.CAP_PROP_FPS) or 30
-                    period = max(period, cap.get(cv2.CAP_PROP_FRAME_COUNT) / fps + config.VIDEO_DELAY_SEC.get(cid, 0))
-                cap.release()
-            _sync.update(epoch=time.time(), period=period)
-        return _sync["epoch"], _sync["period"]
-
-
-def reset_sync():
-    """다음에 여는 영상부터 시작 시각을 새로 정함 -> 모든 영상이 처음부터 같이 재생 (POST /control/plate/start)"""
-    with _sync_lock:
-        _sync.update(epoch=None, period=None)
-
-
 class VideoSource:
-    """영상 파일은 실제 시간 속도로 반복 재생 (카메라끼리 시간을 맞춰서), rtsp 는 그대로 읽기"""
+    """영상 파일은 연 순간(실행 버튼)부터 실제 시간 속도로 반복 재생, rtsp 는 그대로 읽기"""
 
     def __init__(self, source, delay=0.0):
         self.is_file = "://" not in source
@@ -344,8 +317,10 @@ class VideoSource:
         self.still = None            # 기다리는 동안 보여줄 화면 (시작 전: 첫 화면, 끝난 뒤: 마지막 화면)
         self.ts = time.time()        # 마지막으로 읽은 화면의 시각
         if self.is_file:
-            self.epoch, self.period = _sync_clock()
-            self.cycle = int((time.time() - self.epoch) // self.period)   # 지금 몇 번째 바퀴인지
+            # 카메라마다 자기 실행 시점부터 재생. 한 바퀴 = 이 영상 길이 + 딜레이
+            self.epoch = time.time()
+            self.period = max(1.0, self.cap.get(cv2.CAP_PROP_FRAME_COUNT) / self.fps + delay)
+            self.cycle = 0                                                # 지금 몇 번째 바퀴인지
 
     def read(self):
         """'지금 시각'에 해당하는 프레임 하나. 파일은 건너뛸 프레임을 grab 으로 빠르게 넘겨요"""
@@ -355,7 +330,7 @@ class VideoSource:
             return frame if ok else None
         now = time.time()
         cycle = int((now - self.epoch) // self.period)
-        start = self.epoch + cycle * self.period + self.delay  # 이 영상이 이번 바퀴에서 시작하는 시각 (모든 카메라 공통 기준)
+        start = self.epoch + cycle * self.period + self.delay  # 이 영상이 이번 바퀴에서 시작하는 시각
         self.start = start
         target = int((now - start) * self.fps)
         if cycle != self.cycle:                                # 새 바퀴 -> 처음부터 다시
@@ -391,7 +366,7 @@ class VideoSource:
         return self.start + (self.pos + 0.5) / self.fps
 
     def _end(self, now):
-        """영상 끝 -> 다음 바퀴까지 마지막 화면 유지 (다른 카메라와 같이 처음으로 돌아가려고)"""
+        """영상 끝 -> 다음 바퀴까지 마지막 화면 유지 (딜레이가 있으면 그만큼 기다렸다가 처음으로)"""
         self.ended, self.ts = True, now
         return self.still
 
@@ -638,22 +613,25 @@ class CameraWorker:
         return count + 1 >= config.CONFIRM_COUNT
 
     def _send(self, frame, plates, p):
+        """확정된 번호 전송. SEND_AS 에 적힌 카메라 id 마다 한 번씩 (사진은 한 번만 만듦)"""
         now_str = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-        payload = {"cameraId": self.camera_id, "detectedNum": p["text"],
-                   "confidence": round(min(max(p["score"], 0.0), 1.0), 3), "detectedAt": now_str}
-        item = {"at": now_str, "text": p["text"], "score": p["score"]}
-        try:
-            res = spring.send_plate_log(payload, to_jpg(draw(frame, plates, highlight=p["text"])))
-            item.update(plateLogId=res.get("id"), recognitionStatus=res.get("recognitionStatus"),
-                        reviewStatus=res.get("reviewStatus"), imagePath=res.get("imagePath"))
-            self.stats["sent"] += 1
-            log.info("[카메라 %s] %s (%.3f) 전송 -> %s", self.camera_id, p["text"], p["score"],
-                     res.get("recognitionStatus"))
-        except Exception as e:
-            item["error"] = str(e)
-            self.stats["failed"] += 1
-            log.warning("[카메라 %s] %s 전송 실패: %s", self.camera_id, p["text"], e)
-        self.recent.appendleft(item)
+        jpg = to_jpg(draw(frame, plates, highlight=p["text"]))
+        for target in config.SEND_AS.get(self.camera_id, [self.camera_id]):
+            payload = {"cameraId": target, "detectedNum": p["text"],
+                       "confidence": round(min(max(p["score"], 0.0), 1.0), 3), "detectedAt": now_str}
+            item = {"at": now_str, "cameraId": target, "text": p["text"], "score": p["score"]}
+            try:
+                res = spring.send_plate_log(payload, jpg)
+                item.update(plateLogId=res.get("id"), recognitionStatus=res.get("recognitionStatus"),
+                            reviewStatus=res.get("reviewStatus"), imagePath=res.get("imagePath"))
+                self.stats["sent"] += 1
+                log.info("[카메라 %s] %s (%.3f) 전송 -> %s", target, p["text"], p["score"],
+                         res.get("recognitionStatus"))
+            except Exception as e:
+                item["error"] = str(e)
+                self.stats["failed"] += 1
+                log.warning("[카메라 %s] %s 전송 실패: %s", target, p["text"], e)
+            self.recent.appendleft(item)
 
     def known_plates(self, frame_ts):
         """이미 전송한 차들이 frame_ts 화면에 있을 위치 (reader.read 의 known).

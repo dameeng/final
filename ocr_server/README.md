@@ -124,10 +124,10 @@ cd C:\경로\project\fastapi
 
 | 기능 | 설명 |
 |---|---|
-| 번호판 인식 | **실행 버튼(`/control/plate/start`)을 눌러야 시작.** 카메라(`config.CAMERAS`)마다: 영상 → YOLO → OCR → 형식/중복 검사 → 스크린샷과 함께 `POST /api/internal/plate-logs` |
-| `POST /control/plate/start` | 영상 처음부터 재생 + 번호판 인식/전송 시작 (헤더 `X-Internal-Api-Key` 필요. Spring이 호출) |
-| `POST /control/plate/stop` | 영상 + 인식/전송 정지 (헤더 `X-Internal-Api-Key` 필요) |
-| `GET /control/plate` | 지금 돌고 있는지 (버튼 상태 표시용) |
+| 번호판 인식 | **카메라마다 실행 버튼(`/control/plate/start?cameraId=...`)을 눌러야 그 영상이 처음부터 재생되며 시작.** 카메라(`config.CAMERAS`)마다: 영상 → YOLO → OCR → 형식/중복 검사 → 스크린샷과 함께 `POST /api/internal/plate-logs` |
+| `POST /control/plate/start?cameraId=1` | 그 카메라 영상 처음부터 재생 + 번호판 인식/전송 시작. 돌던 다른 영상은 자동으로 멈춤. `cameraId` 없으면 전부. `SEND_AS` 의 id(예: 3)도 가능 (헤더 `X-Internal-Api-Key` 필요. Spring이 호출) |
+| `POST /control/plate/stop?cameraId=1` | 그 카메라 영상 + 인식/전송 정지. `cameraId` 없으면 전부 (헤더 `X-Internal-Api-Key` 필요) |
+| `GET /control/plate` | 카메라별로 돌고 있는지 (버튼 상태 표시용) |
 | `GET /plate/status` | 카메라별 상태 + 최근 전송 기록 |
 | `POST /plate/read` | 사진 올려서 번호판 읽기 (저장 안 함) |
 | `POST /plate/read-image` | 사진 올려서 네모 그린 사진 받기 (저장 안 함) |
@@ -150,7 +150,7 @@ http://localhost:8000/docs 에서 버튼으로 바로 테스트할 수 있어요
 | `TRACK_SKIP_OCR` | `1` | 이미 전송한 차는 위치만 따라가고 OCR 을 다시 안 함 (OCR 횟수 20~40% 감소, 전송되는 번호는 같음). `0`이면 전부 OCR |
 | `VIDEO_SEND_UNTIL_SEC` | `{1: 296}` | 카메라별로 영상의 몇 초까지만 전송. 입구 영상 끝부분은 출구 영상에 장면이 없어서 안 보냄 |
 | `EXIT_OF` / `EXIT_MATCH_SEC` | `{2: 1}` / `30` | 출구 카메라 → 입구 카메라. 출구에서 읽은 번호의 숫자가 30초 안에 입구에서 보낸 번호와 같으면 입구 번호 그대로 보냄 (한글 한 글자 오인식 보정) |
-| `VIDEO_DELAY_SEC` | `{2: 4.5}` | 카메라별 영상 시작 지연(초). 출구 영상을 늦춰 입구 → 출구 순서를 맞춤. 영상들은 매 바퀴 같이 처음으로 돌아가요 (config.py에서 수정) |
+| `VIDEO_DELAY_SEC` | `{}` | 카메라별 영상 시작 지연(초). 실행 버튼을 누르고 이만큼 뒤에 재생. 영상은 카메라마다 따로 반복돼요 (config.py에서 수정) |
 | `FONT_PATH` | `C:\Windows\Fonts\malgun.ttf` | 영상에 번호(한글)를 쓸 글꼴 |
 
 ### Spring 쪽 설정
