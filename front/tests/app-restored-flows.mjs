@@ -42,10 +42,11 @@ try{
  await page.getByRole('button',{name:'취소',exact:true}).click()
  await page.getByRole('navigation',{name:'관리자앱 메뉴'}).getByRole('link',{name:'더보기',exact:true}).click()
  await page.locator('summary').filter({hasText:'기본 정보 수정'}).click()
+ await page.locator('.account-panel').getByRole('button',{name:'\uC218\uC815',exact:true}).click()
  await page.getByRole('button',{name:'기본 정보 저장'}).waitFor()
  for(const [width,height] of [[1440,900],[390,844],[360,640],[844,390]]){
   await page.setViewportSize({width,height})
-  const rect=await page.locator('.service-app-layout').boundingBox();assert(rect.width<=430&&rect.height===height)
+  const rect=await page.locator('.manager-app-shell').boundingBox();assert(rect.width<=430&&rect.height===height)
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false)
  }
  await page.getByRole('button',{name:'로그아웃',exact:true}).click()

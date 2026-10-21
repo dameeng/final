@@ -13,8 +13,20 @@ try{
   class MapStub{constructor(host,options){this.host=host;this.center=options.center;this.level=options.level;host.style.background='#e6eef2';window.testMap=this}getCenter(){return this.center}setCenter(value){this.center=value}panTo(value){this.center=value}setLevel(value){this.level=value}getLevel(){return this.level}setBounds(){}setCursor(){}setZoomable(){}relayout(){}}
   class LatLngBounds{extend(){}}
   class Shape{setMap(){}}
+  class Polyline{
+   constructor(options){
+    window.testRoute=options
+    this.el=document.createElement('div')
+    const svg=document.createElementNS('http://www.w3.org/2000/svg','svg')
+    svg.setAttribute('width','1200');svg.setAttribute('height','1200')
+    const path=document.createElementNS(svg.namespaceURI,'path')
+    path.setAttribute('d','M 600 600 L 700 700');path.setAttribute('stroke',options.strokeColor)
+    svg.append(path);this.el.append(svg);options.map.host.append(this.el)
+   }
+   setMap(map){if(!map)this.el.remove()}
+  }
   class CustomOverlay{constructor(options){this.el=document.createElement('div');this.el.innerHTML=options.content;options.map.host.append(this.el)}setPosition(){}setMap(value){if(!value)this.el.remove()}}
-  window.kakao={maps:{Map:MapStub,LatLng,LatLngBounds,Polyline:Shape,Marker:Shape,Circle:Shape,CustomOverlay,event}}
+  window.kakao={maps:{Map:MapStub,LatLng,LatLngBounds,Polyline,Marker:Shape,Circle:Shape,CustomOverlay,event}}
   window.testGeo={callback:null,error:null,cleared:[],emit(lat,lng){this.callback?.({coords:{latitude:lat,longitude:lng,accuracy:5,speed:10},timestamp:Date.now()})}}
   Object.defineProperty(navigator,'geolocation',{value:{
    watchPosition(callback,error){window.testGeo.callback=callback;window.testGeo.error=error;return 77},
@@ -35,6 +47,10 @@ try{
  await page.goto(base+'/customer-app/screen-7')
  await page.locator('.directions-form .btn.p').click()
  await page.locator('.navigation-summary').waitFor()
+ await page.waitForFunction(()=>!!window.testRoute)
+ assert.equal(await page.locator('.directions-map svg').evaluate(el=>el.getBoundingClientRect().width),1200,'SDK route canvas retains its coordinate space instead of shrinking to the phone width')
+ assert.equal(await page.evaluate(()=>window.testRoute.strokeColor),'#2878cc')
+ assert.equal(await page.evaluate(()=>window.testRoute.path.length),3)
  assert.equal(await page.locator('.navigation-summary .directions-camera-list').count(),0)
  assert.equal(await page.locator('.navigation-summary ol').count(),0)
  assert.equal(await page.locator('.navigation-body').evaluate(el=>el.scrollHeight>el.clientHeight+1),false)

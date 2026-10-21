@@ -139,7 +139,7 @@ onBeforeUnmount(()=>dispose?.())
 <div class="wg-head"><h2>점검 필요</h2></div>
 
 <div class="fill"><div><span class="big">3</span> <span style="color:var(--ink-sub)">건 · 신규 점검 대상</span></div>
-<div style="display:flex;flex-wrap:wrap;gap:8px"><a class="btn sm primary" href="/pm-queue">점검 대상 보기 →</a><a class="btn sm" href="/pm-settings">기준 설정 →</a></div></div>
+<div style="display:flex;flex-wrap:wrap;gap:8px"><a class="btn sm primary" href="/pm-queue">점검 대상 보기 →</a></div></div>
 </section></div></div>
 <div class="dashboard-fixed-item fixed-verify"><div class="dashboard-fixed-content"><section class="card wg widget-original-content" data-id="verify" data-size="s" aria-label="수동 판별 대기">
 <div class="wg-head"><h2>수동 판별 대기</h2><a href="/verify">판별하러 가기</a></div>

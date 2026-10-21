@@ -1,6 +1,15 @@
 <script setup lang="ts">
+import RiskLevelBadge from '../components/RiskLevelBadge.vue'
+import {useRiskChartClock} from '../composables/useRiskChartClock'
+import {mapMarkerSvg} from '../utils/map-marker'
 import {pageFriendlyMapScroll} from '../runtime/mapScroll'
 import {useApp} from '../stores/app'
+import type {BackendEvent} from '../composables/useBackendEvents'
+import {patchFacility,facilityEvents,appendRiskHistory} from '../services/streamUpdates'
+import {useBackendEvents} from '../composables/useBackendEvents'
+import {riskChartSeries} from '../utils/risk-chart'
+import {riskGroup,riskSummaryLabel} from '../services/backendCatalog'
+import {ownsFacility} from '../services/facilityAccess'
 import '../styles/map-weather.css'
 import '../styles/live-map.css'
 import '../styles/c-map.css'
@@ -199,6 +208,10 @@ type Facility = {
   address: string;
   regionId: string;
   assignedRegionId?: string;
+  manageable?:boolean;
+  riskLevel?:string;
+  controlled?:boolean;
+  currentWaterCm?:number|null;
   assignedRegionName?: string;
   latitude: number | null;
   longitude: number | null;
@@ -210,20 +223,23 @@ type Facility = {
   remainingCount:number|null;
   pendingReviewCount:number|null;
 };
-const customerRoot=ref<HTMLElement>(),expanded=ref(true),riskHistory=ref<Json[]>([]);
+const customerRoot=ref<HTMLElement>(),expanded=ref(true),riskHistory=ref<Json[]>([]),riskForecast=ref<Json[]>([]),forecastError=ref('');
 function defaultDistrict(){const districts=(app.account?.regions||[]).map(region=>busanDistrict(region.name));return districts.length&&districts.every(name=>name&&name===districts[0])?districts[0]!:''}
-const district=ref(props.manager?defaultDistrict():''),clusterFacilityIds=ref<string[]>([]);
+const district=ref(props.manager&&!props.mapOnly?defaultDistrict():''),clusterFacilityIds=ref<string[]>([]);
 const managerPanelExpanded=ref(true),managerOperations=ref<InstanceType<typeof BackendResource>>()
 function selectManagerRow(id:string){const row=filtered.value.find(f=>f.id===id);if(row)void selectFacility(row)}
-function managerControl(index:number){if(selected.value)void managerOperations.value?.open('action',{id:Number(selected.value.id)},backendResources.facilities!.actions?.[index])}
+function managerControl(index:number){if(selected.value&&ownsFacility(selected.value))void managerOperations.value?.open('action',{id:Number(selected.value.id)},backendResources.facilities!.actions?.[index])}
 async function focusAssignedRegion(){query.value='';statusFilter.value='';district.value=defaultDistrict();clearRegionSelection('busan');await nextTick();if(map)fitNation()}
 async function afterManagerControl(){await refresh();emit('controlChanged')}
 const facilities = ref<Facility[]>([]);
-function displayState(f:Facility){const label=stateLabel(f);return label==='정상'?'안전':label==='경고'?'주의':label}
-function badgeClass(f:Facility){return ({'안전':'safe','주의':'warn','위험':'danger','통제':'danger'} as Record<string,string>)[displayState(f)]||'unknown'}
-function controlLabel(f:Facility){return ['확인 불가','갱신 지연'].includes(stateLabel(f))?'상태 확인 필요':f.status==='통제'?'통제 중':['정상','경고','위험'].includes(f.status)?'정상 운영':'상태 확인 필요'}
-function closeFacility(){detailAbort?.abort();selectedId.value='';detail.value=null;detailError.value='';riskHistory.value=[];infoWindow?.close()}
-const riskPoints=computed(()=>riskHistory.value.map((row,index)=>{const score=number(row.riskScore);return score===null?'':`${20+index*260/Math.max(1,riskHistory.value.length-1)},${110-Math.min(100,Math.max(0,score))}`}).filter(Boolean).join(' '));
+function displayState(f:Facility){const label=stateLabel(f);return riskSummaryLabel(label,label==='\uD1B5\uC81C')}
+function badgeClass(f:Facility){return ({'안전':'safe','주의':'warn','관심':'warn','경계':'danger','심각':'danger','위험':'danger','통제':'danger'} as Record<string,string>)[displayState(f)]||'unknown'}
+function controlLabel(f:Facility){return ['확인 불가','갱신 지연'].includes(stateLabel(f))?'상태 확인 필요':f.status==='통제'?'통제 중':['정상','경고','관심','경계','심각','위험'].includes(f.status)?'정상 운영':'상태 확인 필요'}
+function closeFacility(){detailAbort?.abort();selectedId.value='';detail.value=null;detailError.value='';riskHistory.value=[];riskForecast.value=[];forecastError.value='';infoWindow?.close()}
+const chartNow=useRiskChartClock();
+const riskSeries=computed(()=>riskChartSeries(riskHistory.value,riskForecast.value,20,260,110,100,{now:chartNow.value}));
+const riskPoints=computed(()=>riskSeries.value.observed);
+async function fetchRiskForecast(id:string,signal:AbortSignal){try{const rows=await request(`${API.underpasses}/${encodeURIComponent(id)}/risk-forecast`,signal);if(!signal.aborted&&selectedId.value===id)riskForecast.value=Array.isArray(rows)?rows.map(object):[]}catch{if(!signal.aborted&&selectedId.value===id)forecastError.value='예측 정보를 불러오지 못했습니다.'}}
 
 const detail = ref<Facility | null>(null);
 type CompactWeather = {condition?: string; temperature?: number | null; humidity?: number | null; rainfall?: number | null; observedAt?: string};
@@ -327,6 +343,10 @@ function statusLabel(value: unknown): string {
     OPEN: "정상",
     NORMAL_TRAFFIC: "정상",
     CAUTION: "경고",
+    WATCH: "관심",
+    ALERT: "경계",
+    SEVERE: "심각",
+    관심:"관심",경계:"경계",심각:"심각",
     WARNING: "경고",
     DANGER: "위험",
     BLOCKED: "통제",
@@ -365,6 +385,10 @@ function normalize(row: Json, current?: Json): Facility | null {
     regionId: findRegion(row),
     assignedRegionId: String(row.regionId ?? ""),
     assignedRegionName: String(row.regionName ?? ""),
+    manageable:typeof row.manageable==='boolean'?row.manageable:undefined,
+    riskLevel:text(state.currentRiskLevel??row.currentRiskLevel),
+    controlled:state.isBlocked===true||text(state.currentStatus).toUpperCase()==='BLOCKED',
+    currentWaterCm:number(state.currentWaterCm??row.currentWaterCm),
     latitude: coordinatesValid ? latitude : null,
     longitude: coordinatesValid ? longitude : null,
     // 백엔드: currentStatus(NORMAL/BLOCKED) + currentRiskLevel(SAFE/WARNING/DANGER)
@@ -482,7 +506,7 @@ const filtered = computed(() =>
       (!statusFilter.value ||
         (statusFilter.value === "미확인"
           ? stateLabel(f).startsWith("미확인")
-          : stateLabel(f) === statusFilter.value)),
+          : (statusFilter.value==='위험'?riskGroup(stateLabel(f))==='DANGER':statusFilter.value==='경고'?riskGroup(stateLabel(f))==='WARNING':stateLabel(f)===statusFilter.value))),
   ),
 );
 const selected = computed(() =>
@@ -588,7 +612,7 @@ async function refresh() {
         : "목록을 불러오지 못했습니다.";
   } finally {
     clearTimeout(timeout);
-    if (alive && version === requestNumber) loading.value = false;
+    if (alive && version === requestNumber){loading.value = false;replayStreamBuffer()}
   }
 }
 // 위험도(riskScore)/강우량(rainfallMm)은 상세 응답에 없고 MP-05 추이 엔드포인트에만 있어
@@ -599,7 +623,7 @@ async function fetchLatestRiskScore(
 ): Promise<Json | null> {
   try {
     const rows = await request(
-      `${API.underpasses}/${encodeURIComponent(id)}/risk-scores?limit=24`,
+      `${API.underpasses}/${encodeURIComponent(id)}/risk-scores?hours=6&limit=500`,
       signal,
     );
     if (!Array.isArray(rows) || !rows.length) return null;
@@ -611,7 +635,7 @@ async function fetchLatestRiskScore(
   }
 }
 async function loadDetail(id: string) {
-  riskHistory.value=[];
+  riskHistory.value=[];riskForecast.value=[];forecastError.value='';
   detailAbort?.abort();
   detailAbort = new AbortController();
   const signal = detailAbort.signal;
@@ -626,6 +650,7 @@ async function loadDetail(id: string) {
     const [rawBody, latestRisk] = await Promise.all([
       request(`${API.underpasses}/${encodeURIComponent(id)}`, signal),
       fetchLatestRiskScore(id, signal),
+      fetchRiskForecast(id, signal),
     ]);
     const body = object(rawBody);
     if (!alive || selectedId.value !== id || signal.aborted) return;
@@ -683,13 +708,14 @@ async function loadDetail(id: string) {
   } finally {
     clearTimeout(timeout);
     if (alive && selectedId.value === id && controller === detailAbort) {
-      detailLoading.value = false;
+      detailLoading.value = false;replayStreamBuffer();
       await nextTick();
       openSelectedPopup();
     }
   }
 }
 async function selectFacility(f: Facility) {
+  dismissedPopupId='';
   closeClusterPopup();
   if(props.manager)managerPanelExpanded.value=true;
   if(appMap.value)sheetOpen.value=true;
@@ -738,6 +764,11 @@ function handleZoomChanged() {
   // Explicit nationwide button preserves selection during programmatic zoom.
 }
 function fitNation() {
+  if(appMap.value&&!props.manager){
+    map.setCenter(new maps.LatLng(35.1796,129.0756));
+    map.setLevel(7);
+    return;
+  }
   const bounds = new maps.LatLngBounds();
   const assigned=props.manager?app.account?.regions||[]:[];
   const scoped=facilities.value.filter(f=>assigned.some(r=>{const name=busanDistrict(r.name);return name?busanDistrict(f.assignedRegionName,f.address)===name:String(r.id)===f.assignedRegionId||f.assignedRegionName===r.name||f.address.includes(r.name)}));
@@ -748,16 +779,39 @@ function fitNation() {
   for (const r of (points.length ? [] : regions)) if(Number.isFinite(r.latitude) && Number.isFinite(r.longitude)) bounds.extend(new maps.LatLng(r.latitude,r.longitude));
   map.setBounds(bounds, props.manager ? 16 : 48, 16, 16, 16);
   if (points.length === 1) map.setLevel(props.manager ? 4 : 6);
-  else if(props.manager){const limit=district.value||assigned.some(region=>busanDistrict(region.name))?6:7;if(map.getLevel()>limit)map.setLevel(limit)}
+  else if(props.manager&&!props.mapOnly){const limit=district.value||assigned.some(region=>busanDistrict(region.name))?6:7;if(map.getLevel()>limit)map.setLevel(limit)}
 }
+async function showAllFacilities(){
+ query.value='';statusFilter.value='';district.value='';page.value=1;
+ closeClusterPopup();clusterFacilityIds.value=[];closeFacility();regionId.value='busan';
+ await nextTick();
+ if(!map)return;
+ map.relayout();
+ const rows=facilities.value.filter(row=>row.latitude!==null&&row.longitude!==null&&Number.isFinite(row.latitude)&&Number.isFinite(row.longitude));
+ if(!rows.length){map.setCenter(new maps.LatLng(35.1796,129.0756));map.setLevel(9);return}
+ const bounds=new maps.LatLngBounds();
+ rows.forEach(row=>bounds.extend(new maps.LatLng(row.latitude,row.longitude)));
+ map.setBounds(bounds,40,40,40,40);
+ if(rows.length===1)map.setLevel(6);
+}
+let dismissedPopupId='';
+function dismissFacilityPopup(){dismissedPopupId=selectedId.value;infoWindow?.close()}
+function dismissPopupOutside(event:PointerEvent){
+ if(event.target instanceof Element&&event.target.closest('.routel-map-popup'))return;
+ dismissFacilityPopup();
+}
+function dismissMapPopups(){dismissFacilityPopup();closeClusterPopup()}
 function openSelectedPopup() {
   if(props.manager&&!props.mapOnly)return;
   if (!map || !selected.value || detailLoading.value) return;
+  if(dismissedPopupId===selectedId.value)return;
   const item = markers.find((m) => m.id === selectedId.value);
   if (!item) return;
   const row = selected.value,
     content = document.createElement("div");
   content.className = "routel-map-popup";
+  content.addEventListener('mousedown',()=>maps.event.preventMap?.());
+  content.addEventListener('touchstart',()=>maps.event.preventMap?.(),{passive:true});
   const heading = document.createElement("strong");
   heading.className = "routel-map-popup__title";
   heading.textContent = row.name;
@@ -793,57 +847,74 @@ function openSelectedPopup() {
 }
 // 상태별 마커 색상. 위에 있을수록 위험한 상태이며 겹칠 때 앞쪽에 그립니다.
 const markerStyles = [
-  { label: "통제", color: "#8b1e2d", zIndex: 6 },
-  { label: "위험", color: "#e75b36", zIndex: 5 },
-  { label: "경고", color: "#e8b923", zIndex: 4 },
-  { label: "정상", color: "#2eaa6b", zIndex: 2 },
+  { label: "통제", color: "#bf7c89", zIndex: 6 },
+  { label: "위험", color: "#ce957f", zIndex: 5 },
+  { label: "경고", color: "#cebc79", zIndex: 4 },
+  { label: "정상", color: "#80ad96", zIndex: 2 },
   { label: "미확인", color: "#8793a0", zIndex: 1 },
 
 ];
 const markerLegendStyles = markerStyles.filter(style => style.label !== '미확인');
+// Temporary visual preview only; facility status and server data stay intact.
+const markerColorPreview=ref(!props.manager&&!props.mapOnly);
+const previewStates=['통제','위험','경고','정상'];
+function previewMarkerState(row:Facility){
+ if(!markerColorPreview.value)return stateLabel(row);
+ const rows=[...filtered.value].filter(f=>f.latitude!==null&&f.longitude!==null).sort((a,b)=>a.longitude!-b.longitude!||a.id.localeCompare(b.id));
+ return previewStates[Math.max(0,rows.findIndex(f=>f.id===row.id))%4]!;
+}
+watch(markerColorPreview,()=>drawMap());
 function markerStyle(state: string) {
+  const mapped=state==='관심'?'경고':['경계','심각'].includes(state)?'위험':state;
   return (
-    markerStyles.find((m) => m.label === state) ||
+    markerStyles.find((m) => m.label === mapped) ||
     markerStyles[markerStyles.length - 1]!
   );
 }
-const markerOpacity = { fill: 0.48, halo: 0.08 };
+const markerOpacity = { fill: 0.94, halo: 0.05 };
 const markerImages = new Map<string, any>();
-function markerImage(state: string) {
+function markerImage(state: string,assigned=true,selected=false) {
   const style = markerStyle(state);
-  const cached = markerImages.get(style.label);
+  const cacheKey=style.label+(assigned?'':':outside')+(selected?':selected':'');
+  const cached = markerImages.get(cacheKey);
   if (cached) return cached;
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 44 44'><style>.ripple{transform-origin:22px 22px;animation:ripple 3.8s ease-out infinite;pointer-events:none}@keyframes ripple{0%{transform:scale(.72);opacity:0}20%{opacity:.2}85%,100%{transform:scale(1.23);opacity:0}}@media(prefers-reduced-motion:reduce){.ripple{animation:none;opacity:0}}</style><circle cx='22' cy='22' r='19.5' fill='none' stroke='${style.color}' stroke-width='5' stroke-opacity='${markerOpacity.halo}'/><circle cx='22' cy='22' r='17' fill='${style.color}' fill-opacity='${markerOpacity.fill}'/><circle class='ripple' cx='22' cy='22' r='17' fill='none' stroke='${style.color}' stroke-width='1.2' opacity='0'/></svg>`;
+  const svg=mapMarkerSvg(props.manager&&!assigned?'#9aa3ae':style.color,markerOpacity.fill,undefined,selected,props.manager&&assigned,true);
   const image = new maps.MarkerImage(
     "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg),
     new maps.Size(44,44),
     { offset:new maps.Point(22,22) },
   );
-  markerImages.set(style.label, image);
+  markerImages.set(cacheKey, image);
   return image;
 }
-function clusterStyle(state:string,count=1,maxCount=count){
- const hex=markerStyle(state).color,rgb=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)).join(',');
- // Normalize against the visible largest cluster; single markers retain their base opacity.
- const density=count<=1?0:Math.min(1,(count-1)/Math.max(1,maxCount-1));
- const fill=markerOpacity.fill+(.8-markerOpacity.fill)*density;
- return {width:'44px',height:'44px',boxSizing:'border-box',background:`rgba(${rgb},${fill.toFixed(3)})`,boxShadow:'none',color:fill>=.68&&state!=='경고'?'#fff':'#163b4b',border:'0',backgroundClip:'border-box',borderRadius:'50%',textAlign:'center',lineHeight:'44px',fontFamily:'Arial,sans-serif',fontSize:'14px',fontWeight:'700'}
+function clusterStyle(_state:string,_count=1,_maxCount=_count){
+ return {width:'44px',height:'44px',boxSizing:'border-box',background:'transparent',boxShadow:'none',color:'#ffffff',border:'0',padding:'0',minWidth:'0',minHeight:'0',borderRadius:'50%',textAlign:'center',lineHeight:'0',fontFamily:'Arial,sans-serif',fontSize:'14px',fontWeight:'700',display:'block'}
 }
+let styledClusters:any[]=[];
 function styleClusters(clusters:any[]){
+ styledClusters=clusters;
  const maxCount=Math.max(1,...clusters.map(cluster=>cluster.getMarkers().length));
- for(const cluster of clusters){
+ const ordered=[...clusters].sort((a,b)=>a.getCenter().getLng()-b.getCenter().getLng()||a.getCenter().getLat()-b.getCenter().getLat());
+ for(const [index,cluster] of ordered.entries()){
   const states=cluster.getMarkers().map((marker:any)=>{const id=markers.find(item=>item.marker===marker)?.id;const row=facilities.value.find(item=>item.id===id);return row?stateLabel(row):'미확인'});
-  const state=markerStyles.find(style=>states.includes(style.label))?.label||'미확인';
+  const state=markerColorPreview.value?previewStates[index%4]!:markerStyles.find(style=>states.some((state:string)=>markerStyle(state).label===style.label))?.label||'미확인';
   const content=cluster.getClusterMarker().getContent();
   if(content instanceof HTMLElement){
    Object.assign(content.style,clusterStyle(state,cluster.getMarkers().length,maxCount));
-   content.classList.add('routel-marker-ripple');
-   content.style.setProperty('--marker-ripple-color',markerStyle(state).color);
+   const ids=cluster.getMarkers().map((marker:any)=>markers.find(item=>item.marker===marker)?.id).filter(Boolean);
+   const selected=ids.includes(selectedId.value)||(!selectedId.value&&clusterFacilityIds.value.length>0&&ids.length===clusterFacilityIds.value.length&&ids.every((id:string)=>clusterFacilityIds.value.includes(id)));
+   const density=cluster.getMarkers().length<=1?0:Math.min(1,(cluster.getMarkers().length-1)/Math.max(1,maxCount-1));
+   const assigned=props.manager&&ids.some((id:string)=>ownsFacility(facilities.value.find(row=>row.id===id)));
+   content.innerHTML=mapMarkerSvg(props.manager&&!assigned?'#9aa3ae':markerStyle(state).color,markerOpacity.fill+(1-markerOpacity.fill)*density,cluster.getMarkers().length,selected,assigned,true);
+   content.classList.toggle('routel-marker-selected',selected);
+   content.setAttribute('aria-label',`${cluster.getMarkers().length}\uAC1C \uC2DC\uC124${selected?' (\uC120\uD0DD\uB428)':''}`);
+   content.style.filter=selected?'drop-shadow(0 0 3px #174f8880)':'none';
+   if(props.manager){const assigned=ids.some((id:string)=>ownsFacility(facilities.value.find(row=>row.id===id)));content.title=assigned?'\uB2F4\uB2F9 \uC2DC\uC124 \uD3EC\uD568':'\uB2F4\uB2F9 \uC678 \uC2DC\uC124'}
   }
  }
 }
 function removeMarkers() {
-  clusterer?.clear();
+  styledClusters=[];clusterer?.clear();
   for (const { marker, click } of markers) {
     maps.event.removeListener(marker, "click", click);
     marker.setMap(null);
@@ -944,13 +1015,13 @@ function drawMap() {
   } else {
     for (const row of filtered.value) {
       if (row.latitude === null || row.longitude === null) continue;
-      const state = stateLabel(row);
+      const state = previewMarkerState(row);
       const marker = new maps.Marker({
         map,
         position: new maps.LatLng(row.latitude, row.longitude),
-        title: `${row.name} · ${state}`,
-        image: markerImage(state),
-        zIndex: markerStyle(state).zIndex,
+        title: `${row.name}${props.manager?(ownsFacility(row)?' · 담당 시설':' · 담당 외 시설'):''} · ${markerColorPreview.value?'색상 미리보기 · ':''}${state}`,
+        image: markerImage(state,!props.manager||ownsFacility(row),selectedId.value===row.id),
+        zIndex: selectedId.value===row.id?12:markerStyle(state).zIndex,
       });
       const click = () => selectFacility(row);
       maps.event.addListener(marker, "click", click);
@@ -1056,21 +1127,21 @@ async function initializeMap() {
           mapError.value = "";
           maps = sdk.maps;
           map = new maps.Map(mapElement.value, {
-            center: new maps.LatLng(props.manager?35.1796:36.3, props.manager?129.0756:127.8),
-            level: props.manager?7:12,
+            center: new maps.LatLng(props.manager||appMap.value?35.1796:36.3, props.manager||appMap.value?129.0756:127.8),
+            level: props.manager||appMap.value?7:12,
             scrollwheel: false,
           });
           disposeMapScroll=pageFriendlyMapScroll(mapElement.value,map);
           clusterer=new maps.MarkerClusterer({map,averageCenter:true,minLevel:0,gridSize:70,disableClickZoom:true,styles:markerStyles.map(style=>clusterStyle(style.label))});
           maps.event.addListener(clusterer,'clusterclick',selectCluster);
           maps.event.addListener(clusterer,'clustered',styleClusters);
-          infoWindow = new maps.InfoWindow({ removable: true, disableAutoPan: true });
+          infoWindow = new maps.InfoWindow({ removable: true, disableAutoPan: true, zIndex: 10 });
           clusterInfoWindow = new maps.InfoWindow({ removable: false, disableAutoPan: false, zIndex: 8 });
           geocoder = maps.services ? new maps.services.Geocoder() : undefined;
           fitNation();
           initialFacilityBoundsApplied = facilities.value.length > 0;
           maps.event.addListener(map, "zoom_changed", handleZoomChanged);
-          maps.event.addListener(map, "click", closeClusterPopup);
+          maps.event.addListener(map, "click", dismissMapPopups);
           drawMap();
           void resolveRegions();
           observer = new ResizeObserver(() => {
@@ -1098,9 +1169,26 @@ function handleVisibility() {
   }
 }
 watch([filtered, regionId, selectedId, now, listError, statusError], drawMap);
+watch(clusterFacilityIds,()=>styleClusters(styledClusters));
 watch([regionId,district,query,statusFilter],()=>{closeClusterPopup();clusterFacilityIds.value=[]});
 watch(selected,async facility=>{if(!facility||props.manager)return;await nextTick();customerRoot.value?.dispatchEvent(new CustomEvent('map-weather-location',{detail:{lat:facility.latitude??35.1796,lng:facility.longitude??129.0756,name:facility.name}}))});
 watch(filtered,rows=>{const ids=clusterFacilityIds.value.filter(id=>rows.some(f=>f.id===id));if(ids.length!==clusterFacilityIds.value.length)clusterFacilityIds.value=ids;if(props.manager&&selectedId.value&&!rows.some(row=>row.id===selectedId.value))closeFacility()});
+let streamRefresh:ReturnType<typeof setTimeout>|undefined
+const streamBuffer:BackendEvent[]=[]
+function updateFromStream(event:BackendEvent){
+ const update=(row:Facility):Facility=>{if(row.id!==String(event.data.underpassId))return row;const raw=patchFacility({...row,currentStatus:row.controlled?'BLOCKED':'NORMAL',currentRiskLevel:row.riskLevel},event);const controlled=raw.currentStatus==='BLOCKED';return {...row,riskLevel:raw.currentRiskLevel,controlled,status:controlled?'통제':statusLabel(raw.currentRiskLevel),riskScore:raw.riskScore,currentWaterCm:raw.currentWaterCm,rainfallMm:raw.rainfallMm,updatedAt:raw.updatedAt}}
+ facilities.value=facilities.value.map(update)
+ if(detail.value)detail.value=update(detail.value)
+ if(event.name==='risk-update'&&selectedId.value===String(event.data.underpassId))riskHistory.value=appendRiskHistory(riskHistory.value,event.data)
+ now.value=Date.now()
+}
+function replayStreamBuffer(){if(loading.value||detailLoading.value)return;for(const event of streamBuffer.splice(0))updateFromStream(event)}
+useBackendEvents(event=>{
+ const {name,data}=event
+ if(facilityEvents.includes(name)){if(loading.value||detailLoading.value){streamBuffer.push(event);if(streamBuffer.length>256)streamBuffer.shift()}updateFromStream(event);return}
+ if(name==='data-changed'&&data.resource==='risk-forecast'){if(selectedId.value===String(data.id)&&detailAbort&&!detailAbort.signal.aborted)void fetchRiskForecast(selectedId.value,detailAbort.signal);return}
+ if(name==='connected'||name==='transit-update'||name.startsWith('plate-queue-')||(name==='data-changed'&&['underpass','camera','threshold'].includes(data.resource))){clearTimeout(streamRefresh);streamRefresh=setTimeout(()=>{if(alive)void refresh()},250)}
+})
 onMounted(() => {
   sizeCustomerMap();
   viewportObserver=new ResizeObserver(sizeCustomerMap);
@@ -1110,8 +1198,10 @@ onMounted(() => {
   void initializeMap();
   void refresh();
   document.addEventListener("visibilitychange", handleVisibility);
+  document.addEventListener('pointerdown',dismissPopupOutside,{passive:true});
 });
 onBeforeUnmount(() => {
+ clearTimeout(streamRefresh);
  listObserver?.disconnect();viewportObserver?.disconnect();window.removeEventListener('resize',sizeCustomerMap);
  userLocation?.setMap(null);
  disposeMapScroll?.()
@@ -1127,26 +1217,28 @@ onBeforeUnmount(() => {
   clearInterval(sdkPoll);
   observer?.disconnect();
   document.removeEventListener("visibilitychange", handleVisibility);
+  document.removeEventListener('pointerdown',dismissPopupOutside);
   infoWindow?.close();
   closeClusterPopup();
   if (map) {
     maps.event.removeListener(map, "zoom_changed", handleZoomChanged);
-    maps.event.removeListener(map, "click", closeClusterPopup);
+    maps.event.removeListener(map, "click", dismissMapPopups);
     removeMarkers();
   }
 });
 </script>
 
 <template>
- <main v-if="props.mapOnly" ref="customerRoot" class="map-only-live"><div ref="mapElement" class="customer-map-canvas" aria-label="카카오 지도"></div><div class="kakao-map-controls"><button type="button" aria-label="지도 확대" @click="zoomMap(-1)">+</button><button type="button" aria-label="지도 축소" @click="zoomMap(1)">−</button></div><p v-if="mapError" class="map-error-note" role="status">{{mapError}}</p><div v-if="selected" class="map-only-selection"><RouterLink :to="'/admin-app/screen-5?id='+selected.id">{{selected.name}} · 시설 상세 →</RouterLink><button type="button" aria-label="선택 닫기" @click="selectedId='';detail=null">×</button></div></main>
- <main v-else-if="!props.manager" ref="customerRoot" class="wire-page page-c-map legacy-live-map" :class="{'mobile-app-map':appMap,'mobile-app-detail':appDetail}">
+ <main v-if="props.mapOnly" ref="customerRoot" class="map-only-live"><div ref="mapElement" class="customer-map-canvas" aria-label="카카오 지도"></div><ul class="map-only-legend" aria-label="마커 등급 안내"><li v-for="style in markerLegendStyles" :key="style.label"><span :style="{background:style.color}"></span>{{style.label==='정상'?'안전':style.label==='경고'?'주의':style.label}}</li><li v-if="props.manager"><span style="background:#9aa3ae"></span>담당 외 시설</li></ul><div class="kakao-map-controls"><button type="button" class="map-fit-all" aria-label="지도 전체 보기" title="부산 전체 지하차도 보기" @click="showAllFacilities">전체<br>보기</button><button type="button" aria-label="지도 확대" @click="zoomMap(-1)">+</button><button type="button" aria-label="지도 축소" @click="zoomMap(1)">−</button></div><p v-if="mapError" class="map-error-note" role="status">{{mapError}}</p><div v-if="selected" class="map-only-selection"><RouterLink :to="'/admin-app/screen-5?id='+selected.id">{{selected.name}} · 시설 상세 →</RouterLink><button type="button" aria-label="선택 닫기" @click="selectedId='';detail=null">×</button></div></main>
+ <main v-else-if="!props.manager" ref="customerRoot" class="wire-page page-c-map legacy-live-map" :class="{'mobile-app-map':appMap,'mobile-app-detail':appDetail,'map-sheet-open':sheetOpen||sheetHeight!==null&&sheetHeight>130}" :style="appMap?{'--map-sheet-height':sheetHeight!==null?sheetHeight+'px':sheetOpen?'var(--map-expanded-sheet-height,72%)':'68px'}:undefined">
   <div class="app map-swap-layout map-columns">
    <form v-if="appMap" class="app-map-search" role="search" @submit.prevent="sheetOpen=true;searchFacilities()"><input v-model.trim="query" type="search" aria-label="지하차도 이름 검색" placeholder="지하차도 이름 검색" @input="sheetOpen=true"><button type="submit">검색</button></form>
    <section class="mapw" aria-label="지하차도 지도">
     <div ref="mapElement" class="customer-map-canvas" aria-label="카카오 지도"></div>
-    <div class="mtop"><div class="pill" aria-label="마커 색상 안내"><span v-for="style in markerLegendStyles" :key="style.label"><i :style="{background:style.color}"></i>{{style.label==='정상'?'안전':style.label==='경고'?'주의':style.label}}</span><span><i style="background:#1671d9"></i>내 위치</span></div></div>
-    <div class="kakao-map-controls" aria-label="지도 조작"><button type="button" aria-label="지도 확대" @click="zoomMap(-1)">+</button><button type="button" aria-label="지도 축소" @click="zoomMap(1)">−</button><button type="button" aria-label="내 위치 찾기" :disabled="findingPosition" @click="locateUser"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 1v4m0 14v4M1 12h4m14 0h4"/></svg></button></div>
+    <div class="mtop"><div class="pill" aria-label="마커 색상 안내"><span v-for="style in markerLegendStyles" :key="style.label"><i :style="{background:style.color}"></i>{{style.label==='정상'?'안전':style.label==='경고'?'주의':style.label}}</span><span><i style="background:#1671d9"></i>내 위치</span></div><button type="button" class="marker-preview-toggle" :aria-pressed="markerColorPreview" @click="markerColorPreview=!markerColorPreview">{{markerColorPreview?'색상 미리보기 중 · 실제 상태 보기':'마커 색상 미리보기'}}<small v-if="markerColorPreview">통제·위험·주의·안전 색상 확인용</small></button></div>
+    <div class="kakao-map-controls" aria-label="지도 조작"><button type="button" class="map-fit-all" aria-label="지도 전체 보기" title="부산 전체 지하차도 보기" @click="showAllFacilities">전체<br>보기</button><button type="button" aria-label="지도 확대" @click="zoomMap(-1)">+</button><button type="button" aria-label="지도 축소" @click="zoomMap(1)">−</button><button v-if="!props.manager" type="button" aria-label="내 위치 찾기" :disabled="findingPosition" @click="locateUser"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 1v4m0 14v4M1 12h4m14 0h4"/></svg></button></div>
     <MapWeatherWidget/>
+
     <div v-if="mapError" class="map-error-note" role="status">{{mapError}}</div>
     <div v-if="selected&&selected.status==='통제'" class="alertbar" role="status"><strong>■ 통제</strong><span>{{selected.name}} 통제 중입니다.</span></div>
    </section>
@@ -1156,12 +1248,12 @@ onBeforeUnmount(() => {
      <div class="sub">{{formatTime(selected.updatedAt)}} 기준</div>
      <div><h2 class="nm">{{selected.name}}</h2><div class="sub">{{selected.address||'주소 미제공'}}</div></div>
      <p v-if="detailLoading" class="sub">최신 상태를 조회 중입니다.</p><p v-if="detailError" role="alert">{{detailError}}</p>
-     <div class="detail-badges"><span class="lvb" :class="badgeClass(selected)">{{displayState(selected)}}</span><span class="lvb">{{controlLabel(selected)}}</span></div>
-     <div class="kv"><div><small>위험 점수</small><strong>{{selected.riskScore===null?'—':selected.riskScore.toFixed(1)+'점'}}</strong></div><div><small>통제 상태</small><strong>{{controlLabel(selected)}}</strong></div></div>
+     <div class="detail-badges"><RiskLevelBadge :value="selected.riskLevel||selected.status"/><span class="lvb">{{controlLabel(selected)}}</span></div>
+     <div class="kv"><div><small>위험 점수</small><strong>{{selected.riskScore===null?'—':selected.riskScore.toFixed(1)+'점'}}</strong></div><div><small>통제 상태</small><strong>{{controlLabel(selected)}}</strong></div><div><small>현재 수위</small><strong>{{selected.currentWaterCm==null?'—':selected.currentWaterCm+' cm'}}</strong></div></div>
      <button type="button" class="btn" :aria-expanded="expanded" @click="expanded=!expanded">{{expanded?'상세 접기 ▴':'상세 펼치기 ▾'}}</button>
      <div v-show="expanded" class="detail-extended">
       <div class="kv"><div><small>현재 강우량</small><strong>{{selected.rainfallMm===null?'—':selected.rainfallMm+' mm'}}</strong></div><div><small>인근 날씨</small><strong class="weather-value">{{weatherLoading?'조회 중':compactWeather?.temperature!=null?compactWeather.temperature+'°C':compactWeather?.condition||'—'}}</strong></div></div>
-      <div class="route"><h2 class="trend-title">위험도 추이</h2><svg v-if="riskPoints" viewBox="0 0 300 130" class="risk-history-chart" role="img" aria-label="최근 관측 위험도 추이"><path d="M20 10V110H280" fill="none" stroke="#c9ced6"/><polyline :points="riskPoints" fill="none" stroke="#225f9b" stroke-width="3" stroke-linejoin="round"/><text x="0" y="15" font-size="10" fill="currentColor">100</text><text x="6" y="113" font-size="10" fill="currentColor">0</text></svg><p v-else class="sub">{{detailLoading?'관측 정보를 조회 중입니다.':'표시할 관측 정보가 없습니다.'}}</p></div>
+      <div class="route"><h2 class="trend-title">위험도 추이</h2><svg v-if="riskPoints||riskSeries.forecast" viewBox="0 0 300 130" class="risk-history-chart" role="img" aria-label="최근 관측 위험도 추이"><path d="M20 10V110H280" fill="none" stroke="#c9ced6"/><line v-if="riskSeries.boundary!==null" :x1="riskSeries.boundary" :x2="riskSeries.boundary" y1="10" y2="110" stroke="#c9ced6" stroke-dasharray="2 3"/><text v-for="tick in riskSeries.ticks" :key="tick.x" :x="tick.x" y="126" text-anchor="middle" font-size="9" fill="currentColor">{{tick.label}}</text><circle v-if="riskSeries.lastObserved" :cx="riskSeries.lastObserved.x" :cy="riskSeries.lastObserved.y" r="3" fill="#225f9b"><title>{{riskSeries.lastObserved.label}} &#183; {{riskSeries.lastObserved.score}}</title></circle><path v-if="riskSeries.carryPath" :d="riskSeries.carryPath" fill="none" stroke="#225f9b" stroke-opacity=".5" stroke-width="2" stroke-dasharray="2 3"/><path :d="riskSeries.observedPath" fill="none" stroke="#225f9b" stroke-width="3" stroke-linejoin="round"/><path v-if="riskSeries.forecastPath" :d="riskSeries.forecastPath" fill="none" stroke="#225f9b" stroke-width="3" stroke-dasharray="6 4"/><text x="0" y="15" font-size="10" fill="currentColor">100</text><text x="6" y="113" font-size="10" fill="currentColor">0</text></svg><p v-else class="sub">{{detailLoading?'관측 정보를 조회 중입니다.':'표시할 관측 정보가 없습니다.'}}</p><p v-if="riskSeries.forecast" class="sub">실선: 관측 · 점선: 향후 3시간 예측</p><p v-if="riskSeries.carryPath" class="sub">엷은 점선: 최근 관측값을 현재까지 유지 (추가 관측 아님)</p><p v-if="forecastError" class="sub">{{forecastError}}</p></div>
       <button type="button" class="btn" @click="cctvOpen=true">▶ 현재 CCTV 보기 (이 지하차도만)</button>
       <RouterLink v-if="appMap" :to="'/customer-app/screen-6?id='+selected.id">상세 화면 보기 →</RouterLink><div class="sub app-guidance">시간대별 예보·길 안내는 <b>앱</b>에서 확인해요. <RouterLink to="/info/app-guide#install">앱 다운로드 →</RouterLink></div>
      </div>
@@ -1178,17 +1270,19 @@ onBeforeUnmount(() => {
   <BusanCctvModal v-model="cctvOpen" :facility-name="selected?.name||''" :lat="selected?.latitude" :lng="selected?.longitude"/>
  </main>
   <main v-else class="wire-page page-c-live-map manager-live-map">
-<form class="underpass-map-form" @submit.prevent="searchFacilities"><label>부산 구·군<select :value="district" aria-label="부산 구·군 선택" @change="chooseDistrict(($event.target as HTMLSelectElement).value)"><option value="">부산 전체</option><option v-for="name in busanDistricts" :key="name" :value="name">{{name}}</option></select></label><label class="underpass-map-label-2">지하차도명·주소<input v-model.trim="query" type="search" aria-label="지하차도명·주소 검색"></label><label>상태<select v-model="statusFilter"><option value="">전체 상태</option><option>정상</option><option>경고</option><option>위험</option><option>통제</option></select></label><button type="submit" :disabled="loading">{{loading?'조회 중…':'새로고침'}}</button><button type="button" @click="focusAssignedRegion">담당 지역 보기</button><button type="button" @click="query='';statusFilter='';chooseDistrict('')">부산 전체 보기</button></form>
+<form class="underpass-map-form" @submit.prevent="searchFacilities"><label>부산 구·군<select :value="district" aria-label="부산 구·군 선택" @change="chooseDistrict(($event.target as HTMLSelectElement).value)"><option value="">부산 전체</option><option v-for="name in busanDistricts" :key="name" :value="name">{{name}}</option></select></label><label class="underpass-map-label-2">지하차도명·주소<input v-model.trim="query" type="search" aria-label="지하차도명·주소 검색"></label><label>상태<select v-model="statusFilter"><option value="">전체 상태</option><option>정상</option><option>경고</option><option>위험</option><option>통제</option></select></label><button type="submit" :disabled="loading">{{loading?'조회 중…':'새로고침'}}</button><button type="button" @click="focusAssignedRegion">담당 지역 보기</button><button type="button" @click="showAllFacilities">부산 전체 보기</button></form>
 <p v-if="listError||statusError" class="manager-map-message" role="alert">{{listError||statusError}}</p><p v-else-if="loaded&&!filtered.length" class="manager-map-message" role="status">조회 조건에 맞는 지하차도가 없습니다.</p>
-<div class="manager-map-stage"><div ref="mapElement" class="underpass-map-div" aria-label="카카오 지하차도 지도"></div><ul class="underpass-map-legend manager-map-legend" aria-label="마커 색상 안내"><li v-for="style in markerLegendStyles" :key="style.label"><span class="underpass-map-legend-dot" :style="{background:style.color}"></span>{{style.label==='정상'?'안전':style.label==='경고'?'주의':style.label}}</li></ul><p v-if="mapError" class="manager-sdk-error" role="status">{{mapError}}</p>
-<ManagerMapPanel v-model:expanded="managerPanelExpanded" :facility="selected" :cluster="clusterRows" :state="selected?stateLabel(selected):''" :control="selected?controlLabel(selected):''" :observed="selected?formatTime(selected.updatedAt):''" :loading="detailLoading" :error="detailError" :weather="compactWeather||undefined" :weather-loading="weatherLoading" :weather-error="weatherError" :risk-points="riskPoints" :can-control="app.account?.role==='REGIONAL_ADMIN'" @select="selectManagerRow" @clear="closeFacility" @control="managerControl" @cctv="cctvOpen=true"/>
-<div class="kakao-map-controls manager-map-controls" aria-label="지도 조작"><button type="button" aria-label="카카오 지도 확대" @click="zoomMap(-1)">+</button><button type="button" aria-label="카카오 지도 축소" @click="zoomMap(1)">−</button><button type="button" aria-label="내 위치 찾기" :disabled="findingPosition" @click="locateUser">◎</button></div></div>
+<div class="manager-map-stage"><div ref="mapElement" class="underpass-map-div" aria-label="카카오 지하차도 지도"></div><ul class="underpass-map-legend manager-map-legend" aria-label="마커 색상 안내"><li v-for="style in markerLegendStyles" :key="style.label"><span class="underpass-map-legend-dot" :style="{background:style.color}"></span>{{style.label==='정상'?'안전':style.label==='경고'?'주의':style.label}}</li><li><span style="width:10px;height:10px;background:#9aa3ae;border-radius:50%"></span>담당 외 시설</li></ul><p v-if="mapError" class="manager-sdk-error" role="status">{{mapError}}</p>
+<ManagerMapPanel v-model:expanded="managerPanelExpanded" :facility="selected" :cluster="clusterRows" :state="selected?stateLabel(selected):''" :risk-level="selected?.riskLevel" :control="selected?controlLabel(selected):''" :observed="selected?formatTime(selected.updatedAt):''" :loading="detailLoading" :error="detailError" :weather="compactWeather||undefined" :weather-loading="weatherLoading" :weather-error="weatherError" :risk-points="riskPoints" :forecast-points="riskSeries.forecast" :chart-series="riskSeries" :forecast-error="forecastError" :can-control="ownsFacility(selected)" @select="selectManagerRow" @clear="closeFacility" @control="managerControl" @cctv="cctvOpen=true"/>
+<div class="kakao-map-controls manager-map-controls" aria-label="지도 조작"><button type="button" class="map-fit-all" aria-label="지도 전체 보기" title="부산 전체 지하차도 보기" @click="showAllFacilities">전체<br>보기</button><button type="button" aria-label="카카오 지도 확대" @click="zoomMap(-1)">+</button><button type="button" aria-label="카카오 지도 축소" @click="zoomMap(1)">−</button><button v-if="!props.manager" type="button" aria-label="내 위치 찾기" :disabled="findingPosition" @click="locateUser">◎</button></div></div>
 <BackendResource v-if="selectedId" ref="managerOperations" embedded operations-only resource-key="facilities" @saved="afterManagerControl"/>
 <BusanCctvModal v-model="cctvOpen" :facility-name="selected?.name||''" :lat="selected?.latitude" :lng="selected?.longitude"/>
 </main>
 </template>
 
 <style>
+.kakao-map-controls button.map-fit-all{font-size:11px;line-height:1.2;font-weight:700}
+.legacy-live-map .mapw .mtop{align-items:flex-start;justify-content:flex-start}.marker-preview-toggle{position:static;flex:0 1 auto;max-width:100%;padding:10px 14px;border:1px solid #d5dde7;border-radius:10px;background:var(--surface,#fff);color:var(--ink,#173d62);box-shadow:0 2px 10px #0002;font-size:12px;cursor:pointer;text-align:left}.marker-preview-toggle small{display:block;margin-top:4px;font-size:10px;color:var(--ink-sub,#64748b)}
 .legacy-live-map .mapw{isolation:isolate}
 .routel-cluster-popup{width:260px;max-width:calc(100vw - 64px);padding:8px;background:var(--surface,#fff);color:var(--foreground,#20252b);font:13px/1.5 Arial,'Malgun Gothic',sans-serif}
 .routel-cluster-popup>header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:2px 4px 8px}

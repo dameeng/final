@@ -25,9 +25,11 @@ const active=(to:string)=>to.includes('?')?route.fullPath===to:route.path===to&&
 const current=computed(()=>myPage.value?({'/my-home':'내 정보','/my-account':'내 정보','/my-alerts':'알림 내역','/my-inquiries':'문의','/my-inquiry-new':'문의하기','/my-cars':'내 정보','/my-withdraw':'회원 탈퇴'}[route.path]||'마이페이지'):group.value.items.find(([,to])=>active(to!))?.[0]||'홈')
 </script>
 <template>
- <div class="customer-page-layout" :class="{'is-mypage':myPage,'is-home':route.path==='/','is-auth':authPage,'is-map':mapPage}">
+ <div class="customer-page-layout" :class="{'is-mypage':myPage,'is-home':route.path==='/','is-auth':authPage,'is-map':mapPage,'is-board':['/c-notice','/info/faq'].includes(route.path)}">
   <nav class="customer-breadcrumb" aria-label="현재 위치"><RouterLink to="/">홈</RouterLink><template v-if="route.path!=='/'"><span aria-hidden="true">›</span><RouterLink :to="myPage?'/my-home':group.to">{{myPage?'마이페이지':group.title}}</RouterLink><span aria-hidden="true">›</span><span aria-current="page">{{current}}</span></template></nav>
   <aside v-if="!myPage&&route.path!=='/'" class="customer-section-sidebar" aria-label="페이지 메뉴"><RouterLink :to="group.to" class="section-sidebar-title">{{group.title}}</RouterLink><nav><RouterLink v-for="[label,to] in group.items" :key="to" :to="to!" :aria-current="active(to!)?'page':undefined">{{label}}</RouterLink></nav></aside>
   <div class="customer-page-body"><slot/></div>
  </div>
 </template>
+
+<style scoped>.is-board .customer-section-sidebar .section-sidebar-title{font-size:24px}.is-board .customer-section-sidebar nav a{font-size:16px}.is-board .customer-breadcrumb{font-size:14px}</style>
