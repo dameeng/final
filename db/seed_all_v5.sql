@@ -46,7 +46,7 @@ INSERT INTO employee (name, birth, phone, email) VALUES
 ('배준혁', '1986-01-12', '01010010016', 'junhyuk.bae@puf.go.kr');
 
 -- =====================================================================
--- 4. manager — 관리자 16명 (login_id = manager01~16, pw = login_id)
+-- 4. manager — 관리자 5명 (login_id = manager01~05, pw = login_id)
 --    shift_id 라운드로빈 배정: 주간(1)/오후(2)/야간(3)
 -- =====================================================================
 INSERT INTO manager (employee_id, login_id, password, role, status, shift_id, created_at, approved_at) VALUES
@@ -54,33 +54,35 @@ INSERT INTO manager (employee_id, login_id, password, role, status, shift_id, cr
 ( 2, 'manager02', '$2b$10$rszJYERxjKPglGms0NV3UefUNjkBpvweZwOkmhQX1/DHoyaEG.c/u', 'REGIONAL_ADMIN', 'ACTIVE', 2, NOW() - INTERVAL '88 days', NOW() - INTERVAL '87 days'),
 ( 3, 'manager03', '$2b$10$iFVuXNTQTBY1BM6YAX8FaeVEDI2r8gUGhradt3OfsoCzdY3aNjEFK', 'REGIONAL_ADMIN', 'ACTIVE', 3, NOW() - INTERVAL '86 days', NOW() - INTERVAL '85 days'),
 ( 4, 'manager04', '$2b$10$OAiR2nu0JnXdFA/K/DCfT.FzHaK7HtURtvmrXd5gYmMTvtMVd0O.a', 'REGIONAL_ADMIN', 'ACTIVE', 1, NOW() - INTERVAL '84 days', NOW() - INTERVAL '83 days'),
-( 5, 'manager05', '$2b$10$jiSe.7MXDwv0dDoSXLbJPOVkEOJe/DCsDMwABRwkMTptrnnskJ222', 'REGIONAL_ADMIN', 'ACTIVE', 2, NOW() - INTERVAL '82 days', NOW() - INTERVAL '81 days'),
-( 6, 'manager06', '$2b$10$pxrhhv7KixcEGbfChpYh4e2hoiYHiGKhmJrqetF7.cFiPMP4qA/CO', 'REGIONAL_ADMIN', 'ACTIVE', 3, NOW() - INTERVAL '80 days', NOW() - INTERVAL '79 days'),
-( 7, 'manager07', '$2b$10$TMvgfEYHJVicRReQzPatnunOSl4dQgq9cbm0vLe8TPlpjHs1WlTfC', 'REGIONAL_ADMIN', 'ACTIVE', 1, NOW() - INTERVAL '78 days', NOW() - INTERVAL '77 days'),
-( 8, 'manager08', '$2b$10$zskAKQFC9lHoJGxkxVLJt.nPeQSd4Xzg5tb6w4nFRRng24pEe47.m', 'REGIONAL_ADMIN', 'ACTIVE', 2, NOW() - INTERVAL '76 days', NOW() - INTERVAL '75 days'),
-( 9, 'manager09', '$2b$10$RrR/hKatHquTZIKr9VptNO1F10IkAk/4IBPLnItOxkPayvlAXGlhC', 'REGIONAL_ADMIN', 'ACTIVE', 3, NOW() - INTERVAL '74 days', NOW() - INTERVAL '73 days'),
-(10, 'manager10', '$2b$10$SscHgF9ejzoic.WgpKjzVexk2KPfGDtsfeqrUzyUDQ6Tdvzdc93ay', 'REGIONAL_ADMIN', 'ACTIVE', 1, NOW() - INTERVAL '72 days', NOW() - INTERVAL '71 days'),
-(11, 'manager11', '$2b$10$jlA0d0.o14btHowH8l0BFeP/WV0A6w.Y/G/6NKfv/CXX6s8kzjSHK', 'REGIONAL_ADMIN', 'ACTIVE', 2, NOW() - INTERVAL '70 days', NOW() - INTERVAL '69 days'),
-(12, 'manager12', '$2b$10$LcF/F2qkQ33TG77HNlbkdu4QzG99stVSRCCzfOCTYulYU7KFMhpTC', 'REGIONAL_ADMIN', 'ACTIVE', 3, NOW() - INTERVAL '68 days', NOW() - INTERVAL '67 days'),
-(13, 'manager13', '$2b$10$4ed.kjxpmFllEClbhql1keiNlLKaLMbzvTqffb8Le6Lr.RiMkb/e6', 'REGIONAL_ADMIN', 'ACTIVE', 1, NOW() - INTERVAL '66 days', NOW() - INTERVAL '65 days'),
-(14, 'manager14', '$2b$10$DxuFOeuWUsIhwPnhSbfvOeqm9xMwcU8w5/.MAkU9jZ55SkLnmDs8W', 'REGIONAL_ADMIN', 'ACTIVE', 2, NOW() - INTERVAL '64 days', NOW() - INTERVAL '63 days'),
-(15, 'manager15', '$2b$10$XaYbw0yGnsNwvoo/3WVd9uCtYK.Emaki8KqNE2ftlfIWhav4PRqmC', 'REGIONAL_ADMIN', 'ACTIVE', 3, NOW() - INTERVAL '62 days', NOW() - INTERVAL '61 days'),
-(16, 'manager16', '$2b$10$gfVtN56C6J0HJ8QFxctL/.qPkMqfuZGL7JW0HBOC4l1eUswIG5z7y', 'REGIONAL_ADMIN', 'ACTIVE', 1, NOW() - INTERVAL '60 days', NOW() - INTERVAL '59 days');
+( 5, 'manager05', '$2b$10$jiSe.7MXDwv0dDoSXLbJPOVkEOJe/DCsDMwABRwkMTptrnnskJ222', 'REGIONAL_ADMIN', 'ACTIVE', 2, NOW() - INTERVAL '82 days', NOW() - INTERVAL '81 days');
 
 -- =====================================================================
--- 5. manager_region — 관리자 ↔ 지역 매핑 (1:1 기본, 일부 관리자 복수 지역)
+-- 5. manager_region — 관리자 ↔ 지역 매핑 (지역 하나는 관리자 한 명만, 한 관리자가 여러 구를 맡아 지하차도 9개씩으로 맞춤)
 --    region id: 미배정=1, 중구=2, 서구=3, 동구=4, 영도구=5, 부산진구=6,
 --    동래구=7, 남구=8, 북구=9, 해운대구=10, 사하구=11, 금정구=12,
 --    강서구=13, 연제구=14, 수영구=15, 사상구=16, 기장군=17
+--    지하차도 개수: 사상 9, 해운대 7, 강서 5, 동구·부산진·동래·북 각 4, 남 3, 사하·금정 각 2, 기장 1, 나머지 0 (합 45)
+--    가장 많은 사상구(9개)에 맞춰 관리자 5명이 구를 묶어 맡는다 (각 9개). 일 없는 관리자 계정은 두지 않는다.
+--      manager01: 사상 / manager02: 해운대+금정+연제+수영 / manager03: 동구+사하+서구+중구+영도+남(초량 시연)
+--      manager04: 강서+북 / manager05: 부산진+동래+기장
 -- =====================================================================
 INSERT INTO manager_region (manager_id, region_id) VALUES
-(1, 2), (2, 3), (3, 4), (4, 5),
-(5, 6), (6, 7), (7, 8), (8, 9),
-(9, 10), (10, 11), (11, 12), (12, 13),
-(13, 14), (14, 15), (15, 16), (16, 17),
--- 인접 지역 겸임 (실무에서 흔한 케이스)
-(1, 3),   -- manager01: 중구 + 서구
-(9, 15);  -- manager09: 해운대구 + 수영구
+( 1, 16),   -- manager01: 사상구
+( 2, 10),   -- manager02: 해운대구
+( 2, 12),   -- manager02: 금정구
+( 2, 14),   -- manager02: 연제구
+( 2, 15),   -- manager02: 수영구
+( 3,  2),   -- manager03: 중구
+( 3,  3),   -- manager03: 서구
+( 3,  4),   -- manager03: 동구
+( 3,  5),   -- manager03: 영도구
+( 3,  8),   -- manager03: 남구
+( 3, 11),   -- manager03: 사하구
+( 4,  9),   -- manager04: 북구
+( 4, 13),   -- manager04: 강서구
+( 5,  6),   -- manager05: 부산진구
+( 5,  7),   -- manager05: 동래구
+( 5, 17);   -- manager05: 기장군
 
 -- =====================================================================
 -- 6. customer — 고객 10명 (login_id = customer01~10, pw = login_id)
@@ -140,48 +142,48 @@ INSERT INTO car (customer_id, car_num) VALUES
 INSERT INTO underpass (name, region_id, road_addr, lat, lng, height, length, width, lanes, safety_grade, river_dist, sea_dist) VALUES
 ('금호지하차도', (SELECT id FROM region WHERE name = '강서구' AND is_deleted = FALSE), '부산광역시 강서구', 35.170616, 128.960309, 7.4, 120, 27, 6, 'B', 21.8, 6945.7),
 ('대상지하차도', (SELECT id FROM region WHERE name = '강서구' AND is_deleted = FALSE), '부산광역시 강서구', 35.211652, 128.973808, 4.9, 130, 16, 4, 'B', 279.4, 11790.1),
-('명지동진 지하차도', (SELECT id FROM region WHERE name = '강서구' AND is_deleted = FALSE), '부산광역시 강서구', 35.097319, 128.926846, 4.8, 160, 17, 4, 'B', 211.1, 556.6),
+('명지동진지하차도', (SELECT id FROM region WHERE name = '강서구' AND is_deleted = FALSE), '부산광역시 강서구', 35.097319, 128.926846, 4.8, 160, 17, 4, 'B', 211.1, 556.6),
 ('명지지하차도', (SELECT id FROM region WHERE name = '강서구' AND is_deleted = FALSE), '부산광역시 강서구', 35.0890275, 128.9036914, 4.5, 380, 15.5, 4, 'B', 685.4, 1485.2),
 ('봉림지하차도', (SELECT id FROM region WHERE name = '강서구' AND is_deleted = FALSE), '부산광역시 강서구', 35.175896, 128.900941, 7, 470, 25.5, 6, 'B', 43.9, 6008.1),
-('구서 지하차도', (SELECT id FROM region WHERE name = '금정구' AND is_deleted = FALSE), '부산광역시 금정구', 35.2459875, 129.0929531, 5, 140, 17, 4, 'B', 243.7, 9400.3),
+('구서지하차도', (SELECT id FROM region WHERE name = '금정구' AND is_deleted = FALSE), '부산광역시 금정구', 35.2459875, 129.0929531, 5, 140, 17, 4, 'B', 243.7, 9400.3),
 ('장전지하차도', (SELECT id FROM region WHERE name = '금정구' AND is_deleted = FALSE), '부산광역시 금정구', 35.240005, 129.087363, 4.8, 220, 9.3, 4, 'B', 182, 8641.9),
-('삼성1 지하차도', (SELECT id FROM region WHERE name = '기장군' AND is_deleted = FALSE), '부산광역시 기장군', 35.2660334, 129.2281624, 4.8, 368, 14, 4, 'A', 501.9, 650.4),
-('대남 지하차도', (SELECT id FROM region WHERE name = '남구' AND is_deleted = FALSE), '부산광역시 남구', 35.1402331, 129.1049538, 5, 125, 16, 4, 'B', 35.3, 758.5),
+('삼성1지하차도', (SELECT id FROM region WHERE name = '기장군' AND is_deleted = FALSE), '부산광역시 기장군', 35.2660334, 129.2281624, 4.8, 368, 14, 4, 'A', 501.9, 650.4),
+('대남지하차도', (SELECT id FROM region WHERE name = '남구' AND is_deleted = FALSE), '부산광역시 남구', 35.1402331, 129.1049538, 5, 125, 16, 4, 'B', 35.3, 758.5),
 ('문현지하차도', (SELECT id FROM region WHERE name = '남구' AND is_deleted = FALSE), '부산광역시 남구', 35.137092, 129.068048, 10, 260, 17, 4, 'B', 124.1, 810.3),
 ('신선대지하차도', (SELECT id FROM region WHERE name = '남구' AND is_deleted = FALSE), '부산광역시 남구', 35.123743, 129.099580, 4.7, 1800, 14, 4, 'B', 173.9, 1181.1),
-('부산진시장 지하차도', (SELECT id FROM region WHERE name = '동구' AND is_deleted = FALSE), '부산광역시 동구', 35.137087, 129.057756, 4, 44, 12, 2, 'B', 557.5, 1099.4),
-('초량 제1지하차도', (SELECT id FROM region WHERE name = '동구' AND is_deleted = FALSE), '부산광역시 동구', 35.1191375, 129.0447344, 3.5, 165, 15, 2, 'B', 346.1, 397),
-('초량 제2지하차도', (SELECT id FROM region WHERE name = '동구' AND is_deleted = FALSE), '부산광역시 동구', 35.1231375, 129.0469531, 3.5, 175, 15, 2, 'B', 658.2, 241.8),
+('부산진시장지하차도', (SELECT id FROM region WHERE name = '동구' AND is_deleted = FALSE), '부산광역시 동구', 35.137087, 129.057756, 4, 44, 12, 2, 'B', 557.5, 1099.4),
+('초량제1지하차도', (SELECT id FROM region WHERE name = '동구' AND is_deleted = FALSE), '부산광역시 동구', 35.1191375, 129.0447344, 3.5, 165, 15, 2, 'B', 346.1, 397),
+('초량제2지하차도', (SELECT id FROM region WHERE name = '동구' AND is_deleted = FALSE), '부산광역시 동구', 35.1231375, 129.0469531, 3.5, 175, 15, 2, 'B', 658.2, 241.8),
 ('충장지하차도', (SELECT id FROM region WHERE name = '동구' AND is_deleted = FALSE), '부산광역시 동구', 35.115165, 129.043793, 7.3, 1860, 20, 4, 'UNKNOWN', 310.5, 285.4),
-('내성 지하차도', (SELECT id FROM region WHERE name = '동래구' AND is_deleted = FALSE), '부산광역시 동래구', 35.2044875, 129.0780469, 4.6, 185, 17, 4, 'B', 158.1, 6145.9),
-('안락 지하차도', (SELECT id FROM region WHERE name = '동래구' AND is_deleted = FALSE), '부산광역시 동래구', 35.198163, 129.096968, 4.6, 200, 15.2, 4, 'B', 611.8, 4522.4),
-('우장춘 지하차도', (SELECT id FROM region WHERE name = '동래구' AND is_deleted = FALSE), '부산광역시 동래구', 35.2151375, 129.0723594, 4.6, 244, 17.6, 4, 'B', 574.1, 7360.8),
+('내성지하차도', (SELECT id FROM region WHERE name = '동래구' AND is_deleted = FALSE), '부산광역시 동래구', 35.2044875, 129.0780469, 4.6, 185, 17, 4, 'B', 158.1, 6145.9),
+('안락지하차도', (SELECT id FROM region WHERE name = '동래구' AND is_deleted = FALSE), '부산광역시 동래구', 35.198163, 129.096968, 4.6, 200, 15.2, 4, 'B', 611.8, 4522.4),
+('우장춘지하차도', (SELECT id FROM region WHERE name = '동래구' AND is_deleted = FALSE), '부산광역시 동래구', 35.2151375, 129.0723594, 4.6, 244, 17.6, 4, 'B', 574.1, 7360.8),
 ('가야감고개공원 복개구조물', (SELECT id FROM region WHERE name = '부산진구' AND is_deleted = FALSE), '부산광역시 부산진구', 35.14845892, 129.0334801, 6.5, 105, 46, 4, 'B', 166.5, 3072.4),
-('문전교차로 지하차도', (SELECT id FROM region WHERE name = '부산진구' AND is_deleted = FALSE), '부산광역시 부산진구', 35.149896, 129.065352, 4.7, 436, 8, 2, 'A', 265, 2279.3),
+('문전교차로지하차도', (SELECT id FROM region WHERE name = '부산진구' AND is_deleted = FALSE), '부산광역시 부산진구', 35.149896, 129.065352, 4.7, 436, 8, 2, 'A', 265, 2279.3),
 ('범일지하도', (SELECT id FROM region WHERE name = '부산진구' AND is_deleted = FALSE), '부산광역시 부산진구', 35.14489, 129.057733, 3.5, 27.7, 8, 2, 'B', 304, 1803.9),
 ('범천지하차도', (SELECT id FROM region WHERE name = '부산진구' AND is_deleted = FALSE), '부산광역시 부산진구', 35.1472161, 129.0558065, 4.5, 215, 16, 4, 'B', 3.8, 2111.8),
-('구남 굴다리', (SELECT id FROM region WHERE name = '북구' AND is_deleted = FALSE), '부산광역시 북구', 35.203253, 128.994752, 4.1, 33, 6, 2, 'B', 129.6, 10096.9),
+('구남지하차도', (SELECT id FROM region WHERE name = '북구' AND is_deleted = FALSE), '부산광역시 북구', 35.203253, 128.994752, 4.1, 33, 6, 2, 'B', 129.6, 10096.9),
 ('만덕2터널밑지하보차도', (SELECT id FROM region WHERE name = '북구' AND is_deleted = FALSE), '부산광역시 북구', 35.2113625, 129.0513906, 4.6, 72, 9.2, 2, 'B', 662.7, 8489.7),
 ('만덕고개생태통로', (SELECT id FROM region WHERE name = '동래구' AND is_deleted = FALSE), '부산광역시 동래구', 35.2129012, 129.0519514, 8, 25, 8, 2, 'B', 589.5, 8552.6),
 ('와석지하차도', (SELECT id FROM region WHERE name = '북구' AND is_deleted = FALSE), '부산광역시 북구', 35.2354204, 129.0204082, 4.5, 480, 10, 4, 'A', 66.3, 12356.6),
 ('산업인력공단옆지하차도', (SELECT id FROM region WHERE name = '북구' AND is_deleted = FALSE), '부산광역시 북구', 35.2465732, 129.0096511, 5, 37, 8.6, 2, 'B', 157.8, 13900.3),
-('감현2교', (SELECT id FROM region WHERE name = '사상구' AND is_deleted = FALSE), '부산광역시 사상구', 35.167548, 128.987185, 2, 20, 4.4, 2, 'B', 225.5, 7354.9),
-('괘법동', (SELECT id FROM region WHERE name = '사상구' AND is_deleted = FALSE), '부산광역시 사상구', 35.1639625, 128.9884531, 2, 48, 3.5, 1, 'B', 256.6, 7037.2),
-('모라북구경계 지하차도', (SELECT id FROM region WHERE name = '사상구' AND is_deleted = FALSE), '부산광역시 사상구', 35.193945, 128.99035, 2.1, 14.5, 7.2, 2, 'B', 245.6, 9467.5),
+('감현2교지하차도', (SELECT id FROM region WHERE name = '사상구' AND is_deleted = FALSE), '부산광역시 사상구', 35.167548, 128.987185, 2, 20, 4.4, 2, 'B', 225.5, 7354.9),
+('괘법동지하차도', (SELECT id FROM region WHERE name = '사상구' AND is_deleted = FALSE), '부산광역시 사상구', 35.1639625, 128.9884531, 2, 48, 3.5, 1, 'B', 256.6, 7037.2),
+('모라북구경계지하차도', (SELECT id FROM region WHERE name = '사상구' AND is_deleted = FALSE), '부산광역시 사상구', 35.193945, 128.99035, 2.1, 14.5, 7.2, 2, 'B', 245.6, 9467.5),
 ('주례역왕굴다리지하차도', (SELECT id FROM region WHERE name = '사상구' AND is_deleted = FALSE), '부산광역시 사상구', 35.152690, 129.003230, 5, 30, 16.5, 2, 'B', 324.5, 5350),
 ('주례역교차로지하차도', (SELECT id FROM region WHERE name = '사상구' AND is_deleted = FALSE), '부산광역시 사상구', 35.1514171, 129.0030179, 5, 53, 25, 4, 'B', 295.3, 5283.4),
-('자유아파트', (SELECT id FROM region WHERE name = '사상구' AND is_deleted = FALSE), '부산광역시 사상구', 35.180769, 128.988075, 4.5, 35, 25, 4, 'B', 606.1, 8486.8),
+('자유아파트지하차도', (SELECT id FROM region WHERE name = '사상구' AND is_deleted = FALSE), '부산광역시 사상구', 35.180769, 128.988075, 4.5, 35, 25, 4, 'B', 606.1, 8486.8),
 ('온골지하차도', (SELECT id FROM region WHERE name = '사상구' AND is_deleted = FALSE), '부산광역시 사상구', 35.15293, 128.996573, 4.2, 46, 5.5, 1, 'B', 573, 5861.7),
 ('주례지하차도', (SELECT id FROM region WHERE name = '사상구' AND is_deleted = FALSE), '부산광역시 사상구', 35.1524402, 129.0044598, 5, 123, 6, 1, 'B', 221.1, 5246.1),
-('한일시멘트', (SELECT id FROM region WHERE name = '사상구' AND is_deleted = FALSE), '부산광역시 사상구', 35.172773, 128.988287, 4.5, 79, 13.8, 2, 'B', 713.3, 7859),
+('한일시멘트지하차도', (SELECT id FROM region WHERE name = '사상구' AND is_deleted = FALSE), '부산광역시 사상구', 35.172773, 128.988287, 4.5, 79, 13.8, 2, 'B', 713.3, 7859),
 ('감천지하차도', (SELECT id FROM region WHERE name = '사하구' AND is_deleted = FALSE), '부산광역시 사하구', 35.0864125, 128.9967656, 4.7, 964, 10, 4, 'A', 1514.7, 347.2),
 ('장평지하차도', (SELECT id FROM region WHERE name = '사하구' AND is_deleted = FALSE), '부산광역시 사하구', 35.084959, 128.981989, 4.5, 2000, 21.7, 4, 'UNKNOWN', 1027.4, 1328.1),
-('부산센텀시티 지하차도', (SELECT id FROM region WHERE name = '해운대구' AND is_deleted = FALSE), '부산광역시 해운대구', 35.170524, 129.126182, 5, 1370, 30, 6, 'B', 115.2, 633.8),
+('센텀시티지하차도', (SELECT id FROM region WHERE name = '해운대구' AND is_deleted = FALSE), '부산광역시 해운대구', 35.170524, 129.126182, 5, 1370, 30, 6, 'B', 115.2, 633.8),
 ('센텀지하차도', (SELECT id FROM region WHERE name = '해운대구' AND is_deleted = FALSE), '부산광역시 해운대구', 35.176764, 129.124401, 4.5, 100, 18, 4, 'C', 331.6, 1211.6),
-('수영강변 지하차도', (SELECT id FROM region WHERE name = '해운대구' AND is_deleted = FALSE), '부산광역시 해운대구', 35.1846125, 129.1182656, 5, 400, 18, 4, 'B', 45.2, 2212.4),
-('우동 지하차도', (SELECT id FROM region WHERE name = '해운대구' AND is_deleted = FALSE), '부산광역시 해운대구', 35.1744625, 129.1643906, 4.5, 145.5, 30, 6, 'B', 469, 1703.3),
-('원동IC 인근 지하차도', (SELECT id FROM region WHERE name = '해운대구' AND is_deleted = FALSE), '부산광역시 해운대구', 35.191497, 129.113678, 5, 4, 6, 1, 'A', 52.4, 3087),
-('좌동 지하차도', (SELECT id FROM region WHERE name = '해운대구' AND is_deleted = FALSE), '부산광역시 해운대구', 35.176549, 129.183386, 4.5, 265, 18, 4, 'B', 1014.8, 1239.2),
+('수영강변지하차도', (SELECT id FROM region WHERE name = '해운대구' AND is_deleted = FALSE), '부산광역시 해운대구', 35.1846125, 129.1182656, 5, 400, 18, 4, 'B', 45.2, 2212.4),
+('우동지하차도', (SELECT id FROM region WHERE name = '해운대구' AND is_deleted = FALSE), '부산광역시 해운대구', 35.1744625, 129.1643906, 4.5, 145.5, 30, 6, 'B', 469, 1703.3),
+('원동IC인근지하차도', (SELECT id FROM region WHERE name = '해운대구' AND is_deleted = FALSE), '부산광역시 해운대구', 35.191497, 129.113678, 5, 4, 6, 1, 'A', 52.4, 3087),
+('좌동지하차도', (SELECT id FROM region WHERE name = '해운대구' AND is_deleted = FALSE), '부산광역시 해운대구', 35.176549, 129.183386, 4.5, 265, 18, 4, 'B', 1014.8, 1239.2),
 ('중동지하차도', (SELECT id FROM region WHERE name = '해운대구' AND is_deleted = FALSE), '부산광역시 해운대구', 35.166402, 129.165501, 4.5, 85, 20, 6, 'C', 805.4, 816.2);
 
 -- =====================================================================
@@ -232,14 +234,14 @@ CROSS JOIN (VALUES (1, 'CCTV'), (2, 'DISPLAY'), (3, 'PUMP')) AS s(slot, type)
 ORDER BY u.id, s.slot;
 
 -- 11-1. 선제 차단 대상 (수위 5cm 에서 차단) — 시연/테스트용 1곳 지정. 실제 운영에서는 관리자가 지정
-UPDATE underpass SET early_block = TRUE WHERE name = '초량 제1지하차도';
+UPDATE underpass SET early_block = TRUE WHERE name = '초량제1지하차도';
 
 -- =====================================================================
 -- 12. threshold — 지하차도별 위험도 임계치 (안전 0 / 관심 40 / 주의 70. 경계·심각은 수위로만 판정하므로 행 없음)
---     updated_by = 그 지하차도 지역을 담당하는 관리자(manager_region 1:1 기본 매핑: 지역 id - 1)
+--     updated_by = 그 지하차도 지역을 담당하는 관리자(manager_region 에서 그 지역을 맡은 관리자)
 -- =====================================================================
 INSERT INTO threshold (underpass_id, level, min_score, updated_by)
-SELECT u.id, s.level::risk_level, s.min_score, u.region_id - 1
+SELECT u.id, s.level::risk_level, s.min_score, (SELECT MIN(mr.manager_id) FROM manager_region mr WHERE mr.region_id = u.region_id)
 FROM underpass u
 CROSS JOIN (VALUES ('안전', 0), ('관심', 40), ('주의', 70)) AS s(level, min_score)
 ORDER BY u.id, s.min_score;
@@ -250,7 +252,7 @@ ORDER BY u.id, s.min_score;
 --     DISPLAY 안전 0 / 주의 50 / 위험 80,  PUMP 안전 0 / 주의 45 / 위험 75
 -- =====================================================================
 INSERT INTO pm_threshold (equip_id, level, min_score, updated_by)
-SELECT e.id, s.level::pm_level, s.min_score, u.region_id - 1
+SELECT e.id, s.level::pm_level, s.min_score, (SELECT MIN(mr.manager_id) FROM manager_region mr WHERE mr.region_id = u.region_id)
 FROM pm_equipment e
 JOIN underpass u ON u.id = e.underpass_id
 JOIN (VALUES
@@ -323,10 +325,10 @@ INSERT INTO faq (category, sort_order, question, answer, manager_id) VALUES
  5),
 ('USAGE', 4, '위험도 점수는 어떻게 산출되나요?',
  'AI 모델이 현재 강수량, 누적 강수량, 지하차도 구조(높이/길이/폭), 인근 하천 거리, 과거 침수 이력 등을 종합하여 0~100점으로 산출합니다.',
- 6),
+ 2),
 ('ETC', 5, '예지보전이 뭔가요?',
  'CCTV, 전광판, 배수펌프 등 시설물의 고장을 사전에 예측하는 시스템입니다. 센서 데이터를 분석하여 점검이 필요한 설비를 미리 알려줍니다.',
- 11);
+ 4);
 
 -- =====================================================================
 -- 18. notice — 공지사항 3건
@@ -337,7 +339,7 @@ INSERT INTO notice (category, title, content, is_important, send_push, manager_i
  TRUE, FALSE, 1),
 ('URGENT', '태풍 대비 사전 안내',
  '기상청 예보에 따라 이번 주말 태풍 영향이 예상됩니다. 지하차도 이용 시 각별히 주의해 주시기 바랍니다.',
- TRUE, TRUE, 9),
+ TRUE, TRUE, 2),
 ('MAINTENANCE', '시스템 정기 점검 안내',
  '10월 25일(금) 02:00~06:00 시스템 정기 점검이 예정되어 있습니다. 해당 시간 동안 서비스 이용이 제한될 수 있습니다.',
  FALSE, FALSE, 1);
@@ -393,7 +395,7 @@ INSERT INTO device_token (customer_id, token, platform) VALUES
 -- region:       1=미배정, 2=중구, ..., 17=기장군
 -- employee:     1~16
 -- shift:        1=주간, 2=오후, 3=야간
--- manager:      1~16 (login: manager01~16)
+-- manager:      1~5 (login: manager01~05)
 -- customer:     1~10 (login: customer01~10)
 -- car:          1~14 (고객당 1~2대) + 15~37 시연용(roi 영상 21대 + 52로/52모0979)
 -- underpass:    1~45 (엑셀 순서: 강서구 → 금정구 → 기장군 → … → 해운대구)
