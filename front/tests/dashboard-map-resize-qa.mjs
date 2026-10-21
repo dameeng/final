@@ -1,4 +1,105 @@
-﻿import {chromium} from '@playwright/test';import {createServer} from 'vite';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';
-const server=await createServer({configLoader:'runner',server:{host:'127.0.0.1',port:0,strictPort:false}});await server.listen();const browser=await chromium.launch({channel:'msedge',headless:true});
-try{const page=await browser.newPage({viewport:{width:1600,height:1000}});const source=readFileSync(new URL('./manager-map-overlay.mjs',import.meta.url),'utf8'),start=source.indexOf('await page.addInitScript(')+'await page.addInitScript('.length,end=source.indexOf('\n })',start)+3;await page.addInitScript({content:'('+source.slice(start,end)+')()'});await page.route('**/api/**',r=>{const path=new URL(r.request().url()).pathname;let data=[];if(path==='/api/customers/me')data=null;if(path==='/api/managers/me')data={id:1,name:'관리자',role:'REGIONAL_ADMIN',regions:[{id:1,name:'부산광역시'}]};const facility={id:1,name:'Facility 1',regionId:1,regionName:'부산광역시',roadAddress:'부산광역시 중구',latitude:35.1,longitude:129.03,currentStatus:'NORMAL',currentRiskLevel:'SAFE',manageable:true,currentRiskScore:20,riskScore:20};if(path==='/api/underpasses')data={items:[facility],page:1,totalItems:1,totalPages:1};if(path==='/api/underpasses/1')data=facility;if(path==='/api/dashboard/timeline')data=Array.from({length:30},(_,i)=>({underpassName:'시설 '+i,eventType:'BLOCK',reason:'통제 시작',createdAt:'2026-10-21T12:00:00'}));if(path.endsWith('/risk-scores'))data=[{riskScore:20,predictedAt:new Date().toISOString()}];if(path==='/api/weather')data={temperature:18,rainfall:0,humidity:60,condition:'맑음'};return r.fulfill({json:{success:true,data}})});await page.goto(server.resolvedUrls.local[0]+'admin-dashboard');await page.locator('.handover-x').click();await page.locator('.test-map-marker').first().click();const panel=page.locator('.manager-map-panel');await panel.locator('.manager-facility-heading').waitFor();
-for(const width of [1600,1440,768,390]){await page.setViewportSize({width,height:1000});await page.waitForTimeout(150);const map=await page.locator('.fixed-map').boundingBox(),events=await page.locator('.fixed-events').boundingBox(),stage=await page.locator('.manager-map-stage').boundingBox(),detail=await panel.boundingBox();assert(stage.height>=600);if(width>1050){assert(map.height<1200);assert(Math.abs(events.height-map.height)<3,JSON.stringify({map,events}));assert(Math.abs(events.y-map.y)<2);assert(detail.y-stage.y<16);assert(detail.width>=338);assert(detail.height>500)}assert(detail.x>=stage.x&&detail.y>=stage.y&&detail.x+detail.width<=stage.x+stage.width+1&&detail.y+detail.height<=stage.y+stage.height+1);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);console.log('PASS dashboard proportions at',width,JSON.stringify({map:map.height,events:events.height,stage:stage.height,panel:detail.height}))}await page.setViewportSize({width:1600,height:1000});await page.screenshot({path:'test-results/dashboard-map-resize.png',fullPage:true});}finally{await browser.close();await server.close()}
+﻿import { chromium } from '@playwright/test'
+import { createServer } from 'vite'
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+const server = await createServer({
+  configLoader: 'runner',
+  server: { host: '127.0.0.1', port: 0, strictPort: false },
+})
+await server.listen()
+const browser = await chromium.launch({ channel: 'msedge', headless: true })
+try {
+  const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } })
+  const source = readFileSync(new URL('./manager-map-overlay.mjs', import.meta.url), 'utf8'),
+    start = source.indexOf('await page.addInitScript(') + 'await page.addInitScript('.length,
+    end = source.indexOf('\n })', start) + 3
+  await page.addInitScript({ content: '(' + source.slice(start, end) + ')()' })
+  await page.route('**/api/**', (r) => {
+    const path = new URL(r.request().url()).pathname
+    let data = []
+    if (path === '/api/customers/me') data = null
+    if (path === '/api/managers/me')
+      data = {
+        id: 1,
+        name: '관리자',
+        role: 'REGIONAL_ADMIN',
+        regions: [{ id: 1, name: '부산광역시' }],
+      }
+    const facility = {
+      id: 1,
+      name: 'Facility 1',
+      regionId: 1,
+      regionName: '부산광역시',
+      roadAddress: '부산광역시 중구',
+      latitude: 35.1,
+      longitude: 129.03,
+      currentStatus: 'NORMAL',
+      currentRiskLevel: 'SAFE',
+      manageable: true,
+      currentRiskScore: 20,
+      riskScore: 20,
+    }
+    if (path === '/api/underpasses')
+      data = { items: [facility], page: 1, totalItems: 1, totalPages: 1 }
+    if (path === '/api/underpasses/1') data = facility
+    if (path === '/api/dashboard/timeline')
+      data = Array.from({ length: 30 }, (_, i) => ({
+        underpassName: '시설 ' + i,
+        eventType: 'BLOCK',
+        reason: '통제 시작',
+        createdAt: '2026-10-21T12:00:00',
+      }))
+    if (path.endsWith('/risk-scores'))
+      data = [{ riskScore: 20, predictedAt: new Date().toISOString() }]
+    if (path === '/api/weather')
+      data = { temperature: 18, rainfall: 0, humidity: 60, condition: '맑음' }
+    return r.fulfill({ json: { success: true, data } })
+  })
+  await page.goto(server.resolvedUrls.local[0] + 'admin-dashboard')
+  await page.locator('.handover-x').click()
+  await page.locator('.test-map-marker').first().click()
+  const panel = page.locator('.manager-map-panel')
+  await panel.locator('.manager-facility-heading').waitFor()
+  for (const width of [1600, 1440, 768, 390]) {
+    await page.setViewportSize({ width, height: 1000 })
+    await page.waitForTimeout(150)
+    const map = await page.locator('.fixed-map').boundingBox(),
+      events = await page.locator('.fixed-events').boundingBox(),
+      stage = await page.locator('.manager-map-stage').boundingBox(),
+      detail = await panel.boundingBox()
+    assert(stage.height >= 600)
+    if (width > 1050) {
+      assert(map.height < 1200)
+      assert(Math.abs(events.height - map.height) < 3, JSON.stringify({ map, events }))
+      assert(Math.abs(events.y - map.y) < 2)
+      assert(detail.y - stage.y < 16)
+      assert(detail.width >= 338)
+      assert(detail.height > 500)
+    }
+    assert(
+      detail.x >= stage.x &&
+        detail.y >= stage.y &&
+        detail.x + detail.width <= stage.x + stage.width + 1 &&
+        detail.y + detail.height <= stage.y + stage.height + 1,
+    )
+    assert.equal(
+      await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1),
+      false,
+    )
+    console.log(
+      'PASS dashboard proportions at',
+      width,
+      JSON.stringify({
+        map: map.height,
+        events: events.height,
+        stage: stage.height,
+        panel: detail.height,
+      }),
+    )
+  }
+  await page.setViewportSize({ width: 1600, height: 1000 })
+  await page.screenshot({ path: 'test-results/dashboard-map-resize.png', fullPage: true })
+} finally {
+  await browser.close()
+  await server.close()
+}

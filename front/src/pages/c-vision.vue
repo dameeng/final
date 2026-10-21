@@ -1,4 +1,5 @@
-<script setup lang="ts">const visionRoadmap=[
+<script setup lang="ts">
+const visionRoadmap = [
   {
     year: '2026',
     title: '안전 정보의 기반을 다지겠습니다',
@@ -7,7 +8,8 @@
   {
     year: '2027',
     title: '필요한 안내를 제때 전달하겠습니다',
-    description: '관심 지역과 시설의 통제 정보를 확인하고 알림을 받을 수 있도록, 이용자 중심의 안내 기능을 고도화하겠습니다.',
+    description:
+      '관심 지역과 시설의 통제 정보를 확인하고 알림을 받을 수 있도록, 이용자 중심의 안내 기능을 고도화하겠습니다.',
   },
   {
     year: '2028',
@@ -17,6 +19,23 @@
   {
     year: '2030',
     title: '더 넓은 지역의 안전한 이동을 돕겠습니다',
-    description: '서비스 적용 지역을 단계적으로 확대하고, 이용자와 시설 관리자를 연결하는 안전 정보 체계를 발전시키겠습니다.',
+    description:
+      '서비스 적용 지역을 단계적으로 확대하고, 이용자와 시설 관리자를 연결하는 안전 정보 체계를 발전시키겠습니다.',
   },
-]</script><template><main class="wire-page customer-content"><h1>비전·로드맵</h1><p>서비스 추진 목표이며 완료된 성과가 아닙니다.</p><ol><li v-for="goal in visionRoadmap" :key="goal.year" class="routel-vision-row"><strong>{{goal.year}}</strong><div><h2>{{goal.title}}</h2><p>{{goal.description}}</p></div></li></ol></main></template>
+]
+</script>
+<template>
+  <main class="wire-page customer-content">
+    <h1>비전·로드맵</h1>
+    <p>서비스 추진 목표이며 완료된 성과가 아닙니다.</p>
+    <ol>
+      <li v-for="goal in visionRoadmap" :key="goal.year" class="routel-vision-row">
+        <strong>{{goal.year}}</strong>
+        <div>
+          <h2>{{goal.title}}</h2>
+          <p>{{goal.description}}</p>
+        </div>
+      </li>
+    </ol>
+  </main>
+</template>
