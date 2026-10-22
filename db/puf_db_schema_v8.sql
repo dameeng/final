@@ -1,11 +1,12 @@
 -- =====================================================================
--- PUF DB 리셋 + 스키마 생성 v7 (ENUM / TABLE / CHECK / FK / INDEX) — 시드는 필수 기준행만
+-- PUF DB 리셋 + 스키마 생성 v8 (ENUM / TABLE / CHECK / FK / INDEX) — 시드는 필수 기준행만
 -- v3 변경 요약: 최고관리자 폐지(manager_region N:M), 근무조/인수인계, 전화번호 인증, 알림 구조 분리(alert/delivery/device_token),
 --              전광판 페이지/프리셋, 통제정보 이관, 예지보전(pm_*), 챗봇(chat_*), 날씨 실데이터 테이블, 컬럼/테이블명 축약
 -- v6 변경 요약: ITS CCTV/전광판 원본(its_cctv, its_vms) 및 지하차도-전광판 표출 매핑(vms_underpass) 추가,
 --              camera.its_cctv_id / pm_equipment.its_vms_id 추가, display_page 가 설비(equip_id) 대신 전광판(its_vms_id) + 원인 지하차도(underpass_id)를 가리키도록 변경
 -- v7 변경 요약: 전광판 자동 표출 — display_page.is_manual 추가(수동/자동 페이지 구분), display_page UNIQUE(its_vms_id,page_no)를 DEFERRABLE 로 변경,
 --              display_history 에 its_vms_id/underpass_id 추가 + page_id NULL 허용(페이지가 지워져도 이력 유지, ON DELETE SET NULL)
+-- v8 변경 요약: DDL 구조는 v7과 같음(카메라 역할 설명 주석만 수정). 시드 쪽이 바뀜 — 카메라 일괄 5대 생성 폐지, 초량지하차도 id=1
 -- ⚠️ 개발 DB 전용. public 스키마를 통째로 지우므로 되돌릴 수 없음. 운영 DB 실행 금지.
 -- 실행 순서: 스키마 리셋 → ENUM → 테이블 → CHECK → FK/인덱스 → 필수 기준행
 -- 약어 사전: cam(카메라) num(번호) addr(주소) dist(거리) lat/lng(위경도) ctrl(통제) pm(예지보전) recog(인식)
@@ -172,7 +173,7 @@ CREATE TABLE camera ( -- 지하차도 카메라 등록 테이블
     dist INT, -- 진입지점까지 거리(m)
     lat DECIMAL(10,7), -- 위도
     lng DECIMAL(10,7), -- 경도
-    its_cctv_id BIGINT UNIQUE, -- ITS CCTV 아이디(실제 ITS 영상과 연결된 CCTV 역할 카메라만 값 있음, 더미는 NULL. 한 ITS CCTV 는 한 지하차도에만 귀속)
+    its_cctv_id BIGINT UNIQUE, -- ITS CCTV 아이디(실제 ITS 영상과 연결된 카메라만 값 있음, 역할은 지하차도~카메라 거리로 CCTV/FINAL_LPR/APPROACH_LPR 중 하나, 더미는 NULL. 한 ITS CCTV 는 한 지하차도에만 귀속)
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE, -- 삭제 여부(소프트 삭제, plate_log 참조 보존용)
     created_at TIMESTAMP NOT NULL DEFAULT NOW() -- 등록일
 );
