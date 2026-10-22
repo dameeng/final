@@ -4,7 +4,6 @@ import com.mbc.puf.common.enums.TransferAgency;
 import com.mbc.puf.common.enums.UnderpassCurrentStatus;
 import com.mbc.puf.common.enums.UnderpassEventType;
 import com.mbc.puf.common.exception.BusinessException;
-import com.mbc.puf.common.enums.DisplayCategory;
 import com.mbc.puf.common.pdf.ControlNoticeData;
 import com.mbc.puf.risk.RiskPolicy;
 import tools.jackson.databind.json.JsonMapper;
@@ -34,6 +33,7 @@ import com.mbc.puf.region.repository.RegionRepository;
 import com.mbc.puf.common.enums.ManagerNotificationCategory;
 import com.mbc.puf.common.enums.ReasonType;
 import com.mbc.puf.notification.service.NotificationService;
+import com.mbc.puf.display.service.VmsDisplayService;
 import com.mbc.puf.stream.StreamPayloads;
 import com.mbc.puf.stream.StreamPublisher;
 import com.mbc.puf.underpass.dto.UnderpassDetailResponse;
@@ -80,6 +80,7 @@ public class ControlServiceImpl implements ControlService {
     private final StreamPublisher streamPublisher;           // SSE 실시간 이벤트
     private final NotificationService notificationService;   // 관리자 알림(위험)
     private final RiskPolicy riskPolicy;                     // 해제 가능 수위 판단
+    private final VmsDisplayService vmsDisplayService;       // 전광판 자동 표출(차단·해제 때 다시 맞춘다)
 
     // 이관 스냅샷(JSON) 만들고 읽는 용도
     private static final JsonMapper JSON = JsonMapper.builder().build();
@@ -102,8 +103,10 @@ public class ControlServiceImpl implements ControlService {
             EntityManager em,
             StreamPublisher streamPublisher,
             NotificationService notificationService,
-            RiskPolicy riskPolicy) {
+            RiskPolicy riskPolicy,
+            VmsDisplayService vmsDisplayService) {
         this.riskPolicy = riskPolicy;
+        this.vmsDisplayService = vmsDisplayService;
         this.reasonPresetRepository = reasonPresetRepository;
         this.ctrlTransferRepository = ctrlTransferRepository;
         this.ctrlTransferCarRepository = ctrlTransferCarRepository;
@@ -160,9 +163,8 @@ public class ControlServiceImpl implements ControlService {
 
         String reason = resolveReason(request, ReasonType.BLOCK);
         String reasonNote = resolveReasonNote(request);   // 프리셋이 '기타'인데 상세 사유가 없으면 여기서 400
-        DisplayChoice displayChoice = resolveDisplay(request, DisplayCategory.BLOCK);   // 잘못된 요청은 차단하기 전에 걸러낸다
 
-        BlockOutcome out = doBlock(underpass, loginUser.id(), false, reason, reasonNote, null, displayChoice);
+        BlockOutcome out = doBlock(underpass, loginUser.id(), false, reason, reasonNote, null);
 
         // PDF 생성 + 최신 상태 다시 조회해서 응답 구성
         LocalDateTime now = out.transfer().getCreatedAt() != null ? out.transfer().getCreatedAt() : LocalDateTime.now();
@@ -187,14 +189,14 @@ public class ControlServiceImpl implements ControlService {
         BigDecimal block = riskPolicy.blockCm(underpass);
         String reason = "수위 " + waterCm.stripTrailingZeros().toPlainString() + "cm — 차단 기준 "
                 + block.stripTrailingZeros().toPlainString() + "cm 도달(자동 차단)";
-        doBlock(underpass, null, true, reason, null, waterCm, null);
+        doBlock(underpass, null, true, reason, null, waterCm);
     }
 
     private record BlockOutcome(UnderpassEvent event, CtrlTransfer transfer, ControlNoticeData notice) {}
 
     // 수동/자동 차단이 같이 쓰는 본체. operatorId 가 NULL 이면 자동 차단
     private BlockOutcome doBlock(Underpass underpass, Long operatorId, boolean auto, String reason, String reasonNote,
-                                 BigDecimal waterCm, DisplayChoice displayChoice) {
+                                 BigDecimal waterCm) {
         Long underpassId = underpass.getId();
 
         // 1) 차단 이벤트 저장
@@ -218,8 +220,8 @@ public class ControlServiceImpl implements ControlService {
         streamPublisher.publishToAdmins(underpass.getRegionId(), "transit-update",
                 new StreamPayloads.TransitUpdate(underpassId, "REMAINING", null, null));
 
-        // 4) 전광판을 차단 문구로 전환
-        switchDisplay(underpass, event, operatorId, DisplayCategory.BLOCK, displayChoice);
+        // 4) 이 지하차도와 연결된 전광판들의 문구를 다시 맞춘다 (차단 → 빨강 "통제 중" 페이지)
+        vmsDisplayService.reconcileForUnderpass(underpassId, event.getId(), operatorId);
 
         // 5) 경찰 이관 기록 저장 (전달서에 들어갈 내용은 스냅샷으로 같이 저장)
         ControlNoticeData notice = buildNotice(underpass, event, null, operatorId, null);
@@ -254,7 +256,6 @@ public class ControlServiceImpl implements ControlService {
 
         String reason = resolveReason(request, ReasonType.RELEASE);
         String reasonNote = resolveReasonNote(request);
-        DisplayChoice displayChoice = resolveDisplay(request, DisplayCategory.RELEASE);
 
         // 1) 해제 이벤트 저장
         UnderpassEvent event = new UnderpassEvent();
@@ -270,8 +271,8 @@ public class ControlServiceImpl implements ControlService {
         underpass.setCurrentBlockEventId(null);
         publishControlChange(underpass, UnderpassCurrentStatus.NORMAL, null);
 
-        // 3) 전광판을 해제 문구로 전환
-        switchDisplay(underpass, event, loginUser.id(), DisplayCategory.RELEASE, displayChoice);
+        // 3) 전광판 문구를 다시 맞춘다 (해제 → 초록 "통행 재개" 페이지, 일정 시간 뒤 사라짐)
+        vmsDisplayService.reconcileForUnderpass(underpassId, event.getId(), loginUser.id());
 
         // 4) 경찰 이관 기록 저장 + PDF 생성
         ControlNoticeData notice = buildNotice(underpass, event, blockEvent, loginUser.id(), null);
@@ -436,33 +437,6 @@ public class ControlServiceImpl implements ControlService {
         return request.getReason();
     }
 
-    /** 관리자가 고른 전광판 문구. 직접 입력이면 presetId 가 null */
-    private record DisplayChoice(String content, Long presetId) {}
-
-    /**
-     * 전광판 문구 결정: 직접 입력(displayContent)이 있으면 그것, 없고 프리셋(displayPresetId)을 골랐으면 그 프리셋,
-     * 둘 다 없으면 null (기본 프리셋 문구를 쓴다). 프리셋은 차단이면 BLOCK, 해제면 RELEASE 분류만 허용.
-     */
-    private DisplayChoice resolveDisplay(BlockRequest request, DisplayCategory expected) {
-        if (request == null) return null;
-        String typed = request.getDisplayContent() == null ? "" : request.getDisplayContent().trim();
-        if (!typed.isEmpty()) {
-            return new DisplayChoice(typed, null);
-        }
-        if (request.getDisplayPresetId() == null) return null;
-        List<?> rows = em.createNativeQuery("SELECT content, CAST(category AS TEXT) FROM display_preset WHERE id = :id")
-                .setParameter("id", request.getDisplayPresetId()).getResultList();
-        if (rows.isEmpty()) {
-            throw new BusinessException(HttpStatus.NOT_FOUND, "전광판 프리셋을 찾을 수 없습니다.");
-        }
-        Object[] row = (Object[]) rows.get(0);
-        if (!expected.name().equals(row[1])) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, expected == DisplayCategory.BLOCK
-                    ? "차단 문구 프리셋이 아닙니다." : "해제 문구 프리셋이 아닙니다.");
-        }
-        return new DisplayChoice((String) row[0], request.getDisplayPresetId());
-    }
-
     private CtrlTransfer saveTransfer(Long eventId, TransferAgency agency, String memo, Long managerId, String snapshot) {
         CtrlTransfer transfer = new CtrlTransfer();
         transfer.setSnapshot(snapshot);
@@ -529,14 +503,9 @@ public class ControlServiceImpl implements ControlService {
                 memo);
     }
 
-    // 그 지하차도 전광판의 1페이지 문구 (전광판이 없거나 페이지가 비어 있으면 null)
+    // 그 지하차도에서 가장 가까운 전광판의 첫 페이지 문구 (전광판이 없거나 페이지가 비어 있으면 null)
     private String currentDisplayText(Long underpassId) {
-        List<?> rows = em.createNativeQuery(
-                        "SELECT dp.content FROM display_page dp JOIN pm_equipment pe ON pe.id = dp.equip_id"
-                                + " WHERE pe.underpass_id = :id AND CAST(pe.type AS TEXT) = 'DISPLAY'"
-                                + " ORDER BY dp.page_no, pe.id")
-                .setParameter("id", underpassId).setMaxResults(1).getResultList();
-        return rows.isEmpty() ? null : (String) rows.get(0);
+        return vmsDisplayService.nearestFirstPageText(underpassId);
     }
 
     // "1조 06:00~14:00" (근무조가 없으면 null)
@@ -623,67 +592,6 @@ public class ControlServiceImpl implements ControlService {
                 m.get("managerRegion") instanceof String t ? t : base.managerRegion(),
                 m.get("shiftLabel") instanceof String t ? t : base.shiftLabel(),
                 base.blockAt(), base.blockReason(), base.blockReasonNote(), base.memo());
-    }
-
-    /**
-     * 그 지하차도 전광판(DISPLAY 설비)의 1페이지 문구를 바꾼다. 관리자가 고른 문구(choice, 직접 입력 또는 프리셋)가 있으면 그것,
-     * 없으면 해당 분류(차단/해제)의 첫 프리셋 문구.
-     * 전광판이 없거나 프리셋이 없으면 아무 것도 하지 않는다. 바꾸면 전광판 이력(display_history)에 이 이벤트가 계기로 남는다.
-     */
-    private void switchDisplay(Underpass underpass, UnderpassEvent event, Long operatorId, DisplayCategory category,
-                               DisplayChoice choice) {
-        List<?> equips = em.createNativeQuery("SELECT pe.id FROM pm_equipment pe WHERE pe.underpass_id = :u"
-                        + " AND CAST(pe.type AS TEXT) = 'DISPLAY' ORDER BY pe.id")
-                .setParameter("u", underpass.getId()).setMaxResults(1).getResultList();
-        if (equips.isEmpty()) return;
-
-        Long presetId;
-        String content;
-        if (choice != null) {
-            presetId = choice.presetId();
-            content = choice.content();
-        } else {
-            List<?> presets = em.createNativeQuery("SELECT id, content FROM display_preset"
-                            + " WHERE CAST(category AS TEXT) = :c ORDER BY id")
-                    .setParameter("c", category.name()).setMaxResults(1).getResultList();
-            if (presets.isEmpty()) return;
-            Object[] preset = (Object[]) presets.get(0);
-            presetId = ((Number) preset[0]).longValue();
-            content = (String) preset[1];
-        }
-
-        Long equipId = ((Number) equips.get(0)).longValue();
-
-        List<?> pages = em.createNativeQuery("SELECT id, content FROM display_page WHERE equip_id = :e AND page_no = 1")
-                .setParameter("e", equipId).getResultList();
-        Long pageId;
-        String oldContent;
-        String action;
-        if (pages.isEmpty()) {
-            Object id = em.createNativeQuery("INSERT INTO display_page (equip_id, page_no, content, preset_id, updated_by)"
-                            + " VALUES (:e, 1, :c, :p, :m) RETURNING id")
-                    .setParameter("e", equipId).setParameter("c", content).setParameter("p", presetId)
-                    .setParameter("m", operatorId).getSingleResult();
-            pageId = ((Number) id).longValue();
-            oldContent = null;
-            action = "CREATE";
-        } else {
-            Object[] page = (Object[]) pages.get(0);
-            pageId = ((Number) page[0]).longValue();
-            oldContent = (String) page[1];
-            if (content.equals(oldContent)) return;   // 이미 같은 문구
-            em.createNativeQuery("UPDATE display_page SET content = :c, preset_id = :p, updated_by = :m, updated_at = NOW()"
-                            + " WHERE id = :id")
-                    .setParameter("c", content).setParameter("p", presetId).setParameter("m", operatorId)
-                    .setParameter("id", pageId).executeUpdate();
-            action = "UPDATE";
-        }
-        em.createNativeQuery("INSERT INTO display_history (page_id, event_id, old_content, new_content, changed_by)"
-                        + " VALUES (:pg, :ev, :o, :n, :m)")
-                .setParameter("pg", pageId).setParameter("ev", event.getId()).setParameter("o", oldContent)
-                .setParameter("n", content).setParameter("m", operatorId).executeUpdate();
-        streamPublisher.publishToAdmins(underpass.getRegionId(), "display-change",
-                new StreamPayloads.DisplayChange(equipId, underpass.getId(), 1, action));
     }
 
     private record ManagerInfo(String name, String regionName) {}

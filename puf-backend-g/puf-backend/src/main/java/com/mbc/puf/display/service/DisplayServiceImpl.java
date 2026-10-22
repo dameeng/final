@@ -1,24 +1,31 @@
 package com.mbc.puf.display.service;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.mbc.puf.common.enums.DisplayCategory;
 import com.mbc.puf.common.exception.BusinessException;
 import com.mbc.puf.common.jpa.DbClock;
 import com.mbc.puf.common.security.LoginUser;
 import com.mbc.puf.common.security.ScopeResolver;
-import com.mbc.puf.display.dto.DisplayPageItem;
 import com.mbc.puf.display.dto.DisplayPageSaveRequest;
 import com.mbc.puf.display.dto.DisplayPresetItem;
+import com.mbc.puf.display.dto.VmsPageItem;
 import com.mbc.puf.display.entity.DisplayHistory;
 import com.mbc.puf.display.entity.DisplayPage;
 import com.mbc.puf.display.entity.DisplayPreset;
 import com.mbc.puf.display.repository.DisplayHistoryRepository;
 import com.mbc.puf.display.repository.DisplayPageRepository;
 import com.mbc.puf.display.repository.DisplayPresetRepository;
-import java.util.List;
-import java.util.stream.Collectors;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import com.mbc.puf.stream.StreamPayloads;
+import com.mbc.puf.stream.StreamPublisher;
+
+import jakarta.persistence.EntityManager;
 
 @Service
 public class DisplayServiceImpl implements DisplayService {
@@ -26,22 +33,19 @@ public class DisplayServiceImpl implements DisplayService {
     private final DisplayPresetRepository presetRepository;
     private final DisplayPageRepository pageRepository;
     private final DisplayHistoryRepository historyRepository;
+    private final VmsDisplayService vmsDisplayService;
     private final DbClock dbClock;
-    private final jakarta.persistence.EntityManager em;
-    private final ScopeResolver scopeResolver;   // 담당 지역 확인
-    private final com.mbc.puf.stream.StreamPublisher streamPublisher;   // SSE 실시간 이벤트
+    private final EntityManager em;
+    private final ScopeResolver scopeResolver;
+    private final StreamPublisher streamPublisher;
 
-    public DisplayServiceImpl(
-            DisplayPresetRepository presetRepository,
-            DisplayPageRepository pageRepository,
-            DisplayHistoryRepository historyRepository,
-            DbClock dbClock,
-            jakarta.persistence.EntityManager em,
-            ScopeResolver scopeResolver,
-            com.mbc.puf.stream.StreamPublisher streamPublisher) {
+    public DisplayServiceImpl(DisplayPresetRepository presetRepository, DisplayPageRepository pageRepository,
+                              DisplayHistoryRepository historyRepository, VmsDisplayService vmsDisplayService, DbClock dbClock,
+                              EntityManager em, ScopeResolver scopeResolver, StreamPublisher streamPublisher) {
         this.presetRepository = presetRepository;
         this.pageRepository = pageRepository;
         this.historyRepository = historyRepository;
+        this.vmsDisplayService = vmsDisplayService;
         this.dbClock = dbClock;
         this.em = em;
         this.scopeResolver = scopeResolver;
@@ -65,133 +69,124 @@ public class DisplayServiceImpl implements DisplayService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<DisplayPageItem> getPages(LoginUser loginUser, Long equipId) {
-        requireEquipmentRegion(loginUser, equipId, false);
-        return pageRepository.findByEquipIdOrderByPageNoAsc(equipId)
-                .stream().map(this::toItem).collect(Collectors.toList());
+    public List<VmsPageItem> getPages(Long vmsId) {
+        requireVms(vmsId);
+        List<VmsPageItem> pages = vmsDisplayService.pagesOf(List.of(vmsId)).get(vmsId);
+        return pages == null || pages.isEmpty() ? List.of(vmsDisplayService.defaultPage(vmsId)) : pages;
     }
 
-    // ─── 페이지 생성 ─────────────────────────────────────────────────
+    // ─── 수동 페이지 생성 ────────────────────────────────────────────
 
     @Override
     @Transactional
-    public DisplayPageItem createPage(LoginUser loginUser, Long equipId, DisplayPageSaveRequest request) {
-        requireEquipmentRegion(loginUser, equipId, true);
-        int nextPageNo = pageRepository.findMaxPageNoByEquipId(equipId)
-                .map(max -> max + 1)
-                .orElse(1);
+    public VmsPageItem createPage(LoginUser loginUser, Long vmsId, DisplayPageSaveRequest request) {
+        requireVms(vmsId);
+        if (request.getUnderpassId() == null) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "원인 지하차도(underpassId)는 필수입니다.");
+        }
+        Long regionId = underpassRegion(request.getUnderpassId());
+        scopeResolver.requireOwnable(loginUser, regionId);
 
+        int nextPageNo = pageRepository.findMaxPageNoByVmsId(vmsId).map(max -> max + 1).orElse(1);
         DisplayPage page = new DisplayPage();
-        page.setEquipId(equipId);
+        page.setVmsId(vmsId);
+        page.setUnderpassId(request.getUnderpassId());
         page.setPageNo(nextPageNo);
         page.setContent(request.getContent().trim());
         page.setPresetId(request.getPresetId());
+        page.setManual(true);
         page.setUpdatedBy(loginUser.id());
         page.setUpdatedAt(dbClock.now());
         pageRepository.save(page);
 
-        // 최초 생성: oldContent = null
-        saveHistory(page.getId(), null, null, page.getContent(), loginUser.id());
-        publishDisplayChange(equipId, page.getPageNo(), "CREATE");
-
+        saveHistory(page, null, page.getContent(), loginUser.id());
+        publish(vmsId, page.getUnderpassId(), page.getPageNo(), "CREATE");
         return toItem(page);
     }
 
-    // ─── 페이지 수정 ─────────────────────────────────────────────────
+    // ─── 수동 페이지 수정 ────────────────────────────────────────────
 
     @Override
     @Transactional
-    public DisplayPageItem updatePage(LoginUser loginUser, Long equipId, Integer pageNo, DisplayPageSaveRequest request) {
-        requireEquipmentRegion(loginUser, equipId, true);
-        DisplayPage page = requirePage(equipId, pageNo);
+    public VmsPageItem updatePage(LoginUser loginUser, Long vmsId, Integer pageNo, DisplayPageSaveRequest request) {
+        DisplayPage page = requireManualPage(vmsId, pageNo);
+        scopeResolver.requireOwnable(loginUser, underpassRegion(page.getUnderpassId()));
 
         String newContent = request.getContent().trim();
         String oldContent = page.getContent();
-
-        // 내용이 실제로 바뀔 때만 히스토리 저장
-        if (!newContent.equals(oldContent)) {
+        if (!newContent.equals(oldContent)) {   // 내용이 실제로 바뀔 때만 이력을 남긴다
             page.setContent(newContent);
             page.setPresetId(request.getPresetId());
             page.setUpdatedBy(loginUser.id());
             page.setUpdatedAt(dbClock.now());
-
-            saveHistory(page.getId(), null, oldContent, newContent, loginUser.id());
-            publishDisplayChange(equipId, pageNo, "UPDATE");
+            saveHistory(page, oldContent, newContent, loginUser.id());
+            publish(vmsId, page.getUnderpassId(), pageNo, "UPDATE");
         }
-
         return toItem(page);
     }
 
-    // ─── 페이지 삭제 ─────────────────────────────────────────────────
+    // ─── 수동 페이지 삭제 ────────────────────────────────────────────
 
     @Override
     @Transactional
-    public void deletePage(LoginUser loginUser, Long equipId, Integer pageNo) {
-        requireEquipmentRegion(loginUser, equipId, true);
-        DisplayPage page = requirePage(equipId, pageNo);
+    public void deletePage(LoginUser loginUser, Long vmsId, Integer pageNo) {
+        DisplayPage page = requireManualPage(vmsId, pageNo);
+        scopeResolver.requireOwnable(loginUser, underpassRegion(page.getUnderpassId()));
+        Long underpassId = page.getUnderpassId();
         pageRepository.delete(page);
-        // 삭제된 페이지 뒤에 있는 페이지들의 page_no 를 1씩 내린다
-        pageRepository.shiftPageNoDown(equipId, pageNo);
-        publishDisplayChange(equipId, pageNo, "DELETE");
+        pageRepository.flush();
+        pageRepository.shiftPageNoDown(vmsId, pageNo);   // 삭제된 페이지 뒤의 번호를 1씩 내린다
+        publish(vmsId, underpassId, pageNo, "DELETE");
     }
 
     // ─── 내부 헬퍼 ──────────────────────────────────────────────────
 
-    // 전광판 설비가 속한 지하차도의 지역이 내 담당인지 확인한다. 설비가 없으면 404, 담당 밖이면 403.
-    // write=true 는 등록·수정·삭제, false 는 조회
-    private void requireEquipmentRegion(LoginUser loginUser, Long equipId, boolean write) {
-        List<?> rows = em.createNativeQuery("select u.region_id from pm_equipment e"
-                        + " join underpass u on u.id = e.underpass_id where e.id = :id")
-                .setParameter("id", equipId).getResultList();
-        if (rows.isEmpty()) {
-            throw new BusinessException(HttpStatus.NOT_FOUND, "전광판 설비를 찾을 수 없습니다. equipId=" + equipId);
-        }
-        Long regionId = ((Number) rows.get(0)).longValue();
-        if (write) {
-            scopeResolver.requireOwnable(loginUser, regionId);
-        } else if (!scopeResolver.myRegionIds(loginUser).contains(regionId)) {
-            throw new BusinessException(HttpStatus.FORBIDDEN, "담당 지역 밖의 전광판은 조회할 수 없습니다.");
+    private void requireVms(Long vmsId) {
+        Number n = (Number) em.createNativeQuery("SELECT COUNT(*) FROM its_vms WHERE id = :id")
+                .setParameter("id", vmsId).getSingleResult();
+        if (n.longValue() == 0) {
+            throw new BusinessException(HttpStatus.NOT_FOUND, "전광판을 찾을 수 없습니다. vmsId=" + vmsId);
         }
     }
 
-    // 전광판 장비가 속한 지하차도의 지역 관리자에게 전광판 변경을 알린다
-    private void publishDisplayChange(Long equipId, Integer pageNo, String action) {
-        List<?> rows = em.createNativeQuery("select u.id, u.region_id from pm_equipment e"
-                        + " join underpass u on u.id = e.underpass_id where e.id = :id")
-                .setParameter("id", equipId).getResultList();
+    private Long underpassRegion(Long underpassId) {
+        List<?> rows = em.createNativeQuery("SELECT region_id FROM underpass WHERE id = :id AND is_deleted = FALSE")
+                .setParameter("id", underpassId).getResultList();
         if (rows.isEmpty()) {
-            return;
+            throw new BusinessException(HttpStatus.NOT_FOUND, "지하차도를 찾을 수 없습니다. underpassId=" + underpassId);
         }
-        Object[] row = (Object[]) rows.get(0);
-        streamPublisher.publishToAdmins(((Number) row[1]).longValue(), "display-change",
-                new com.mbc.puf.stream.StreamPayloads.DisplayChange(equipId, ((Number) row[0]).longValue(), pageNo, action));
+        return ((Number) rows.get(0)).longValue();
     }
 
-    private DisplayPage requirePage(Long equipId, Integer pageNo) {
-        return pageRepository.findByEquipIdAndPageNo(equipId, pageNo)
+    private DisplayPage requireManualPage(Long vmsId, Integer pageNo) {
+        DisplayPage page = pageRepository.findByVmsIdAndPageNo(vmsId, pageNo)
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND,
-                        "전광판 페이지를 찾을 수 없습니다. equipId=" + equipId + ", pageNo=" + pageNo));
+                        "전광판 페이지를 찾을 수 없습니다. vmsId=" + vmsId + ", pageNo=" + pageNo));
+        if (!page.isManual()) {
+            throw new BusinessException(HttpStatus.CONFLICT,
+                    "자동 표출 페이지는 수정·삭제할 수 없습니다. 지하차도 상태가 바뀌면 자동으로 바뀝니다.");
+        }
+        return page;
     }
 
-    private void saveHistory(Long pageId, Long eventId, String oldContent, String newContent, Long changedBy) {
+    private void publish(Long vmsId, Long underpassId, Integer pageNo, String action) {
+        streamPublisher.publishToAdmins(null, "display-change", new StreamPayloads.DisplayChange(vmsId, underpassId, pageNo, action));
+        streamPublisher.dataChangedPublic(null, "its-vms", "UPDATE", vmsId);
+    }
+
+    private void saveHistory(DisplayPage page, String oldContent, String newContent, Long changedBy) {
         DisplayHistory h = new DisplayHistory();
-        h.setPageId(pageId);
-        h.setEventId(eventId);
+        h.setPageId(page.getId());
+        h.setVmsId(page.getVmsId());
+        h.setUnderpassId(page.getUnderpassId());
         h.setOldContent(oldContent);
         h.setNewContent(newContent);
         h.setChangedBy(changedBy);
         historyRepository.save(h);
     }
 
-    private DisplayPageItem toItem(DisplayPage p) {
-        DisplayPageItem item = new DisplayPageItem();
-        item.setId(p.getId());
-        item.setEquipId(p.getEquipId());
-        item.setPageNo(p.getPageNo());
-        item.setContent(p.getContent());
-        item.setPresetId(p.getPresetId());
-        item.setUpdatedBy(p.getUpdatedBy());
-        item.setUpdatedAt(p.getUpdatedAt());
-        return item;
+    private VmsPageItem toItem(DisplayPage p) {
+        return new VmsPageItem(p.getId(), p.getVmsId(), p.getPageNo(), p.getUnderpassId(), null, p.getContent(),
+                Arrays.asList(p.getContent().split("\n")), "YELLOW", p.isManual(), false, p.getUpdatedBy(), p.getUpdatedAt());
     }
 }

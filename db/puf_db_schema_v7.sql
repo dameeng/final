@@ -1,7 +1,11 @@
 -- =====================================================================
--- PUF DB 리셋 + 스키마 생성 v4 (ENUM / TABLE / CHECK / FK / INDEX) — 시드는 필수 기준행만
+-- PUF DB 리셋 + 스키마 생성 v7 (ENUM / TABLE / CHECK / FK / INDEX) — 시드는 필수 기준행만
 -- v3 변경 요약: 최고관리자 폐지(manager_region N:M), 근무조/인수인계, 전화번호 인증, 알림 구조 분리(alert/delivery/device_token),
 --              전광판 페이지/프리셋, 통제정보 이관, 예지보전(pm_*), 챗봇(chat_*), 날씨 실데이터 테이블, 컬럼/테이블명 축약
+-- v6 변경 요약: ITS CCTV/전광판 원본(its_cctv, its_vms) 및 지하차도-전광판 표출 매핑(vms_underpass) 추가,
+--              camera.its_cctv_id / pm_equipment.its_vms_id 추가, display_page 가 설비(equip_id) 대신 전광판(its_vms_id) + 원인 지하차도(underpass_id)를 가리키도록 변경
+-- v7 변경 요약: 전광판 자동 표출 — display_page.is_manual 추가(수동/자동 페이지 구분), display_page UNIQUE(its_vms_id,page_no)를 DEFERRABLE 로 변경,
+--              display_history 에 its_vms_id/underpass_id 추가 + page_id NULL 허용(페이지가 지워져도 이력 유지, ON DELETE SET NULL)
 -- ⚠️ 개발 DB 전용. public 스키마를 통째로 지우므로 되돌릴 수 없음. 운영 DB 실행 금지.
 -- 실행 순서: 스키마 리셋 → ENUM → 테이블 → CHECK → FK/인덱스 → 필수 기준행
 -- 약어 사전: cam(카메라) num(번호) addr(주소) dist(거리) lat/lng(위경도) ctrl(통제) pm(예지보전) recog(인식)
@@ -168,8 +172,39 @@ CREATE TABLE camera ( -- 지하차도 카메라 등록 테이블
     dist INT, -- 진입지점까지 거리(m)
     lat DECIMAL(10,7), -- 위도
     lng DECIMAL(10,7), -- 경도
+    its_cctv_id BIGINT UNIQUE, -- ITS CCTV 아이디(실제 ITS 영상과 연결된 CCTV 역할 카메라만 값 있음, 더미는 NULL. 한 ITS CCTV 는 한 지하차도에만 귀속)
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE, -- 삭제 여부(소프트 삭제, plate_log 참조 보존용)
     created_at TIMESTAMP NOT NULL DEFAULT NOW() -- 등록일
+);
+
+-- ---- ITS CCTV / 전광판 (부산 ITS 원본, 지도 레이어용) ----
+
+CREATE TABLE its_cctv ( -- ITS CCTV 원본 테이블(지도 CCTV 레이어, 가까운 CCTV 조회용. 지하차도 귀속은 camera.its_cctv_id)
+    id BIGSERIAL PRIMARY KEY, -- 아이디
+    its_id INT, -- ITS 원본 CCTV 번호(원본에 번호가 없는 CCTV는 NULL)
+    name VARCHAR(100) NOT NULL, -- 이름
+    lat DECIMAL(10,7) NOT NULL, -- 위도
+    lng DECIMAL(10,7) NOT NULL, -- 경도
+    stream_url VARCHAR(255) NOT NULL, -- 영상 스트림 주소(HLS)
+    created_at TIMESTAMP NOT NULL DEFAULT NOW() -- 등록일
+);
+
+CREATE TABLE its_vms ( -- ITS 전광판(VMS) 테이블(지도 전광판 레이어. 실제 ITS 전광판 + 지하차도마다 근접/원거리 전광판을 채우는 더미)
+    id BIGSERIAL PRIMARY KEY, -- 아이디
+    its_no INT, -- ITS 원본 전광판 번호(더미는 NULL)
+    spec VARCHAR(20), -- 규격(예: 2단10열, 원본에 없으면 NULL)
+    name VARCHAR(100) NOT NULL, -- 이름
+    lat DECIMAL(10,7) NOT NULL, -- 위도
+    lng DECIMAL(10,7) NOT NULL, -- 경도
+    is_dummy BOOLEAN NOT NULL DEFAULT FALSE, -- 더미 여부(실제 ITS 전광판이 아니라 시연용으로 만든 가짜 전광판. 지도에는 똑같이 표시)
+    created_at TIMESTAMP NOT NULL DEFAULT NOW() -- 등록일
+);
+
+CREATE TABLE vms_underpass ( -- 지하차도-전광판 표출 매핑 테이블(차단 정보를 어느 전광판에 띄울지, 지하차도 반경 1km 이내 쌍. 한 전광판이 여러 지하차도와 겹칠 수 있음)
+    its_vms_id BIGINT NOT NULL, -- 전광판 아이디
+    underpass_id BIGINT NOT NULL, -- 지하차도 아이디
+    dist INT NOT NULL, -- 지하차도에서 전광판까지 직선거리(m, 300 이하 근접=차단 정보 / 초과 원거리=차단+우회 정보. 기준값은 백엔드 설정)
+    PRIMARY KEY (its_vms_id, underpass_id)
 );
 
 CREATE TABLE car ( -- 고객 등록 차량 테이블
@@ -329,18 +364,22 @@ CREATE TABLE display_preset ( -- 전광판 프리셋 문구 테이블
 
 CREATE TABLE display_page ( -- 전광판 페이지 테이블(전광판 1대가 여러 페이지를 순환 표시)
     id BIGSERIAL PRIMARY KEY, -- 아이디
-    equip_id BIGINT NOT NULL, -- 전광판 설비 아이디(pm_equipment, type=DISPLAY)
+    its_vms_id BIGINT NOT NULL, -- 전광판 아이디(its_vms)
+    underpass_id BIGINT NOT NULL, -- 이 페이지가 생긴 원인 지하차도 아이디(vms_underpass 로 매핑된 지하차도. 해제 시 그 지하차도 페이지만 삭제)
     page_no INT NOT NULL, -- 페이지 순서
     content VARCHAR(100) NOT NULL, -- 표출 문구(프리셋 선택 또는 직접 입력)
     preset_id BIGINT, -- 사용한 프리셋 아이디(직접 입력이면 NULL)
     updated_by BIGINT, -- 마지막 수정 관리자 아이디(수동 차단/해제 전환 시 해당 관리자, 자동 차단이면 NULL)
+    is_manual BOOLEAN NOT NULL DEFAULT FALSE, -- 수동 페이지 여부(관리자가 직접 만든 페이지 TRUE / 자동 표출이 만든 페이지 FALSE. 자동 페이지는 관리자가 수정·삭제 불가)
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(), -- 마지막 수정 시각
-    UNIQUE (equip_id, page_no)
+    UNIQUE (its_vms_id, page_no) DEFERRABLE INITIALLY DEFERRED -- 페이지 번호 재정렬을 한 문장으로 하려고 커밋 시점에 검사
 );
 
 CREATE TABLE display_history ( -- 전광판 페이지 수정 이력 테이블
     id BIGSERIAL PRIMARY KEY, -- 아이디
-    page_id BIGINT NOT NULL, -- 전광판 페이지 아이디
+    page_id BIGINT, -- 전광판 페이지 아이디(페이지가 지워지면 NULL)
+    its_vms_id BIGINT NOT NULL, -- 전광판 아이디
+    underpass_id BIGINT NOT NULL, -- 원인 지하차도 아이디
     event_id BIGINT, -- 계기가 된 차단/해제 이벤트 아이디(수동 수정이면 NULL)
     old_content VARCHAR(100), -- 변경 전 문구(최초 생성이면 NULL)
     new_content VARCHAR(100) NOT NULL, -- 변경 후 문구
@@ -436,6 +475,7 @@ CREATE TABLE pm_equipment ( -- 예지보전 설비 테이블(지하차도별 CCT
     underpass_id BIGINT NOT NULL, -- 지하차도 아이디
     type pm_equipment_type NOT NULL, -- 설비 종류
     cam_id BIGINT, -- 카메라 아이디(type=CCTV일 때만 값 있음)
+    its_vms_id BIGINT UNIQUE, -- ITS 전광판 아이디(type=DISPLAY일 때만 값 있음, 더미 전광판 포함. 한 전광판은 한 지하차도 설비에만 귀속)
     created_at TIMESTAMP NOT NULL DEFAULT NOW() -- 등록일
 );
 
@@ -620,6 +660,11 @@ ALTER TABLE pm_equipment
 ADD CONSTRAINT chk_pm_equipment_cam
 CHECK (type = 'CCTV' OR cam_id IS NULL);
 
+-- 전광판 아이디는 DISPLAY 설비에만 연결
+ALTER TABLE pm_equipment
+ADD CONSTRAINT chk_pm_equipment_vms
+CHECK (type = 'DISPLAY' OR its_vms_id IS NULL);
+
 ALTER TABLE inquiry
 ADD CONSTRAINT chk_inquiry_author
 CHECK ((customer_id IS NULL) <> (manager_id IS NULL));
@@ -648,6 +693,10 @@ ALTER TABLE underpass ADD CONSTRAINT fk_underpass_down_exit_cam FOREIGN KEY (dow
 ALTER TABLE underpass ADD CONSTRAINT fk_underpass_block_event FOREIGN KEY (block_event_id) REFERENCES event(id);
 
 ALTER TABLE camera ADD CONSTRAINT fk_camera_underpass FOREIGN KEY (underpass_id) REFERENCES underpass(id);
+ALTER TABLE camera ADD CONSTRAINT fk_camera_its_cctv FOREIGN KEY (its_cctv_id) REFERENCES its_cctv(id);
+
+ALTER TABLE vms_underpass ADD CONSTRAINT fk_vmsup_vms FOREIGN KEY (its_vms_id) REFERENCES its_vms(id);
+ALTER TABLE vms_underpass ADD CONSTRAINT fk_vmsup_underpass FOREIGN KEY (underpass_id) REFERENCES underpass(id);
 
 ALTER TABLE water_level ADD CONSTRAINT fk_water_level_underpass FOREIGN KEY (underpass_id) REFERENCES underpass(id);
 
@@ -685,11 +734,14 @@ ALTER TABLE ctrl_transfer ADD CONSTRAINT fk_transfer_manager FOREIGN KEY (manage
 
 ALTER TABLE ctrl_transfer_car ADD CONSTRAINT fk_tcar_transfer FOREIGN KEY (ctrl_transfer_id) REFERENCES ctrl_transfer(id);
 
-ALTER TABLE display_page ADD CONSTRAINT fk_dpage_equip FOREIGN KEY (equip_id) REFERENCES pm_equipment(id);
+ALTER TABLE display_page ADD CONSTRAINT fk_dpage_vms FOREIGN KEY (its_vms_id) REFERENCES its_vms(id);
+ALTER TABLE display_page ADD CONSTRAINT fk_dpage_underpass FOREIGN KEY (underpass_id) REFERENCES underpass(id);
 ALTER TABLE display_page ADD CONSTRAINT fk_dpage_preset FOREIGN KEY (preset_id) REFERENCES display_preset(id);
 ALTER TABLE display_page ADD CONSTRAINT fk_dpage_updated FOREIGN KEY (updated_by) REFERENCES manager(id);
 
-ALTER TABLE display_history ADD CONSTRAINT fk_dhistory_page FOREIGN KEY (page_id) REFERENCES display_page(id);
+ALTER TABLE display_history ADD CONSTRAINT fk_dhistory_page FOREIGN KEY (page_id) REFERENCES display_page(id) ON DELETE SET NULL;
+ALTER TABLE display_history ADD CONSTRAINT fk_dhistory_vms FOREIGN KEY (its_vms_id) REFERENCES its_vms(id);
+ALTER TABLE display_history ADD CONSTRAINT fk_dhistory_underpass FOREIGN KEY (underpass_id) REFERENCES underpass(id);
 ALTER TABLE display_history ADD CONSTRAINT fk_dhistory_event FOREIGN KEY (event_id) REFERENCES event(id);
 ALTER TABLE display_history ADD CONSTRAINT fk_dhistory_changed FOREIGN KEY (changed_by) REFERENCES manager(id);
 
@@ -707,6 +759,7 @@ ALTER TABLE weather_forecast ADD CONSTRAINT fk_wforecast_area FOREIGN KEY (area_
 
 ALTER TABLE pm_equipment ADD CONSTRAINT fk_pmequip_underpass FOREIGN KEY (underpass_id) REFERENCES underpass(id);
 ALTER TABLE pm_equipment ADD CONSTRAINT fk_pmequip_cam FOREIGN KEY (cam_id) REFERENCES camera(id);
+ALTER TABLE pm_equipment ADD CONSTRAINT fk_pmequip_its_vms FOREIGN KEY (its_vms_id) REFERENCES its_vms(id);
 
 ALTER TABLE pm_sensor ADD CONSTRAINT fk_pmsensor_equip FOREIGN KEY (equip_id) REFERENCES pm_equipment(id);
 ALTER TABLE pm_score ADD CONSTRAINT fk_pmscore_equip FOREIGN KEY (equip_id) REFERENCES pm_equipment(id);
@@ -770,6 +823,11 @@ CREATE INDEX idx_pm_sensor_equip_time ON pm_sensor (equip_id, recorded_at);
 CREATE INDEX idx_pm_score_equip_time ON pm_score (equip_id, predicted_at);
 CREATE INDEX idx_pm_event_equip_status ON pm_event (equip_id, status);
 CREATE INDEX idx_chat_log_answered ON chat_log (is_answered, created_at);
+CREATE INDEX idx_its_cctv_pos ON its_cctv (lat, lng);
+CREATE INDEX idx_its_vms_pos ON its_vms (lat, lng);
+CREATE INDEX idx_vms_underpass_up ON vms_underpass (underpass_id, dist);
+CREATE INDEX idx_display_page_underpass ON display_page (underpass_id);
+CREATE INDEX idx_display_history_underpass ON display_history (underpass_id, changed_at DESC);
 
 -- 6. 필수 기준행 (시드 데이터가 아니라 서비스 로직이 참조하는 고정 행)
 -- 지역 삭제 시 소속 underpass/manager_region을 옮겨두는 특수 지역. 서비스 로직에서 삭제 금지 처리 필요.

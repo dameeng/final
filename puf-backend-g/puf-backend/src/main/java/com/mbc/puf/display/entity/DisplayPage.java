@@ -18,8 +18,14 @@ public class DisplayPage {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "equip_id", nullable = false)
-    private Long equipId;
+    @Column(name = "its_vms_id", nullable = false)
+    private Long vmsId;   // 전광판(its_vms) 아이디
+
+    @Column(name = "underpass_id", nullable = false)
+    private Long underpassId;   // 이 페이지가 생긴 원인 지하차도
+
+    @Column(name = "is_manual", nullable = false)
+    private boolean manual;   // 관리자가 직접 만든 페이지(true) / 자동 표출이 만든 페이지(false)
 
     @Column(name = "page_no", nullable = false)
     private Integer pageNo;
@@ -40,8 +46,14 @@ public class DisplayPage {
 
     public Long getId() { return id; }
 
-    public Long getEquipId() { return equipId; }
-    public void setEquipId(Long equipId) { this.equipId = equipId; }
+    public Long getVmsId() { return vmsId; }
+    public void setVmsId(Long vmsId) { this.vmsId = vmsId; }
+
+    public Long getUnderpassId() { return underpassId; }
+    public void setUnderpassId(Long underpassId) { this.underpassId = underpassId; }
+
+    public boolean isManual() { return manual; }
+    public void setManual(boolean manual) { this.manual = manual; }
 
     public Integer getPageNo() { return pageNo; }
     public void setPageNo(Integer pageNo) { this.pageNo = pageNo; }

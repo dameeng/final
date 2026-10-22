@@ -19,8 +19,14 @@ public class DisplayHistory {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "page_id", nullable = false)
-    private Long pageId;
+    @Column(name = "page_id")
+    private Long pageId;   // 페이지가 지워지면 NULL 이 된다 (ON DELETE SET NULL)
+
+    @Column(name = "its_vms_id", nullable = false)
+    private Long vmsId;
+
+    @Column(name = "underpass_id", nullable = false)
+    private Long underpassId;
 
     @Column(name = "event_id")
     private Long eventId;   // 차단/해제 이벤트가 원인이면 값 있음, 수동 수정이면 NULL
@@ -44,6 +50,12 @@ public class DisplayHistory {
 
     public Long getPageId() { return pageId; }
     public void setPageId(Long pageId) { this.pageId = pageId; }
+
+    public Long getVmsId() { return vmsId; }
+    public void setVmsId(Long vmsId) { this.vmsId = vmsId; }
+
+    public Long getUnderpassId() { return underpassId; }
+    public void setUnderpassId(Long underpassId) { this.underpassId = underpassId; }
 
     public Long getEventId() { return eventId; }
     public void setEventId(Long eventId) { this.eventId = eventId; }

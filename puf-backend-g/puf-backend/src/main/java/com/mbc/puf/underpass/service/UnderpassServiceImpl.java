@@ -336,12 +336,11 @@ public class UnderpassServiceImpl implements UnderpassService {
             total += count(c, "select count(e) from UnderpassEvent e");
         }
         if (!"EVENT".equals(kind)) {
-            // 전광판 문구 변경 이력: display_history → display_page → pm_equipment(전광판 설비) → underpass
-            String where = " WHERE pe.underpass_id = :id"
+            // 전광판 문구 변경 이력: display_history.underpass_id (자동 표출은 가장 가까운 전광판 것만 남는다)
+            String where = " WHERE dh.underpass_id = :id"
                     + (period != null && period.startAt() != null ? " AND dh.changed_at >= :fromAt" : "")
                     + (period != null && period.endAtExclusive() != null ? " AND dh.changed_at < :toAt" : "");
-            String from = " FROM display_history dh JOIN display_page dp ON dp.id = dh.page_id"
-                    + " JOIN pm_equipment pe ON pe.id = dp.equip_id";
+            String from = " FROM display_history dh";
             Query rowsQuery = em.createNativeQuery("SELECT dh.new_content, dh.changed_by, dh.changed_at" + from + where
                     + " ORDER BY dh.changed_at DESC, dh.id DESC").setMaxResults(needed);
             Query countQuery = em.createNativeQuery("SELECT COUNT(*)" + from + where);
@@ -357,7 +356,7 @@ public class UnderpassServiceImpl implements UnderpassService {
             for (Object row : rowsQuery.getResultList()) {
                 Object[] r = (Object[]) row;
                 merged.add(new ControlHistoryItem("DISPLAY", id, underpass.getName(), null, null, null, null,
-                        (String) r[0], ((Number) r[1]).longValue(), toLocalDateTime(r[2])));
+                        (String) r[0], r[1] == null ? null : ((Number) r[1]).longValue(), toLocalDateTime(r[2])));   // changed_by 는 자동 표출이면 NULL
             }
             total += ((Number) countQuery.getSingleResult()).longValue();
         }
