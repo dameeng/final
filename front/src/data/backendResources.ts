@@ -504,9 +504,9 @@ export const backendResources: Record<string, Resource> = {
       ['title', '제목'],
       ['important', '중요'],
       ['category', '분류'],
-      ['viewCount', '조회수'],
       ['authorName', '작성자'],
       ['createdAt', '작성일'],
+      ['viewCount', '조회수'],
     ],
     filters: [text('keyword', '제목·내용'), select('category', '분류', noticeCategories)],
     fields: [
@@ -528,9 +528,9 @@ export const backendResources: Record<string, Resource> = {
     columns: [
       ['question', '질문'],
       ['category', '분류'],
-      ['viewCount', '조회수'],
       ['authorName', '작성자'],
       ['createdAt', '작성일'],
+      ['viewCount', '조회수'],
     ],
     filters: [text('keyword', '질문·답변'), select('category', '분류', faqCategories)],
     fields: [

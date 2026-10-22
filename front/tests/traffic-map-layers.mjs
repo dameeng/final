@@ -1,0 +1,38 @@
+import { chromium } from '@playwright/test'
+import { createServer } from 'vite'
+import assert from 'node:assert/strict'
+const server = await createServer({ configLoader:'runner', server:{ host:'127.0.0.1', port:0, strictPort:false } })
+await server.listen()
+const browser = await chromium.launch({ channel:'msedge', headless:true })
+try {
+  const page = await browser.newPage(), errors = []
+  page.on('pageerror', error => errors.push(error.message))
+  await page.route('**/cctvs', route => route.fulfill({ json:[{ cctvId:1, instlPos:'테스트 도로 CCTV', instlAddr:'부산', hlsAddr:'https://example.test/live.m3u8', lat:35.17, lot:129.07 }] }))
+  await page.route('**/map-vms.json', route => route.fulfill({ json:[{ id:'v1', name:'테스트 전광판', address:'부산 도로', lat:35.18, lng:129.08, content:'지하차도 통제 중\n우회 바랍니다' }] }))
+  await page.route('**/api/underpasses/61/cameras', route => route.fulfill({ json:{ success:true, data:[{ id:2, cameraRole:'CCTV', name:'내부 카메라', streamUrl:'/test-inside.mp4' },{ id:3, cameraRole:'APPROACH_LPR', streamUrl:'/plate.mp4' }] } }))
+  await page.route('**/test-inside.mp4', route => route.fulfill({ status:204 }))
+  await page.route('**/live.m3u8', route => route.fulfill({ status:503 }))
+  await page.goto(`http://127.0.0.1:${server.httpServer.address().port}/tests/traffic-layers-fixture.html`)
+  await page.getByRole('button',{ name:'CCTV', exact:true }).click()
+  await page.locator('.traffic-device-marker.cctv').waitFor()
+  await page.locator('.traffic-device-marker.cctv').click()
+  await page.getByRole('heading',{ name:'테스트 도로 CCTV' }).waitFor()
+  await page.getByRole('dialog').getByRole('button',{ name:'닫기' }).click()
+  await page.getByRole('button',{ name:'VMS 전광판',exact:true }).click()
+  await page.locator('.traffic-device-marker.vms').waitFor()
+  assert.equal(await page.locator('.traffic-device-marker').count(),2)
+  await page.locator('.traffic-device-marker.vms').click()
+  assert.match(await page.locator('.vms-display').textContent(),/우회 바랍니다/)
+  await page.keyboard.press('Escape')
+  await page.getByRole('button',{ name:'CCTV',exact:true }).click()
+  await page.locator('.traffic-device-marker.cctv').waitFor({ state:'detached' })
+  assert.equal(await page.locator('.traffic-device-marker.vms').count(),1)
+  await page.getByRole('button',{ name:'내부 지하차도 보기',exact:true }).click()
+  await page.getByRole('dialog').getByRole('combobox').waitFor()
+  assert.equal(await page.getByRole('dialog').locator('option').count(),1)
+  assert.match(await page.getByRole('dialog').locator('video').getAttribute('src'),/test-inside.mp4/)
+  await page.keyboard.press('Escape')
+  assert.equal(await page.locator('dialog[open]').count(),0)
+  assert.deepEqual(errors,[])
+  console.log('PASS: CCTV/VMS toggles, marker dialogs, Escape, and internal camera source separation')
+} finally { await browser.close(); await server.close() }

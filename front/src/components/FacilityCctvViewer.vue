@@ -7,6 +7,44 @@ const props = defineProps<{ cameras: Record<string, any>[]; underpassId: string 
 const route = useRoute(),
   selected = ref('')
 const current = computed(() => props.cameras.find((camera) => String(camera.id) === selected.value))
+const starting = ref(false)
+const recognitionMessage = ref('')
+const recognitionError = ref(false)
+watch(() => [props.underpassId, selected.value], () => {
+  recognitionMessage.value = ''
+})
+async function startRecognition() {
+  if (!current.value || starting.value) return
+  const cameraId = selected.value
+  const facilityId = props.underpassId
+  starting.value = true
+  recognitionMessage.value = ''
+  recognitionError.value = false
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 30000)
+  try {
+    const response = await fetch(`/control/plate/start?cameraId=${encodeURIComponent(cameraId)}`, {
+      method: 'POST',
+      credentials: 'include',
+      signal: controller.signal,
+    })
+    const data = await response.json().catch(() => null)
+    if (!response.ok || data?.success === false)
+      throw new Error(typeof data?.detail === 'string' ? data.detail : data?.message || '번호판 인식을 시작하지 못했습니다. AI 서버 연결과 카메라 설정을 확인해 주세요.')
+    if (selected.value === cameraId && props.underpassId === facilityId)
+      recognitionMessage.value = '번호판 인식 시작 요청이 완료되었습니다. OCR 인식 기록에서 결과를 확인하세요.'
+  } catch (error) {
+    if (selected.value === cameraId && props.underpassId === facilityId) {
+      recognitionError.value = true
+      recognitionMessage.value = controller.signal.aborted
+        ? '시작 응답 시간이 초과되었습니다. 인식 기록을 확인한 뒤 다시 시도해 주세요.'
+        : error instanceof Error ? error.message : 'AI 서버에 연결하지 못했습니다.'
+    }
+  } finally {
+    clearTimeout(timeout)
+    starting.value = false
+  }
+}
 watch(
   () => [props.underpassId, props.cameras] as const,
   () => {
@@ -30,6 +68,12 @@ const app = computed(() => route.path.startsWith('/admin-app/'))
         </select>
       </label>
       <h2>{{label(current)}}</h2>
+      <div class="facility-recognition-controls">
+        <button type="button" class="recognition-start" :disabled="starting" @click="startRecognition">
+          {{ starting ? '인식 시작 중…' : '번호판 인식 실행' }}
+        </button>
+        <p v-if="recognitionMessage" role="status" :class="{ 'recognition-error': recognitionError }">{{ recognitionMessage }}</p>
+      </div>
       <div class="facility-camera-stage">
         <TrafficVideo
           v-if="current.streamUrl"
@@ -53,6 +97,20 @@ const app = computed(() => route.path.startsWith('/admin-app/'))
   </section>
 </template>
 <style scoped>
+.recognition-start {
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 0;
+  border-radius: 8px;
+  background: #225f9b;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.recognition-start:disabled { opacity: .6; cursor: wait; }
+.facility-recognition-controls p { margin: 8px 0 0; font-size: 13px; line-height: 1.6; }
+.recognition-error { color: #b42318; }
 .facility-cctv-viewer {
   display: flex;
   flex-direction: column;

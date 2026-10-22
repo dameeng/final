@@ -13,6 +13,7 @@ import { useApp } from '../stores/app'
 import { loginDestination } from '../services/access'
 import PostcodeSearch from '../components/PostcodeSearch.vue'
 import BirthDateInput from '../components/BirthDateInput.vue'
+import VerificationCodeInput from '../components/VerificationCodeInput.vue'
 import EmailInput from '../components/EmailInput.vue'
 import PhoneInput from '../components/PhoneInput.vue'
 import NationalitySelect from '../components/NationalitySelect.vue'
@@ -39,9 +40,9 @@ const route = useRoute(),
   values = reactive<Record<string, any>>({}),
   verified = ref(false)
 const mobilePassSignup = computed(
-    () => !manager.value && kind.value === 'signup' && route.path.startsWith('/customer-app/'),
+    () => !manager.value && kind.value === 'signup',
   ),
-  passMode = ref(true),
+  passMode = ref(route.path.startsWith('/customer-app/')),
   passOpen = ref(false),
   passDemoVerified = ref(false)
 function completePass(identity: { name: string; birthDate: string }) {
@@ -65,6 +66,16 @@ const {
 const maskedPhone = ref(''),
   approvalEstimate = ref(0)
 const rememberId = ref(false)
+let firstInvalid: EventTarget | null = null
+function focusInvalid(event: Event) {
+  event.preventDefault()
+  if (firstInvalid) return
+  firstInvalid = event.target
+  const input = event.target as HTMLElement
+  input.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  input.focus({ preventScroll: true })
+  setTimeout(() => { firstInvalid = null }, 0)
+}
 const rememberedIdKey = computed(
   () => `routel-remembered-login-id:${manager.value ? 'manager' : 'customer'}`,
 )
@@ -160,7 +171,7 @@ const fields = computed<Field[]>(() =>
           ? [{ key: 'phone', label: '휴대전화', required: true }]
           : step.value === 2
             ? [{ key: 'code', label: '인증번호', required: true }]
-            : signupFields.filter((field) => field.key !== 'phone'),
+            : signupFields.filter((field) => field.key !== 'phone' || passDemoVerified.value),
 )
 const duplicateMessage = reactive<Record<string, string>>({}),
   checked = reactive<Record<string, string>>({}),
@@ -419,7 +430,7 @@ async function resend() {
       ><p v-if="kind!=='login'&&step<4">{{step}} / 3단계</p
       ><p v-if="error" class="service-error" role="alert">{{error}}</p
       ><p v-if="message" class="service-message" role="status">{{message}}</p
-      ><form v-if="step<4" :class="{'signup-form':kind==='signup'}" @submit.prevent="submit"
+      ><form v-if="step<4" :class="{'signup-form':kind==='signup','login-form':kind==='login'}" @invalid.capture="focusInvalid" @submit.prevent="submit"
         ><section v-if="mobilePassSignup&&step===1" class="signup-verification-choice"
           ><h2>휴대전화 본인인증</h2><p>회원가입에 사용할 인증 방식을 선택해 주세요.</p
           ><div role="group" aria-label="회원가입 인증 방식"
@@ -450,8 +461,9 @@ async function resend() {
                 v-if="!manager&&kind==='signup'&&field.key==='phone'"
                 v-model="app.signupNationality"
                 name="customer-signup-nationality"
+              /><input v-if="field.key==='phone'&&passDemoVerified" :value="values.phone" type="text" :aria-label="field.label" readonly
               /><PhoneInput
-                v-if="['phone','emergency'].includes(field.key)"
+                v-else-if="['phone','emergency'].includes(field.key)"
                 v-model="values[field.key]"
                 :label="field.label"
                 :required="field.required"
@@ -461,6 +473,12 @@ async function resend() {
               /><BirthDateInput
                 v-else-if="field.key==='birthDate'"
                 v-model="values[field.key]"
+                :required="field.required"
+                :disabled="busy"
+              /><VerificationCodeInput
+                v-else-if="field.key==='code'"
+                v-model="values[field.key]"
+                :label="field.label"
                 :required="field.required"
                 :disabled="busy"
               /><EmailInput
@@ -482,7 +500,7 @@ async function resend() {
               /><input
                 v-else
                 @blur="['phone','emergency'].includes(field.key)&&(values[field.key]=formatPhone(values[field.key]))"
-                :inputmode="['phone','emergency'].includes(field.key)?'tel':undefined"
+                :inputmode="field.key==='code'?'numeric':['phone','emergency'].includes(field.key)?'tel':undefined"
                 v-model="values[field.key]"
                 :aria-label="field.label"
                 :type="/password/i.test(field.key)?'password':field.type||'text'"
@@ -497,14 +515,6 @@ async function resend() {
                 :disabled="busy||!values.loginId"
                 @click="checkId"
                 >중복 확인</button
-              ><label v-if="kind==='login'&&field.key==='loginId'" class="remember-login-id"
-                ><input
-                  v-model="rememberId"
-                  aria-label="아이디 저장"
-                  type="checkbox"
-                  :disabled="busy"
-                  @change="forgetId"
-                />아이디 저장</label
               ><PostcodeSearch
                 v-if="field.key==='zipcode'"
                 :disabled="busy"
@@ -524,6 +534,7 @@ async function resend() {
               ></div
             ></div
           ></section
+        ><label v-if="kind==='login'" class="remember-login-id"><input v-model="rememberId" aria-label="아이디 저장" type="checkbox" :disabled="busy" @change="forgetId" />아이디 저장</label
         ><section
           v-if="kind!=='login'&&step===2"
           class="verification-timing"
@@ -644,7 +655,7 @@ async function resend() {
   align-items: center;
   gap: 8px;
   width: max-content;
-  margin-top: 16px;
+  margin-top: 8px;
   font-size: 13px;
   cursor: pointer;
 }
@@ -700,6 +711,18 @@ async function resend() {
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--surface);
+}
+.auth-service .login-form .service-form-fields {
+  max-width: 360px;
+  grid-template-columns: minmax(0,1fr);
+}
+.auth-service .auth-field-code {
+  width: min(100%,328px);
+}
+.auth-service .auth-field-code > input {
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .2em;
 }
 .auth-service h1 {
   font-size: 24px;

@@ -787,7 +787,7 @@
   }
 }
 
-/* Keep app weather readable and location reachable with the sheet open. */
+/* Keep location reachable while the weather stays beneath the list sheet. */
 .mobile-app-map .app-map-sheet .mobile-sheet-handle {
   padding-right: 64px;
 }
@@ -809,7 +809,7 @@
   font-size: 25px;
 }
 .mobile-app-map .map-weather-widget {
-  z-index: 13;
+  z-index: 6;
 }
 .mobile-app-map .map-weather-detail {
   bottom: 72px;

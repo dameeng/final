@@ -289,6 +289,11 @@ html {
 .sidebar-group[open]>summary.sidebar-group-label::after {
   transform: rotate(90deg);
 }
+.admin-sidebar-groups .sidebar-group>a {
+  margin-left: 18px;
+  padding-left: 18px;
+  border-left: 2px solid var(--line,#d6dde5);
+}
 .sidebar-group>summary.sidebar-group-label:hover {
   background: #edf3f9;
   color: #173d62;

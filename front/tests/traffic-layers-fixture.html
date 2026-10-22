@@ -1,0 +1,18 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><body><div id="app"></div>
+<script type="module">
+import { createApp, h, ref } from 'vue'
+import TrafficMapLayers from '../src/components/TrafficMapLayers.vue'
+import InternalUnderpassModal from '../src/components/InternalUnderpassModal.vue'
+const host = document.createElement('div'); host.id = 'map'; host.style.marginTop='200px'; document.body.append(host)
+const map = { getBounds: () => ({ contain: () => true }) }
+const maps = {
+  LatLng: class { constructor(lat,lng) { this.lat=lat; this.lng=lng } },
+  CustomOverlay: class { constructor(options) { this.content=options.content; host.append(this.content) } setMap(value) { if (!value) this.content.remove() } },
+  event: { addListener() {}, removeListener() {}, preventMap() {} },
+}
+createApp({ setup() { const open = ref(false); return () => h('div', [
+  h(TrafficMapLayers, { map, maps }),
+  h('button', { onClick: () => open.value=true }, '내부 지하차도 보기'),
+  h(InternalUnderpassModal, { modelValue:open.value, 'onUpdate:modelValue':value => open.value=value, facilityId:61, facilityName:'테스트 지하차도' }),
+]) } }).mount('#app')
+</script></body></html>
