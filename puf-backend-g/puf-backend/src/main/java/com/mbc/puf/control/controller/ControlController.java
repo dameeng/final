@@ -68,11 +68,12 @@ public class ControlController {
     /**
      * POST /api/control/underpasses/{id}/block
      * 지하차도 차단 + 경찰 이관 PDF 반환.
-     * 요청 body (모두 선택): { presetId, reason, displayPresetId, displayContent }
+     * 요청 body (모두 선택): { presetId, reason, reasonNote, displayPresetId, displayContent }
      *  - 사유: presetId(프리셋) 또는 reason(직접 입력). 둘 다 없으면 null (PDF에 '-' 로 표시).
+     *  - 상세 사유: reasonNote(200자). 사유와 함께 저장되고 PDF 의 '상세 사유' 칸에 들어간다. 프리셋이 '기타'이면 필수(없으면 400).
      *  - 전광판 문구: displayContent(직접 입력, 100자) 또는 displayPresetId(차단 문구 프리셋). 둘 다 없으면 기본 차단 문구.
      */
-    @Operation(summary = "지하차도 차단", description = "경찰 이관 PDF 를 돌려준다. body(모두 선택): presetId/reason = 사유(프리셋 또는 직접 입력), displayPresetId/displayContent = 전광판 문구(프리셋 또는 직접 입력, 직접 입력이 우선, 둘 다 없으면 기본 차단 문구)")
+    @Operation(summary = "지하차도 차단", description = "경찰 이관 PDF 를 돌려준다. body(모두 선택): presetId/reason = 사유(프리셋 또는 직접 입력), reasonNote = 사유에 덧붙이는 상세 사유(200자, 저장되고 PDF 에 '상세 사유'로 들어감, 프리셋이 '기타'이면 필수), displayPresetId/displayContent = 전광판 문구(프리셋 또는 직접 입력, 직접 입력이 우선, 둘 다 없으면 기본 차단 문구)")
     @PostMapping("/underpasses/{id}/block")
     @PreAuthorize("isAuthenticated() and principal.manager")
     public ResponseEntity<byte[]> block(
@@ -90,7 +91,7 @@ public class ControlController {
      * POST /api/control/underpasses/{id}/release
      * 지하차도 해제 + 경찰 이관 PDF 반환. body 는 차단과 같고, 전광판 문구는 해제 문구 프리셋만 고를 수 있다.
      */
-    @Operation(summary = "지하차도 해제", description = "경찰 이관 PDF 를 돌려준다. body 는 차단과 같고, 전광판 문구는 해제 문구 프리셋만 고를 수 있다")
+    @Operation(summary = "지하차도 해제", description = "경찰 이관 PDF 를 돌려준다. body 는 차단과 같고(사유 프리셋·직접 입력·상세 사유 reasonNote, '기타'이면 상세 사유 필수), 전광판 문구는 해제 문구 프리셋만 고를 수 있다")
     @PostMapping("/underpasses/{id}/release")
     @PreAuthorize("isAuthenticated() and principal.manager")
     public ResponseEntity<byte[]> release(

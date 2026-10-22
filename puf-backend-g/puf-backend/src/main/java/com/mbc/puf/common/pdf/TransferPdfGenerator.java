@@ -69,6 +69,9 @@ public class TransferPdfGenerator {
                     + (d.address() != null && !d.address().isBlank() ? " (" + d.address() + ")" : ""));
             addNoticeRow(table, font, "구분", "[" + eventLabel + "]  " + fmt(d.eventAt()));
             addNoticeRow(table, font, "사유", reasonLine(d));
+            if (d.reasonNote() != null && !d.reasonNote().isBlank()) {
+                addNoticeRow(table, font, "상세 사유", d.reasonNote());
+            }
             addNoticeRow(table, font, "통제 방식", methodLine(d));
             addNoticeRow(table, font, "담당자", managerLine(d));
             if (d.blockEvent()) {
@@ -141,6 +144,9 @@ public class TransferPdfGenerator {
         StringBuilder sb = new StringBuilder(fmt(d.blockAt()));
         if (d.blockReason() != null && !d.blockReason().isBlank()) {
             sb.append(" · 사유: ").append(d.blockReason());
+            if (d.blockReasonNote() != null && !d.blockReasonNote().isBlank()) {
+                sb.append(" (").append(d.blockReasonNote()).append(")");
+            }
         }
         if (d.blockAt() != null && d.eventAt() != null && !d.eventAt().isBefore(d.blockAt())) {
             long min = java.time.Duration.between(d.blockAt(), d.eventAt()).toMinutes();
