@@ -8,6 +8,11 @@ export default defineConfig(({ mode }) => ({
     port: 8282,
     strictPort: true,
     proxy: {
+      '/control/plate': {
+        target: loadEnv(mode, '.', '').AI_SERVER_URL || 'http://localhost:8000',
+        changeOrigin: true,
+        headers: { 'X-Internal-Api-Key': loadEnv(mode, '.', '').INTERNAL_API_KEY || '' },
+      },
       '/api': {
         target: loadEnv(mode, '.', '').BACKEND_URL || 'http://localhost:5555',
         changeOrigin: true,
@@ -21,6 +26,11 @@ export default defineConfig(({ mode }) => ({
     port: 8282,
     strictPort: true,
     proxy: {
+      '/control/plate': {
+        target: loadEnv(mode, '.', '').AI_SERVER_URL || 'http://localhost:8000',
+        changeOrigin: true,
+        headers: { 'X-Internal-Api-Key': loadEnv(mode, '.', '').INTERNAL_API_KEY || '' },
+      },
       '/api': {
         target: loadEnv(mode, '.', '').BACKEND_URL || 'http://localhost:5555',
         changeOrigin: true,

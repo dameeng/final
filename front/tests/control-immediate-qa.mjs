@@ -156,7 +156,7 @@ try {
   await page.route('**/api/**', async (r) => {
     const path = new URL(r.request().url()).pathname,
       method = r.request().method()
-    calls.push({ path, method })
+    calls.push({ path, method, body: r.request().postDataJSON() })
     let data = []
     if (path === '/api/customers/me') data = null
     if (path === '/api/managers/me')
@@ -164,6 +164,7 @@ try {
     if (path === '/api/underpasses')
       data = { items: [facility], page: 1, totalItems: 1, totalPages: 1 }
     if (path === '/api/underpasses/1') data = { ...facility }
+    if (path === '/api/control/reason-presets') data = [{ id: 1, content: 'Preset reason' }]
     if (path.endsWith('/risk-scores')) {
       riskRequests++
       data = [
@@ -197,9 +198,12 @@ try {
   const riskBaseline = riskRequests
   await block.click()
   const dialog = page.locator('.service-modal[open]')
+  await dialog.locator('select').selectOption('1')
   await dialog.locator('textarea').fill('Test block')
   await dialog.getByRole('button', { name: '확인', exact: true }).click()
   await dialog.waitFor({ state: 'hidden' })
+  assert.deepEqual(calls.find((call) => call.path.endsWith('/block')).body,
+    { presetId: null, reason: 'Test block' }, 'manual reason overrides a selected preset in the PDF request')
   assert(
     await release.isEnabled(),
     'release is immediately available after successful block without SSE',

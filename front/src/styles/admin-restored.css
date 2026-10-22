@@ -408,7 +408,7 @@
   z-index: 5;
   top: 12px;
   left: 12px;
-  right: 12px;
+  right: auto;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -420,8 +420,9 @@
   list-style: none;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 24px;
+  border-radius: 8px;
   font-size: 11px;
+  pointer-events: none;
 }
 .manager-live-map .manager-map-legend li {
   display: flex;

@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import RiskLevelBadge from './RiskLevelBadge.vue'
 import { nextTick, ref, watch } from 'vue'
 type Facility = {
@@ -83,15 +83,15 @@ watch(
         aria-controls="manager-map-panel-body"
         @click="expanded=!expanded"
         >{{expanded?'상세 접기 ▴':'상세 펼치기 ▾'}}</button
-      ></header
+      ><button v-if="facility||cluster.length" class="ui-icon-button" type="button" aria-label="시설 선택 해제" @click="$emit('clear')">
+        <UiIcon name="close" />
+      </button></header
     ><div v-if="facility" class="manager-facility-heading"
       ><strong>{{facility.name}}</strong
       ><p>{{facility.address||'주소 미제공'}}</p
       ><div
         ><RiskLevelBadge :value="riskLevel||state" /><span>{{control}}</span
-        ><button class="ui-icon-button" type="button" aria-label="시설 선택 해제" @click="$emit('clear')">
-          <UiIcon name="close" />
-        </button></div
+        ></div
       ></div
     ><div ref="body" v-show="expanded" id="manager-map-panel-body" class="manager-panel-body"
       ><template v-if="facility"
@@ -188,7 +188,7 @@ watch(
             @click="$emit('control',1)"
             >통제 해제</button
           ></div
-        ><button type="button" @click="$emit('cctv')">주변 CCTV 보기</button
+        ><button type="button" @click="$emit('cctv')">내부 지하차도 보기</button
         ><RouterLink :to="'/fac-detail?id='+facility.id">시설 상세 →</RouterLink></template
       ><ul v-else-if="cluster.length" class="manager-cluster-options"
         ><li v-for="row in cluster" :key="row.id"
@@ -231,6 +231,7 @@ watch(
   flex-shrink: 0;
 }
 .manager-map-panel h2 {
+  margin-right: auto;
   font-size: 14px;
   margin: 0;
 }

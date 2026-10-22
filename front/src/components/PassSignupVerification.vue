@@ -15,9 +15,7 @@ const allAgreed = computed({
   get: () => terms.value.every(Boolean),
   set: (value) => (terms.value = terms.value.map(() => value)),
 })
-const phone = computed(() =>
-  props.phone.replace(/(\d{2,3})[- ]?(\d{3,4})[- ]?(\d{4})$/, '$1-****-$3'),
-)
+const phone = computed(() => props.phone)
 let timer: ReturnType<typeof setInterval> | undefined
 function stop() {
   clearInterval(timer)
@@ -92,7 +90,7 @@ onBeforeUnmount(() => {
         </label>
         <div class="pass-phone">
           <span>인증할 휴대전화</span>
-          <strong>{{phone}}</strong>
+          <input :value="phone" type="text" aria-label="인증할 휴대전화" readonly />
         </div>
         <div class="pass-agreements">
           <label class="pass-agree-all">
@@ -158,10 +156,11 @@ onBeforeUnmount(() => {
   background: #14243699;
 }
 .pass-signup-dialog header {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px 20px;
+  padding: 16px 64px 16px 20px;
   border-bottom: 1px solid #e5e7eb;
 }
 .pass-wordmark {
@@ -179,6 +178,9 @@ onBeforeUnmount(() => {
   border-radius: 4px;
 }
 .pass-signup-dialog header button {
+  position: absolute;
+  top: 16px;
+  right: 16px;
   margin-left: auto;
   border: 0;
   background: transparent;

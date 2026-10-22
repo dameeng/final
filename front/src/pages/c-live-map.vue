@@ -22,10 +22,12 @@ import { busanDistricts, busanDistrict } from '../utils/busan-districts'
 import { getWeather } from '../services/weather'
 let disposeMapScroll: (() => void) | undefined
 
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { displayDate, dateParts } from '../utils/display-date'
 import { RouterLink, useRoute } from 'vue-router'
-import BusanCctvModal from '../components/BusanCctvModal.vue'
+import InternalUnderpassModal from '../components/InternalUnderpassModal.vue'
+import TrafficMapLayers from '../components/TrafficMapLayers.vue'
+const trafficMap = shallowRef<any>(), trafficMaps = shallowRef<any>()
 const cctvOpen = ref(false)
 const currentRoute = useRoute()
 
@@ -1103,14 +1105,17 @@ function openSelectedPopup() {
 const markerStyles = [
   { label: '통제', color: '#bf7c89', zIndex: 6 },
   { label: '위험', color: '#ce957f', zIndex: 5 },
-  { label: '경고', color: '#cebc79', zIndex: 4 },
-  { label: '정상', color: '#80ad96', zIndex: 2 },
+  { label: '주의', color: '#cebc79', zIndex: 4 },
+  { label: '관심', color: '#80a9c7', zIndex: 3 },
+  { label: '안전', color: '#80ad96', zIndex: 2 },
   { label: '미확인', color: '#8793a0', zIndex: 1 },
 ]
-const markerLegendStyles = markerStyles.filter((style) => style.label !== '미확인')
+const markerLegendStyles = ['안전', '주의', '관심', '위험', '통제'].map(
+  (label) => markerStyles.find((style) => style.label === label)!,
+)
 // Temporary visual preview only; facility status and server data stay intact.
 const markerColorPreview = ref(!props.manager && !props.mapOnly)
-const previewStates = ['통제', '위험', '경고', '정상']
+const previewStates = ['통제', '위험', '주의', '관심', '안전']
 function previewMarkerState(row: Facility) {
   if (!markerColorPreview.value) return stateLabel(row)
   const rows = [...filtered.value]
@@ -1120,12 +1125,12 @@ function previewMarkerState(row: Facility) {
     Math.max(
       0,
       rows.findIndex((f) => f.id === row.id),
-    ) % 4
+    ) % previewStates.length
   ]!
 }
 watch(markerColorPreview, () => drawMap())
 function markerStyle(state: string) {
-  const mapped = state === '관심' ? '경고' : ['경계', '심각'].includes(state) ? '위험' : state
+  const mapped = state === '정상' ? '안전' : state === '경고' ? '주의' : ['경계', '심각'].includes(state) ? '위험' : state
   return markerStyles.find((m) => m.label === mapped) || markerStyles[markerStyles.length - 1]!
 }
 const markerOpacity = { fill: 0.94, halo: 0.05 }
@@ -1188,7 +1193,7 @@ function styleClusters(clusters: any[]) {
       return row ? stateLabel(row) : '미확인'
     })
     const state = markerColorPreview.value
-      ? previewStates[index % 4]!
+      ? previewStates[index % previewStates.length]!
       : markerStyles.find((style) =>
           states.some((state: string) => markerStyle(state).label === style.label),
         )?.label || '미확인'
@@ -1510,6 +1515,8 @@ async function initializeMap() {
             scrollwheel: false,
           })
           disposeMapScroll = pageFriendlyMapScroll(mapElement.value, map)
+          trafficMaps.value = maps
+          trafficMap.value = map
           clusterer = new maps.MarkerClusterer({
             map,
             averageCenter: true,
@@ -1699,7 +1706,7 @@ onBeforeUnmount(() => {
 
 <template>
   <main v-if="props.mapOnly" ref="customerRoot" class="map-only-live"
-    ><div ref="mapElement" class="customer-map-canvas" aria-label="카카오 지도"></div
+    ><div ref="mapElement" class="customer-map-canvas" aria-label="카카오 지도"></div><TrafficMapLayers :map="trafficMap" :maps="trafficMaps" />
     ><ul class="map-only-legend" aria-label="마커 등급 안내"
       ><li v-for="style in markerLegendStyles" :key="style.label"
         ><span :style="{background:style.color}"></span
@@ -1752,7 +1759,7 @@ onBeforeUnmount(() => {
         /><button type="submit">검색</button></form
       >
    <section class="mapw" aria-label="지하차도 지도">
-        <div ref="mapElement" class="customer-map-canvas" aria-label="카카오 지도"></div>
+        <div ref="mapElement" class="customer-map-canvas" aria-label="카카오 지도"></div><TrafficMapLayers :map="trafficMap" :maps="trafficMaps" />
     <div class="mtop"
           ><div class="pill" aria-label="마커 색상 안내"
             ><span v-for="style in markerLegendStyles" :key="style.label"
@@ -1765,7 +1772,7 @@ onBeforeUnmount(() => {
             :aria-pressed="markerColorPreview"
             @click="markerColorPreview=!markerColorPreview"
             >{{markerColorPreview?'색상 미리보기 중 · 실제 상태 보기':'마커 색상 미리보기'
-            }}<small v-if="markerColorPreview">통제·위험·주의·안전 색상 확인용</small></button
+            }}<small v-if="markerColorPreview">안전·주의·관심·위험·통제 색상 확인용</small></button
           ></div
         >
     <div class="kakao-map-controls" aria-label="지도 조작"
@@ -1943,7 +1950,7 @@ onBeforeUnmount(() => {
               ><p v-if="forecastError" class="sub">{{forecastError}}</p></div
             >
       <button type="button" class="btn" @click="cctvOpen=true"
-              >▶ 현재 CCTV 보기 (이 지하차도만)</button
+              >▶ 내부 지하차도 보기</button
             >
       <RouterLink v-if="appMap" :to="'/customer-app/screen-6?id='+selected.id"
               >상세 화면 보기 →</RouterLink
@@ -2060,11 +2067,11 @@ onBeforeUnmount(() => {
         >
       </aside>
     </div>
-  <BusanCctvModal
+  <InternalUnderpassModal
       v-model="cctvOpen"
       :facility-name="selected?.name||''"
-      :lat="selected?.latitude"
-      :lng="selected?.longitude"
+      :facility-id="selected?.id"
+
     />
   </main>
   <main v-else class="wire-page page-c-live-map manager-live-map">
@@ -2108,7 +2115,7 @@ onBeforeUnmount(() => {
       >조회 조건에 맞는 지하차도가 없습니다.</p
     >
 <div class="manager-map-stage"
-      ><div ref="mapElement" class="underpass-map-div" aria-label="카카오 지하차도 지도"></div
+      ><div ref="mapElement" class="underpass-map-div" aria-label="카카오 지하차도 지도"></div><TrafficMapLayers :map="trafficMap" :maps="trafficMaps" />
       ><ul class="underpass-map-legend manager-map-legend" aria-label="마커 색상 안내"
         ><li v-for="style in markerLegendStyles" :key="style.label"
           ><span class="underpass-map-legend-dot" :style="{background:style.color}"></span
@@ -2174,11 +2181,11 @@ onBeforeUnmount(() => {
       resource-key="facilities"
       @saved="afterManagerControl"
     />
-<BusanCctvModal
+<InternalUnderpassModal
       v-model="cctvOpen"
       :facility-name="selected?.name||''"
-      :lat="selected?.latitude"
-      :lng="selected?.longitude"
+      :facility-id="selected?.id"
+
     />
   </main>
 </template>
@@ -2293,11 +2300,11 @@ onBeforeUnmount(() => {
   content: '';
   position: absolute;
   inset: 0;
-  border: 1.2px solid var(--marker-ripple-color);
+  border: 2.5px solid var(--marker-ripple-color);
   border-radius: 50%;
   pointer-events: none;
   opacity: 0;
-  animation: routel-marker-wave 3.8s ease-out infinite;
+  animation: routel-marker-wave 2.2s ease-out infinite;
 }
 @keyframes routel-marker-wave {
   0% {
@@ -2305,10 +2312,10 @@ onBeforeUnmount(() => {
     opacity: 0;
   }
   20% {
-    opacity: .2;
+    opacity: .8;
   }
   85%, 100% {
-    transform: scale(1.23);
+    transform: scale(1.6);
     opacity: 0;
   }
 }

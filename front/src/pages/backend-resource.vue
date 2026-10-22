@@ -3,6 +3,7 @@ import { useNotificationGlow } from '../stores/notificationGlow'
 const notificationGlow = useNotificationGlow()
 import RiskLevelBadge from '../components/RiskLevelBadge.vue'
 import { formatPhone } from '../utils/phone'
+import { dateParts } from '../utils/display-date'
 import { riskGroup, matchesRisk, boardCategoryLabel } from '../services/backendCatalog'
 import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { useRoute, onBeforeRouteLeave } from 'vue-router'
@@ -350,6 +351,8 @@ function display(value: any) {
   if (Array.isArray(value))
     return value.map((item) => (typeof item === 'object' ? item.name || item.id : item)).join(', ')
   if (typeof value === 'object') return value.name || '—'
+  const timestamp = dateParts(value)
+  if (timestamp) return `${timestamp.date}${timestamp.time ? ' ' + timestamp.time : ''}`
   return valueLabels[String(value)] || String(value).replace('T', ' ')
 }
 function canEditRow(row: Record<string, any>) {
@@ -508,6 +511,14 @@ async function submit() {
       method = action.value.method || 'POST'
       pdf = !!action.value.pdf
       if (!formFields.value.length) payload = undefined
+    }
+    if (resourceId.value === 'facilities' && mode.value === 'action' &&
+        /\/(block|release)$/.test(url)) {
+      const control = payload as Record<string, unknown>
+      const reason = String(control.reason || '').trim()
+      if (!reason && !control.presetId) throw new Error('사유를 선택하거나 직접 입력해 주세요.')
+      // The server prioritizes presetId; clear it when a manual reason was supplied.
+      payload = { ...control, reason: reason || null, presetId: reason ? null : control.presetId }
     }
     const result = await backend(url, { method, body: payload, pdf })
     const controlStatus =
@@ -792,7 +803,7 @@ defineExpose({ open, load })
           >모두 읽음</button>
           <button type="button" :disabled="loading||missingParent" @click="load">새로고침</button>
           <button v-if="resource.create&&canWrite" type="button" @click="open('create')">
-            {{resourceId==='cars'?'차량 등록':facilityList?'+ 지하차도 등록':'새로 등록'}}
+            {{resourceId==='cars'?'차량 등록':resourceId==='my-inquiries'?'문의 등록':facilityList?'+ 지하차도 등록':'새로 등록'}}
           </button>
         </div>
       </div>
@@ -869,7 +880,6 @@ defineExpose({ open, load })
           aria-label="지하차도 이름 검색"
         />
         <button class="btn sm" type="submit">조회</button>
-        <span class="sub">총 {{data.totalItems}}곳</span>
       </form>
       <form v-else class="service-filters filters" @submit.prevent="search">
         <ServiceFields
@@ -903,6 +913,7 @@ defineExpose({ open, load })
       <p v-if="missingParent">위에서 {{resource.parents?.map(field=>field.label).join(' · ')}}를 선택하고 조회하세요.</p>
       <p v-else-if="loading" role="status">불러오는 중입니다.</p>
       <template v-else>
+        <p class="service-result-count" role="status">총 {{data.totalItems}}건</p>
         <AdminAppFacilityRows v-if="appFacilityList" :items="facilityRows" />
         <AdminFacilityList
           v-else-if="facilityList"
@@ -1015,7 +1026,7 @@ defineExpose({ open, load })
         </div>
         <div class="service-pagination">
           <button :disabled="page<=1" @click="navigatePage(page-1)">이전</button>
-          <span>{{page}} / {{Math.max(1,data.totalPages)}} 페이지 · 전체 {{data.totalItems}}개</span>
+          <span>{{page}} / {{Math.max(1,data.totalPages)}} 페이지</span>
           <button :disabled="page>=data.totalPages" @click="navigatePage(page+1)">다음</button>
         </div>
       </template>
@@ -1028,7 +1039,7 @@ defineExpose({ open, load })
         <form @submit.prevent="submit">
           <header>
             <h2>
-              {{mode==='video'?'카메라 영상':mode==='detail'?(restored&&detail.name?detail.name:'상세 보기'):mode==='create'?'새로 등록':mode==='edit'?'정보 수정':mode==='remove'?'삭제 확인':action?.label}}
+              {{mode==='video'?'카메라 영상':mode==='detail'?(restored&&detail.name?detail.name:'상세 보기'):mode==='create'?(resourceId==='my-inquiries'?'문의 등록':'새로 등록'):mode==='edit'?'정보 수정':mode==='remove'?'삭제 확인':action?.label}}
             </h2>
             <button type="button" :disabled="saving" @click="modal?.close()">닫기</button>
           </header>
@@ -1123,6 +1134,9 @@ defineExpose({ open, load })
             />
           </template>
           <p v-if="error" class="service-error" role="alert">{{error}}</p>
+          <footer v-if="facilityList&&mode==='detail'&&detail.id" class="facility-drawer-footer">
+            <RouterLink :to="{path:'/fac-detail',query:{id:String(detail.id)}}" @click="modal?.close()">상세보기</RouterLink>
+          </footer>
           <footer v-if="mode!=='detail'&amp;&amp;mode!=='video'">
             <button type="button" :disabled="saving" @click="modal?.close()">취소</button>
             <button type="submit" :disabled="saving">{{saving?'처리 중…':'확인'}}</button>
@@ -1135,6 +1149,34 @@ defineExpose({ open, load })
 </template>
 
 <style scoped>
+.restored-summary-drawer:has(.facility-drawer-footer) form {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.restored-summary-drawer .facility-drawer-footer {
+  position: sticky;
+  bottom: -20px;
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  margin-top: auto;
+  padding: 16px 0 max(16px, env(safe-area-inset-bottom));
+  background: var(--surface, #fff);
+  border-top: 1px solid var(--line, #d8dee6);
+}
+.facility-drawer-footer a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 22px;
+  border-radius: 6px;
+  background: #225f9b;
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+}
 .resource-operations-only>:not(dialog) {
   display: none!important;
 }
@@ -1245,16 +1287,25 @@ button:disabled {
 }
 .service-workspace.restored-admin-workspace .service-filters :deep(.service-form-fields) {
   flex: 1 1 640px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit,minmax(180px,1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 14px 16px;
   min-width: 0;
 }
 .service-workspace.restored-admin-workspace .service-filters :deep(label) {
   min-width: 0;
   max-width: none;
-  width: 100%;
+  width: min(260px,100%);
   gap: 8px;
+}
+.service-workspace.restored-admin-workspace .service-filters :deep(.field-type-select) {
+  width: min(180px,100%);
+}
+.service-workspace.restored-admin-workspace .service-filters :deep(.field-type-number) {
+  width: min(140px,100%);
+}
+.service-workspace.restored-admin-workspace .service-filters :deep(.field-type-datetime-local) {
+  width: min(230px,100%);
 }
 .service-workspace.restored-admin-workspace .service-filters :deep(input:not([type=checkbox])),.service-workspace.restored-admin-workspace .service-filters :deep(select) {
   width: 100%;
@@ -1290,6 +1341,9 @@ button:disabled {
   .service-workspace.restored-admin-workspace .service-filters :deep(.service-form-fields) {
     flex-basis: 100%;
     grid-template-columns: minmax(0,1fr);
+  }
+  .service-workspace.restored-admin-workspace .service-filters :deep(label) {
+    width: 100%;
   }
   .service-workspace.restored-admin-workspace .service-filters>button {
     width: 100%;

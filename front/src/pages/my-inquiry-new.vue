@@ -53,7 +53,7 @@ onBeforeUnmount(() => dispose?.())
         <a href="/my-withdraw" class="dim">회원 탈퇴</a>
       </aside>
       <main class="main">
-        <h1>문의하기</h1>
+        <h1>문의 등록</h1>
         <p class="lead"><a class="link" href="/my-inquiries">← 내 문의</a></p>
 <div class="card">
           <div class="form inl-b12974cb6c">
@@ -81,7 +81,7 @@ onBeforeUnmount(() => dispose?.())
             </div>
 <p class="hint inl-1169661891">답변이 등록되면 알림으로 알려드려요. (알림 설정에서 끌 수 있어요)</p>
 <div class="row">
-              <button type="button" class="btn primary" id="ok">등록</button>
+              <button type="button" class="btn primary" id="ok">문의 등록</button>
               <a class="btn" href="/my-inquiries">취소</a>
             </div>
           </div>

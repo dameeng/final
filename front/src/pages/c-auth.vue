@@ -4,6 +4,7 @@ import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { loginCustomer, customerRequest } from '../services/customerSession'
 import NationalitySelect from '../components/NationalitySelect.vue'
 import CarrierSelect from '../components/CarrierSelect.vue'
+import VerificationCodeInput from '../components/VerificationCodeInput.vue'
 import { useApp } from '../stores/app'
 const app = useApp()
 const route = useRoute(),
@@ -255,13 +256,8 @@ async function submit() {
               {{phoneRequested?'인증번호 다시 받기':'인증번호 받기'}}
             </button>
             <template v-if="phoneRequested">
-              <label>인증번호<input
+              <label>인증번호<VerificationCodeInput
                   v-model="form.code"
-                  inputmode="numeric"
-                  maxlength="6"
-                  pattern="[0-9]{6}"
-                  autocomplete="one-time-code"
-                  placeholder="인증번호 6자리"
                 />
               </label>
               <button

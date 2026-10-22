@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, useId, watch } from 'vue'
 defineProps<{ required?: boolean; disabled?: boolean }>()
 const value = defineModel<string>({ default: '' })
+const listId = useId()
 const todayParts = new Intl.DateTimeFormat('en-CA', {
   timeZone: 'Asia/Seoul',
   year: 'numeric',
@@ -14,8 +15,7 @@ const currentYear = today('year'),
   currentDay = today('day')
 const year = ref(''),
   month = ref(''),
-  day = ref(''),
-  direct = ref(false)
+  day = ref('')
 const years = Array.from({ length: 121 }, (_, i) => String(currentYear - i))
 const monthCount = computed(() => (Number(year.value) === currentYear ? currentMonth : 12))
 const dayCount = computed(() => {
@@ -25,7 +25,10 @@ const dayCount = computed(() => {
   const days = new Date(Date.UTC(y || 2000, m, 0)).getUTCDate()
   return y === currentYear && m === currentMonth ? Math.min(days, currentDay) : days
 })
-const pad = (part: string) => part.padStart(2, '0')
+const pad = (part: string) => String(Number(part)).padStart(2, '0')
+const yearPattern = years.join('|')
+const monthPattern = computed(() => Array.from({length: monthCount.value}, (_, i) => `0?${i + 1}`).join('|'))
+const dayPattern = computed(() => Array.from({length: dayCount.value}, (_, i) => `0?${i + 1}`).join('|'))
 watch(
   value,
   (next) => {
@@ -42,7 +45,7 @@ function update() {
   if (Number(month.value) > monthCount.value) month.value = ''
   if (Number(day.value) > dayCount.value) day.value = ''
   value.value =
-    year.value && month.value && day.value
+    years.includes(year.value) && /^\d{1,2}$/.test(month.value) && Number(month.value) >= 1 && Number(month.value) <= monthCount.value && /^\d{1,2}$/.test(day.value) && Number(day.value) >= 1 && Number(day.value) <= dayCount.value
       ? `${year.value}-${pad(month.value)}-${pad(day.value)}`
       : ''
 }
@@ -50,53 +53,53 @@ function update() {
 <template>
   <span class="birth-date-input" role="group" aria-label="생년월일">
     <input
-      v-if="direct"
-      v-model="value"
-      type="date"
-      aria-label="생년월일 직접 입력"
-      :max="`${currentYear}-${pad(String(currentMonth))}-${pad(String(currentDay))}`"
-      :min="`${currentYear-120}-01-01`"
+      v-model="year"
+      aria-label="생년월일 연도"
+      placeholder="연도"
+      autocomplete="bday-year"
+      inputmode="numeric"
+      maxlength="4"
+      :list="`${listId}-years`"
+      :pattern="yearPattern"
       :required="required"
       :disabled="disabled"
+      @input="update"
     />
-    <template v-else>
-      <select
-        v-model="year"
-        aria-label="생년월일 연도"
-        autocomplete="bday-year"
-        :required="required"
-        :disabled="disabled"
-        @change="update"
-      >
-        <option value="" disabled>연도</option>
-        <option v-for="item in years" :key="item" :value="item">{{item}}년</option>
-      </select>
-      <select
-        v-model="month"
-        aria-label="생년월일 월"
-        autocomplete="bday-month"
-        :required="required"
-        :disabled="disabled"
-        @change="update"
-      >
-        <option value="" disabled>월</option>
-        <option v-for="item in monthCount" :key="item" :value="String(item)">{{item}}월</option>
-      </select>
-      <select
-        v-model="day"
-        aria-label="생년월일 일"
-        autocomplete="bday-day"
-        :required="required"
-        :disabled="disabled"
-        @change="update"
-      >
-        <option value="" disabled>일</option>
-        <option v-for="item in dayCount" :key="item" :value="String(item)">{{item}}일</option>
-      </select>
-    </template>
-    <button type="button" :disabled="disabled" @click="direct=!direct">
-      {{direct?'선택으로 입력':'직접 입력'}}
-    </button>
+    <datalist :id="`${listId}-years`">
+      <option v-for="item in years" :key="item" :value="item">{{item}}년</option>
+    </datalist>
+    <input
+      v-model="month"
+      aria-label="생년월일 월"
+      placeholder="월"
+      autocomplete="bday-month"
+      inputmode="numeric"
+      maxlength="2"
+      :list="`${listId}-months`"
+      :pattern="monthPattern"
+      :required="required"
+      :disabled="disabled"
+      @input="update"
+    />
+    <datalist :id="`${listId}-months`">
+      <option v-for="item in monthCount" :key="item" :value="String(item)">{{item}}월</option>
+    </datalist>
+    <input
+      v-model="day"
+      aria-label="생년월일 일"
+      placeholder="일"
+      autocomplete="bday-day"
+      inputmode="numeric"
+      maxlength="2"
+      :list="`${listId}-days`"
+      :pattern="dayPattern"
+      :required="required"
+      :disabled="disabled"
+      @input="update"
+    />
+    <datalist :id="`${listId}-days`">
+      <option v-for="item in dayCount" :key="item" :value="String(item)">{{item}}일</option>
+    </datalist>
   </span>
 </template>
 <style scoped>
@@ -107,19 +110,7 @@ function update() {
   width: 100%;
   min-width: 0;
 }
-.birth-date-input>input {
-  grid-column: 1/-1;
-  min-width: 0;
-  width: 100%;
-}
-.birth-date-input>button {
-  grid-column: 1/-1;
-  justify-self: start;
-  font-size: 12px;
-  min-height: 30px;
-  padding: 4px 8px;
-}
-.birth-date-input select {
+.birth-date-input input {
   width: 100%;
   min-width: 0;
   min-height: 44px;
@@ -135,19 +126,7 @@ function update() {
   .birth-date-input {
     gap: 6px;
   }
-  .birth-date-input>input {
-    grid-column: 1/-1;
-    min-width: 0;
-    width: 100%;
-  }
-  .birth-date-input>button {
-    grid-column: 1/-1;
-    justify-self: start;
-    font-size: 12px;
-    min-height: 30px;
-    padding: 4px 8px;
-  }
-  .birth-date-input select {
+  .birth-date-input input {
     padding: 8px 5px;
     font-size: 13px;
   }
