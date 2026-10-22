@@ -212,13 +212,23 @@ public class DemoStubScheduler {
         double baseline = 3 + (uid % 7);
         LocalDateTime now = dbClock.now().truncatedTo(ChronoUnit.MILLIS);
         List<Map<String, Object>> items = new ArrayList<>();
+        double calmFuture = calmScores.getOrDefault(uid, baseline);
         int count = 0;
         for (JsonNode f : forecast) {
             if (count++ >= FORECAST_HOURS) {
                 break;
             }
             double rain = num(f, "rainfallMm");
-            double score = Math.max(baseline, 100 * (1 - Math.exp(-(rain * factor) / 30.0)));
+            double score;
+            if (active) {
+                score = Math.max(baseline, 100 * (1 - Math.exp(-(rain * factor) / 30.0)));
+            } else {
+                // 평상시: 예보 강수가 0이라 그대로 계산하면 미래만 바닥값(안전)으로 납작해진다.
+                // 현재 점수에서 출발해 중간값(35) 쪽으로 천천히 끌려가며 조금씩 흔들리게 한다.
+                calmFuture = calmFuture + 0.08 * (35 - calmFuture) + random.nextGaussian() * calmStep * 0.6;
+                calmFuture = Math.max(baseline, Math.min(calmMaxScore, calmFuture));
+                score = calmFuture;
+            }
             Map<String, Object> item = new LinkedHashMap<>();
             item.put("targetAt", f.get("targetAt"));
             item.put("riskScore", dec(Math.min(100, score), 2));

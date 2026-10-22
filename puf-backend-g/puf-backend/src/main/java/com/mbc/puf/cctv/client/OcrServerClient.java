@@ -33,6 +33,7 @@ public class OcrServerClient {
         this.apiKey = apiKey;
         this.timeout = Duration.ofSeconds(timeoutSeconds);
         this.http = HttpClient.newBuilder().connectTimeout(timeout).build();
+        System.out.println("[OCR-KEY] length=" + apiKey.length());
     }
 
     /** 응답 본문을 흘려 읽는다(MJPEG). 호출한 쪽이 body 를 반드시 닫아야 OCR 서버 쪽 연결도 정리된다 */
