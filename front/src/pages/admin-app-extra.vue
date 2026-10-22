@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useApp } from '../stores/app'
+import JurisdictionContactList from '../components/JurisdictionContactList.vue'
 import { useAdminProfile } from '../stores/adminProfile'
 import history from '../data/pm-history.json'
 import '../styles/admin-app-14.css'
@@ -21,18 +22,6 @@ const section = computed(() => route.path.split('/').at(-1)),
         : '통제 전달 문서',
   )
 const rows = computed(() => history.H.filter((row) => row.join(' ').includes(query.value)))
-const contacts = computed(() => {
-  try {
-    return JSON.parse(
-      localStorage.getItem(
-        'routel-jurisdiction-contacts:' +
-          (app.account?.regions?.map((r) => r.name).join(' · ') || admin.region),
-      ) || '[]',
-    )
-  } catch {
-    return []
-  }
-})
 </script>
 <template>
   <div class="wire-page mobile-page page-admin-app-14">
@@ -68,23 +57,7 @@ const contacts = computed(() => {
           <p v-if="!rows.length">검색 결과가 없습니다.</p>
         </template>
         <template v-else-if="section==='contacts'">
-          <p>{{admin.region}}</p>
-          <article
-            v-for="[id,label] in [['community','관할 주민센터'],['police','지역 경찰관'],['civilian','민간 조력자']]"
-            :key="id"
-            class="card"
-          >
-            <h2>{{label}}</h2>
-            <template v-for="contact in contacts.filter((c:any)=>c.id===id)" :key="contact.id">
-              <p>
-                {{contact.organization||'소속 미등록'}} · {{contact.nameOfPerson||'담당자 미등록'}}
-              </p>
-              <a v-if="contact.phone" :href="'tel:'+contact.phone.replace(/[^\d+]/g,'')">
-                {{contact.phone}}
-              </a>
-            </template>
-            <p v-if="!contacts.some((c:any)=>c.id===id&&c.phone)">연락처 미등록</p>
-          </article>
+          <JurisdictionContactList />
         </template>
         <template v-else>
           <p class="sub">구성 예시 · 실제 통제 문서가 아닙니다.</p>
@@ -116,41 +89,4 @@ const contacts = computed(() => {
     </div>
   </div>
 </template>
-<style scoped>
-.app-extra-body {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-.app-extra-body h2 {
-  font-size: 16px;
-  margin: 8px 0;
-}
-.app-extra-body p {
-  font-size: 14px;
-  line-height: 1.6;
-}
-.app-extra-body input {
-  padding: 12px;
-  background: var(--surface);
-  color: inherit;
-  border: 1px solid var(--line);
-}
-dl {
-  display: grid;
-  grid-template-columns: 90px 1fr;
-  gap: 16px;
-  font-size: 14px;
-}
-dd {
-  margin: 0;
-}
-.ah>a {
-  color: inherit;
-  text-decoration: none;
-  font-size: 24px;
-}
-.ah>button {
-  margin-left: auto;
-}
-</style>
+<style scoped src="../styles/pages/admin-app-extra.css"></style>

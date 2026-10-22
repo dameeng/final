@@ -32,9 +32,4 @@ const menus = [
     ><div class="mypage-body"><slot /></div
   ></div>
 </template>
-<style scoped>
-.mypage-sidebar .customer-logout {
-  display: block;
-  padding: 12px;
-}
-</style>
+<style scoped src="../styles/components/my-page-layout.css"></style>

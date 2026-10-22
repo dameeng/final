@@ -167,6 +167,7 @@ async function submit() {
           </label>
     <label>비밀번호 확인<PasswordInput
               v-model="form.confirm"
+              :match-value="form.password"
               autocomplete="new-password"
               minlength="8"
               required
@@ -291,6 +292,7 @@ async function submit() {
           </label>
           <label>새 비밀번호 확인<PasswordInput
               v-model="form.confirm"
+              :match-value="form.password"
               minlength="8"
               autocomplete="new-password"
               required

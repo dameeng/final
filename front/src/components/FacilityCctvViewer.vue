@@ -2,8 +2,10 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import TrafficVideo from './TrafficVideo.vue'
+import TunnelReferenceVideo from './TunnelReferenceVideo.vue'
+import FacilityOcrLog from './FacilityOcrLog.vue'
 import { valueLabels } from '../data/backendResources'
-const props = defineProps<{ cameras: Record<string, any>[]; underpassId: string }>()
+const props = defineProps<{ cameras: Record<string, any>[]; underpassId: string; facilityName?: string }>()
 const route = useRoute(),
   selected = ref('')
 const current = computed(() => props.cameras.find((camera) => String(camera.id) === selected.value))
@@ -59,7 +61,9 @@ function label(camera: Record<string, any>) {
 const app = computed(() => route.path.startsWith('/admin-app/'))
 </script>
 <template>
+  <div class="facility-cctv-layout">
   <section class="facility-cctv-viewer" aria-label="시설 CCTV">
+    <TunnelReferenceVideo v-if="facilityName?.includes('초량')" />
     <template v-if="current">
       <label class="facility-camera-select">CCTV 선택<select v-model="selected">
           <option v-for="camera in cameras" :key="camera.id" :value="String(camera.id)">
@@ -74,6 +78,7 @@ const app = computed(() => route.path.startsWith('/admin-app/'))
         </button>
         <p v-if="recognitionMessage" role="status" :class="{ 'recognition-error': recognitionError }">{{ recognitionMessage }}</p>
       </div>
+      <div class="facility-camera-row">
       <div class="facility-camera-stage">
         <TrafficVideo
           v-if="current.streamUrl"
@@ -82,6 +87,8 @@ const app = computed(() => route.path.startsWith('/admin-app/'))
           hls
         />
         <p v-else>영상 주소가 등록되지 않았습니다.</p>
+      </div>
+      <div class="facility-ocr-column"><FacilityOcrLog :key="underpassId" :underpass-id="underpassId" :app="app" /></div>
       </div>
       <nav class="facility-camera-links" aria-label="CCTV 관련 기록">
         <RouterLink
@@ -93,79 +100,8 @@ const app = computed(() => route.path.startsWith('/admin-app/'))
         >차량 통과 기록 보기 →</RouterLink>
       </nav>
     </template>
-    <p v-else>등록된 CCTV가 없습니다.</p>
+    <template v-else><p>등록된 CCTV가 없습니다.</p><FacilityOcrLog :key="underpassId" :underpass-id="underpassId" :app="app" /></template>
   </section>
+  </div>
 </template>
-<style scoped>
-.recognition-start {
-  min-height: 44px;
-  padding: 10px 18px;
-  border: 0;
-  border-radius: 8px;
-  background: #225f9b;
-  color: #fff;
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
-}
-.recognition-start:disabled { opacity: .6; cursor: wait; }
-.facility-recognition-controls p { margin: 8px 0 0; font-size: 13px; line-height: 1.6; }
-.recognition-error { color: #b42318; }
-.facility-cctv-viewer {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-width: 0;
-}
-.facility-camera-select {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  font-size: 14px;
-}
-.facility-camera-select select {
-  width: 100%;
-  min-height: 44px;
-  padding: 10px 12px;
-  border: 1px solid var(--line,#c9ced6);
-  border-radius: 8px;
-  background: var(--surface,#fff);
-  color: inherit;
-  font: inherit;
-}
-.facility-cctv-viewer h2 {
-  margin: 0;
-  font-size: 16px;
-}
-.facility-camera-stage {
-  overflow: hidden;
-  border-radius: 10px;
-  background: #17212b;
-}
-.facility-camera-stage :deep(video) {
-  display: block;
-  width: 100%;
-  height: auto;
-  aspect-ratio: 16/9;
-  max-height: 65dvh;
-  object-fit: contain;
-  background: #17212b;
-}
-.facility-camera-stage :deep(p) {
-  padding: 16px;
-  margin: 0;
-  color: #fff;
-  font-size: 13px;
-  line-height: 1.6;
-}
-.facility-camera-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 24px;
-}
-.facility-camera-links a {
-  font-size: 12px;
-  color: #225f9b;
-  line-height: 1.6;
-}
-</style>
+<style scoped src="../styles/components/facility-cctv-viewer.css"></style>

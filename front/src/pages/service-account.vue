@@ -2,7 +2,6 @@
 import AdminPageDirectory from '../components/AdminPageDirectory.vue'
 import ServiceResource from './backend-resource.vue'
 import FeedbackToast from '../components/FeedbackToast.vue'
-import CustomerLogout from '../components/CustomerLogout.vue'
 import AccountActions from '../components/AccountActions.vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -202,6 +201,7 @@ onBeforeUnmount(() => controller.abort())
               >{{label
               }}<PasswordInput
                 v-model="passwords[key!]"
+                :match-value="key==='newPasswordConfirm' ? (passwords.newPassword || '') : undefined"
                 :autocomplete="key==='currentPassword'?'current-password':'new-password'"
                 required
                 :disabled="busy" /></label
@@ -222,64 +222,7 @@ onBeforeUnmount(() => controller.abort())
         ><RouterLink to="/admin-app/history">점검 이력 <span>›</span></RouterLink
         ><RouterLink to="/admin-app/screen-13">알림 내역 <span>›</span></RouterLink
         ><RouterLink to="/admin-app/contacts">관할 담당자 연락처 <span>›</span></RouterLink></nav
-      ><AdminPageDirectory v-else-if="manager" /><AccountActions v-if="manager" /><CustomerLogout
-        v-else /></section
+      ><AdminPageDirectory v-else-if="manager" /><AccountActions v-if="manager" /></section
   ></component>
 </template>
-<style scoped>
-.account-panel[id] {
-  scroll-margin-top: 110px;
-}
-.account-summary {
-  display: grid;
-  grid-template-columns: 120px minmax(0,1fr);
-  gap: 14px;
-}
-.account-summary dd {
-  margin: 0;
-  overflow-wrap: anywhere;
-}
-.account-service {
-  max-width: 1100px;
-  margin: auto;
-}
-.account-service h1 {
-  font-size: 24px;
-}
-.account-panel {
-  padding: 24px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  margin-bottom: 20px;
-  background: var(--surface);
-}
-.account-panel h2 {
-  font-size: 18px;
-  margin-top: 0;
-}
-.account-panel form {
-  display: grid;
-  gap: 16px;
-  margin-top: 20px;
-}
-.account-panel form>label {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-width: 500px;
-}
-.account-panel form>button {
-  justify-self: start;
-}
-.account-panel small {
-  color: #65748a;
-}
-.account-panel summary {
-  cursor: pointer;
-}
-@media (max-width:600px) {
-  .account-panel {
-    padding: 16px;
-  }
-}
-</style>
+<style scoped src="../styles/pages/service-account.css"></style>

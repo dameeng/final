@@ -96,18 +96,6 @@ onBeforeUnmount(() => {
       </div>
     </div>
     <LiveMap manager map-only />
-    <RouterLink class="card" to="/admin-app/screen-4">
-      <b>담당 시설 {{summary?.facilityCount??'—'}}곳</b>
-      <small>통제 상태 확인 ›</small>
-    </RouterLink>
-    <RouterLink class="card" to="/admin-app/screen-9">
-      <b>예지보전</b>
-      <small>설비·점검 대상 확인 ›</small>
-    </RouterLink>
-    <RouterLink class="card" to="/admin-app/screen-13">
-      <b>오늘 알림 {{summary?.alertsToday??'—'}}건</b>
-      <small>알림 내역 ›</small>
-    </RouterLink>
-    <button type="button" :disabled="loading" @click="load">새로고침</button>
   </section>
 </template>
+<style src="../styles/pages/admin-app-overview.css"></style>

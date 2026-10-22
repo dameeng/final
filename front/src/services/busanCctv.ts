@@ -1,4 +1,3 @@
-const BASE = 'https://its.busan.go.kr/api-n/v1/bsits/user'
 export type BusanCamera = {
   id: string
   name: string
@@ -15,7 +14,7 @@ export async function getBusanCameras(): Promise<BusanCamera[]> {
   if (cached && Date.now() - loadedAt < 60000) return cached
   if (pending) return pending
   pending = (async () => {
-    const response = await fetch(`${BASE}/cctvs`, {
+    const response = await fetch('/map-cctv.json', {
       cache: 'no-store',
       signal: AbortSignal.timeout(15000),
     })
@@ -25,17 +24,19 @@ export async function getBusanCameras(): Promise<BusanCamera[]> {
     cached = rows
       .filter(
         (row) =>
-          /^https?:\/\//i.test(row.hlsAddr || '') &&
+          /^https?:\/\//i.test(row.url || '') &&
+          row.lat != null && row.lng != null &&
           Number.isFinite(Number(row.lat)) &&
-          Number.isFinite(Number(row.lot)),
+          Number.isFinite(Number(row.lng)) &&
+          Math.abs(Number(row.lat)) <= 90 && Math.abs(Number(row.lng)) <= 180,
       )
       .map((row) => ({
-        id: String(row.cctvId),
-        name: String(row.instlPos || row.cctvId),
-        address: String(row.instlAddr || ''),
-        url: String(row.hlsAddr),
+        id: String(row.id),
+        name: String(row.name || row.id),
+        address: String(row.address || ''),
+        url: String(row.url),
         lat: Number(row.lat),
-        lng: Number(row.lot),
+        lng: Number(row.lng),
       }))
     loadedAt = Date.now()
     return cached

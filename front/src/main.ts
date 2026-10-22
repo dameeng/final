@@ -1,4 +1,5 @@
 import { registerPwa } from './runtime/pwa'
+import { installErrorVisibility } from './runtime/errorVisibility'
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
@@ -20,6 +21,7 @@ import './styles/customer-map-viewport.css'
 import './styles/admin-restored.css'
 import './styles/app-restored.css'
 import './styles/ui-icons.css'
+import './styles/visual-consistency.css'
 createApp(App)
   .component('PasswordInput', PasswordInput)
   .component('UiIcon', UiIcon)
@@ -28,3 +30,8 @@ createApp(App)
   .mount('#app')
 
 registerPwa()
+const errorRoot = document.getElementById('app')
+if (errorRoot) {
+  const disposeErrorVisibility = installErrorVisibility(errorRoot)
+  import.meta.hot?.dispose(disposeErrorVisibility)
+}

@@ -1,0 +1,58 @@
+.app-overview .map-only-live {
+  height: max(420px, calc(100dvh - 250px));
+}
+.app-overview .map-only-live .map-only-selection {
+  bottom: 80px;
+}
+.map-only-live .admin-facility-sheet {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  min-height: 68px;
+  max-height: 88%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 18px 18px 0 0;
+  background: var(--surface, #fff);
+  box-shadow: 0 -3px 16px #17375320;
+  transition: height .22s ease;
+}
+.admin-facility-sheet.is-dragging { transition: none; }
+.admin-facility-sheet .admin-sheet-handle {
+  position: relative;
+  flex: 0 0 68px;
+  width: 100%;
+  padding: 24px 12px 12px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  touch-action: none;
+  user-select: none;
+  cursor: ns-resize;
+}
+.admin-sheet-handle::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: calc(50% - 20px);
+  width: 40px;
+  height: 4px;
+  border-radius: 4px;
+  background: #b8c4d0;
+}
+.admin-sheet-content { min-height: 0; overflow-y: auto; padding: 0 14px 16px; overscroll-behavior: contain; }
+.admin-sheet-content input { width: 100%; box-sizing: border-box; margin-bottom: 10px; }
+.admin-sheet-content ul { list-style: none; margin: 0; padding: 0; }
+.admin-sheet-content li { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #e4eaf0; }
+.admin-sheet-content li.is-selected { background: #edf4fa; }
+.admin-sheet-content .admin-sheet-facility { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; padding: 16px 4px; border: 0; background: transparent; color: inherit; text-align: left; }
+.admin-sheet-facility > span:last-child { min-width: 0; }
+.admin-sheet-facility strong { display: block; font-size: 14px; font-weight: 600; }
+.admin-sheet-facility small { display: block; margin-top: 6px; color: #6b7e91; font-size: 12px; overflow-wrap: anywhere; }
+.admin-sheet-content li > a { flex-shrink: 0; padding: 12px 4px; font-size: 13px; }
+@media (prefers-reduced-motion: reduce) { .map-only-live .admin-facility-sheet { transition: none; } }

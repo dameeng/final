@@ -30,21 +30,4 @@ function select() {
     </select>
   </span>
 </template>
-<style scoped>
-.email-input {
-  display: grid;
-  grid-template-columns: minmax(0,1fr) 140px;
-  gap: 8px;
-  width: 100%;
-  min-width: 0;
-}
-.email-input input,.email-input select {
-  min-width: 0;
-  width: 100%;
-}
-@media (max-width:600px) {
-  .email-input {
-    grid-template-columns: 1fr;
-  }
-}
-</style>
+<style scoped src="../styles/components/email-input.css"></style>
