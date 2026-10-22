@@ -1,6 +1,6 @@
 -- =====================================================================
 -- PUF 더미 데이터 시드 (seed_all.sql)
--- 실행 전제: puf_db_schema_v4.sql 실행 완료 (region id=1 '미배정' 존재, delivery_status 의 PENDING 도 스키마에 포함됨)
+-- 실행 전제: puf_db_schema_v8.sql 실행 완료 (region id=1 '미배정' 존재, delivery_status 의 PENDING 도 스키마에 포함됨)
 -- 실행 순서: FK 의존성 순서대로 정렬됨, 위에서 아래로 순서대로 실행
 -- 비밀번호: 모든 계정의 비밀번호 = 로그인 아이디 (BCrypt 해시)
 -- 지역: 부산광역시 16개 구/군
@@ -85,7 +85,7 @@ INSERT INTO manager_region (manager_id, region_id) VALUES
 ( 5, 17);   -- manager05: 기장군
 
 -- =====================================================================
--- 6. customer — 고객 10명 (login_id = customer01~10, pw = login_id)
+-- 6. customer — 고객 13명 (login_id = customer01~13, pw = login_id). 차량을 고객당 3대씩 맞추느라 11~13 추가
 -- =====================================================================
 INSERT INTO customer (login_id, password, name, birth, email, phone, zipcode, road_addr, detail_addr, emergency, is_withdrawn, created_at) VALUES
 ('customer01', '$2b$10$f7pNPQHzg6AvUlBaBfvUeuWGv6A9c8TA6LR8ZAYlZLCi04h2LnnXi', '이하은', '1995-04-12', 'haeun@example.com',   '01020010001', '48058', '부산 해운대구 해운대로 570',      '1201호', '01090010001', FALSE, NOW() - INTERVAL '60 days'),
@@ -97,49 +97,43 @@ INSERT INTO customer (login_id, password, name, birth, email, phone, zipcode, ro
 ('customer07', '$2b$10$7ASBqdB9N10Yz1Ot5D2.xOF/OO1cAEz4g20QLUQ4NO5bmSXHTWsh6', '조하윤', '1999-09-14', 'hayun@example.com',   '01020010007', '46241', '부산 금정구 금정로 63',           '101호',  NULL,            FALSE, NOW() - INTERVAL '30 days'),
 ('customer08', '$2b$10$Y6AeEQ.Ieu8gvABl/pe5ve3s9ew8xtSiObmDWWKQ0JB/HIta4Pxvq', '윤시우', '1993-12-01', 'siwoo@example.com',   '01020010008', '47545', '부산 연제구 연제로 2',            '805호',  '01090010008', FALSE, NOW() - INTERVAL '25 days'),
 ('customer09', '$2b$10$zGsSHPqwOjDzIN3ozBtdvuIY6uTYV2Zms41Hvxqb6VPHM1/s5Q2/u', '장소율', '1996-05-20', NULL,                  '01020010009', '46079', '부산 중구 중앙대로 2',            NULL,     NULL,            FALSE, NOW() - INTERVAL '20 days'),
-('customer10', '$2b$10$u45mUGuoLrd2qkzKSipX.u7/y0ZmpVKO0MarPJ79K5KeDcmv75ieW', '한유찬', '1985-07-08', 'yuchan@example.com',  '01020010010', '48311', '부산 사상구 사상로 310',          '1502호', '01090010010', FALSE, NOW() - INTERVAL '15 days');
+('customer10', '$2b$10$u45mUGuoLrd2qkzKSipX.u7/y0ZmpVKO0MarPJ79K5KeDcmv75ieW', '한유찬', '1985-07-08', 'yuchan@example.com',  '01020010010', '48311', '부산 사상구 사상로 310',          '1502호', '01090010010', FALSE, NOW() - INTERVAL '15 days'),
+('customer11', '$2b$10$pgy.q4F6zL9b8mI9GO/dIOaYdp9dTvPffDD/Clv9yFEqlYTwu9p5a', '오다인', '1991-02-18', 'dain@example.com',   '01020010011', '48513', '부산 남구 못골로 21',            '404호',  '01090010011', FALSE, NOW() - INTERVAL '12 days'),
+('customer12', '$2b$10$HdY.JTiaLtPxssXcAGkam.eealu/uflbH9Em50mDnGUcDZveT7bRO', '서재원', '1989-10-03', 'jaewon@example.com',  '01020010012', '47030', '부산 사하구 다대로 105',          '1102호', NULL,            FALSE, NOW() - INTERVAL '10 days'),
+('customer13', '$2b$10$wR4QWBNaQrG4FTvdIhOA.OxCczipzAhpGbYwsltSUNwvSS348pwR6', '노채원', '1994-06-27', NULL,                  '01020010013', '46218', '부산 금정구 부산대학로 63',      NULL,     '01090010013', FALSE, NOW() - INTERVAL '8 days');
 
 -- =====================================================================
--- 7. car — 고객 등록 차량 (고객당 1~2대)
--- =====================================================================
-INSERT INTO car (customer_id, car_num) VALUES
-(1, '51허3927'), (1, '12가7841'),
-(2, '23나5012'),
-(3, '67다8834'), (3, '34가2019'),
-(4, '45라1156'),
-(5, '78마6623'),
-(6, '56바4490'), (6, '89사7712'),
-(7, '91아3345'),
-(8, '32자8867'),
-(9, '64차5501'), (9, '17카9923'),
-(10, '73타2278');
-
--- 7-1. 시연용 차량 — AI 서버 roi.mp4 에 나오는 번호 (ocr_server/자동차영상/번호판_목록.txt, test/결과 영상 기준)
+-- 7. car — 고객 등록 차량: 고객당 정확히 3대 (13명 × 3 = 39대)
+--    · 시연용 번호 = AI 서버 roi.mp4 에 나오는 번호 (ocr_server/자동차영상/번호판_목록.txt, test/결과 영상 기준)
 --      Spring 은 번호가 정확히 같아야 매칭하므로 OCR 이 한글을 다르게 읽는 번호는 둘 다 같은 고객에게 등록
---      customer01: 실행할 때마다 같은 번호로 읽힌 차(12고1252/19저0362/117머1687) -> 로그인해서 알림 확인용
+--    · customer01: 실행할 때마다 같은 번호로 읽힌 차(12고1252/19저0362/117머1687) -> 로그인해서 알림 확인용
+--    · customer07: 50주3712/50수3712 (둘 중 하나로 읽힘), customer10: 52로0979/52모0979 (입구/출구 영상, 둘 중 하나로 읽힘)
+--      입구·출구 영상 차량도 APPROACH_LPR/FINAL_LPR 이라 알림이 나가요
+--    · 나머지는 시연용 번호 2개 + 일반 더미 번호 1개 (customer11~13 은 일반 더미 번호만)
+-- =====================================================================
 INSERT INTO car (customer_id, car_num) VALUES
 (1, '12고1252'), (1, '19저0362'), (1, '117머1687'),
-(2, '821루4545'), (2, '50마2269'),
-(3, '285수8896'), (3, '09무0867'),
-(4, '33보6383'), (4, '127보7725'),
-(5, '51소3396'), (5, '386부6716'),
-(6, '04다5872'), (6, '204로1201'),
-(7, '01가7454'), (7, '50주3712'), (7, '50수3712'),   -- 50주/50수 둘 중 하나로 읽힘
-(8, '256어9101'), (8, '231어4584'),
-(9, '381구8437'), (9, '109가5726'),
-(10, '259가8906');
-
--- 7-2. 입구/출구 영상 차량 중 한글이 다르게 읽히는 번호 (52로/52모 둘 중 하나로 읽힘)
---      입구(카메라 1, 3)·출구(2, 4)도 APPROACH_LPR/FINAL_LPR 이라 이 차는 입구/출구 영상에서도 알림이 나가요
-INSERT INTO car (customer_id, car_num) VALUES
-(10, '52로0979'), (10, '52모0979');
+(2, '821루4545'), (2, '50마2269'), (2, '23나5012'),
+(3, '285수8896'), (3, '09무0867'), (3, '67다8834'),
+(4, '33보6383'), (4, '127보7725'), (4, '45라1156'),
+(5, '51소3396'), (5, '386부6716'), (5, '78마6623'),
+(6, '04다5872'), (6, '204로1201'), (6, '56바4490'),
+(7, '01가7454'), (7, '50주3712'), (7, '50수3712'),
+(8, '256어9101'), (8, '231어4584'), (8, '32자8867'),
+(9, '381구8437'), (9, '109가5726'), (9, '64차5501'),
+(10, '259가8906'), (10, '52로0979'), (10, '52모0979'),
+(11, '51허3927'), (11, '12가7841'), (11, '34가2019'),
+(12, '89사7712'), (12, '17카9923'), (12, '91아3345'),
+(13, '73타2278'), (13, '38라6241'), (13, '72바1394');
 
 -- =====================================================================
 -- 8. underpass — 부산 지하차도 45개소 (busan_underpass_master 엑셀 기준)
+--    id 순서: 1=초량지하차도(시연 지하차도, OCR 시연 roi 카메라 226/227 소속), 2~13=강서구·금정구·기장군·남구·... 엑셀 순서 그대로 한 칸씩 뒤로(금호=2), 14번부터는 엑셀 순서 그대로
 --    region_id는 region.name으로 조회(id 값에 의존하지 않음). 카메라 참조는 아래 10번에서 UPDATE
 --    flood_count(침수 이력)는 엑셀에 없어서 기본값 0
 -- =====================================================================
 INSERT INTO underpass (name, region_id, road_addr, lat, lng, height, length, width, lanes, safety_grade, river_dist, sea_dist) VALUES
+('초량지하차도', (SELECT id FROM region WHERE name = '동구' AND is_deleted = FALSE), '부산광역시 동구', 35.1191375, 129.0447344, 3.5, 165, 15, 2, 'B', 346.1, 397),
 ('금호지하차도', (SELECT id FROM region WHERE name = '강서구' AND is_deleted = FALSE), '부산광역시 강서구', 35.170616, 128.960309, 7.4, 120, 27, 6, 'B', 21.8, 6945.7),
 ('대상지하차도', (SELECT id FROM region WHERE name = '강서구' AND is_deleted = FALSE), '부산광역시 강서구', 35.211652, 128.973808, 4.9, 130, 16, 4, 'B', 279.4, 11790.1),
 ('명지동진지하차도', (SELECT id FROM region WHERE name = '강서구' AND is_deleted = FALSE), '부산광역시 강서구', 35.097319, 128.926846, 4.8, 160, 17, 4, 'B', 211.1, 556.6),
@@ -152,7 +146,6 @@ INSERT INTO underpass (name, region_id, road_addr, lat, lng, height, length, wid
 ('문현지하차도', (SELECT id FROM region WHERE name = '남구' AND is_deleted = FALSE), '부산광역시 남구', 35.137092, 129.068048, 10, 260, 17, 4, 'B', 124.1, 810.3),
 ('신선대지하차도', (SELECT id FROM region WHERE name = '남구' AND is_deleted = FALSE), '부산광역시 남구', 35.123743, 129.099580, 4.7, 1800, 14, 4, 'B', 173.9, 1181.1),
 ('부산진시장지하차도', (SELECT id FROM region WHERE name = '동구' AND is_deleted = FALSE), '부산광역시 동구', 35.137087, 129.057756, 4, 44, 12, 2, 'B', 557.5, 1099.4),
-('초량지하차도', (SELECT id FROM region WHERE name = '동구' AND is_deleted = FALSE), '부산광역시 동구', 35.1191375, 129.0447344, 3.5, 165, 15, 2, 'B', 346.1, 397),
 ('북항지하차도', (SELECT id FROM region WHERE name = '동구' AND is_deleted = FALSE), '부산광역시 동구', 35.1231375, 129.0469531, 3.5, 175, 15, 2, 'B', 658.2, 241.8),
 ('충장지하차도', (SELECT id FROM region WHERE name = '동구' AND is_deleted = FALSE), '부산광역시 동구', 35.115165, 129.043793, 7.3, 1860, 20, 4, 'UNKNOWN', 310.5, 285.4),
 ('내성지하차도', (SELECT id FROM region WHERE name = '동래구' AND is_deleted = FALSE), '부산광역시 동래구', 35.2044875, 129.0780469, 4.6, 185, 17, 4, 'B', 158.1, 6145.9),
@@ -187,27 +180,17 @@ INSERT INTO underpass (name, region_id, road_addr, lat, lng, height, length, wid
 ('중동지하차도', (SELECT id FROM region WHERE name = '해운대구' AND is_deleted = FALSE), '부산광역시 해운대구', 35.166402, 129.165501, 4.5, 85, 20, 6, 'C', 805.4, 816.2);
 
 -- =====================================================================
--- 9. camera — 지하차도별 카메라 5대 (APPROACH_LPR 2 + FINAL_LPR 2 + CCTV 1)
---    카메라 ID 배치: 지하차도 N → 카메라 (N-1)*5+1 ~ (N-1)*5+5
---    순서: 상행입구(1), 상행출구(2), 하행입구(3), 하행출구(4), CCTV(5), 좌표는 지하차도 좌표에서 조금씩 어긋나게
+-- 9. camera — 일괄 생성하지 않음
+--    · CCTV 역할 카메라는 seed_its 가 만든다: 지하차도 반경 1km 안의 ITS CCTV 개수만큼(지하차도마다 다름),
+--      ITS CCTV 가 하나도 없는 지하차도는 더미 CCTV 1대
+--    · 입구/출구(LPR) 카메라는 시연용 roi 2대(초량지하차도)만 둔다. 그래서 underpass 의 입구/출구 카메라 칸(up_entry_cam_id 등)은 NULL
+--    · OCR 서버 설정(config.CAMERAS)이 카메라 id 226/227 을 쓰므로, 번호가 이어지도록 시퀀스를 225 로 맞춘다
 -- =====================================================================
-INSERT INTO camera (underpass_id, role, stream_url, dist, lat, lng)
-SELECT u.id, s.role::camera_role,
-       'rtsp://cam' || LPAD(((u.id - 1) * 5 + s.slot)::text, 2, '0') || '.puf.local/stream',
-       s.dist, u.lat + s.dlat, u.lng + s.dlng
-FROM underpass u
-CROSS JOIN (VALUES
-  (1, 'APPROACH_LPR', 200,  0.0010, -0.0005),
-  (2, 'FINAL_LPR',     50,  0.0005, -0.0002),
-  (3, 'APPROACH_LPR', 200, -0.0010,  0.0005),
-  (4, 'FINAL_LPR',     50, -0.0005,  0.0002),
-  (5, 'CCTV',        NULL,  0,       0)
-) AS s(slot, role, dist, dlat, dlng)
-ORDER BY u.id, s.slot;
+SELECT setval('camera_id_seq', 225);
 
--- 9-1. 시연용 roi 카메라 2대 (AI 서버 roi.mp4, config.CAMERAS 의 226/227) — 금호지하차도(id 1) 소속
---      id 를 직접 적지 않음: 위 225대 바로 뒤라 BIGSERIAL 이 226(APPROACH_LPR), 227(FINAL_LPR) 을 줌
---      아래 10번의 입구/출구 칸에는 넣지 않음 -> 통과 기록 없이 알림만
+-- 9-1. 시연용 roi 카메라 2대 (AI 서버 roi.mp4, config.CAMERAS 의 226/227) — 초량지하차도(id 1) 소속
+--      id 를 직접 적지 않음: 위 setval 바로 뒤라 BIGSERIAL 이 226(APPROACH_LPR), 227(FINAL_LPR) 을 줌
+--      underpass 의 입구/출구 칸에는 넣지 않음 -> 통과 기록 없이 알림만
 INSERT INTO camera (underpass_id, role, stream_url, dist, lat, lng)
 SELECT u.id, s.role::camera_role, 'rtsp://cam-roi-' || s.slot || '.puf.local/stream', s.dist, u.lat, u.lng
 FROM underpass u
@@ -216,25 +199,17 @@ WHERE u.id = 1
 ORDER BY s.slot;
 
 -- =====================================================================
--- 10. underpass 카메라 참조 UPDATE (위 카메라 ID 배치 규칙 그대로)
+-- 11. pm_equipment — 지하차도별 설비 (DISPLAY 1 + PUMP 1). CCTV 설비는 카메라를 만드는 seed_its 에서 카메라마다 추가
+--     equip_id 배치: 지하차도 N → (N-1)*2+1(DISPLAY), +2(PUMP)
 -- =====================================================================
-UPDATE underpass SET up_entry_cam_id   = (id - 1) * 5 + 1,
-                     up_exit_cam_id    = (id - 1) * 5 + 2,
-                     down_entry_cam_id = (id - 1) * 5 + 3,
-                     down_exit_cam_id  = (id - 1) * 5 + 4;
-
--- =====================================================================
--- 11. pm_equipment — 지하차도별 설비 (CCTV 1 + DISPLAY 1 + PUMP 1)
---     equip_id 배치: 지하차도 N → (N-1)*3+1(CCTV), +2(DISPLAY), +3(PUMP)
--- =====================================================================
-INSERT INTO pm_equipment (underpass_id, type, cam_id)
-SELECT u.id, s.type::pm_equipment_type, CASE WHEN s.type = 'CCTV' THEN (u.id - 1) * 5 + 5 END
+INSERT INTO pm_equipment (underpass_id, type)
+SELECT u.id, s.type::pm_equipment_type
 FROM underpass u
-CROSS JOIN (VALUES (1, 'CCTV'), (2, 'DISPLAY'), (3, 'PUMP')) AS s(slot, type)
+CROSS JOIN (VALUES (1, 'DISPLAY'), (2, 'PUMP')) AS s(slot, type)
 ORDER BY u.id, s.slot;
 
 -- 11-1. 선제 차단 대상 (수위 5cm 에서 차단) — 시연/테스트용 1곳 지정. 실제 운영에서는 관리자가 지정
-UPDATE underpass SET early_block = TRUE WHERE name = '초량제1지하차도';
+UPDATE underpass SET early_block = TRUE WHERE name = '초량지하차도';
 
 -- =====================================================================
 -- 12. threshold — 지하차도별 위험도 임계치 (안전 0 / 관심 40 / 주의 70. 경계·심각은 수위로만 판정하므로 행 없음)
@@ -248,7 +223,7 @@ ORDER BY u.id, s.min_score;
 
 -- =====================================================================
 -- 13. pm_threshold — 설비별 예지보전 임계치
---     CCTV 안전 0 / 주의 40 / 위험 65 (recognition_rate 기반 별도 기준)
+--     CCTV 안전 0 / 주의 40 / 위험 65 (recognition_rate 기반 별도 기준. CCTV 설비는 seed_its 에서 만들고 거기서 임계치도 넣음)
 --     DISPLAY 안전 0 / 주의 50 / 위험 80,  PUMP 안전 0 / 주의 45 / 위험 75
 -- =====================================================================
 INSERT INTO pm_threshold (equip_id, level, min_score, updated_by)
@@ -396,14 +371,14 @@ INSERT INTO device_token (customer_id, token, platform) VALUES
 -- employee:     1~16
 -- shift:        1=주간, 2=오후, 3=야간
 -- manager:      1~5 (login: manager01~05)
--- customer:     1~10 (login: customer01~10)
--- car:          1~14 (고객당 1~2대) + 15~37 시연용(roi 영상 21대 + 52로/52모0979)
--- underpass:    1~45 (엑셀 순서: 강서구 → 금정구 → 기장군 → … → 해운대구)
--- camera:       1~225 (지하차도당 5대) + 226 roi APPROACH_LPR, 227 roi FINAL_LPR (금호지하차도)
--- pm_equipment: 1~135 (지하차도당 3대: CCTV/DISPLAY/PUMP)
---   DISPLAY 설비 ID: (지하차도 id - 1) * 3 + 2  (2, 5, 8, ...)
+-- customer:     1~13 (login: customer01~13)
+-- car:          1~39 (고객당 3대. 시연용 번호 23대 + 일반 더미 16대)
+-- underpass:    1~45 (1=초량지하차도, 이후 엑셀 순서: 금호(강서구)=2 → … → 해운대구)
+-- camera:       226 roi APPROACH_LPR, 227 roi FINAL_LPR (초량지하차도, id 1) — 나머지 카메라(CCTV)는 seed_its 가 228번부터 추가
+-- pm_equipment: 1~90 (지하차도당 2대: DISPLAY/PUMP). CCTV 설비는 seed_its 가 91번부터 추가
+--   DISPLAY 설비 ID: (지하차도 id - 1) * 2 + 1  (1, 3, 5, ...)
 -- threshold:    1~135 (지하차도당 3단계)
--- pm_threshold: 1~405 (설비당 3단계)
+-- pm_threshold: 1~270 (DISPLAY/PUMP 설비당 3단계). CCTV 설비 임계치는 seed_its 에서 추가
 -- weather_area: 1~16 (부산 16구군)
 -- reason_preset:  1~12
 -- display_preset: 1~5 (SAFE/WATCH/CAUTION/BLOCK/RELEASE)
