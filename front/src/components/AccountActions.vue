@@ -60,21 +60,6 @@ const live = () =>
   !!app.account ||
   localStorage.getItem('routel-session-kind') === 'manager' ||
   import.meta.env.VITE_DATA_MODE === 'server'
-async function logout() {
-  if (busy.value) return
-  busy.value = true
-  error.value = ''
-  try {
-    if (live()) await backend('/api/auth/logout', { method: 'POST' })
-    app.authVersion++
-    app.clearAccount()
-    await router.push(route.path.startsWith('/admin-app/') ? '/admin-app/screen-1' : '/admin-login')
-  } catch (e) {
-    error.value = (e as Error).message
-  } finally {
-    busy.value = false
-  }
-}
 async function withdraw() {
   if (busy.value) return
   error.value = ''
@@ -104,7 +89,6 @@ async function withdraw() {
     <h2>계정 관리</h2>
     <div>
       <button type="button" :disabled="busy" @click="openPassword">비밀번호 변경</button>
-      <button type="button" :disabled="busy" @click="logout">로그아웃</button>
       <button type="button" :disabled="busy" @click="error='';password='';dialog?.showModal()">회원탈퇴</button>
     </div>
     <p v-if="error&&!dialog?.open" role="alert">{{error}}</p>
@@ -150,6 +134,7 @@ async function withdraw() {
         </label>
         <label>새 비밀번호 확인<PasswordInput
             v-model="newPasswordConfirm"
+            :match-value="newPassword"
             autocomplete="new-password"
             required
             :disabled="busy"
@@ -164,56 +149,4 @@ async function withdraw() {
     </dialog>
   </section>
 </template>
-<style scoped>
-.account-actions {
-  padding: 24px;
-  border: 1px solid var(--line,#cbd5e1);
-  border-radius: 10px;
-  margin: 20px 0;
-  background: var(--surface,#fff);
-}
-h2 {
-  font-size: 18px;
-  margin: 0 0 16px;
-}
-.account-actions>div,form>div {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-button {
-  padding: 10px 18px;
-  border: 1px solid var(--line,#cbd5e1);
-  background: var(--surface,#fff);
-  color: inherit;
-  font-size: 14px;
-  font-weight: 400;
-}
-.account-withdraw {
-  width: min(480px,calc(100% - 32px));
-  padding: 24px;
-  color: inherit;
-  background: var(--surface,#fff);
-  border: 1px solid var(--line,#cbd5e1);
-  border-radius: 10px;
-}
-.account-withdraw::backdrop {
-  background: #172a4066;
-}
-label {
-  display: grid;
-  gap: 8px;
-  margin: 20px 0;
-}
-input {
-  padding: 10px;
-  min-width: 0;
-  width: 100%;
-}
-p[role=alert] {
-  color: #b42318;
-}
-form>div {
-  justify-content: flex-end;
-}
-</style>
+<style scoped src="../styles/components/account-actions.css"></style>

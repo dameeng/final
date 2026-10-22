@@ -1,0 +1,8 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><div id="app"></div><script type="module">
+import {createApp,h,ref} from 'vue'
+import {createRouter,createMemoryHistory} from 'vue-router'
+import FacilityCctvViewer from '../src/components/FacilityCctvViewer.vue'
+import '../src/styles/shared.css'
+const router=createRouter({history:createMemoryHistory(),routes:[{path:'/:pathMatch(.*)*',component:{render:()=>null}}]})
+createApp({setup(){const id=ref('1');window.selectTestFacility=value=>id.value=value;return()=>h(FacilityCctvViewer,{underpassId:id.value,cameras:[{id:61,cameraRole:'APPROACH_LPR',streamUrl:''}]})}}).use(router).mount('#app')
+</script></html>

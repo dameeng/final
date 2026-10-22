@@ -14,6 +14,7 @@ import { loginDestination } from '../services/access'
 import PostcodeSearch from '../components/PostcodeSearch.vue'
 import BirthDateInput from '../components/BirthDateInput.vue'
 import VerificationCodeInput from '../components/VerificationCodeInput.vue'
+import { developmentSmsCode } from '../services/developmentSms'
 import EmailInput from '../components/EmailInput.vue'
 import PhoneInput from '../components/PhoneInput.vue'
 import NationalitySelect from '../components/NationalitySelect.vue'
@@ -303,6 +304,8 @@ async function submit() {
         maskedPhone.value = timing?.maskedPhone || ''
         step.value = 2
         message.value = '인증번호를 발송했습니다.'
+        const code = await developmentSmsCode(values.phone || '')
+        if (code) { values.code = code; message.value = '개발용 인증번호를 자동으로 입력했습니다.' }
       } else if (step.value === 2) {
         await backend(base.value + '/password-reset/verify', {
           method: 'POST',
@@ -336,6 +339,8 @@ async function submit() {
       maskedPhone.value = timing?.maskedPhone || ''
       step.value = 2
       message.value = '인증번호를 발송했습니다.'
+      const code = await developmentSmsCode(values.phone || '')
+      if (code) { values.code = code; message.value = '개발용 인증번호를 자동으로 입력했습니다.' }
     } else if (step.value === 2) {
       await backend(
         base.value + (manager.value ? '/signup/phone-code/verify' : '/phone-code/verify'),
@@ -413,6 +418,8 @@ async function resend() {
     issued(timing)
     values.code = ''
     message.value = '인증번호를 다시 발송했습니다.'
+    const code = await developmentSmsCode(values.phone || '')
+    if (code) { values.code = code; message.value = '개발용 인증번호를 자동으로 입력했습니다.' }
   } catch (e) {
     error.value = (e as Error).message
   } finally {
@@ -490,6 +497,7 @@ async function resend() {
               /><PasswordInput
                 v-else-if="/password/i.test(field.key)"
                 v-model="values[field.key]"
+                :match-value="field.key==='passwordConfirm' ? (values.password || '') : field.key==='newPasswordConfirm' ? (values.newPassword || '') : undefined"
                 :aria-label="field.label"
                 :type="/password/i.test(field.key)?'password':field.type||'text'"
                 :required="field.required"
@@ -591,202 +599,6 @@ async function resend() {
     ></component
   >
 </template>
-<style scoped>
-.required-guide {
-  font-size: 13px;
-}
-.required-guide span,.auth-service .required-star {
-  color: #c62828;
-  font-size: 16px;
-  font-weight: 700;
-}
-.auth-service .service-form-fields {
-  display: grid;
-  grid-template-columns: repeat(2,minmax(0,1fr));
-  gap: 18px;
-}
-.auth-service .service-form-fields>.auth-field {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  grid-column: 1/-1;
-}
-.auth-service .signup-form .service-form-fields>:is(.auth-field-password,.auth-field-passwordConfirm,.auth-field-name,.auth-field-birthDate) {
-  grid-column: auto;
-}
-.auth-service .service-form-fields input {
-  min-width: 0;
-  width: 100%;
-}
-.auth-service .service-form-fields .inline-field {
-  display: grid;
-  grid-template-columns: minmax(0,1fr) auto;
-  align-items: end;
-}
-.inline-field .service-field-label {
-  grid-column: 1/-1;
-}
-.inline-field :deep(.postcode-search-control) {
-  margin: 0;
-}
-.auth-service .auth-buttons button[type=submit] {
-  min-width: 160px;
-}
-.auth-service .remember-login-id input {
-  width: 16px;
-}
-.auth-service .remember-login-id {
-  margin-top: 0;
-}
-@media (max-width:600px) {
-  .auth-service .service-form-fields {
-    grid-template-columns: minmax(0,1fr);
-  }
-  .auth-service .service-form-fields .inline-field {
-    grid-template-columns: minmax(0,1fr);
-  }
-  .auth-service .auth-buttons button[type=submit] {
-    width: 100%;
-  }
-}
-.auth-service .remember-login-id {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: max-content;
-  margin-top: 8px;
-  font-size: 13px;
-  cursor: pointer;
-}
-.auth-service .remember-login-id input {
-  width: 16px;
-  height: 16px;
-  min-height: 16px;
-  margin: 0;
-  padding: 0;
-  accent-color: #173d62;
-}
-.verification-timing {
-  margin-top: 20px;
-  padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-}
-.verification-timing p {
-  margin: 0 0 10px;
-}
-.verification-timing strong {
-  font-variant-numeric: tabular-nums;
-  color: var(--primary,#173d62);
-}
-.auth-field-group {
-  margin: 20px 0;
-}
-.auth-field-group h2 {
-  font-size: 16px;
-  margin: 0 0 16px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--line);
-}
-.service-field-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.service-field-label small {
-  font-size: 11px;
-  color: var(--ink-sub,#64748b);
-}
-.auth-service .duplicate-check {
-  justify-self: start;
-  min-height: 36px;
-  padding: 6px 12px;
-  font-size: 12px;
-}
-.auth-service {
-  max-width: 680px;
-  margin: 24px auto;
-  padding: 24px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--surface);
-}
-.auth-service .login-form .service-form-fields {
-  max-width: 360px;
-  grid-template-columns: minmax(0,1fr);
-}
-.auth-service .auth-field-code {
-  width: min(100%,328px);
-}
-.auth-service .auth-field-code > input {
-  width: 100%;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: .2em;
-}
-.auth-service h1 {
-  font-size: 24px;
-  margin: 0 0 20px;
-}
-.auth-buttons,.auth-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 24px;
-}
-.auth-buttons {
-  justify-content: flex-end;
-}
-.auth-links {
-  font-size: 13px;
-}
-.auth-service button {
-  min-height: 44px;
-  padding: 10px 16px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--surface);
-  color: inherit;
-}
-.auth-service .auth-buttons button[type=submit] {
-  background: #173d62;
-  color: white;
-}
-@media (max-width:600px) {
-  .auth-service {
-    margin: 12px 0;
-    padding: 20px 16px;
-  }
-}
-</style>
+<style scoped src="../styles/pages/service-auth.css"></style>
 
-<style scoped>
-.signup-verification-choice {
-  margin: 20px 0 24px;
-}
-.signup-verification-choice h2 {
-  font-size: 16px;
-  margin: 0 0 8px;
-}
-.signup-verification-choice p,.signup-verification-choice>small {
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--ink-sub,#64748b);
-}
-.signup-verification-choice>div {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin: 16px 0 8px;
-}
-.signup-verification-choice button[aria-pressed=true] {
-  border-color: #e52b3b;
-  background: #fff4f5;
-  color: #b91f30;
-  font-weight: 700;
-}
-.signup-verification-choice button small {
-  font-size: 10px;
-  margin-left: 4px;
-}
-</style>
+<style scoped src="../styles/pages/service-auth-2.css"></style>

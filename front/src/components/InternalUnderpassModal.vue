@@ -2,6 +2,7 @@
 import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { asPage, backend } from '../services/backend'
 import TrafficVideo from './TrafficVideo.vue'
+import TunnelReferenceVideo from './TunnelReferenceVideo.vue'
 const open = defineModel<boolean>({ default: false })
 const props = defineProps<{ facilityId?: string | number; facilityName: string }>()
 const dialog = ref<HTMLDialogElement>(), cameras = ref<any[]>([]), selected = ref(''), error = ref(''), loading = ref(false)
@@ -27,6 +28,7 @@ onBeforeUnmount(() => { request?.abort(); dialog.value?.close() })
 <template>
   <dialog ref="dialog" class="internal-underpass-modal" aria-label="내부 지하차도 영상" @cancel.prevent="open=false" @close="open=false">
     <header><h2>{{facilityName}} · 내부 지하차도</h2><button type="button" @click="open=false" aria-label="닫기">✕</button></header>
+    <TunnelReferenceVideo v-if="open && facilityName.includes('초량')" />
     <p v-if="loading" role="status">내부 영상을 불러오는 중입니다.</p>
     <p v-else-if="error" role="alert">{{error}}</p>
     <template v-else-if="cameras.length">
@@ -36,8 +38,4 @@ onBeforeUnmount(() => { request?.abort(); dialog.value?.close() })
     <p v-else>등록된 내부 영상이 없습니다.</p>
   </dialog>
 </template>
-<style scoped>
-.internal-underpass-modal { width:min(720px,92vw); max-height:85dvh; overflow:auto; border:0; border-radius:16px; padding:20px; background:#fff; color:#17212b; }
-dialog::backdrop { background:#10203399; }
-header { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:16px; } h2 { margin:0; font-size:18px; } button,select { min-height:40px; } :deep(video) { width:100%; margin-top:16px; background:#17212b; }
-</style>
+<style scoped src="../styles/components/internal-underpass-modal.css"></style>
