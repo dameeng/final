@@ -5,10 +5,10 @@
 --   · its_cctv 241개: 원본 258행 중 좌표 0,0 이거나 스트림(hls) 없는 17행 제외
 --   · its_vms  실제 120개(좌표 0,0 인 강풍전광판 제외) + 더미 50개(근접 35 + 원거리 15)
 -- ※ 지하차도 id: 1=초량지하차도(시연), 금호=2 … (seed_all_v8 의 id 순서 기준. 이 파일의 지하차도 id 는 모두 그 기준)
--- 카메라(CCTV): seed_all 은 카메라를 일괄 생성하지 않는다(roi 226/227 제외). 여기서 지하차도마다 필요한 만큼만 만든다.
+-- 카메라(CCTV): seed_all 은 카메라를 일괄 생성하지 않는다(시연용 번호판 카메라 226~229 제외). 여기서 지하차도마다 필요한 만큼만 만든다.
 --   · 각 ITS CCTV 를 가장 가까운 지하차도 1곳에만 귀속(반경 1000m 이내) → 그 개수만큼 CCTV 카메라 (지하차도마다 개수 다름, 1대면 1대)
 --   · 귀속된 ITS CCTV 가 없는 지하차도는 더미 CCTV 카메라 1대(rtsp://cam-dummy-{지하차도id}.puf.local/stream)
---   · 카메라 id 는 228번부터 지하차도 id 순서로 부여. 입구/출구(LPR) 카메라는 만들지 않음
+--   · 카메라 id 는 230번부터 지하차도 id 순서로 부여. 입구/출구(LPR) 카메라는 만들지 않음
 -- 예지보전 VMS: 각 VMS 를 가장 가까운 지하차도 1곳에만 귀속(반경 300m 이내). 귀속 VMS 없는 지하차도는 근접 더미 VMS(100m 지점)를 대신 연결
 --   · 첫 번째 전광판은 기존 DISPLAY 설비 행의 its_vms_id 를 채우고, 두 번째부터는 pm_equipment 136번~ 로 추가
 -- 표출 매핑(vms_underpass): 지하차도 반경 1000m 이내 실제 VMS 전부(여러 지하차도와 겹침 허용) + 각 지하차도의 더미. dist 는 지하차도~전광판 직선거리(m)
@@ -440,7 +440,7 @@ SELECT setval(pg_get_serial_sequence('its_vms', 'id'), (SELECT MAX(id) FROM its_
 
 -- =====================================================================
 -- 3. camera — 지하차도에 귀속된 ITS CCTV 마다 CCTV 역할 카메라 1대 (스트림·좌표·its_cctv_id)
---    VALUES = (지하차도 id, 순서(0=가장 가까운 CCTV), its_cctv id). 지하차도 id 순서대로 228번부터 id 부여
+--    VALUES = (지하차도 id, 순서(0=가장 가까운 CCTV), its_cctv id). 지하차도 id 순서대로 230번부터 id 부여
 -- =====================================================================
 INSERT INTO camera (underpass_id, role, stream_url, lat, lng, its_cctv_id)
 SELECT m.underpass_id, 'CCTV', i.stream_url, i.lat, i.lng, i.id
@@ -578,10 +578,10 @@ WHERE NOT EXISTS (SELECT 1 FROM camera c WHERE c.underpass_id = u.id AND c.its_c
 ORDER BY u.id;
 
 -- =====================================================================
--- 5. pm_equipment — 카메라(228번~)마다 예지보전 CCTV 설비 1개 (seed_all 의 DISPLAY/PUMP 설비 1~90번 뒤에 이어 붙임)
+-- 5. pm_equipment — 카메라(230번~)마다 예지보전 CCTV 설비 1개 (seed_all 의 DISPLAY/PUMP 설비 1~90번 뒤에 이어 붙임)
 -- =====================================================================
 INSERT INTO pm_equipment (underpass_id, type, cam_id)
-SELECT c.underpass_id, 'CCTV', c.id FROM camera c WHERE c.id > 227 ORDER BY c.id;   -- 역할(CCTV/FINAL_LPR/APPROACH_LPR)과 상관없이 ITS·더미 카메라마다 1개
+SELECT c.underpass_id, 'CCTV', c.id FROM camera c WHERE c.id > 229 ORDER BY c.id;   -- 역할(CCTV/FINAL_LPR/APPROACH_LPR)과 상관없이 ITS·더미 카메라마다 1개
 
 -- =====================================================================
 -- 6. pm_equipment — 지하차도별 DISPLAY 설비에 전광판(its_vms) 연결. 귀속 전광판이 없으면 근접 더미 연결

@@ -19,6 +19,8 @@
   .facility-ocr-column :deep(.facility-ocr-log) { position:static; height:480px; max-height:65dvh; }
 }
 .recognition-start:disabled { opacity: .6; cursor: wait; }
+.recognition-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.recognition-stop { background: #b42318; }
 .facility-recognition-controls p { margin: 8px 0 0; font-size: 13px; line-height: 1.6; }
 .recognition-error { color: #b42318; }
 .facility-cctv-viewer {
@@ -53,6 +55,7 @@
   border-radius: 10px;
   background: #17212b;
 }
+.facility-camera-stage > img,
 .facility-camera-stage :deep(video) {
   display: block;
   width: 100%;

@@ -128,7 +128,7 @@ INSERT INTO car (customer_id, car_num) VALUES
 
 -- =====================================================================
 -- 8. underpass — 부산 지하차도 45개소 (busan_underpass_master 엑셀 기준)
---    id 순서: 1=초량지하차도(시연 지하차도, OCR 시연 roi 카메라 226/227 소속), 2~13=강서구·금정구·기장군·남구·... 엑셀 순서 그대로 한 칸씩 뒤로(금호=2), 14번부터는 엑셀 순서 그대로
+--    id 순서: 1=초량지하차도(시연 지하차도, OCR 시연 카메라 226~229 소속), 2~13=강서구·금정구·기장군·남구·... 엑셀 순서 그대로 한 칸씩 뒤로(금호=2), 14번부터는 엑셀 순서 그대로
 --    region_id는 region.name으로 조회(id 값에 의존하지 않음). 카메라 참조는 아래 10번에서 UPDATE
 --    flood_count(침수 이력)는 엑셀에 없어서 기본값 0
 -- =====================================================================
@@ -183,20 +183,24 @@ INSERT INTO underpass (name, region_id, road_addr, lat, lng, height, length, wid
 -- 9. camera — 일괄 생성하지 않음
 --    · CCTV 역할 카메라는 seed_its 가 만든다: 지하차도 반경 1km 안의 ITS CCTV 개수만큼(지하차도마다 다름),
 --      ITS CCTV 가 하나도 없는 지하차도는 더미 CCTV 1대
---    · 입구/출구(LPR) 카메라는 시연용 roi 2대(초량지하차도)만 둔다. 그래서 underpass 의 입구/출구 카메라 칸(up_entry_cam_id 등)은 NULL
---    · OCR 서버 설정(config.CAMERAS)이 카메라 id 226/227 을 쓰므로, 번호가 이어지도록 시퀀스를 225 로 맞춘다
+--    · 번호판(LPR) 카메라는 시연용 4대(초량지하차도)만 둔다: 226 접근(roi), 227 roi, 228 입구, 229 출구
+--    · OCR 서버 설정(config.CAMERAS)이 카메라 id 226~229 를 쓰므로, 번호가 이어지도록 시퀀스를 225 로 맞춘다
 -- =====================================================================
 SELECT setval('camera_id_seq', 225);
 
--- 9-1. 시연용 roi 카메라 2대 (AI 서버 roi.mp4, config.CAMERAS 의 226/227) — 초량지하차도(id 1) 소속
---      id 를 직접 적지 않음: 위 setval 바로 뒤라 BIGSERIAL 이 226(APPROACH_LPR), 227(FINAL_LPR) 을 줌
---      underpass 의 입구/출구 칸에는 넣지 않음 -> 통과 기록 없이 알림만
+-- 9-1. 시연용 번호판 카메라 4대 (config.CAMERAS 의 226~229) — 초량지하차도(id 1) 소속
+--      id 를 직접 적지 않음: 위 setval 바로 뒤라 BIGSERIAL 이 slot 순서대로 226, 227, 228, 229 를 줌
+--      226 APPROACH_LPR(roi.mp4) / 227 FINAL_LPR(roi.mp4) / 228 FINAL_LPR(입구.mp4) / 229 FINAL_LPR(출구.mp4)
+--      stream_url = AI 서버 실시간 영상 주소 (225 + slot = 카메라 id)
 INSERT INTO camera (underpass_id, role, stream_url, dist, lat, lng)
-SELECT u.id, s.role::camera_role, 'rtsp://cam-roi-' || s.slot || '.puf.local/stream', s.dist, u.lat, u.lng
+SELECT u.id, s.role::camera_role, 'http://localhost:8000/stream/' || (225 + s.slot), s.dist, u.lat, u.lng
 FROM underpass u
-CROSS JOIN (VALUES (1, 'APPROACH_LPR', 200), (2, 'FINAL_LPR', 50)) AS s(slot, role, dist)
+CROSS JOIN (VALUES (1, 'APPROACH_LPR', 200), (2, 'FINAL_LPR', 50), (3, 'FINAL_LPR', 0), (4, 'FINAL_LPR', 0)) AS s(slot, role, dist)
 WHERE u.id = 1
 ORDER BY s.slot;
+
+-- 9-2. 초량지하차도 상행 입구/출구 카메라 칸 = 228(입구) / 229(출구) -> 입구에서 찍힌 차가 출구에서 찍히면 통과 기록
+UPDATE underpass SET up_entry_cam_id = 228, up_exit_cam_id = 229 WHERE id = 1;
 
 -- =====================================================================
 -- 11. pm_equipment — 지하차도별 설비 (DISPLAY 1 + PUMP 1). CCTV 설비는 카메라를 만드는 seed_its 에서 카메라마다 추가
@@ -374,7 +378,7 @@ INSERT INTO device_token (customer_id, token, platform) VALUES
 -- customer:     1~13 (login: customer01~13)
 -- car:          1~39 (고객당 3대. 시연용 번호 23대 + 일반 더미 16대)
 -- underpass:    1~45 (1=초량지하차도, 이후 엑셀 순서: 금호(강서구)=2 → … → 해운대구)
--- camera:       226 roi APPROACH_LPR, 227 roi FINAL_LPR (초량지하차도, id 1) — 나머지 카메라(CCTV)는 seed_its 가 228번부터 추가
+-- camera:       226 접근 APPROACH_LPR(roi), 227 roi FINAL_LPR, 228 입구 FINAL_LPR, 229 출구 FINAL_LPR (초량지하차도, id 1) — 나머지 카메라(CCTV)는 seed_its 가 230번부터 추가
 -- pm_equipment: 1~90 (지하차도당 2대: DISPLAY/PUMP). CCTV 설비는 seed_its 가 91번부터 추가
 --   DISPLAY 설비 ID: (지하차도 id - 1) * 2 + 1  (1, 3, 5, ...)
 -- threshold:    1~135 (지하차도당 3단계)
