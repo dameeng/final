@@ -110,14 +110,4 @@ const current = computed(() =>
   </div>
 </template>
 
-<style scoped>
-.is-board .customer-section-sidebar .section-sidebar-title {
-  font-size: 24px;
-}
-.is-board .customer-section-sidebar nav a {
-  font-size: 16px;
-}
-.is-board .customer-breadcrumb {
-  font-size: 14px;
-}
-</style>
+<style scoped src="../styles/components/customer-page-layout.css"></style>

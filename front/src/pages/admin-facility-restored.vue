@@ -267,7 +267,7 @@ function control() {
 <BackendResource v-else-if="tab==='equip'" embedded resource-key="cameras" />
 <BackendResource v-else-if="tab==='sign'" embedded resource-key="display" />
 <section v-else-if="tab==='cctv'" class="restored-cctv">
-          <FacilityCctvViewer :cameras="cameras" :underpass-id="id" />
+          <FacilityCctvViewer :cameras="cameras" :underpass-id="id" :facility-name="facility?.name" />
         </section>
 <section v-else-if="tab==='settings'" class="restored-overview-grid">
           <section class="card">

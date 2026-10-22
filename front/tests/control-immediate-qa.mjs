@@ -35,6 +35,8 @@ try {
       getCenter() {
         return this.center
       }
+      getBounds() { return { contain: () => true } }
+      getProjection() { return { containerPointFromCoords: () => ({ x:0, y:0 }) } }
       setCenter(p) {
         this.center = p
       }
@@ -191,7 +193,7 @@ try {
   const block = panel.getByRole('button', { name: '통제', exact: true })
   const release = panel.getByRole('button', { name: '통제 해제', exact: true })
   await page.waitForFunction(
-    () => !document.querySelector('.manager-control-actions button').disabled,
+    () => document.querySelector('.manager-control-actions button')?.disabled === false,
   )
   assert(await block.isEnabled(), 'old risk observation does not lock a known NORMAL control state')
   assert(await release.isDisabled())
@@ -226,6 +228,19 @@ try {
   assert(await block.isEnabled(), 'successful release immediately re-enables block')
   assert(await release.isDisabled())
   assert.equal(riskRequests, riskBaseline)
+  const legend = page.locator('.manager-map-legend')
+  await legend.getByRole('button', { name: '안전', exact: true }).click()
+  await page.waitForFunction(() => document.querySelectorAll('.test-map-marker').length === 0)
+  await legend.getByRole('button', { name: '관심', exact: true }).click()
+  await page.locator('.test-map-marker').waitFor()
+  assert.equal(await legend.getByRole('button', { name: '관심', exact: true }).getAttribute('aria-pressed'), 'true')
+  await legend.getByRole('button', { name: '관심', exact: true }).click()
+  assert.equal(await legend.getByRole('button', { name: '관심', exact: true }).getAttribute('aria-pressed'), 'false')
+  assert.equal(await page.locator('.test-map-marker').count(), 1)
+  await page.setViewportSize({width:390,height:900})
+  const legendBounds=await legend.boundingBox(),toggleBounds=await page.locator('.map-overlay-toolbar .traffic-layer-switches').boundingBox()
+  assert(toggleBounds.y>=legendBounds.y+legendBounds.height)
+  assert(legendBounds.x+legendBounds.width<=390)
   assert.deepEqual(errors, [])
   console.log(
     'PASS immediate block/release after confirmed PDF response, stale risk independence, no SSE/extra risk wait and failed-action state preservation',

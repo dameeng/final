@@ -1,4 +1,25 @@
 /* Keep the original customer map/list/detail design with API-backed content. */
+.legacy-live-map .mapw .map-left-tools {
+  position:absolute;
+  left:14px;
+  bottom:78px;
+  z-index:6;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:10px;
+  max-width:calc(100% - 76px);
+}
+.legacy-live-map:not(.mobile-app-map) .mapw .map-left-tools { bottom:46px; }
+.legacy-live-map .mapw .map-left-tools>.traffic-map-layers,
+.legacy-live-map .mapw .map-left-tools>.map-weather-widget {
+  position:static;
+  max-width:100%;
+}
+.legacy-live-map .map-left-tools .traffic-layer-switches { flex-wrap:wrap; }
+@media(max-width:500px) {
+  .legacy-live-map .mapw .map-left-tools { left:8px; bottom:76px; }
+}
 .legacy-live-map .customer-map-canvas {
   position: absolute;
   inset: 0;

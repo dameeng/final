@@ -27,12 +27,4 @@ const seconds = computed(() => Math.max(0, Math.ceil((end.value - now.value) / 1
   </span>
   <span v-else>—</span>
 </template>
-<style scoped>
-.deadline-timer {
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-.deadline-expired {
-  color: var(--danger,#b91c1c);
-}
-</style>
+<style scoped src="../styles/components/deadline-timer.css"></style>

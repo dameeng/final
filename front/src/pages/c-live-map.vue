@@ -70,7 +70,7 @@ function toggleSheet() {
   sheetOpen.value = !sheetOpen.value
 }
 const sheetStyle = computed(() =>
-  appMap.value
+  appMap.value || props.mapOnly
     ? {
         height:
           sheetHeight.value !== null ? sheetHeight.value + 'px' : sheetOpen.value ? '72%' : '68px',
@@ -358,6 +358,7 @@ const selectedId = ref(''),
   regionId = ref('busan'),
   query = ref(''),
   statusFilter = ref('')
+const legendFilter = ref('')
 const loading = ref(false),
   detailLoading = ref(false),
   locating = ref(false)
@@ -642,6 +643,7 @@ const filtered = computed(() =>
       (!regionId.value || f.regionId === regionId.value) &&
       (!district.value || busanDistrict(f.assignedRegionName, f.address) === district.value) &&
       (!query.value || (f.name + ' ' + f.address).includes(query.value)) &&
+      (!legendFilter.value || legendState(stateLabel(f)) === legendFilter.value) &&
       (!statusFilter.value ||
         (statusFilter.value === '미확인'
           ? stateLabel(f).startsWith('미확인')
@@ -1103,16 +1105,28 @@ function openSelectedPopup() {
 }
 // 상태별 마커 색상. 위에 있을수록 위험한 상태이며 겹칠 때 앞쪽에 그립니다.
 const markerStyles = [
-  { label: '통제', color: '#bf7c89', zIndex: 6 },
-  { label: '위험', color: '#ce957f', zIndex: 5 },
-  { label: '주의', color: '#cebc79', zIndex: 4 },
-  { label: '관심', color: '#80a9c7', zIndex: 3 },
-  { label: '안전', color: '#80ad96', zIndex: 2 },
+  { label: '통제', color: '#cc6271', zIndex: 6 },
+  { label: '위험', color: '#dc8b56', zIndex: 5 },
+  { label: '주의', color: '#cfad3e', zIndex: 4 },
+  { label: '관심', color: '#777fc1', zIndex: 3 },
+  { label: '안전', color: '#4f9f86', zIndex: 2 },
   { label: '미확인', color: '#8793a0', zIndex: 1 },
 ]
 const markerLegendStyles = ['안전', '주의', '관심', '위험', '통제'].map(
   (label) => markerStyles.find((style) => style.label === label)!,
 )
+function legendState(state: string) {
+  return state === '정상' ? '안전' : state === '경고' ? '주의' : ['경계', '심각'].includes(state) ? '위험' : state
+}
+function toggleLegend(label: string) {
+  markerColorPreview.value = false
+  statusFilter.value = ''
+  legendFilter.value = legendFilter.value === label ? '' : label
+  page.value = 1
+  closeClusterPopup()
+  clusterFacilityIds.value = []
+  if (selectedId.value && !filtered.value.some(row => row.id === selectedId.value)) closeFacility()
+}
 // Temporary visual preview only; facility status and server data stay intact.
 const markerColorPreview = ref(!props.manager && !props.mapOnly)
 const previewStates = ['통제', '위험', '주의', '관심', '안전']
@@ -1128,7 +1142,13 @@ function previewMarkerState(row: Facility) {
     ) % previewStates.length
   ]!
 }
-watch(markerColorPreview, () => drawMap())
+watch(markerColorPreview, value => {
+  if (value) legendFilter.value = ''
+  drawMap()
+})
+watch(statusFilter, value => {
+  if (value) legendFilter.value = ''
+})
 function markerStyle(state: string) {
   const mapped = state === '정상' ? '안전' : state === '경고' ? '주의' : ['경계', '심각'].includes(state) ? '위험' : state
   return markerStyles.find((m) => m.label === mapped) || markerStyles[markerStyles.length - 1]!
@@ -1338,7 +1358,7 @@ function drawMap() {
   clusterInfoWindow?.close()
   clusterPopupOpen = false
   removeMarkers()
-  if (!regionId.value && !query.value && !selectedId.value) {
+  if (!regionId.value && !query.value && !selectedId.value && !legendFilter.value) {
     for (const region of regions) {
       const rows = facilities.value.filter((f) => f.regionId === region.id)
       const blocked = rows.filter((f) => stateLabel(f) === '통제').length
@@ -1706,13 +1726,13 @@ onBeforeUnmount(() => {
 
 <template>
   <main v-if="props.mapOnly" ref="customerRoot" class="map-only-live"
-    ><div ref="mapElement" class="customer-map-canvas" aria-label="카카오 지도"></div><TrafficMapLayers :map="trafficMap" :maps="trafficMaps" />
-    ><ul class="map-only-legend" aria-label="마커 등급 안내"
+    ><div ref="mapElement" class="customer-map-canvas" aria-label="카카오 지도"></div>
+    <div class="map-overlay-toolbar"><ul class="map-only-legend" aria-label="마커 등급 안내"
       ><li v-for="style in markerLegendStyles" :key="style.label"
-        ><span :style="{background:style.color}"></span
-        >{{style.label==='정상'?'안전':style.label==='경고'?'주의':style.label}}</li
-      ><li v-if="props.manager"><span style="background:#9aa3ae"></span>담당 외 시설</li></ul
-    ><div class="kakao-map-controls"
+        ><button type="button" class="legend-filter-button" :aria-pressed="legendFilter===style.label" :class="{'legend-muted':legendFilter&&legendFilter!==style.label}" @click="toggleLegend(style.label)"><i :style="{background:style.color}"></i>{{style.label}}</button></li
+      ><li v-if="props.manager"><span style="background:#9aa3ae"></span>담당 외 시설</li></ul>
+      <TrafficMapLayers :map="trafficMap" :maps="trafficMaps" /></div>
+    <div class="kakao-map-controls"
       ><button
         type="button"
         class="map-fit-all"
@@ -1735,7 +1755,29 @@ onBeforeUnmount(() => {
           <UiIcon name="close" />
         </button
       ></div
-    ></main
+    >
+    <aside class="admin-facility-sheet" :class="{'is-dragging':sheetHeight!==null}" :style="sheetStyle" aria-label="지하차도 시설 목록">
+      <button type="button" class="admin-sheet-handle" :aria-expanded="sheetOpen" aria-controls="admin-map-facilities"
+        @pointerdown="startSheet" @pointermove="moveSheet" @pointerup="endSheet" @pointercancel="endSheet" @lostpointercapture="endSheet" @click="toggleSheet">
+        {{sheetOpen?'시설 목록 접기':'위로 밀어 시설 목록 보기'}} · {{filtered.length}}곳
+      </button>
+      <div v-show="sheetOpen||sheetHeight!==null" id="admin-map-facilities" class="admin-sheet-content">
+        <input v-model.trim="query" type="search" placeholder="지하차도 이름 검색" aria-label="시설 이름 검색" />
+        <p v-if="listError" role="alert">{{listError}}</p>
+        <p v-else-if="loading&&!facilities.length" role="status">시설을 불러오는 중입니다.</p>
+        <p v-else-if="!filtered.length" role="status">조회 조건에 맞는 시설이 없습니다.</p>
+        <ul>
+          <li v-for="row in filtered" :key="row.id" :class="{'is-selected':selectedId===row.id}">
+            <button type="button" class="admin-sheet-facility" @click="selectFacility(row)">
+              <RiskLevelBadge :value="displayState(row)" />
+              <span><strong>{{row.name}}</strong><small>{{controlLabel(row)}} · {{row.address||row.assignedRegionName||'주소 미제공'}}</small></span>
+            </button>
+            <RouterLink :to="'/admin-app/screen-5?id='+row.id" :aria-label="row.name+' 상세보기'">상세 ›</RouterLink>
+          </li>
+        </ul>
+      </div>
+    </aside>
+    </main
   >
  <main
     v-else-if="!props.manager"
@@ -1759,12 +1801,11 @@ onBeforeUnmount(() => {
         /><button type="submit">검색</button></form
       >
    <section class="mapw" aria-label="지하차도 지도">
-        <div ref="mapElement" class="customer-map-canvas" aria-label="카카오 지도"></div><TrafficMapLayers :map="trafficMap" :maps="trafficMaps" />
+        <div ref="mapElement" class="customer-map-canvas" aria-label="카카오 지도"></div>
     <div class="mtop"
           ><div class="pill" aria-label="마커 색상 안내"
             ><span v-for="style in markerLegendStyles" :key="style.label"
-              ><i :style="{background:style.color}"></i
-              >{{style.label==='정상'?'안전':style.label==='경고'?'주의':style.label}}</span
+              ><button type="button" class="legend-filter-button" :aria-pressed="legendFilter===style.label" :class="{'legend-muted':legendFilter&&legendFilter!==style.label}" @click="toggleLegend(style.label)"><i :style="{background:style.color}"></i>{{style.label}}</button></span
             ><span><i style="background:#1671d9"></i>내 위치</span></div
           ><button
             type="button"
@@ -1797,7 +1838,7 @@ onBeforeUnmount(() => {
             @click="locateUser"
             ><UiIcon name="location" /></button
         ></div>
-    <MapWeatherWidget />
+    <div class="map-left-tools"><TrafficMapLayers :map="trafficMap" :maps="trafficMaps" /><MapWeatherWidget /></div>
 
     <div v-if="mapError" class="map-error-note" role="status">{{mapError}}</div>
     <div v-if="selected&&selected.status==='통제'" class="alertbar" role="status"
@@ -2115,15 +2156,14 @@ onBeforeUnmount(() => {
       >조회 조건에 맞는 지하차도가 없습니다.</p
     >
 <div class="manager-map-stage"
-      ><div ref="mapElement" class="underpass-map-div" aria-label="카카오 지하차도 지도"></div><TrafficMapLayers :map="trafficMap" :maps="trafficMaps" />
-      ><ul class="underpass-map-legend manager-map-legend" aria-label="마커 색상 안내"
+      ><div ref="mapElement" class="underpass-map-div" aria-label="카카오 지하차도 지도"></div>
+      <div class="map-overlay-toolbar"><ul class="underpass-map-legend manager-map-legend" aria-label="마커 색상 안내"
         ><li v-for="style in markerLegendStyles" :key="style.label"
-          ><span class="underpass-map-legend-dot" :style="{background:style.color}"></span
-          >{{style.label==='정상'?'안전':style.label==='경고'?'주의':style.label}}</li
+          ><button type="button" class="legend-filter-button" :aria-pressed="legendFilter===style.label" :class="{'legend-muted':legendFilter&&legendFilter!==style.label}" @click="toggleLegend(style.label)"><i :style="{background:style.color}"></i>{{style.label}}</button></li
         ><li
           ><span style="width:10px;height:10px;background:#9aa3ae;border-radius:50%"></span>담당 외 시설</li
-        ></ul
-      ><p v-if="mapError" class="manager-sdk-error" role="status">{{mapError}}</p>
+        ></ul><TrafficMapLayers :map="trafficMap" :maps="trafficMaps" /></div>
+      <p v-if="mapError" class="manager-sdk-error" role="status">{{mapError}}</p>
 <ManagerMapPanel
         v-model:expanded="managerPanelExpanded"
         :facility="selected"
@@ -2190,139 +2230,4 @@ onBeforeUnmount(() => {
   </main>
 </template>
 
-<style>
-.kakao-map-controls button.map-fit-all {
-  font-size: 11px;
-  line-height: 1.2;
-  font-weight: 700;
-}
-.legacy-live-map .mapw .mtop {
-  align-items: flex-start;
-  justify-content: flex-start;
-}
-.marker-preview-toggle {
-  position: static;
-  flex: 0 1 auto;
-  max-width: 100%;
-  padding: 10px 14px;
-  border: 1px solid #d5dde7;
-  border-radius: 10px;
-  background: var(--surface,#fff);
-  color: var(--ink,#173d62);
-  box-shadow: 0 2px 10px #0002;
-  font-size: 12px;
-  cursor: pointer;
-  text-align: left;
-}
-.marker-preview-toggle small {
-  display: block;
-  margin-top: 4px;
-  font-size: 10px;
-  color: var(--ink-sub,#64748b);
-}
-.legacy-live-map .mapw {
-  isolation: isolate;
-}
-.routel-cluster-popup {
-  width: 260px;
-  max-width: calc(100vw - 64px);
-  padding: 8px;
-  background: var(--surface,#fff);
-  color: var(--foreground,#20252b);
-  font:
-    13px/1.5 Arial,'Malgun Gothic',sans-serif;
-}
-.routel-cluster-popup>header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 2px 4px 8px;
-}
-.routel-cluster-popup>header>button {
-  min-width: 28px;
-  min-height: 28px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font-size: 20px;
-  cursor: pointer;
-}
-.routel-cluster-popup>ul {
-  max-height: 200px;
-  overflow: auto;
-  overscroll-behavior: contain;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.routel-cluster-popup__item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  min-height: 42px;
-  padding: 8px 4px;
-  border: 0;
-  border-top: 1px solid var(--line,#c9ced6);
-  border-radius: 0;
-  background: var(--surface,#fff);
-  color: inherit;
-  text-align: left;
-  font: inherit;
-  cursor: pointer;
-}
-.routel-cluster-popup__item>i {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.routel-cluster-popup__item>span {
-  flex: 1;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-.routel-cluster-popup__item>small {
-  flex-shrink: 0;
-  font-size: 11px;
-  color: var(--ink-sub,#64748b);
-}
-.routel-cluster-popup__item:hover,.routel-cluster-popup__item:focus-visible {
-  background: var(--accent-soft,#edf3f9);
-}
-/* SDK-created cluster elements need an unscoped rule. Only the ring moves. */
-.routel-marker-ripple {
-  position: relative;
-}
-.routel-marker-ripple::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border: 2.5px solid var(--marker-ripple-color);
-  border-radius: 50%;
-  pointer-events: none;
-  opacity: 0;
-  animation: routel-marker-wave 2.2s ease-out infinite;
-}
-@keyframes routel-marker-wave {
-  0% {
-    transform: scale(.72);
-    opacity: 0;
-  }
-  20% {
-    opacity: .8;
-  }
-  85%, 100% {
-    transform: scale(1.6);
-    opacity: 0;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .routel-marker-ripple::before {
-    animation: none;
-    opacity: 0;
-  }
-}
-</style>
+<style src="../styles/pages/c-live-map.css"></style>

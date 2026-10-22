@@ -95,7 +95,7 @@ function action(item: Action) {
           <b>{{facility.pendingReviewCount??'—'}}건</b>
         </div>
       </div>
-      <FacilityCctvViewer :cameras="cameras" :underpass-id="id" />
+      <FacilityCctvViewer :cameras="cameras" :underpass-id="id" :facility-name="facility?.name" />
       <button
         type="button"
         class="app-control-primary"

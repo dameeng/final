@@ -2,28 +2,68 @@
 import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { getBusanCameras } from '../services/busanCctv'
 import TrafficVideo from './TrafficVideo.vue'
-type Point = { id: string; name: string; address: string; lat: number; lng: number; kind: 'cctv' | 'vms'; url?: string; content?: string; updatedAt?: string }
+import VmsLedDisplay from './VmsLedDisplay.vue'
+type Point = { id: string; name: string; address: string; lat: number; lng: number; kind: 'cctv' | 'vms'; type?: string; url?: string; content?: string; messages?: string[]; example?: boolean; updatedAt?: string }
 const props = defineProps<{ map: any; maps: any }>()
 const showCctv = ref(false), showVms = ref(false), loading = ref(false), error = ref('')
 const points = ref<Point[]>([]), active = ref<Point>(), dialog = ref<HTMLDialogElement>()
+const groupItems = ref<Point[]>([])
+function closeInfo() { active.value = undefined; groupItems.value = [] }
+let backdropPress = false
+function outsideDialog(event: PointerEvent | MouseEvent) {
+  if (event.target !== dialog.value || !dialog.value) return false
+  const bounds = dialog.value.getBoundingClientRect()
+  return event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom
+}
+function backdropClick(event: MouseEvent) {
+  if (backdropPress && outsideDialog(event)) closeInfo()
+  backdropPress = false
+}
 let overlays: any[] = [], disposed = false, generation = 0
 const icon = (kind: 'cctv' | 'vms') => kind === 'cctv'
-  ? '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 5h13v9H3zM16 8l5-2v8l-5-2M7 14v5m-3 0h10"/></svg>'
-  : '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="13" rx="2"/><path d="M6 8h3m3 0h6M6 12h12M7 16v5m10-5v5"/></svg>'
+  ? '<svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path fill="currentColor" stroke="none" d="m4 4 14 3-2 9L2 11z"/><path stroke="white" stroke-width="1.4" d="m6 7 8 2"/><path d="m18 9 3 1-1 4-3-1M8 14l-1 5h7M4 19h3"/></svg>'
+  : '<svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="3" width="19" height="13" rx="2.5" fill="currentColor" stroke="none"/><path stroke="white" stroke-width="1.5" d="M6 7h5m3 0h4M6 11h12"/><path d="M7 16v5m10-5v5M5 21h4m6 0h4"/></svg>'
 function clear() { overlays.forEach(overlay => overlay.setMap(null)); overlays = [] }
 function draw() {
   clear()
   if (!props.map || !props.maps) return
   const bounds = props.map.getBounds()
+  const projection = props.map.getProjection()
+  const groups: { points: Point[]; pixels: { x: number; y: number }[] }[] = []
   for (const point of points.value) {
     if (!(point.kind === 'cctv' ? showCctv.value : showVms.value)) continue
     const position = new props.maps.LatLng(point.lat, point.lng)
     if (!bounds.contain(position)) continue
+    const pixel = projection.containerPointFromCoords(position)
+    const overlaps = groups.filter(group => group.pixels.some(other => Math.abs(other.x - pixel.x) < 40 && Math.abs(other.y - pixel.y) < 40))
+    const group = overlaps[0] || { points: [], pixels: [] }
+    if (!overlaps.length) groups.push(group)
+    for (const other of overlaps.slice(1)) {
+      group.points.push(...other.points); group.pixels.push(...other.pixels)
+      groups.splice(groups.indexOf(other), 1)
+    }
+    group.points.push(point); group.pixels.push(pixel)
+  }
+  for (const group of groups) {
+    const point = group.points[0]!
+    const bundled = group.points.length > 1
+    const position = new props.maps.LatLng(
+      group.points.reduce((sum, row) => sum + row.lat, 0) / group.points.length,
+      group.points.reduce((sum, row) => sum + row.lng, 0) / group.points.length,
+    )
     const button = document.createElement('button')
-    button.type = 'button'; button.className = `traffic-device-marker ${point.kind}`
-    button.title = point.name; button.setAttribute('aria-label', `${point.kind === 'cctv' ? 'CCTV' : 'VMS 전광판'} · ${point.name}`)
-    button.innerHTML = icon(point.kind)
-    button.onclick = event => { event.stopPropagation(); active.value = point }
+    button.type = 'button'; button.className = `traffic-device-marker ${bundled ? 'device-group' : point.kind}`
+    button.dataset.cctvCount = String(group.points.filter(row => row.kind === 'cctv').length)
+    button.dataset.vmsCount = String(group.points.filter(row => row.kind === 'vms').length)
+    button.title = bundled ? `CCTV·전광판 ${group.points.length}개 목록 보기` : point.name
+    button.setAttribute('aria-label', bundled ? button.title : `${point.kind === 'cctv' ? 'CCTV' : 'VMS 전광판'} · ${point.name}`)
+    if (bundled) button.textContent = String(group.points.length)
+    else button.innerHTML = icon(point.kind)
+    button.onclick = event => {
+      event.stopPropagation()
+      groupItems.value = bundled ? [...group.points] : []
+      active.value = bundled ? undefined : point
+    }
     button.onmousedown = () => props.maps.event.preventMap()
     overlays.push(new props.maps.CustomOverlay({ map: props.map, position, content: button, yAnchor: 1, zIndex: 6 }))
   }
@@ -54,18 +94,24 @@ async function load() {
   if (showVms.value && !rows.some(row => row.kind === 'vms') && results[1]?.status === 'fulfilled') messages.push('등록된 VMS 전광판이 없습니다.')
   points.value = rows; error.value = messages.join(' '); loading.value = false; draw()
 }
-watch([showCctv, showVms], () => { if (active.value && !(active.value.kind === 'cctv' ? showCctv.value : showVms.value)) active.value = undefined; void load() })
+watch([showCctv, showVms], () => { closeInfo(); void load() })
 watch(() => props.map, (map, previous) => {
-  if (previous && props.maps) props.maps.event.removeListener(previous, 'idle', draw)
-  if (map && props.maps) props.maps.event.addListener(map, 'idle', draw)
+  if (previous && props.maps) {
+    props.maps.event.removeListener(previous, 'idle', draw)
+    props.maps.event.removeListener(previous, 'zoom_changed', draw)
+  }
+  if (map && props.maps) {
+    props.maps.event.addListener(map, 'idle', draw)
+    props.maps.event.addListener(map, 'zoom_changed', draw)
+  }
   draw()
-})
-watch(active, async value => {
+}, { immediate: true })
+watch([active, groupItems], async () => {
   await nextTick()
-  if (value && !dialog.value?.open) dialog.value?.showModal()
-  if (!value) dialog.value?.close()
+  if ((active.value || groupItems.value.length) && !dialog.value?.open) dialog.value?.showModal()
+  if (!active.value && !groupItems.value.length) dialog.value?.close()
 })
-onBeforeUnmount(() => { disposed = true; generation++; clear(); if (props.map && props.maps) props.maps.event.removeListener(props.map, 'idle', draw); dialog.value?.close() })
+onBeforeUnmount(() => { disposed = true; generation++; clear(); if (props.map && props.maps) { props.maps.event.removeListener(props.map, 'idle', draw); props.maps.event.removeListener(props.map, 'zoom_changed', draw) } dialog.value?.close() })
 </script>
 <template>
   <div class="traffic-map-layers" aria-label="교통 시설 표시">
@@ -76,33 +122,23 @@ onBeforeUnmount(() => { disposed = true; generation++; clear(); if (props.map &&
     <p v-if="loading" role="status">교통 시설을 불러오는 중…</p>
     <p v-if="error" role="status">{{error}} <button type="button" @click="load">다시 조회</button></p>
   </div>
-  <dialog ref="dialog" class="traffic-device-dialog" aria-label="교통 시설 정보" @cancel.prevent="active=undefined" @close="active=undefined">
+  <dialog ref="dialog" class="traffic-device-dialog" aria-label="교통 시설 정보" @cancel.prevent="closeInfo" @close="closeInfo" @pointerdown="backdropPress=outsideDialog($event)" @pointercancel="backdropPress=false" @click="backdropClick">
+    <template v-if="!active && groupItems.length">
+      <header><span class="traffic-device-type">이 위치의 CCTV·전광판 {{groupItems.length}}개</span><button type="button" aria-label="닫기" @click="closeInfo">✕</button></header>
+      <h2>확인할 시설을 선택하세요</h2>
+      <ul class="traffic-device-list">
+        <li v-for="point in groupItems" :key="point.kind+':'+point.id">
+          <button type="button" @click="active=point"><span class="device-list-icon" :class="point.kind" v-html="icon(point.kind)"></span><span><small>{{point.kind==='cctv'?'CCTV':'VMS 전광판'}}</small><strong>{{point.name}}</strong></span><span aria-hidden="true">›</span></button>
+        </li>
+      </ul>
+    </template>
     <template v-if="active">
-      <header><span class="traffic-device-type">{{active.kind==='cctv'?'도로 CCTV':'VMS 전광판'}}</span><button type="button" aria-label="닫기" @click="active=undefined">✕</button></header>
+      <header><button v-if="groupItems.length" type="button" @click="active=undefined" aria-label="목록으로 돌아가기">←</button><span class="traffic-device-type">{{active.kind==='cctv'?'도로 CCTV':'VMS 전광판'}}</span><button type="button" aria-label="닫기" @click="closeInfo">✕</button></header>
       <h2>{{active.name}}</h2><p v-if="active.address">{{active.address}}</p>
       <TrafficVideo v-if="active.kind==='cctv' && active.url" :key="active.id" :src="active.url" hls />
-      <template v-else-if="active.kind==='vms'"><div class="vms-display">{{active.content || '현재 표출 문구가 제공되지 않았습니다.'}}</div><p v-if="active.updatedAt">갱신 시각: {{active.updatedAt}}</p></template>
+      <template v-else-if="active.kind==='vms'"><p v-if="active.type">전광판 규격: {{active.type}}</p><p>위치: {{active.lat}}, {{active.lng}}</p><p v-if="active.example" class="vms-example-note">예시 문구 · 실제 전광판 표출 내용과 다를 수 있습니다.</p><VmsLedDisplay v-if="active.content || active.messages?.length" :key="active.id" :content="active.content" :messages="active.messages" :example="active.example" /><p v-else>현재 표출 문구는 제공되지 않습니다.</p><p v-if="active.updatedAt">갱신 시각: {{active.updatedAt}}</p></template>
       <small v-if="active.kind==='cctv'">부산광역시 교통정보 제공 · 제공처 사정에 따라 영상이 지연되거나 중단될 수 있습니다.</small>
     </template>
   </dialog>
 </template>
-<style>
-.traffic-map-layers { position:absolute; top:64px; left:12px; z-index:15; max-width:min(340px,calc(100% - 24px)); color:#243447; }
-.traffic-layer-switches { display:flex; gap:6px; }
-.traffic-layer-switches button { display:flex; align-items:center; gap:6px; min-height:42px; border:1px solid #c8d1dc; border-radius:22px; background:#fff; padding:8px 14px; box-shadow:0 2px 8px #20304022; font-weight:700; color:#405165; cursor:pointer; }
-.traffic-layer-switches button[aria-pressed=true] { color:#135fba; background:#edf5ff; border-color:#327ac8; }
-.traffic-layer-switches span { display:flex; }
-.traffic-map-layers p { background:#fff; border-radius:8px; padding:8px 10px; font-size:12px; margin:8px 0; box-shadow:0 2px 8px #20304022; }
-button.traffic-device-marker { box-sizing:border-box; width:40px; height:40px; min-width:40px; min-height:40px; padding:4px; display:flex; align-items:center; justify-content:center; border:0; border-radius:0; box-shadow:none; background:transparent; color:#315a78; cursor:pointer; transition:transform .15s ease; }
-button.traffic-device-marker svg { display:block; width:30px; height:30px; overflow:visible; filter:drop-shadow(0 1px 1px #ffffffee); }
-button.traffic-device-marker.vms { background:transparent; color:#806017; }
-button.traffic-device-marker:hover { background:transparent; box-shadow:none; transform:translateY(-2px); }
-button.traffic-device-marker:focus-visible { outline:2px solid #287ed2; outline-offset:2px; border-radius:5px; }
-.traffic-device-dialog { border:0; border-radius:16px; padding:20px; width:min(640px,92vw); max-height:85dvh; overflow:auto; color:#243447; background:#fff; box-shadow:0 16px 60px #172b4d44; }
-.traffic-device-dialog::backdrop { background:#10203388; }
-.traffic-device-dialog header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
-.traffic-device-dialog header button { min-width:40px; min-height:40px; border:0; background:#f0f4f8; border-radius:50%; cursor:pointer; }
-.traffic-device-dialog h2 { font-size:20px; margin:12px 0; }.traffic-device-type { color:#2468a4; font-weight:700; font-size:13px; }
-.traffic-device-dialog video { width:100%; aspect-ratio:16/9; background:#17212b; }.traffic-device-dialog small { display:block; margin-top:12px; line-height:1.6; color:#63758a; }
-.vms-display { padding:30px 20px; background:#102019; color:#ffdc67; border:5px solid #34423b; border-radius:8px; font-size:24px; font-weight:700; white-space:pre-wrap; text-align:center; line-height:1.7; }
-</style>
+<style src="../styles/components/traffic-map-layers.css"></style>

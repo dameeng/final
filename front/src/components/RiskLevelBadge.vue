@@ -26,39 +26,4 @@ const level = computed(
 <template>
   <span class="risk-level-badge" :class="'risk-level-badge--'+level[1]">{{level[0]}}</span>
 </template>
-<style scoped>
-.risk-level-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  vertical-align: middle;
-  flex: none;
-  padding: 3px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  line-height: 18px;
-  white-space: nowrap;
-  background: #edf0f4;
-  color: #526175;
-}
-.risk-level-badge--safe {
-  background: #e1f3ea;
-  color: #1b7f5c;
-}
-.risk-level-badge--watch {
-  background: #eef3d8;
-  color: #65732d;
-}
-.risk-level-badge--caution {
-  background: #fff1d6;
-  color: #965000;
-}
-.risk-level-badge--alert {
-  background: #fce7dc;
-  color: #a14621;
-}
-.risk-level-badge--severe {
-  background: #fde3e9;
-  color: #a32446;
-}
-</style>
+<style scoped src="../styles/components/risk-level-badge.css"></style>

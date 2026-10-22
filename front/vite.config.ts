@@ -8,6 +8,11 @@ export default defineConfig(({ mode }) => ({
     port: 8282,
     strictPort: true,
     proxy: {
+      '/tunnel-source': {
+        target: 'https://seoultunnel.co.kr',
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/tunnel-source/, '/usage'),
+      },
       '/control/plate': {
         target: loadEnv(mode, '.', '').AI_SERVER_URL || 'http://localhost:8000',
         changeOrigin: true,
@@ -26,6 +31,11 @@ export default defineConfig(({ mode }) => ({
     port: 8282,
     strictPort: true,
     proxy: {
+      '/tunnel-source': {
+        target: 'https://seoultunnel.co.kr',
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/tunnel-source/, '/usage'),
+      },
       '/control/plate': {
         target: loadEnv(mode, '.', '').AI_SERVER_URL || 'http://localhost:8000',
         changeOrigin: true,

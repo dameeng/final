@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, ref, useId, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
+import DatePartInput from './DatePartInput.vue'
 defineProps<{ required?: boolean; disabled?: boolean }>()
 const value = defineModel<string>({ default: '' })
-const listId = useId()
 const todayParts = new Intl.DateTimeFormat('en-CA', {
   timeZone: 'Asia/Seoul',
   year: 'numeric',
@@ -52,83 +52,45 @@ function update() {
 </script>
 <template>
   <span class="birth-date-input" role="group" aria-label="생년월일">
-    <input
+    <DatePartInput
       v-model="year"
+      :options="years"
       aria-label="생년월일 연도"
       placeholder="연도"
       autocomplete="bday-year"
       inputmode="numeric"
       maxlength="4"
-      :list="`${listId}-years`"
       :pattern="yearPattern"
       :required="required"
       :disabled="disabled"
-      @input="update"
+      @update:model-value="update"
     />
-    <datalist :id="`${listId}-years`">
-      <option v-for="item in years" :key="item" :value="item">{{item}}년</option>
-    </datalist>
-    <input
+    <DatePartInput
       v-model="month"
+      :options="Array.from({length:monthCount}, (_,i)=>String(i+1))"
       aria-label="생년월일 월"
       placeholder="월"
       autocomplete="bday-month"
       inputmode="numeric"
       maxlength="2"
-      :list="`${listId}-months`"
       :pattern="monthPattern"
       :required="required"
       :disabled="disabled"
-      @input="update"
+      @update:model-value="update"
     />
-    <datalist :id="`${listId}-months`">
-      <option v-for="item in monthCount" :key="item" :value="String(item)">{{item}}월</option>
-    </datalist>
-    <input
+    <DatePartInput
       v-model="day"
+      :options="Array.from({length:dayCount}, (_,i)=>String(i+1))"
       aria-label="생년월일 일"
       placeholder="일"
       autocomplete="bday-day"
       inputmode="numeric"
       maxlength="2"
-      :list="`${listId}-days`"
       :pattern="dayPattern"
       :required="required"
       :disabled="disabled"
-      @input="update"
+      @update:model-value="update"
     />
-    <datalist :id="`${listId}-days`">
-      <option v-for="item in dayCount" :key="item" :value="String(item)">{{item}}일</option>
-    </datalist>
   </span>
 </template>
-<style scoped>
-.birth-date-input {
-  display: grid;
-  grid-template-columns: minmax(0,1.4fr) repeat(2,minmax(0,1fr));
-  gap: 8px;
-  width: 100%;
-  min-width: 0;
-}
-.birth-date-input input {
-  width: 100%;
-  min-width: 0;
-  min-height: 44px;
-  padding: 8px 10px;
-  border: 1px solid var(--line,#c9ced6);
-  border-radius: 6px;
-  background: var(--surface,#fff);
-  color: inherit;
-  font: inherit;
-  font-size: 14px;
-}
-@media (max-width:400px) {
-  .birth-date-input {
-    gap: 6px;
-  }
-  .birth-date-input input {
-    padding: 8px 5px;
-    font-size: 13px;
-  }
-}
-</style>
+<style scoped src="../styles/components/birth-date-input.css"></style>
