@@ -146,12 +146,10 @@ public class DashboardServiceImpl implements DashboardService {
                  WHERE u.is_deleted = FALSE""" + region + """
 
                 UNION ALL
-                SELECT 'DISPLAY', pe.underpass_id, u.name, NULL, NULL, NULL, NULL, dh.new_content,
+                SELECT 'DISPLAY', dh.underpass_id, u.name, NULL, NULL, NULL, NULL, dh.new_content,
                        dh.changed_by, dh.changed_at
                   FROM display_history dh
-                  JOIN display_page dp ON dp.id = dh.page_id
-                  JOIN pm_equipment pe ON pe.id = dp.equip_id
-                  JOIN underpass u ON u.id = pe.underpass_id
+                  JOIN underpass u ON u.id = dh.underpass_id
                  WHERE u.is_deleted = FALSE""" + region + """
 
                 UNION ALL
@@ -326,9 +324,7 @@ public class DashboardServiceImpl implements DashboardService {
                   LEFT JOIN (
                         SELECT dh.changed_by, COUNT(*) AS display_count
                           FROM display_history dh
-                          JOIN display_page dp ON dp.id = dh.page_id
-                          JOIN pm_equipment pe ON pe.id = dp.equip_id
-                          JOIN underpass u ON u.id = pe.underpass_id
+                          JOIN underpass u ON u.id = dh.underpass_id
                          WHERE dh.changed_at >= NOW() - make_interval(days => :days)""" + region + """
 
                          GROUP BY dh.changed_by

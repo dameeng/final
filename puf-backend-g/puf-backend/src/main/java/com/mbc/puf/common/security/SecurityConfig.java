@@ -56,10 +56,11 @@ public class SecurityConfig {
 								"/api/underpasses/*/risk-scores", "/api/underpasses/*/risk-forecast").permitAll()
 						// ---- 로그인 없이 조회 가능한 통제현황 통계 (MP-06/08, CP 지도 화면의 통계 위젯) ----
 						.requestMatchers(HttpMethod.GET, "/api/dashboard/status-summary", "/api/dashboard/region-status").permitAll()
-						// ---- 로그인 없이 조회 가능한 부산시 교통 CCTV (지하차도 상세의 주변 CCTV 보기) ----
-						.requestMatchers(HttpMethod.GET, "/api/busan-cctvs", "/api/busan-cctvs/nearby").permitAll()
+						// ---- 로그인 없이 조회 가능한 ITS CCTV·전광판 (지도 레이어, 지하차도 상세의 주변 CCTV, 전광판 표출 문구) ----
+						.requestMatchers(HttpMethod.GET, "/api/its-cctvs", "/api/its-cctvs/nearby", "/api/its-vms", "/api/its-vms/*").permitAll()
 						// ---- 로그인 없이 조회 가능한 날씨 (CP-08) ----
 						.requestMatchers(HttpMethod.GET, "/api/weather").permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/navigation/places", "/api/navigation/directions", "/api/navigation/weather").permitAll()
 						// ---- API 문서(Swagger UI) 화면과 문서 JSON. 화면만 열릴 뿐이고, 화면에서 실제 API를 호출할 때는
 						//                  각 API의 로그인 규칙이 그대로 적용된다. 운영에서는 springdoc.swagger-ui.enabled=false 로 끈다 ----
 						.requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs", "/v3/api-docs/**").permitAll()

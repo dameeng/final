@@ -11,6 +11,7 @@ import com.mbc.puf.common.enums.RiskLevel;
 import com.mbc.puf.common.enums.UnderpassCurrentStatus;
 import com.mbc.puf.common.enums.UnderpassEventType;
 import com.mbc.puf.control.service.ControlService;
+import com.mbc.puf.display.service.VmsDisplayService;
 import com.mbc.puf.notification.service.NotificationService;
 import com.mbc.puf.stream.StreamPayloads;
 import com.mbc.puf.stream.StreamPublisher;
@@ -34,16 +35,19 @@ public class RiskLevelService {
     private final StreamPublisher streamPublisher;
     private final NotificationService notificationService;
     private final ControlService controlService;
+    private final VmsDisplayService vmsDisplayService;   // 위험도가 바뀌면 전광판 문구를 다시 맞춘다
 
     public RiskLevelService(RiskPolicy policy, ThresholdRepository thresholdRepository,
             UnderpassEventRepository eventRepository, StreamPublisher streamPublisher,
-            NotificationService notificationService, ControlService controlService) {
+            NotificationService notificationService, ControlService controlService,
+            VmsDisplayService vmsDisplayService) {
         this.policy = policy;
         this.thresholdRepository = thresholdRepository;
         this.eventRepository = eventRepository;
         this.streamPublisher = streamPublisher;
         this.notificationService = notificationService;
         this.controlService = controlService;
+        this.vmsDisplayService = vmsDisplayService;
     }
 
     /**
@@ -60,6 +64,7 @@ public class RiskLevelService {
         BigDecimal water = underpass.getCurrentWaterCm();
 
         RiskLevel after = policy.decide(underpass, thresholds, score, water, before);
+        Long levelEventId = null;
         if (after != before) {
             underpass.setCurrentRiskLevel(after);
 
@@ -71,6 +76,7 @@ public class RiskLevelService {
             event.setRiskScoreAtEvent(score);
             event.setWaterCm(water);
             eventRepository.saveAndFlush(event);
+            levelEventId = event.getId();
 
             boolean up = after.ordinal() > before.ordinal();
             streamPublisher.publishPublic("risk-level-change", underpass.getRegionId(),
@@ -85,8 +91,11 @@ public class RiskLevelService {
 
         // 수위가 차단 기준에 닿았고 아직 열려 있으면 자동 차단. 이미 차단 중이면 아무 것도 하지 않는다
         if (underpass.getCurrentStatus() == UnderpassCurrentStatus.NORMAL && policy.reachedBlock(underpass, water)) {
-            controlService.autoBlock(underpass.getId(), water);
+            controlService.autoBlock(underpass.getId(), water);   // 차단하면서 전광판도 다시 맞춘다
             return true;
+        }
+        if (levelEventId != null) {
+            vmsDisplayService.reconcileForUnderpass(underpass.getId(), levelEventId, null);
         }
         return false;
     }

@@ -3,7 +3,7 @@ package com.mbc.puf.display.controller;
 import com.mbc.puf.common.enums.DisplayCategory;
 import com.mbc.puf.common.response.ApiResponse;
 import com.mbc.puf.common.security.LoginUser;
-import com.mbc.puf.display.dto.DisplayPageItem;
+import com.mbc.puf.display.dto.VmsPageItem;
 import com.mbc.puf.display.dto.DisplayPageSaveRequest;
 import com.mbc.puf.display.dto.DisplayPresetItem;
 import com.mbc.puf.display.service.DisplayService;
@@ -53,63 +53,63 @@ public class DisplayController {
     // ── 페이지 목록 ────────────────────────────────────────────────
 
     /**
-     * GET /api/display/equipments/{equipId}/pages
+     * GET /api/display/vms/{vmsId}/pages
      * 특정 전광판 설비의 페이지 목록 (page_no 오름차순).
      */
-    @GetMapping("/equipments/{equipId}/pages")
+    @GetMapping("/vms/{vmsId}/pages")
     @PreAuthorize("isAuthenticated() and principal.manager")
-    public ResponseEntity<ApiResponse<List<DisplayPageItem>>> getPages(
+    public ResponseEntity<ApiResponse<List<VmsPageItem>>> getPages(
             @AuthenticationPrincipal LoginUser loginUser,
-            @PathVariable("equipId") Long equipId) {
-        return ResponseEntity.ok(ApiResponse.ok("전광판 페이지 목록입니다.", displayService.getPages(loginUser, equipId)));
+            @PathVariable("vmsId") Long vmsId) {
+        return ResponseEntity.ok(ApiResponse.ok("전광판 페이지 목록입니다.", displayService.getPages(vmsId)));
     }
 
     // ── 페이지 생성 ────────────────────────────────────────────────
 
     /**
-     * POST /api/display/equipments/{equipId}/pages
+     * POST /api/display/vms/{vmsId}/pages
      * 페이지 신규 추가 (page_no 자동 부여, 히스토리 기록).
      */
-    @PostMapping("/equipments/{equipId}/pages")
+    @PostMapping("/vms/{vmsId}/pages")
     @PreAuthorize("isAuthenticated() and principal.manager")
-    public ResponseEntity<ApiResponse<DisplayPageItem>> createPage(
+    public ResponseEntity<ApiResponse<VmsPageItem>> createPage(
             @AuthenticationPrincipal LoginUser loginUser,
-            @PathVariable("equipId") Long equipId,
+            @PathVariable("vmsId") Long vmsId,
             @Valid @RequestBody DisplayPageSaveRequest request) {
-        DisplayPageItem item = displayService.createPage(loginUser, equipId, request);
+        VmsPageItem item = displayService.createPage(loginUser, vmsId, request);
         return ResponseEntity.ok(ApiResponse.ok("전광판 페이지가 추가되었습니다.", item));
     }
 
     // ── 페이지 수정 ────────────────────────────────────────────────
 
     /**
-     * PUT /api/display/equipments/{equipId}/pages/{pageNo}
+     * PUT /api/display/vms/{vmsId}/pages/{pageNo}
      * 페이지 문구 수정 (내용 변경 시에만 히스토리 기록).
      */
-    @PutMapping("/equipments/{equipId}/pages/{pageNo}")
+    @PutMapping("/vms/{vmsId}/pages/{pageNo}")
     @PreAuthorize("isAuthenticated() and principal.manager")
-    public ResponseEntity<ApiResponse<DisplayPageItem>> updatePage(
+    public ResponseEntity<ApiResponse<VmsPageItem>> updatePage(
             @AuthenticationPrincipal LoginUser loginUser,
-            @PathVariable("equipId") Long equipId,
+            @PathVariable("vmsId") Long vmsId,
             @PathVariable("pageNo") Integer pageNo,
             @Valid @RequestBody DisplayPageSaveRequest request) {
-        DisplayPageItem item = displayService.updatePage(loginUser, equipId, pageNo, request);
+        VmsPageItem item = displayService.updatePage(loginUser, vmsId, pageNo, request);
         return ResponseEntity.ok(ApiResponse.ok("전광판 페이지가 수정되었습니다.", item));
     }
 
     // ── 페이지 삭제 ────────────────────────────────────────────────
 
     /**
-     * DELETE /api/display/equipments/{equipId}/pages/{pageNo}
+     * DELETE /api/display/vms/{vmsId}/pages/{pageNo}
      * 페이지 삭제 후 뒤 페이지들 page_no 재정렬.
      */
-    @DeleteMapping("/equipments/{equipId}/pages/{pageNo}")
+    @DeleteMapping("/vms/{vmsId}/pages/{pageNo}")
     @PreAuthorize("isAuthenticated() and principal.manager")
     public ResponseEntity<ApiResponse<Void>> deletePage(
             @AuthenticationPrincipal LoginUser loginUser,
-            @PathVariable("equipId") Long equipId,
+            @PathVariable("vmsId") Long vmsId,
             @PathVariable("pageNo") Integer pageNo) {
-        displayService.deletePage(loginUser, equipId, pageNo);
+        displayService.deletePage(loginUser, vmsId, pageNo);
         return ResponseEntity.ok(ApiResponse.ok("전광판 페이지가 삭제되었습니다.", null));
     }
 }

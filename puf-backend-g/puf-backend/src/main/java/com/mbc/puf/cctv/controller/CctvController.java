@@ -16,8 +16,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.mbc.puf.cctv.dto.CctvAssignResponse;
-import com.mbc.puf.cctv.service.CctvAssignService;
 import com.mbc.puf.cctv.service.CctvService;
 import com.mbc.puf.common.response.ApiResponse;
 import com.mbc.puf.common.security.LoginUser;
@@ -39,11 +37,9 @@ import tools.jackson.databind.JsonNode;
 public class CctvController {
 
     private final CctvService cctvService;
-    private final CctvAssignService assignService;
 
-    public CctvController(CctvService cctvService, CctvAssignService assignService) {
+    public CctvController(CctvService cctvService) {
         this.cctvService = cctvService;
-        this.assignService = assignService;
     }
 
     @Operation(summary = "실시간 탐지 영상 (MJPEG)",
@@ -96,21 +92,5 @@ public class CctvController {
     @PostMapping("/plate/stop")
     public ApiResponse<JsonNode> stopPlate(@AuthenticationPrincipal LoginUser loginUser, @RequestParam("cameraId") Long cameraId) {
         return ApiResponse.ok(cctvService.stopPlate(loginUser, cameraId));
-    }
-
-    @Operation(summary = "카메라 영상 주소 일괄 채우기 (camera.stream_url)",
-            description = "담당 지역의 카메라 중 주소가 비었거나 시드 더미(rtsp://….puf.local)인 것을 채운다. 카메라 역할로 나누지 않고 카메라마다 판단한다: "
-                    + "OCR 서버가 영상을 돌리는 카메라(OCR 서버 /control/plate 의 cameraId·sendAs)는 '/api/cctv/{id}/stream'(MJPEG → <img>), "
-                    + "나머지는 그 좌표에서 가장 가까운 부산시 CCTV 의 HLS(.m3u8) 주소. 한 지하차도 안에서는 카메라마다 다른 CCTV 를 배정한다. "
-                    + "dryRun=true(기본)는 바꿀 내용만 보여 주고 저장하지 않는다 → 확인 후 dryRun=false 로 다시 호출. "
-                    + "overwrite=true 면 이미 입력된 주소도 다시 채운다. includeOcr=false 면 OCR 서버를 확인하지 않는다(전부 부산시 CCTV). "
-                    + "반경(radius, m) 안에 CCTV 가 없는 카메라는 noCandidate 로 세고 건드리지 않는다. 프런트는 주소가 .m3u8 이면 HLS, 아니면 <img> 로 그린다.")
-    @PostMapping("/assign-streams")
-    public ApiResponse<CctvAssignResponse> assignStreams(@AuthenticationPrincipal LoginUser loginUser,
-                                                         @RequestParam(name = "dryRun", defaultValue = "true") boolean dryRun,
-                                                         @RequestParam(name = "overwrite", defaultValue = "false") boolean overwrite,
-                                                         @RequestParam(name = "radius", defaultValue = "5000") double radius,
-                                                         @RequestParam(name = "includeOcr", defaultValue = "true") boolean includeOcr) {
-        return ApiResponse.ok(assignService.assign(loginUser, dryRun, overwrite, Math.min(Math.max(radius, 100), 50000), includeOcr));
     }
 }

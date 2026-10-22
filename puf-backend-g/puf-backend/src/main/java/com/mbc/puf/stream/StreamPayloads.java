@@ -82,8 +82,8 @@ public final class StreamPayloads {
             @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = DT) LocalDateTime createdAt) {
     }
 
-    /** [display-change] (관리자) 전광판 페이지 생성/수정/삭제. action: CREATE / UPDATE / DELETE */
-    public record DisplayChange(Long equipId, Long underpassId, Integer pageNo, String action) {
+    /** [display-change] (관리자) 전광판(its_vms) 페이지 생성/수정/삭제. action: CREATE / UPDATE / DELETE */
+    public record DisplayChange(Long vmsId, Long underpassId, Integer pageNo, String action) {
     }
 
     /** [notification-new] (고객 본인) 내 알림이 도착함. unread 는 도착 직후의 안 읽은 개수 */
