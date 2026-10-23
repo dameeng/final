@@ -12,9 +12,10 @@ public class PmInternalEquipmentItem {
     private final String underpassName;
     private final Integer sensorIntervalSec;    // 센서 측정 주기(초)
     private final LocalDateTime dataStartedAt;  // 센서 데이터가 시작된 시각 (아직 없으면 null)
+    private final LocalDateTime lastSensorAt;   // 센서 데이터의 마지막 측정 시각 (아직 없으면 null). 예지보전 서버가 이 시각 기준으로 최근 창을 잘라 간다
 
     public PmInternalEquipmentItem(Long equipId, String name, String type, Long underpassId, String underpassName,
-            Integer sensorIntervalSec, LocalDateTime dataStartedAt) {
+            Integer sensorIntervalSec, LocalDateTime dataStartedAt, LocalDateTime lastSensorAt) {
         this.equipId = equipId;
         this.name = name;
         this.type = type;
@@ -22,6 +23,7 @@ public class PmInternalEquipmentItem {
         this.underpassName = underpassName;
         this.sensorIntervalSec = sensorIntervalSec;
         this.dataStartedAt = dataStartedAt;
+        this.lastSensorAt = lastSensorAt;
     }
 
     public Long getEquipId() {
@@ -50,5 +52,9 @@ public class PmInternalEquipmentItem {
 
     public LocalDateTime getDataStartedAt() {
         return dataStartedAt;
+    }
+
+    public LocalDateTime getLastSensorAt() {
+        return lastSensorAt;
     }
 }

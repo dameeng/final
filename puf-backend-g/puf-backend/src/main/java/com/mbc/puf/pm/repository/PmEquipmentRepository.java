@@ -16,6 +16,7 @@ public interface PmEquipmentRepository extends JpaRepository<PmEquipment, Long> 
         String getName();
         Integer getSensorIntervalSec();
         java.time.LocalDateTime getDataStartedAt();
+        java.time.LocalDateTime getLastSensorAt();   // 센서 테이블의 마지막 측정 시각 (없으면 null)
         Long getUnderpassId();
         String getUnderpassName();
         Long getRegionId();
@@ -25,7 +26,13 @@ public interface PmEquipmentRepository extends JpaRepository<PmEquipment, Long> 
     @Query(value = """
         SELECT e.id AS equipId, CAST(e.type AS text) AS type, e.name AS name, u.id AS underpassId, u.name AS underpassName,
                u.region_id AS regionId,
-               e.sensor_interval_sec AS sensorIntervalSec, e.data_started_at AS dataStartedAt
+               e.sensor_interval_sec AS sensorIntervalSec, e.data_started_at AS dataStartedAt,
+               (CASE CAST(e.type AS text)
+                 WHEN 'PUMP' THEN (SELECT MAX(s.recorded_at) FROM pm_sensor_pump s WHERE s.equip_id = e.id)
+                 WHEN 'CCTV' THEN (SELECT MAX(s.recorded_at) FROM pm_sensor_cctv s WHERE s.equip_id = e.id)
+                 WHEN 'DISPLAY' THEN (SELECT MAX(s.recorded_at) FROM pm_sensor_display s WHERE s.equip_id = e.id)
+                 WHEN 'WATER_LEVEL' THEN (SELECT MAX(s.recorded_at) FROM pm_sensor_water_level s WHERE s.equip_id = e.id)
+               END) AS lastSensorAt
         FROM pm_equipment e
         JOIN underpass u ON u.id = e.underpass_id
         WHERE u.is_deleted = FALSE AND e.is_deleted = FALSE
@@ -37,7 +44,13 @@ public interface PmEquipmentRepository extends JpaRepository<PmEquipment, Long> 
     @Query(value = """
         SELECT e.id AS equipId, CAST(e.type AS text) AS type, e.name AS name, u.id AS underpassId, u.name AS underpassName,
                u.region_id AS regionId,
-               e.sensor_interval_sec AS sensorIntervalSec, e.data_started_at AS dataStartedAt
+               e.sensor_interval_sec AS sensorIntervalSec, e.data_started_at AS dataStartedAt,
+               (CASE CAST(e.type AS text)
+                 WHEN 'PUMP' THEN (SELECT MAX(s.recorded_at) FROM pm_sensor_pump s WHERE s.equip_id = e.id)
+                 WHEN 'CCTV' THEN (SELECT MAX(s.recorded_at) FROM pm_sensor_cctv s WHERE s.equip_id = e.id)
+                 WHEN 'DISPLAY' THEN (SELECT MAX(s.recorded_at) FROM pm_sensor_display s WHERE s.equip_id = e.id)
+                 WHEN 'WATER_LEVEL' THEN (SELECT MAX(s.recorded_at) FROM pm_sensor_water_level s WHERE s.equip_id = e.id)
+               END) AS lastSensorAt
         FROM pm_equipment e
         JOIN underpass u ON u.id = e.underpass_id
         WHERE u.is_deleted = FALSE AND e.is_deleted = FALSE AND e.id IN (:ids)

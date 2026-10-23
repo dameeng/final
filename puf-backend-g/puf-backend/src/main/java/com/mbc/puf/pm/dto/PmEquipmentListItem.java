@@ -29,6 +29,7 @@ public class PmEquipmentListItem {
     private List<String> reasons;          // 주요 사유
     private Long openEventId;              // 처리 중(확인필요·점검중) 이벤트
     private PmEventStatus openEventStatus; // 점검 상태 (없으면 null = 이상 없음)
+    private List<BigDecimal> sparkline;    // 최근 24시간 1시간 평균 점수 (오래된 순, 점수 없는 시간은 건너뜀). 목록에서만 채운다
 
     public PmEquipmentListItem() {
     }
@@ -79,6 +80,9 @@ public class PmEquipmentListItem {
 
     public List<String> getReasons() { return reasons; }
     public void setReasons(List<String> reasons) { this.reasons = reasons; }
+
+    public List<BigDecimal> getSparkline() { return sparkline; }
+    public void setSparkline(List<BigDecimal> sparkline) { this.sparkline = sparkline; }
 
     public Long getOpenEventId() { return openEventId; }
     public void setOpenEventId(Long openEventId) { this.openEventId = openEventId; }

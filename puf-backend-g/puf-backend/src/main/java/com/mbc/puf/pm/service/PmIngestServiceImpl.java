@@ -101,7 +101,7 @@ public class PmIngestServiceImpl implements PmIngestService {
     public List<PmInternalEquipmentItem> getEquipments() {
         return equipmentRepository.findAllRows().stream()
                 .map(r -> new PmInternalEquipmentItem(r.getEquipId(), r.getName(), r.getType(), r.getUnderpassId(), r.getUnderpassName(),
-                        r.getSensorIntervalSec(), r.getDataStartedAt()))
+                        r.getSensorIntervalSec(), r.getDataStartedAt(), r.getLastSensorAt()))
                 .toList();
     }
 

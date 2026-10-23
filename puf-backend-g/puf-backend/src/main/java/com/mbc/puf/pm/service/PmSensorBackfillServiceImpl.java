@@ -29,21 +29,25 @@ import jakarta.persistence.PersistenceContext;
  *          (이상 원인 4가지: 열 / 전원 / 통신 / 화면 — 설비 번호 순서대로)
  *   수위  0.30m 기준 하루 주기 ±0.02 + 잡음            (이상: 서서히 올라가는 드리프트 + 잡음 증가)
  *
- * 설비 종류별 번호(rk, id 순)에 따라 시나리오가 정해진다:  rk%4==1 위험까지 악화 / 2 주의까지 악화 / 3 계속 정상 / 0 중간에 한 번 튀었다 복구.
- * 악화는 끝 시각에 가까울수록 커지는 곡선이고 시작 시점은 종류마다 다르다(펌프 3일 전, CCTV·전광판 6일 전, 수위 2일 전).
- * 값은 모델 점수에 직접 맞춰 보정한 것이 아니라서, 단계(주의/위험)가 의도대로 나오는지는 예지보전 서버로 점수를 내 보고 상수를 조정한다.
+ * 설비 종류별 번호(rk, id 순)에 따라 시나리오가 정해진다:  rk%4==1 위험까지 악화 / 2 주의까지 악화 / 3 계속 정상 / 0 끝 3일 전에 한 번 튀었다 복구.
+ * 악화는 끝 시각에 가까울수록 커지는 곡선이고 시작 시점은 종류마다 다르다(펌프 36시간 전, CCTV·전광판 6일 전, 수위 2시간 전).
+ * 종류별 악화 크기(위험·주의·튐)는 예지보전 서버의 실제 모델 점수로 보정한 값이다(2026-10-24, 시드를 바꿔 3번씩 점수를 낸 중앙값):
+ *   위험 → 끝에서 78~86점 / 주의 → 끝에서 50~55점 / 튐 → 최고 60점 안팎 / 정상 → 40점 아래.
+ *   수위계 모델은 천천히 오르는 값을 평소로 받아들여 점수가 잘 안 오르고 최근에 바뀐 값에만 반응해서, 수위의 위험은 끝 2시간 안의 급변으로 만든다.
+ *   펌프 모델은 이상이 조금만 생겨도 72~75점으로 거의 바로 포화한다(모델이 낼 수 있는 최고 점수에 가까움).
+ *   모델을 다시 학습하거나 센서 값을 바꾸면 상수를 다시 맞춰야 한다.
  */
 @Service
 public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
 
-    private static final double CAUTION_AMP = 0.35;
     private static final String NOISE = "((random() + random() + random() - 1.5) * 2)";   // 평균 0, 표준편차 약 1
 
     /** 설비 종류별 만드는 방법 */
-    private record Spec(PmEquipmentType type, String table, long rampSec, long spikeLenSec, String insertSql) {
+    private record Spec(PmEquipmentType type, String table, long rampSec, long spikeLenSec,
+            double ampDanger, double ampCaution, double ampSpike, String insertSql) {
     }
 
-    private static final Spec PUMP = new Spec(PmEquipmentType.PUMP, "pm_sensor_pump", 3 * 86400L, 1800L, """
+    private static final Spec PUMP = new Spec(PmEquipmentType.PUMP, "pm_sensor_pump", 36 * 3600L, 2 * 3600L, 0.3, 0.06, 0.06, """
             INSERT INTO pm_sensor_pump (equip_id, recorded_at, vibration, pressure, temperature, current, flow, rpm)
             SELECT x.id, x.t,
                    980 + 2.0 * {N} - 850 * x.s,
@@ -56,7 +60,7 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
             ON CONFLICT DO NOTHING
             """);
 
-    private static final Spec CCTV = new Spec(PmEquipmentType.CCTV, "pm_sensor_cctv", 6 * 86400L, 5 * 3600L, """
+    private static final Spec CCTV = new Spec(PmEquipmentType.CCTV, "pm_sensor_cctv", 6 * 86400L, 5 * 3600L, 0.10, 0.05, 0.20, """
             INSERT INTO pm_sensor_cctv (equip_id, recorded_at, video_receive_rate, response_time_ms, packet_loss_rate, image_blur_score)
             SELECT x.id, x.t,
                    LEAST(100, GREATEST(0, 99.0 + 0.65 * {N} - 7.5 * x.s)),
@@ -68,7 +72,7 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
             """);
 
     // 전광판: 주변 온도를 한 번만 뽑아야 본체 온도와 짝이 맞아서 안쪽 SELECT 를 한 겹 더 둔다 (OFFSET 0 = 합쳐지지 않게)
-    private static final Spec DISPLAY = new Spec(PmEquipmentType.DISPLAY, "pm_sensor_display", 6 * 86400L, 8 * 3600L, """
+    private static final Spec DISPLAY = new Spec(PmEquipmentType.DISPLAY, "pm_sensor_display", 6 * 86400L, 8 * 3600L, 0.40, 0.20, 0.70, """
             INSERT INTO pm_sensor_display (equip_id, recorded_at, temperature_c, ambient_c, ripple_v, response_time_ms, error_count, bad_pixel_pct)
             SELECT y.id, y.t,
                    y.a + 6.5 + 0.6 * {N} + CASE WHEN y.cause = 0 THEN 9 * y.s ELSE 0 END,
@@ -84,7 +88,7 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
             ON CONFLICT DO NOTHING
             """);
 
-    private static final Spec WATER = new Spec(PmEquipmentType.WATER_LEVEL, "pm_sensor_water_level", 2 * 86400L, 3600L, """
+    private static final Spec WATER = new Spec(PmEquipmentType.WATER_LEVEL, "pm_sensor_water_level", 2 * 3600L, 3600L, 0.50, 0.10, 0.07, """
             INSERT INTO pm_sensor_water_level (equip_id, recorded_at, level_m)
             SELECT x.id, x.t,
                    0.30 + 0.02 * sin(2 * pi() * (EXTRACT(HOUR FROM x.t) + EXTRACT(MINUTE FROM x.t) / 60.0 - 6) / 24)
@@ -170,8 +174,8 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
             LocalDateTime normalEnd = start.plusWeeks(typeNormal);
             LocalDateTime onset = end.minusSeconds(spec.rampSec()).isBefore(normalEnd) ? normalEnd : end.minusSeconds(spec.rampSec());
             long rampSec = Math.max(1, Duration.between(onset, end).getSeconds());
-            long anomalySec = Math.max(0, Duration.between(normalEnd, end).getSeconds());
-            LocalDateTime spike0 = normalEnd.plusSeconds((long) (anomalySec * 0.35));
+            // 튐은 끝 3일 전에 (지난 7일 점수 그래프 안에서 보이게). 정상 구간 안으로 들어가면 정상 구간 끝으로 미룬다
+            LocalDateTime spike0 = end.minusDays(3).isBefore(normalEnd) ? normalEnd : end.minusDays(3);
 
             String sql = spec.insertSql().replace("{SEV}", "WITH ranked AS (" + RANKED + "), eq AS (SELECT * FROM ranked WHERE id IN (:ids)) " + SEVERITY)
                     .replace("{N}", NOISE);
@@ -181,6 +185,7 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
                     .setParameter("startAt", start).setParameter("endAt", end).setParameter("stepSec", step)
                     .setParameter("onset", onset).setParameter("rampSec", rampSec)
                     .setParameter("spike0", spike0).setParameter("spikeLen", spec.spikeLenSec())
+                    .setParameter("ampD", spec.ampDanger()).setParameter("ampC", spec.ampCaution()).setParameter("ampS", spec.ampSpike())
                     .executeUpdate();
 
             em.createNativeQuery("UPDATE pm_equipment e SET data_started_at = (SELECT MIN(s.recorded_at) FROM " + spec.table()
@@ -197,11 +202,12 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
     private static final String RANKED = """
             SELECT r.id, r.rk,
                    CASE MOD(r.rk, 4) WHEN 1 THEN 'D' WHEN 2 THEN 'D' WHEN 0 THEN 'S' ELSE 'N' END AS kind,
-                   CASE MOD(r.rk, 4) WHEN 1 THEN 1.0 WHEN 2 THEN {CAUTION} WHEN 0 THEN 1.0 ELSE 0.0 END AS amp
+                   CASE MOD(r.rk, 4) WHEN 1 THEN CAST(:ampD AS double precision) WHEN 2 THEN CAST(:ampC AS double precision)
+                                     WHEN 0 THEN CAST(:ampS AS double precision) ELSE 0.0 END AS amp
               FROM (SELECT e.id, row_number() OVER (ORDER BY e.id) AS rk
                       FROM pm_equipment e JOIN underpass u ON u.id = e.underpass_id AND u.is_deleted = FALSE
                      WHERE e.is_deleted = FALSE AND CAST(e.type AS text) = :type) r
-            """.replace("{CAUTION}", String.valueOf(CAUTION_AMP));
+            """;
 
     @SuppressWarnings("unchecked")
     private List<Long> targets(Spec spec, boolean reset, List<Long> equipIds) {

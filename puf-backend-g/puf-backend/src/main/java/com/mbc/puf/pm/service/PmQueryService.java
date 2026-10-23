@@ -15,6 +15,7 @@ import com.mbc.puf.pm.dto.PmEquipmentDetailResponse;
 import com.mbc.puf.pm.dto.PmEquipmentListItem;
 import com.mbc.puf.pm.dto.PmEventItem;
 import com.mbc.puf.pm.dto.PmScorePoint;
+import com.mbc.puf.pm.dto.PmSensorTrendResponse;
 
 /** 예지보전 화면 조회 (설비 목록·상세·점수 추이·점검 대기·점검 이력). 관리자 담당 지역만 */
 public interface PmQueryService {
@@ -23,6 +24,8 @@ public interface PmQueryService {
                                                     PmLevel level, PageQuery page);
 
     PmEquipmentDetailResponse getEquipment(LoginUser loginUser, Long equipId);
+
+    PmSensorTrendResponse getSensorTrend(LoginUser loginUser, Long equipId, String column, int days);
 
     List<PmScorePoint> getScores(LoginUser loginUser, Long equipId, int days, Integer bucketMinutes);
 

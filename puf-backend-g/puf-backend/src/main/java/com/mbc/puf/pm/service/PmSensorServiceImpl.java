@@ -57,6 +57,16 @@ public class PmSensorServiceImpl implements PmSensorService {
         COLUMNS.put(PmEquipmentType.WATER_LEVEL, List.of("level_m"));
     }
 
+    /** 센서 테이블 이름 (조회용 화이트리스트) */
+    static String tableOf(PmEquipmentType type) {
+        return TABLES.get(type);
+    }
+
+    /** 센서 컬럼 이름 목록 (조회용 화이트리스트) */
+    static List<String> columnsOf(PmEquipmentType type) {
+        return COLUMNS.get(type);
+    }
+
     @PersistenceContext
     private EntityManager em;
 

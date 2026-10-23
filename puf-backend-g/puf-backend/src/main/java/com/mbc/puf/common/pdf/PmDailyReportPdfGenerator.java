@@ -118,7 +118,7 @@ public class PmDailyReportPdfGenerator {
             for (PmActionItem a : nz(s.actions())) {
                 boolean alt = i++ % 2 == 1;
                 t4.addCell(cell(fmt(a.getCreatedAt()), font, alt, TextAlignment.LEFT));
-                t4.addCell(cell(typeName(a.getType()) + " #" + a.getEquipId() + "\n" + dash(a.getUnderpassName()), font, alt, TextAlignment.LEFT));
+                t4.addCell(cell(equipLabel(a.getName(), a.getType(), a.getEquipId()) + "\n" + dash(a.getUnderpassName()), font, alt, TextAlignment.LEFT));
                 t4.addCell(cell(dash(a.getManagerName()), font, alt, TextAlignment.LEFT));
                 t4.addCell(cell(dash(a.getContent()), font, alt, TextAlignment.LEFT));
                 t4.addCell(cell(num(a.getScoreBefore()), font, alt, TextAlignment.CENTER));
@@ -156,7 +156,7 @@ public class PmDailyReportPdfGenerator {
         for (PmEventItem e : nz(events)) {
             boolean alt = i++ % 2 == 1;
             t.addCell(cell(fmt(e.getCreatedAt()), font, alt, TextAlignment.LEFT));
-            t.addCell(cell(typeName(e.getType()) + " #" + e.getEquipId() + "\n" + dash(e.getUnderpassName()), font, alt, TextAlignment.LEFT));
+            t.addCell(cell(equipLabel(e.getName(), e.getType(), e.getEquipId()) + "\n" + dash(e.getUnderpassName()), font, alt, TextAlignment.LEFT));
             t.addCell(cell(levelName(e.getLevel()), font, alt, TextAlignment.CENTER));
             t.addCell(cell(num(e.getScore()), font, alt, TextAlignment.CENTER));
             t.addCell(cell(num(e.getCurrentScore()), font, alt, TextAlignment.CENTER));
@@ -176,7 +176,7 @@ public class PmDailyReportPdfGenerator {
         int i = 0;
         for (PmReportEquipment q : nz(list)) {
             boolean alt = i++ % 2 == 1;
-            t.addCell(cell(typeName(q.getType()) + " #" + q.getEquipId(), font, alt, TextAlignment.LEFT));
+            t.addCell(cell(equipLabel(q.getName(), q.getType(), q.getEquipId()), font, alt, TextAlignment.LEFT));
             t.addCell(cell(dash(q.getUnderpassName()), font, alt, TextAlignment.LEFT));
             t.addCell(cell(levelName(q.getLevel()), font, alt, TextAlignment.CENTER));
             t.addCell(cell(num(q.getScore()), font, alt, TextAlignment.CENTER));
@@ -246,6 +246,11 @@ public class PmDailyReportPdfGenerator {
         }
         int d = now - before;
         return now + (d == 0 ? "  (변동 없음)" : d > 0 ? "  (+" + d + ")" : "  (" + d + ")");
+    }
+
+    /** 설비 이름(예: W-1-6). 이름이 없으면 종류 + 번호로 */
+    private String equipLabel(String name, PmEquipmentType t, Long id) {
+        return (name != null && !name.isBlank()) ? name : typeName(t) + " #" + id;
     }
 
     private String typeName(PmEquipmentType t) {
