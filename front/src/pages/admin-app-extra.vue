@@ -47,13 +47,15 @@ const rows = computed(() => history.H.filter((row) => row.join(' ').includes(que
             placeholder="설비·시설·조치 내용 검색"
             aria-label="점검 이력 검색"
           />
-          <article v-for="row in rows" :key="String(row[0])+row[1]" class="card">
-            <small>{{row[0]}}</small>
+          <div class="inspection-history-list" role="list" aria-label="점검 이력 목록">
+          <article v-for="row in rows" :key="String(row[0])+row[1]" class="history-record" role="listitem">
+            <time>{{row[0]}}</time>
             <h2>{{row[1]}} · {{row[2]}}</h2>
-            <p>{{row[3]}}</p>
+            <p class="history-facility">{{row[3]}}</p>
             <p>{{row[4]}} · {{row[5]}}</p>
-            <p>{{row[7]}} · {{row[8]}} → {{row[9]}}점</p>
+            <p class="history-result">{{row[7]}} · {{row[8]}} → {{row[9]}}점</p>
           </article>
+          </div>
           <p v-if="!rows.length">검색 결과가 없습니다.</p>
         </template>
         <template v-else-if="section==='contacts'">

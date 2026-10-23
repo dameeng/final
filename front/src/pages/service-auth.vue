@@ -468,7 +468,7 @@ async function resend() {
                 v-if="!manager&&kind==='signup'&&field.key==='phone'"
                 v-model="app.signupNationality"
                 name="customer-signup-nationality"
-              /><input v-if="field.key==='phone'&&passDemoVerified" :value="values.phone" type="text" :aria-label="field.label" readonly
+              /><input v-if="field.key==='phone'&&passDemoVerified" :value="values.phone" type="text" :aria-label="field.label" disabled title="인증된 전화번호는 변경할 수 없습니다."
               /><PhoneInput
                 v-else-if="['phone','emergency'].includes(field.key)"
                 v-model="values[field.key]"

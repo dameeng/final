@@ -1,0 +1,14 @@
+.widget-library.widget-library-drawer { position:fixed; inset:0 0 0 auto; z-index:100; width:min(380px,90vw); height:100dvh; margin:0; padding:24px; overflow-y:auto; overscroll-behavior:contain; border:0; border-left:1px solid var(--line,#dce3e9); border-radius:0; background:var(--surface,#fff); color:var(--foreground,#263544); box-shadow:-8px 0 28px #172b4d20; font-family:var(--ui-font,system-ui,sans-serif); }
+.widget-library-drawer>header { display:flex; flex-wrap:nowrap; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:24px; }
+.widget-library-drawer>header strong { font-size:18px; font-weight:600; }.widget-library-drawer>header p { margin:8px 0 0; font-size:12px; color:var(--ui-muted,#687888); }
+.widget-library-drawer>header>button { min-width:36px; min-height:36px; padding:4px; font-size:20px; }
+.widget-library-drawer .widget-library-items { display:flex; flex-direction:column; gap:12px; }
+.widget-library-drawer .widget-library-item { min-width:0; }
+.widget-library-drawer .widget-library-item[draggable=true] { cursor:grab; }
+.widget-library-drawer .widget-library-item>button { display:grid; grid-template-columns:minmax(0,1fr) 22px; align-items:center; width:100%; padding:14px 12px; text-align:left; gap:12px; }
+.widget-library-drawer .widget-library-item>button>span:last-child { display:grid; place-items:center; box-sizing:border-box; width:22px; height:22px; border:1px solid #9baebb; border-radius:6px; font-size:0; }
+.widget-library-drawer .widget-library-item>button[aria-pressed=true]>span:last-child { background:#356b94; border-color:#356b94; color:#fff; font-size:13px; }
+.widget-library-drawer .widget-library-item strong,.widget-library-drawer .widget-library-item small { display:block; }
+.widget-library-drawer .widget-library-item strong { font-size:14px; font-weight:500; }.widget-library-drawer .widget-library-item small { margin-top:6px; font-size:12px; color:var(--ui-muted,#687888); line-height:1.6; }
+.widget-library-drawer>footer { display:flex; justify-content:flex-end; padding-top:20px; }
+.widget-library-drawer .widget-library-item>button[aria-pressed=true] { opacity:1; border-color:#a8becf; background:color-mix(in srgb,var(--surface,#fff) 85%,#dce9f4); }

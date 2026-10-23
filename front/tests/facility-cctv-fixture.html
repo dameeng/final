@@ -4,5 +4,5 @@ import {createRouter,createMemoryHistory} from 'vue-router'
 import FacilityCctvViewer from '../src/components/FacilityCctvViewer.vue'
 import '../src/styles/shared.css'
 const router=createRouter({history:createMemoryHistory(),routes:[{path:'/:pathMatch(.*)*',component:{render:()=>null}}]})
-createApp({setup(){const id=ref('1');window.selectTestFacility=value=>id.value=value;return()=>h(FacilityCctvViewer,{underpassId:id.value,cameras:[{id:61,cameraRole:'APPROACH_LPR',streamUrl:''}]})}}).use(router).mount('#app')
+createApp({setup(){const id=ref('1');window.selectTestFacility=value=>id.value=value;return()=>h(FacilityCctvViewer,{underpassId:id.value,cameras:[{id:61,cameraRole:'APPROACH_LPR',streamUrl:location.search.includes('ai=1')?'http://ocr.test/stream/61':''}]})}}).use(router).mount('#app')
 </script></html>

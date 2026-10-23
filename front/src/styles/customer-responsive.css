@@ -1,4 +1,15 @@
 /* Compact desktop header; narrower screens keep separate rows without overlap. */
+.customer-shell .customer-header .customer-header-scroll {
+  overflow: visible;
+  width: 100%;
+  min-width: 0;
+}
+.customer-shell .customer-header .customer-header-inner {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
 .customer-shell .customer-header .customer-header-inner {
   display: grid;
   grid-template-columns: auto minmax(0,1fr);

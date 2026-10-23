@@ -47,6 +47,7 @@ try {
       }
       setCenter(value) {
         this.center = value
+        this.centerUpdates = (this.centerUpdates || 0) + 1
       }
       panTo(value) {
         this.center = value
@@ -173,23 +174,46 @@ try {
             : null
     return r.fulfill({ json: { success: true, data } })
   })
-  await page.route('https://its.busan.go.kr/**', (r) =>
+  await page.route('**/map-cctv.json', (r) =>
     r.fulfill({
       json: Array.from({ length: 15 }, (_, i) => ({
-        cctvId: i + 1,
-        instlPos: `Camera ${i + 1}`,
-        instlAddr: 'Busan',
-        hlsAddr: `https://video.test/${i + 1}.m3u8`,
+        id: i + 1,
+        name: `Camera ${i + 1}`,
+        address: 'Busan',
+        url: `https://video.test/${i + 1}.m3u8`,
         lat: 35.12 + i * 0.0001,
-        lot: 129,
+        lng: 129,
       })),
     }),
   )
   await page.route('https://video.test/**', (r) => r.fulfill({ status: 404, body: '' }))
   const base = `http://127.0.0.1:${server.httpServer.address().port}`
   await page.goto(base + '/customer-app/screen-7')
+  const searchToggle = page.getByRole('button', { name: '어디로 갈까요?', exact: true })
+  await searchToggle.click()
+  assert.equal(await searchToggle.getAttribute('aria-expanded'), 'false')
+  assert.equal(await page.locator('.directions-form').isVisible(), false)
+  await searchToggle.click()
+  assert.equal(await searchToggle.getAttribute('aria-expanded'), 'true')
+  assert.equal(await page.locator('.directions-form input').first().inputValue(), '부산역')
   await page.locator('.directions-form .btn.p').click()
   await page.locator('.navigation-summary').waitFor()
+  const summaryHandle = page.locator('.navigation-summary-handle')
+  const expandedHeight = (await page.locator('.navigation-summary').boundingBox()).height
+  const grip = await summaryHandle.boundingBox()
+  await page.mouse.move(grip.x + grip.width / 2, grip.y + 8)
+  await page.mouse.down()
+  await page.mouse.move(grip.x + grip.width / 2, grip.y + 70, { steps: 6 })
+  await page.mouse.up()
+  assert.equal(await summaryHandle.getAttribute('aria-expanded'), 'false')
+  assert((await page.locator('.navigation-summary').boundingBox()).height < expandedHeight)
+  assert.equal(await page.locator('.navigation-arrival').isVisible(), true)
+  const collapsedGrip = await summaryHandle.boundingBox()
+  await page.mouse.move(collapsedGrip.x + collapsedGrip.width / 2, collapsedGrip.y + 10)
+  await page.mouse.down()
+  await page.mouse.move(collapsedGrip.x + collapsedGrip.width / 2, collapsedGrip.y - 60, { steps: 6 })
+  await page.mouse.up()
+  assert.equal(await summaryHandle.getAttribute('aria-expanded'), 'true')
   await page.waitForFunction(() => !!window.testRoute)
   assert.equal(
     await page.locator('.directions-map svg').evaluate((el) => el.getBoundingClientRect().width),
@@ -217,13 +241,37 @@ try {
   assert.equal(await cctv.locator('.directions-camera-list li').count(), 1)
   await cctv.getByRole('button', { name: 'Camera 12', exact: true }).click()
   await cctv.locator('video').waitFor()
+  assert((await cctv.boundingBox()).height < 844 * 0.75, 'video dialog fits the player instead of leaving a full-height blank area')
   assert.equal(await cctv.locator('.directions-camera-list').count(), 0)
   await cctv.getByRole('button', { name: 'CCTV 창 닫기' }).click()
   assert.equal(await page.locator('video').count(), 0, 'closing CCTV releases the player')
   await page.getByRole('button', { name: '도착지 날씨', exact: true }).click()
   const weatherDialog = page.getByRole('dialog', { name: '도착지 날씨', exact: true })
   await weatherDialog.getByText('맑음 · 15°C', { exact: true }).waitFor()
+  assert((await weatherDialog.boundingBox()).height < 844 * 0.5, 'weather dialog fits its content without a large empty area')
   await weatherDialog.getByRole('button', { name: '날씨 창 닫기' }).click()
+  await page.getByLabel('주행 방식').selectOption('demo')
+  await page.getByLabel('시연 배속').selectOption('2')
+  const centerUpdatesBefore = await page.evaluate(() => window.testMap.centerUpdates || 0)
+  await page.getByRole('button', { name: '안내 시작', exact: true }).click()
+  await page.waitForFunction(() => window.testMap.center.lat > 35.10001)
+  assert((await page.evaluate(() => window.testMap.centerUpdates)) > centerUpdatesBefore + 1,
+    'simulation continuously updates map center without restarting pan animations')
+  await page.getByRole('button', { name: '일시정지', exact: true }).click()
+  const pausedLat = await page.evaluate(() => window.testMap.center.lat)
+  await page.waitForTimeout(350)
+  assert.equal(await page.evaluate(() => window.testMap.center.lat), pausedLat, 'pause stops simulated movement')
+  await page.getByLabel('시연 배속').selectOption('16')
+  await page.getByRole('button', { name: '시연 재개', exact: true }).click()
+  await page.waitForFunction((lat) => window.testMap.center.lat > lat + 0.0001, pausedLat)
+  await page.getByText('목적지에 도착했습니다', { exact: true }).waitFor({ timeout: 20000 })
+  assert((await page.locator('.navigation-arrival strong').innerText()).includes('0'))
+  await page.getByRole('button', { name: '다시 안내', exact: true }).click()
+  await page.getByRole('button', { name: '안내 종료', exact: true }).click()
+  const stoppedLat = await page.evaluate(() => window.testMap.center.lat)
+  await page.waitForTimeout(250)
+  assert.equal(await page.evaluate(() => window.testMap.center.lat), stoppedLat, 'stop cancels simulated movement')
+  await page.getByLabel('주행 방식').selectOption('gps')
   await page.getByRole('button', { name: '안내 시작', exact: true }).click()
   await page.getByText('현재 위치 확인 중…', { exact: true }).waitFor()
   await page.evaluate(() => window.testGeo.emit(35.105, 129))

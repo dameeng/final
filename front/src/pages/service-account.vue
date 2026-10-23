@@ -31,7 +31,8 @@ function cancelEdit() {
 }
 const managerApp = computed(() => route.path.startsWith('/admin-app/'))
 const controller = new AbortController()
-const combined = computed(() => !manager.value && route.path === '/my-home')
+const mobileCombined = computed(() => /^\/customer-app\/account\/(profile|emergency|cars)$/.test(route.path))
+const combined = computed(() => !manager.value && (route.path === '/my-home' || mobileCombined.value))
 const accountSection = computed(() =>
   route.path === '/my-withdraw' || route.path.endsWith('/withdraw')
     ? 'withdraw'
@@ -42,7 +43,9 @@ const accountSection = computed(() =>
         : 'profile',
 )
 const pageTitle = computed(() =>
-  manager.value
+  mobileCombined.value
+    ? '내 정보 관리'
+    : manager.value
     ? '관리자 마이페이지'
     : accountSection.value === 'withdraw'
       ? '회원 탈퇴'
@@ -151,7 +154,7 @@ onBeforeUnmount(() => controller.abort())
 </script>
 <template>
   <component :is="manager?BackendLayout:'div'"
-    ><section class="service-workspace account-service"
+    ><section class="service-workspace account-service" :class="{'manager-account-page':managerApp}"
       ><h1>{{pageTitle}}</h1
       ><FeedbackToast :message="message" /><p v-if="loading" role="status"
         >정보를 불러오는 중입니다.</p
@@ -164,7 +167,7 @@ onBeforeUnmount(() => controller.abort())
           v-if="manager||['summary','profile','settings'].includes(accountSection)"
           :id="!manager?'account-settings':undefined"
           class="account-panel"
-          ><summary v-if="managerApp">{{profile.name}}님 · 기본 정보 수정</summary><h2>내 정보</h2
+          ><summary v-if="managerApp" class="manager-profile-summary"><span class="manager-profile-avatar" aria-hidden="true">{{profile.name?.slice(0,1)}}</span><span><strong>{{profile.name}}님</strong><small>기본 정보 확인 및 수정</small></span><span class="manager-profile-chevron" aria-hidden="true">⌄</span></summary><h2>내 정보</h2
           ><p>{{profile.name}} · {{profile.loginId}}</p
           ><template v-if="manager"
             ><p
@@ -192,7 +195,7 @@ onBeforeUnmount(() => controller.abort())
           ></component
         ><section v-if="combined" id="account-cars" class="account-panel"
           ><ServiceResource resource-key="cars" embedded /></section
-        ><section v-if="!manager&&(accountSection==='settings'||combined)" class="account-panel"
+        ><section v-if="!manager&&(accountSection==='settings'||combined&&!mobileCombined)" class="account-panel"
           ><h2>비밀번호 변경</h2
           ><form @submit.prevent="password"
             ><label
@@ -220,7 +223,7 @@ onBeforeUnmount(() => controller.abort())
         ></template
       ><nav v-if="managerApp" class="app-more-menu"
         ><RouterLink to="/admin-app/history">점검 이력 <span>›</span></RouterLink
-        ><RouterLink to="/admin-app/screen-13">알림 내역 <span>›</span></RouterLink
+        ><RouterLink to="/admin-app/notifications">알림 내역 <span>›</span></RouterLink
         ><RouterLink to="/admin-app/contacts">관할 담당자 연락처 <span>›</span></RouterLink></nav
       ><AdminPageDirectory v-else-if="manager" /><AccountActions v-if="manager" /></section
   ></component>

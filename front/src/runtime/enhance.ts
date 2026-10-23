@@ -2,12 +2,10 @@ import { uiIconSvg } from '../utils/ui-icons'
 import { organizeSidebar } from './sidebar'
 import { meeting } from './meeting'
 import { watch } from 'vue'
-import { useAdminProfile } from '../stores/adminProfile'
 import { loadKakao, geocode } from '../services/kakao'
 export function enhance(name: string, ctx: any) {
   const root = ctx.root as HTMLElement
   const store = ctx.store
-  const admin = useAdminProfile()
   const popup = root.querySelector<HTMLElement>('#bell-pop'),
     bellButton = root.querySelector<HTMLElement>('#bell-btn')
   if (popup && bellButton) {
@@ -63,11 +61,15 @@ export function enhance(name: string, ctx: any) {
     }
   }
   const stopIdentity = watch(
-    () => [admin.region, admin.profile.name],
+    () => store.account?.name,
     () => {
       root
         .querySelectorAll<HTMLElement>('.hdr .user')
-        .forEach((el) => (el.textContent = `${admin.region} · ${admin.profile.name}님`))
+        .forEach((el) => (el.textContent = `${store.account?.name || '관리자'}님`))
+      root.querySelectorAll<HTMLElement>('.ro').forEach((el) => {
+        if (el.textContent?.includes('(로그인 계정 자동 기록)'))
+          el.textContent = `${store.account?.name || '관리자'} (로그인 계정 자동 기록)`
+      })
     },
     { immediate: true },
   )

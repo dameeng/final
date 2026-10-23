@@ -36,6 +36,7 @@
   transform: none;
 }
 .customer-notification-popup {
+  box-sizing: border-box;
   position: fixed;
   z-index: 220;
   display: flex;

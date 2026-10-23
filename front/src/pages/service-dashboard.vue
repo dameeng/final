@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { useNewItemGlow } from '../composables/useNewItemGlow'
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useBackendEvents } from '../composables/useBackendEvents'
 import { useApp } from '../stores/app'
 import BackendLayout from '../components/BackendLayout.vue'
 import LiveMap from './c-live-map.vue'
+import DashboardEditor from '../components/DashboardEditor.vue'
 import { backend } from '../services/backend'
 import { valueLabels } from '../data/backendResources'
 import { displayDate } from '../utils/display-date'
@@ -13,6 +14,7 @@ import '../styles/admin-dashboard.css'
 import '../styles/dashboard-fixed.css'
 const route = useRoute(),
   app = useApp()
+const dashboardGrid = ref<HTMLElement>()
 const appLink = (web: string, mobile: string) =>
   route.path.startsWith('/admin-app/') ? mobile : web
 const region = computed(
@@ -26,6 +28,15 @@ const summary = ref<Record<string, number> | null>(null),
   controller = new AbortController()
 const eventKey = (event: Record<string, any>) => String(event.id ?? JSON.stringify([event.createdAt, event.underpassId, event.underpassName, event.eventType, event.reason]))
 const isNewEvent = useNewItemGlow(() => events.value, eventKey)
+const eventPage = ref(1)
+const eventPageCount = computed(() => Math.max(1, Math.ceil(events.value.length / 10)))
+const pageEvents = computed(() => events.value.slice((eventPage.value - 1) * 10, eventPage.value * 10))
+watch(eventPageCount, count => { eventPage.value = Math.min(eventPage.value, count) })
+watch(eventPage, async () => {
+  await nextTick()
+  const list = dashboardGrid.value?.querySelector('.fixed-events .tl')
+  if (list) list.scrollTop = 0
+})
 const dashboardPaths = ['facility-kpi', 'timeline?limit=30', 'risk-margin?limit=5']
 const pendingLoads = new Set<number>()
 let liveTimer: ReturnType<typeof setTimeout> | undefined
@@ -124,7 +135,7 @@ onBeforeUnmount(() => {
         ><h1>종합 현황</h1
         ><button class="btn sm" :disabled="loading" @click="load">새로고침</button></div
       ><p v-if="error" class="service-error" role="alert">{{error}}</p
-      ><div id="grid" class="dashboard-fixed-layout">
+      ><DashboardEditor :grid="dashboardGrid" /><div id="grid" ref="dashboardGrid" class="dashboard-fixed-layout">
         <div class="dashboard-fixed-item fixed-summary"
           ><div class="dashboard-fixed-content"
             ><section class="card wg widget-original-content" aria-label="지하차도 현황"
@@ -160,7 +171,7 @@ onBeforeUnmount(() => {
                 ><RouterLink to="/admin-reports?report=timeline">로그 전체 보기</RouterLink></div
               ><p v-if="!events.length">표시할 이벤트가 없습니다.</p
               ><ol class="tl" tabindex="0" aria-label="최근 이벤트 목록"
-                ><li v-for="event in events" :key="eventKey(event)" :class="{'notification-arrival-glow':isNewEvent(event)}"
+                ><li v-for="event in pageEvents" :key="eventKey(event)" :class="{'notification-arrival-glow':isNewEvent(event)}"
                   ><time :datetime="event.createdAt">{{displayDate(event.createdAt)}}</time
                   ><div
                     ><span
@@ -172,7 +183,11 @@ onBeforeUnmount(() => {
                     ></div
                   ></li
                 ></ol
-              ></section
+              ><nav v-if="events.length" class="event-pagination" aria-label="최근 이벤트 페이지"
+                ><button type="button" :disabled="eventPage === 1" aria-label="최근 이벤트 이전 페이지" @click="eventPage--">이전</button
+                ><span aria-live="polite">{{eventPage}} / {{eventPageCount}}</span
+                ><button type="button" :disabled="eventPage === eventPageCount" aria-label="최근 이벤트 다음 페이지" @click="eventPage++">다음</button
+              ></nav></section
             ></div
           ></div
         >

@@ -18,6 +18,11 @@ const route = useRoute(),
 const regions = ref<any[]>([]),
   facilities = ref<any[]>([]),
   lookupAbort = new AbortController()
+const page=ref(1)
+const pages=computed(()=>Math.max(1,Math.ceil(rows.value.length/10)))
+const pageRows=computed(()=>rows.value.slice((page.value-1)*10,page.value*10))
+watch(pages,count=>{page.value=Math.min(page.value,count)})
+watch(selected,()=>{page.value=1})
 onMounted(async () => {
   const results = await Promise.allSettled([
     backend('/api/regions', { signal: lookupAbort.signal }),
@@ -148,7 +153,7 @@ onBeforeUnmount(() => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(row,index) in rows" :key="index">
+            <tr v-for="(row,index) in pageRows" :key="index">
               <td v-for="[key] in report.columns" :key="key">
                 {{valueLabels[row[key]]||(row[key]??'—')}}
               </td>
@@ -159,6 +164,11 @@ onBeforeUnmount(() => {
           </tbody>
         </table>
       </div>
+      <nav v-if="!loading && rows.length" class="service-pagination" aria-label="보고서 페이지">
+        <button :disabled="page===1" @click="page--">이전</button>
+        <span>{{page}} / {{pages}} 페이지</span>
+        <button :disabled="page===pages" @click="page++">다음</button>
+      </nav>
     </section>
   </BackendLayout>
 </template>
