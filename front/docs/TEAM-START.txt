@@ -1,3 +1,7 @@
+API 키·주소·부산 CCTV·서울터널의 최신 연결 안내: docs/API-GUIDE.md
+실제 키는 .env.local에 입력하세요. 같은 항목은 .env보다 우선합니다.
+부산 CCTV는 현재 로컬 map-cctv.json 목록과 부산 영상 서버를 사용하며 ITS 키가 필요하지 않습니다.
+
 ROUTEL 프런트엔드 팀원 전달 안내
 기준일: 2026-10-19
 

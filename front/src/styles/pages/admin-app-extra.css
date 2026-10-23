@@ -34,3 +34,36 @@ dd {
 .ah>button {
   margin-left: auto;
 }
+.inspection-history-list {
+  border-top: 1px solid var(--line,#c9ced6);
+}
+.inspection-history-list .history-record {
+  padding: 16px 4px;
+  border-bottom: 1px solid var(--line,#c9ced6);
+}
+.history-record time {
+  display: block;
+  color: var(--ink-sub,#64748b);
+  font-size: 11px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+.inspection-history-list .history-record h2 {
+  margin: 5px 0 4px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.inspection-history-list .history-record p {
+  margin: 7px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.history-record .history-facility {
+  color: var(--ink-sub,#64748b);
+}
+.history-record .history-result {
+  padding-left: 8px;
+  border-left: 2px solid var(--line,#c9ced6);
+  font-weight: 600;
+}

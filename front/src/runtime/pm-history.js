@@ -1,4 +1,5 @@
 import seeds from '../data/pm-history.json'
+import { tablePagination } from './table-pagination'
 export function initialize(ctx) {
   const {
     document,
@@ -144,10 +145,9 @@ export function initialize(ctx) {
   })
   var tf = '',
     q = ''
+  const paginate=tablePagination(ctx,'#htbl')
   function apply() {
-    ;[].forEach.call(document.querySelectorAll('#htbl tbody tr'), function (tr) {
-      tr.hidden = !((!tf || tr.dataset.type === tf) && (!q || tr.dataset.text.indexOf(q) > -1))
-    })
+    paginate(tr=>(!tf || tr.dataset.type===tf) && (!q || tr.dataset.text.indexOf(q)>-1))
   }
   $('h-type').addEventListener('change', function () {
     tf = this.value

@@ -54,7 +54,7 @@ function active(path: string) {
 <template>
   <div
     class="service-app-layout"
-    :class="{'app-manager':manager,'app-auth':auth,'app-map-screen':map}"
+    :class="{'app-manager':manager,'app-auth':auth,'app-map-screen':map,'app-manager-overview':route.path==='/admin-app/screen-3'}"
   >
     <header v-if="!manager||auth" class="ah app-restored-header">
       <AdminBackButton v-if="manager&&!auth&&!route.path.endsWith('/screen-3')" />

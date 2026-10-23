@@ -11,6 +11,26 @@
   color: var(--foreground,#20252b);
   font-size: 14px;
 }
+/* 네이티브 dialog의 top layer에서도 앱(최대 430px) 너비를 넘지 않게 합니다. */
+.service-app-layout .service-modal,
+.mobile-page .service-modal {
+  box-sizing: border-box;
+  width: min(398px, calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 32px);
+  padding: 20px;
+  overscroll-behavior: contain;
+}
+.service-app-layout .service-modal .service-form-fields,
+.mobile-page .service-modal .service-form-fields {
+  grid-template-columns: minmax(0, 1fr);
+}
+.service-app-layout .service-modal :is(input,textarea,select),
+.mobile-page .service-modal :is(input,textarea,select) {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
 .app-restored-header {
   height: 64px;
   min-height: 64px;
@@ -888,10 +908,33 @@
   inset: auto 12px 16px auto;
 }
 .legacy-live-map.mobile-app-map .mapw .kakao-map-controls {
+  position: absolute;
   inset: auto 12px min(calc(var(--map-sheet-height,68px) + 12px),calc(100% - 54px)) auto;
   flex-direction: row;
+  flex-shrink: 0;
   z-index: 13;
-  transition: bottom .22s ease;
+}
+.legacy-live-map.mobile-app-map .mapw .mtop {
+  box-sizing: border-box;
+  max-height: max(0px, calc(100% - var(--map-sheet-height,68px) - 162px));
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  padding-bottom: 2px;
+}
+.legacy-live-map.mobile-app-map .mtop>:is(.pill,.traffic-map-toggles) {
+  flex-shrink: 0;
+}
+.legacy-live-map.mobile-app-map .mapw .map-left-tools {
+  bottom: calc(var(--map-sheet-height,68px) + 12px);
+}
+.legacy-live-map.mobile-app-map.map-sheet-open .map-left-tools {
+  display: none;
+}
+.legacy-live-map.mobile-app-map.map-sheet-open .mapw .mtop {
+  top: 70px!important;
+  max-height: max(0px, calc(100% - var(--map-sheet-height,68px) - 134px));
 }
 /* Keep the SDK's stacking context on the canvas, so controls can stay above the sheet. */
 .legacy-live-map.mobile-app-map .app.map-swap-layout > .mapw {
@@ -935,8 +978,3 @@
   }
 }
 
-@media (max-height:600px) {
-  .legacy-live-map.mobile-app-map.map-sheet-open .app-map-search {
-    right: 188px;
-  }
-}

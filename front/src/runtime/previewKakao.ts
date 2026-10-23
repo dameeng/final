@@ -40,7 +40,8 @@ export async function mountPreviewKakao(
     host.setAttribute('aria-label', '카카오 지도')
     parent.append(host)
     map = new sdk.maps.Map(host, { center: new sdk.maps.LatLng(35.1796, 129.0756), level: 8 })
-    const disposeScroll = pageFriendlyMapScroll(host, map)
+    const disposeScroll = pageFriendlyMapScroll(host, map,
+      /^\/(admin|customer)-app\//.test(window.location.pathname))
     ctx.on(root, 'page-dispose', disposeScroll)
     map.setCursor('grab')
     const controls = document.createElement('div')

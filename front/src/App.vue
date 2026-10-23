@@ -97,7 +97,7 @@ const serviceComponent = computed(() => {
     ['/admin-profile', '/admin-app/screen-14', '/my-home', '/my-account', '/my-withdraw'].includes(
       path,
     ) ||
-    /^\/customer-app\/account\/(profile|emergency|settings|withdraw)$/.test(path)
+    /^\/customer-app\/account\/(profile|emergency|cars|settings|withdraw)$/.test(path)
   )
     return ServiceAccount
   if (
@@ -135,7 +135,7 @@ function unmounted(vnode: VNode) {
   <div
     :class="{'manager-app-shell':managerApp,'customer-shell':customer,'service-mobile':appService,'admin-shell':!customer&&!route.path.startsWith('/admin-app/')&&!route.path.startsWith('/customer-app/')}"
   >
-    <AdminAppHeader v-if="managerApp" />
+    <AdminAppHeader v-if="managerApp&&route.path!=='/admin-app/menu'" />
     <PwaStatus :hide-install="managerApp" v-if="/^\/(admin|customer)-app\//.test(route.path)" />
     <AdminHandover v-if="app.account?.role==='REGIONAL_ADMIN'" />
     <CustomerHeader v-if="customer" />
@@ -168,7 +168,7 @@ function unmounted(vnode: VNode) {
         @vue:unmounted="unmounted"
       />
     </RouterView>
-    <AdminAppNav v-if="managerApp" />
+    <AdminAppNav v-if="managerApp&&route.path!=='/admin-app/menu'" />
     <CustomerFooter v-if="customer" />
     <PublicChatbot v-if="customer" />
   </div>

@@ -1,4 +1,101 @@
 /* Keep the original customer map/list/detail design with API-backed content. */
+.legacy-live-map .mapw .mtop {
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+.legacy-live-map .mapw .mtop>.kakao-map-controls {
+  position: static;
+  inset: auto;
+  flex-shrink: 0;
+}
+.legacy-live-map .mtop>.traffic-map-toggles {
+  position: static;
+  max-width: 100%;
+  pointer-events: auto;
+  width: fit-content;
+  min-width: 230px;
+  box-sizing: border-box;
+  background: var(--surface,#fff);
+  color: var(--foreground,#243447);
+  border: 1px solid var(--line,#c8d1dc);
+  border-radius: 12px;
+  box-shadow: 0 3px 12px #07121c22;
+  overflow: hidden;
+}
+.traffic-map-toggles .traffic-controls-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+.legacy-live-map .mtop>.traffic-map-toggles.traffic-controls-collapsed {
+  min-width: 0;
+  width: 128px;
+  border-radius: 10px;
+}
+.traffic-map-toggles.traffic-controls-collapsed .traffic-controls-heading {
+  min-height: 32px;
+  padding: 6px 10px;
+  gap: 10px;
+}
+.traffic-map-toggles .traffic-controls-body {
+  padding: 0 8px 8px;
+}
+:root[data-theme=dark] .legacy-live-map .mtop>.traffic-map-toggles {
+  background: #252f38;
+  border-color: #52616e;
+  color: #e3edf5;
+}
+.traffic-map-toggles .traffic-layer-switches {
+  flex-wrap: wrap;
+}
+.traffic-map-toggles .traffic-layer-switches button {
+  gap: 8px;
+  min-height: 40px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+.traffic-map-toggles .traffic-toggle-track {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 18px;
+  padding: 2px;
+  border-radius: 10px;
+  background: #8795a2;
+  box-sizing: border-box;
+}
+.traffic-toggle-track::before {
+  content: '';
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform .15s ease;
+}
+.traffic-map-toggles button[aria-pressed=true] .traffic-toggle-track {
+  background: #2876b9;
+}
+.traffic-map-toggles button[aria-pressed=true] .traffic-toggle-track::before {
+  transform: translateX(12px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .traffic-toggle-track::before { transition: none; }
+}
 .legacy-live-map .mapw .map-left-tools {
   position:absolute;
   left:14px;
@@ -226,6 +323,106 @@
 }
 
 /* The customer map uses its existing pill legend, not the embedded admin legend. */
+.legacy-live-map.mobile-app-map .mapw .mtop {
+  left: 12px;
+  right: 12px;
+}
+.legacy-live-map.mobile-app-map .mapw .mtop .pill {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) minmax(0, 1.35fr);
+  width: 100%;
+  max-width: 100%;
+  gap: 2px;
+  padding: 6px 8px;
+  font-size: clamp(10px, 2.7vw, 12px);
+}
+.legacy-live-map.mobile-app-map .mapw .mtop .pill>span {
+  min-width: 0;
+  justify-content: center;
+  white-space: nowrap;
+  gap: 5px;
+}
+.legacy-live-map.mobile-app-map .mtop .pill .legend-filter-button {
+  width: 100%;
+  justify-content: center;
+  gap: 5px;
+  padding: 4px 2px;
+  font-size: inherit;
+  white-space: nowrap;
+}
+.legacy-live-map.mobile-app-map .mtop .pill i {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+}
 .legacy-live-map .mapw>.map-only-legend {
   display: none;
+}
+.legacy-live-map .mapw .mtop>.traffic-map-toggles {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  width: max-content;
+}
+.legacy-live-map .mtop>.traffic-map-toggles.traffic-controls-collapsed {
+  width: fit-content;
+}
+.legacy-live-map .traffic-map-toggles .traffic-controls-heading {
+  flex: 0 0 auto;
+  width: auto;
+  min-height: 34px;
+  padding: 6px 9px;
+  gap: 8px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.legacy-live-map .traffic-map-toggles .traffic-controls-body {
+  min-width: 0;
+  padding: 4px 5px 4px 0;
+}
+.legacy-live-map .traffic-map-toggles .traffic-layer-switches {
+  flex-wrap: nowrap;
+  gap: 4px;
+}
+.legacy-live-map .traffic-map-toggles .traffic-layer-switches button {
+  min-height: 30px;
+  padding: 4px 6px;
+  gap: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.legacy-live-map .traffic-map-toggles .traffic-toggle-track {
+  display: none;
+}
+.legacy-live-map .customer-map-control-dock {
+  position: absolute;
+  right: 12px;
+  bottom: 16px;
+  z-index: 13;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  max-width: calc(100% - 24px);
+}
+.legacy-live-map.mobile-app-map .customer-map-control-dock {
+  bottom: min(calc(var(--map-sheet-height,68px) + 12px),calc(100% - 54px));
+}
+.legacy-live-map .mapw .customer-map-control-dock>.kakao-map-controls,
+.legacy-live-map.mobile-app-map .mapw .customer-map-control-dock>.kakao-map-controls {
+  position: static;
+  inset: auto;
+  flex-direction: row;
+}
+.legacy-live-map .customer-map-control-dock .map-control-toggle {
+  min-height: 40px;
+  padding: 6px 9px;
+  border: 1px solid var(--line,#c8d1dc);
+  border-radius: 9px;
+  background: var(--surface,#fff);
+  color: var(--foreground,#243447);
+  font: inherit;
+  font-size: 11px;
+  white-space: nowrap;
+  cursor: pointer;
 }

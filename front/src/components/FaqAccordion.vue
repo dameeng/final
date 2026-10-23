@@ -8,6 +8,7 @@ const props = defineProps<{
   manage?: boolean
   initialOpenId?: string
   saving?: boolean
+  allowReorder?: boolean
 }>()
 defineEmits<{ edit: [row: Item]; remove: [row: Item]; move: [row: Item, direction: number] }>()
 const answers = reactive<Record<string, { loading: boolean; answer?: string; error: string }>>({})
@@ -88,8 +89,9 @@ onBeforeUnmount(() => requests.forEach((controller) => controller.abort()))
           <div v-if="manage" class="service-actions">
             <button type="button" @click="$emit('edit',row)">수정</button>
             <button type="button" @click="$emit('remove',row)">삭제</button>
-            <button type="button" :disabled="saving||index===0" @click="$emit('move',row,-1)">위로</button>
+            <button v-if="allowReorder!==false" type="button" :disabled="saving||index===0" @click="$emit('move',row,-1)">위로</button>
             <button
+              v-if="allowReorder!==false"
               type="button"
               :disabled="saving||index===items.length-1"
               @click="$emit('move',row,1)"

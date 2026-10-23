@@ -2,10 +2,9 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import TrafficVideo from './TrafficVideo.vue'
-import TunnelReferenceVideo from './TunnelReferenceVideo.vue'
 import FacilityOcrLog from './FacilityOcrLog.vue'
 import { valueLabels } from '../data/backendResources'
-const props = defineProps<{ cameras: Record<string, any>[]; underpassId: string; facilityName?: string }>()
+const props = defineProps<{ cameras: Record<string, any>[]; underpassId: string; facilityName?: string; compact?: boolean }>()
 const route = useRoute(),
   selected = ref('')
 const current = computed(() => props.cameras.find((camera) => String(camera.id) === selected.value))
@@ -14,11 +13,12 @@ const stopping = ref(false)
 const recognitionMessage = ref('')
 const recognitionError = ref(false)
 // AI 서버(FastAPI) 실시간 영상 주소인지 (/stream/226 처럼 끝나면 그림책(MJPEG) 방식 -> <img> 로 보여줌)
+// 영상과 실행·정지는 로그인 쿠키를 사용하는 Spring 중계 API로 요청합니다.
 const isAiStream = computed(() => /\/stream\/\d+$/.test(current.value?.streamUrl || ''))
 // 시작/정지할 때마다 숫자를 올려서 <img> 가 영상을 새로 받아오게 함
 const streamVersion = ref(0)
 const streamFailed = ref(false)
-const aiStreamSrc = computed(() => `${current.value?.streamUrl}?v=${streamVersion.value}`)
+const aiStreamSrc = computed(() => `/api/cctv/${current.value?.id}/stream?v=${streamVersion.value}`)
 watch(() => [props.underpassId, selected.value], () => {
   recognitionMessage.value = ''
   streamFailed.value = false
@@ -35,7 +35,7 @@ async function controlRecognition(action: 'start' | 'stop') {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 30000)
   try {
-    const response = await fetch(`/control/plate/${action}?cameraId=${encodeURIComponent(cameraId)}`, {
+    const response = await fetch(`/api/cctv/plate/${action}?cameraId=${encodeURIComponent(cameraId)}`, {
       method: 'POST',
       credentials: 'include',
       signal: controller.signal,
@@ -78,9 +78,8 @@ function label(camera: Record<string, any>) {
 const app = computed(() => route.path.startsWith('/admin-app/'))
 </script>
 <template>
-  <div class="facility-cctv-layout">
+  <div class="facility-cctv-layout" :class="{'compact-cctv':compact}">
   <section class="facility-cctv-viewer" aria-label="시설 CCTV">
-    <TunnelReferenceVideo v-if="facilityName?.includes('초량')" />
     <template v-if="current">
       <label class="facility-camera-select">CCTV 선택<select v-model="selected">
           <option v-for="camera in cameras" :key="camera.id" :value="String(camera.id)">
@@ -120,7 +119,7 @@ const app = computed(() => route.path.startsWith('/admin-app/'))
         />
         <p v-else>영상 주소가 등록되지 않았습니다.</p>
       </div>
-      <div class="facility-ocr-column"><FacilityOcrLog :key="underpassId" :underpass-id="underpassId" :app="app" /></div>
+      <div v-if="!compact" class="facility-ocr-column"><FacilityOcrLog :key="underpassId" :underpass-id="underpassId" :app="app" /></div>
       </div>
       <nav class="facility-camera-links" aria-label="CCTV 관련 기록">
         <RouterLink
@@ -132,7 +131,7 @@ const app = computed(() => route.path.startsWith('/admin-app/'))
         >차량 통과 기록 보기 →</RouterLink>
       </nav>
     </template>
-    <template v-else><p>등록된 CCTV가 없습니다.</p><FacilityOcrLog :key="underpassId" :underpass-id="underpassId" :app="app" /></template>
+    <template v-else><p>등록된 CCTV가 없습니다.</p><FacilityOcrLog v-if="!compact" :key="underpassId" :underpass-id="underpassId" :app="app" /></template>
   </section>
   </div>
 </template>

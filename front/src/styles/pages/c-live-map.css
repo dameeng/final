@@ -20,26 +20,6 @@
   align-items: flex-start;
   justify-content: flex-start;
 }
-.marker-preview-toggle {
-  position: static;
-  flex: 0 1 auto;
-  max-width: 100%;
-  padding: 10px 14px;
-  border: 1px solid #d5dde7;
-  border-radius: 10px;
-  background: var(--surface,#fff);
-  color: var(--ink,#173d62);
-  box-shadow: 0 2px 10px #0002;
-  font-size: 12px;
-  cursor: pointer;
-  text-align: left;
-}
-.marker-preview-toggle small {
-  display: block;
-  margin-top: 4px;
-  font-size: 10px;
-  color: var(--ink-sub,#64748b);
-}
 .legacy-live-map .mapw {
   isolation: isolate;
 }

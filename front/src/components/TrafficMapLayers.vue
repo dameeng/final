@@ -4,8 +4,9 @@ import { getBusanCameras } from '../services/busanCctv'
 import TrafficVideo from './TrafficVideo.vue'
 import VmsLedDisplay from './VmsLedDisplay.vue'
 type Point = { id: string; name: string; address: string; lat: number; lng: number; kind: 'cctv' | 'vms'; type?: string; url?: string; content?: string; messages?: string[]; example?: boolean; updatedAt?: string }
-const props = defineProps<{ map: any; maps: any }>()
+const props = defineProps<{ map: any; maps: any; toggleControls?: boolean }>()
 const showCctv = ref(false), showVms = ref(false), loading = ref(false), error = ref('')
+const controlsExpanded = ref(true)
 const points = ref<Point[]>([]), active = ref<Point>(), dialog = ref<HTMLDialogElement>()
 const groupItems = ref<Point[]>([])
 function closeInfo() { active.value = undefined; groupItems.value = [] }
@@ -114,15 +115,21 @@ watch([active, groupItems], async () => {
 onBeforeUnmount(() => { disposed = true; generation++; clear(); if (props.map && props.maps) { props.maps.event.removeListener(props.map, 'idle', draw); props.maps.event.removeListener(props.map, 'zoom_changed', draw) } dialog.value?.close() })
 </script>
 <template>
-  <div class="traffic-map-layers" aria-label="교통 시설 표시">
+  <div class="traffic-map-layers" :class="{'traffic-map-toggles':toggleControls,'traffic-controls-collapsed':toggleControls&&!controlsExpanded}" aria-label="교통 시설 표시">
+    <button v-if="toggleControls" type="button" class="traffic-controls-heading" :aria-expanded="controlsExpanded" @click="controlsExpanded=!controlsExpanded">
+      <span>교통 시설</span><span aria-hidden="true">{{controlsExpanded?'‹':'›'}}</span>
+    </button>
+    <div v-show="!toggleControls||controlsExpanded" class="traffic-controls-body">
     <div class="traffic-layer-switches">
-      <button type="button" :aria-pressed="showCctv" @click="showCctv=!showCctv"><span v-html="icon('cctv')"></span>CCTV</button>
-      <button type="button" :aria-pressed="showVms" @click="showVms=!showVms"><span v-html="icon('vms')"></span>VMS 전광판</button>
+      <button type="button" :aria-pressed="showCctv" @click="showCctv=!showCctv"><span v-html="icon('cctv')"></span>CCTV<span v-if="toggleControls" class="traffic-toggle-track" aria-hidden="true"></span></button>
+      <button type="button" :aria-pressed="showVms" @click="showVms=!showVms"><span v-html="icon('vms')"></span>VMS 전광판<span v-if="toggleControls" class="traffic-toggle-track" aria-hidden="true"></span></button>
     </div>
     <p v-if="loading" role="status">교통 시설을 불러오는 중…</p>
     <p v-if="error" role="status">{{error}} <button type="button" @click="load">다시 조회</button></p>
+    </div>
   </div>
-  <dialog ref="dialog" class="traffic-device-dialog" aria-label="교통 시설 정보" @cancel.prevent="closeInfo" @close="closeInfo" @pointerdown="backdropPress=outsideDialog($event)" @pointercancel="backdropPress=false" @click="backdropClick">
+  <Teleport to="body">
+  <dialog ref="dialog" class="traffic-device-dialog" aria-label="교통 시설 정보" @cancel.prevent="closeInfo" @close="closeInfo" @pointerdown.stop="backdropPress=outsideDialog($event)" @pointercancel="backdropPress=false" @click.stop="backdropClick">
     <template v-if="!active && groupItems.length">
       <header><span class="traffic-device-type">이 위치의 CCTV·전광판 {{groupItems.length}}개</span><button type="button" aria-label="닫기" @click="closeInfo">✕</button></header>
       <h2>확인할 시설을 선택하세요</h2>
@@ -140,5 +147,6 @@ onBeforeUnmount(() => { disposed = true; generation++; clear(); if (props.map &&
       <small v-if="active.kind==='cctv'">부산광역시 교통정보 제공 · 제공처 사정에 따라 영상이 지연되거나 중단될 수 있습니다.</small>
     </template>
   </dialog>
+  </Teleport>
 </template>
 <style src="../styles/components/traffic-map-layers.css"></style>
