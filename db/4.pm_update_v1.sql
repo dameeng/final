@@ -1,7 +1,7 @@
 -- =====================================================================
--- PUF 예지보전 업데이트 v1 (pm_update_v1.sql)
--- 실행 전제: puf_db_schema_v8.sql → seed_all_v8.sql → seed_its_v8.sql 실행 완료 (이 파일은 그 다음에 실행)
--- 실행 방법: 자동 커밋(autocommit)으로 위에서 아래로 실행. 예) psql -U postgres -d mydb -f pm_update_v1.sql
+-- PUF 예지보전 업데이트 v1 (4.pm_update_v1.sql)
+-- 실행 전제: 1.puf_db_schema_v8.sql → 2.seed_all_v8.sql → 3.seed_its_v8.sql 실행 완료 (이 파일은 그 다음에 실행)
+-- 실행 방법: 자동 커밋(autocommit)으로 위에서 아래로 실행. 예) psql -U postgres -d mydb -f 4.pm_update_v1.sql
 --            ※ 전체를 BEGIN ... COMMIT 한 트랜잭션으로 묶지 말 것
 --              (1번에서 추가한 'WATER_LEVEL' 값은 커밋된 뒤에야 4번에서 쓸 수 있음)
 -- 두 번 실행해도 결과가 같음 (이미 있는 컬럼·제약·설비는 건너뜀)
