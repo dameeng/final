@@ -346,6 +346,7 @@ CREATE TABLE manager_notification ( -- 관리자 알림 센터 테이블(알림 
     body VARCHAR(255), -- 알림 내용
     ref_type VARCHAR(20), -- 눌렀을 때 이동할 대상 종류(UNDERPASS/INQUIRY 등)
     ref_id BIGINT, -- 이동할 대상 아이디
+    is_urgent BOOLEAN NOT NULL DEFAULT FALSE, -- 긴급 여부(TRUE 면 화면에 긴급 팝업, 기기 푸시도 높은 우선순위. 예: 설비 위험 진입, 수위 자동 차단)
     created_at TIMESTAMP NOT NULL DEFAULT NOW() -- 알림 생성 시각
 );
 
@@ -893,6 +894,7 @@ CREATE INDEX idx_alert_customer_time ON alert (customer_id, created_at);
 CREATE INDEX idx_notice_alert_customer ON notice_alert (customer_id, is_read);
 CREATE INDEX idx_customer_notification_list ON customer_notification (customer_id, is_read, created_at DESC);
 CREATE INDEX idx_manager_notification_list ON manager_notification (region_id, category, created_at DESC);
+CREATE INDEX idx_manager_notification_urgent ON manager_notification (created_at DESC) WHERE is_urgent;
 CREATE UNIQUE INDEX uq_manager_notification_read ON manager_notification_read (notification_id, manager_id);
 CREATE INDEX idx_risk_score_underpass_time ON risk_score (underpass_id, predicted_at);
 CREATE INDEX idx_water_level_underpass_time ON water_level (underpass_id, measured_at);

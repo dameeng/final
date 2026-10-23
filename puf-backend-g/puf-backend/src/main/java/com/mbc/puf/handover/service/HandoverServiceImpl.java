@@ -6,13 +6,18 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.mbc.puf.common.enums.PmLevel;
+import com.mbc.puf.common.enums.PmTriggerType;
 import com.mbc.puf.common.enums.RiskLevel;
 import com.mbc.puf.common.enums.UnderpassCurrentStatus;
 import com.mbc.puf.common.exception.BusinessException;
@@ -36,6 +41,7 @@ import com.mbc.puf.member.entity.Manager;
 import com.mbc.puf.member.entity.Shift;
 import com.mbc.puf.member.repository.ManagerRepository;
 import com.mbc.puf.member.repository.ShiftRepository;
+import com.mbc.puf.pm.dto.PmEventItem;
 import com.mbc.puf.pm.dto.PmPeriodSummary;
 import com.mbc.puf.pm.service.PmReportService;
 import com.mbc.puf.stream.StreamPublisher;
@@ -134,7 +140,7 @@ public class HandoverServiceImpl implements HandoverService {
         Window w = resolveWindow(loginUser, request.getShiftId(), request.getShiftDate());
         LocalDateTime now = dbClock.now();
         LocalDateTime end = w.end().isAfter(now) ? now : w.end();
-        HandoverSummary summary = buildSummary(scopeResolver.regionsOf(loginUser, null), w.start(), end);
+        HandoverSummary summary = buildSummary(scopeResolver.regionsOf(loginUser, null), w.shift().getId(), w.start(), end);
 
         ShiftHandover h = new ShiftHandover();
         h.setShiftId(w.shift().getId());
@@ -199,13 +205,15 @@ public class HandoverServiceImpl implements HandoverService {
     }
 
     // ------------------------------------------------------------------ 집계
-    private HandoverSummary buildSummary(List<Long> regionIds, LocalDateTime start, LocalDateTime end) {
+    private HandoverSummary buildSummary(List<Long> regionIds, Long shiftId, LocalDateTime start, LocalDateTime end) {
         PmPeriodSummary pm = pmReportService.summarize(regionIds, null, start, end);
 
         List<HandoverRows.EventRow> events = new NativeSql("""
                 SELECT ev.created_at AS created_at, CAST(ev.type AS text) AS type, CAST(ev.risk_level AS text) AS risk_level,
-                       u.name AS underpass_name, ev.is_auto AS automatic, ev.reason AS reason
+                       u.name AS underpass_name, ev.is_auto AS automatic, ev.reason AS reason, oemp.name AS operator_name
                   FROM event ev JOIN underpass u ON u.id = ev.underpass_id AND u.is_deleted = FALSE
+                  LEFT JOIN manager om ON om.id = ev.operator_id
+                  LEFT JOIN employee oemp ON oemp.id = om.employee_id
                  WHERE ev.created_at >= :from AND ev.created_at < :to AND u.region_id IN (:regionIds)
                  ORDER BY ev.created_at DESC, ev.id DESC
                 """).param("from", start).param("to", end).param("regionIds", regionIds)
@@ -244,16 +252,29 @@ public class HandoverServiceImpl implements HandoverService {
         for (HandoverRows.EventRow e : events) {
             activities.add(riskActivity(e));
         }
-        pm.newEvents().forEach(ev -> activities.add(new HandoverSummary.Activity(ev.getCreatedAt(), "설비",
-                String.format("%s %s 점검 대기 등록 (%s, %s점)", ev.getCode(), ev.getUnderpassName(), ev.getLevel().getDbValue(),
-                        ev.getScore().stripTrailingZeros().toPlainString()))));
+        pm.newEvents().forEach(ev -> activities.add(new HandoverSummary.Activity(ev.getCreatedAt(), "설비", pmEventText(ev), null)));
         pm.actions().forEach(a -> activities.add(new HandoverSummary.Activity(a.getCreatedAt(), "점검",
-                String.format("%s %s 점검 기록: %s", a.getCode(), a.getUnderpassName(), a.getContent()))));
+                String.format("%s %s 점검 기록: %s", a.getCode(), a.getUnderpassName(), a.getContent()), a.getManagerName())));
+        List<HandoverRows.DisplayEditRow> displayEdits = new NativeSql("""
+                SELECT h.changed_at AS changed_at, u.name AS underpass_name, h.new_content AS new_content, emp.name AS actor_name
+                  FROM display_history h
+                  JOIN underpass u ON u.id = h.underpass_id AND u.is_deleted = FALSE
+                  LEFT JOIN manager m ON m.id = h.changed_by
+                  LEFT JOIN employee emp ON emp.id = m.employee_id
+                 WHERE h.event_id IS NULL AND h.changed_by IS NOT NULL
+                   AND h.changed_at >= :from AND h.changed_at < :to AND u.region_id IN (:regionIds)
+                 ORDER BY h.changed_at DESC, h.id DESC
+                """).param("from", start).param("to", end).param("regionIds", regionIds)
+                .list(em, HandoverRows.DisplayEditRow.class);
+        displayEdits.forEach(d -> activities.add(new HandoverSummary.Activity(d.getChangedAt(), "전광판",
+                d.getUnderpassName() + " 전광판 문구 수정: " + d.getNewContent(), d.getActorName())));
         activities.sort(Comparator.comparing(HandoverSummary.Activity::at).reversed());
+
+        List<HandoverSummary.StaffWork> staff = staffWork(regionIds, shiftId, start, end);
 
         var counts = new HandoverSummary.Counts(block, release, riskUp, riskDown, pm.newEventCount(),
                 pm.actionCount(), pm.openEventCount());
-        return new HandoverSummary(start, end, counts, blocked, elevated, pm,
+        return new HandoverSummary(start, end, counts, blocked, elevated, pm, staff,
                 activities.size() > ACTIVITY_LIMIT ? activities.subList(0, ACTIVITY_LIMIT) : activities);
     }
 
@@ -261,13 +282,108 @@ public class HandoverServiceImpl implements HandoverService {
         String auto = Boolean.TRUE.equals(e.getAutomatic()) ? " (자동)" : "";
         String reason = e.getReason() == null || e.getReason().isBlank() ? "" : " · " + e.getReason();
         return switch (e.getType()) {
-            case "BLOCK" -> new HandoverSummary.Activity(e.getCreatedAt(), "통제", e.getUnderpassName() + " 통제 시작" + auto + reason);
-            case "RELEASE" -> new HandoverSummary.Activity(e.getCreatedAt(), "통제", e.getUnderpassName() + " 통제 해제" + auto + reason);
+            case "BLOCK" -> new HandoverSummary.Activity(e.getCreatedAt(), "통제", e.getUnderpassName() + " 통제 시작" + auto + reason,
+                    e.getOperatorName());
+            case "RELEASE" -> new HandoverSummary.Activity(e.getCreatedAt(), "통제", e.getUnderpassName() + " 통제 해제" + auto + reason,
+                    e.getOperatorName());
             case "RISK_LEVEL_UP" -> new HandoverSummary.Activity(e.getCreatedAt(), "위험",
-                    e.getUnderpassName() + " 위험 단계 상승 → " + levelLabel(e.getRiskLevel()));
+                    e.getUnderpassName() + " 위험 단계 상승 → " + levelLabel(e.getRiskLevel()), null);
             default -> new HandoverSummary.Activity(e.getCreatedAt(), "위험",
-                    e.getUnderpassName() + " 위험 단계 하강 → " + levelLabel(e.getRiskLevel()));
+                    e.getUnderpassName() + " 위험 단계 하강 → " + levelLabel(e.getRiskLevel()), null);
         };
+    }
+
+    /** 새 점검 대기 한 줄. 미수신은 점수·단계가 없다 */
+    private String pmEventText(PmEventItem ev) {
+        if (ev.getTriggerType() == PmTriggerType.NO_DATA) {
+            return String.format("%s %s 센서 데이터 미수신 점검 대기 등록", ev.getCode(), ev.getUnderpassName());
+        }
+        String why = ev.getTriggerType() == null ? "" : ev.getTriggerType().getDbValue() + ", ";
+        return String.format("%s %s 점검 대기 등록 (%s%s, %s점)", ev.getCode(), ev.getUnderpassName(), why,
+                ev.getLevel() == null ? "-" : ev.getLevel().getDbValue(),
+                ev.getScore() == null ? "-" : ev.getScore().stripTrailingZeros().toPlainString());
+    }
+
+    /**
+     * 이 시간대에 직원별로 한 일. 근무조 소속(내 담당 지역과 겹치는 사람)과 실제로 처리한 사람을 합친다.
+     * 지역을 가리는 항목은 내 담당 지역 안에서 센다 (접수의견 답변만 지역 구분 없음).
+     */
+    private List<HandoverSummary.StaffWork> staffWork(List<Long> regionIds, Long shiftId, LocalDateTime start, LocalDateTime end) {
+        List<HandoverRows.StaffCountRow> counted = new NativeSql("""
+                SELECT t.manager_id AS manager_id, t.kind AS kind, COUNT(*) AS cnt FROM (
+                  SELECT ev.operator_id AS manager_id,
+                         CASE WHEN CAST(ev.type AS text) = 'BLOCK' THEN 'block' ELSE 'release' END AS kind
+                    FROM event ev JOIN underpass u ON u.id = ev.underpass_id AND u.is_deleted = FALSE
+                   WHERE ev.operator_id IS NOT NULL AND CAST(ev.type AS text) IN ('BLOCK', 'RELEASE')
+                     AND ev.created_at >= :from AND ev.created_at < :to AND u.region_id IN (:regionIds)
+                  UNION ALL
+                  SELECT p.reviewed_by, 'plateReview'
+                    FROM plate_log p JOIN camera c ON c.id = p.camera_id JOIN underpass u ON u.id = c.underpass_id
+                   WHERE p.reviewed_by IS NOT NULL AND p.reviewed_at >= :from AND p.reviewed_at < :to AND u.region_id IN (:regionIds)
+                  UNION ALL
+                  SELECT a.manager_id, 'pmAction'
+                    FROM pm_action a JOIN pm_event pe ON pe.id = a.event_id JOIN pm_equipment e ON e.id = pe.equip_id
+                    JOIN underpass u ON u.id = e.underpass_id
+                   WHERE a.created_at >= :from AND a.created_at < :to AND u.region_id IN (:regionIds)
+                  UNION ALL
+                  SELECT h.changed_by, 'displayEdit'
+                    FROM display_history h JOIN underpass u ON u.id = h.underpass_id
+                   WHERE h.event_id IS NULL AND h.changed_by IS NOT NULL
+                     AND h.changed_at >= :from AND h.changed_at < :to AND u.region_id IN (:regionIds)
+                  UNION ALL
+                  SELECT ct.manager_id, 'transfer'
+                    FROM ctrl_transfer ct JOIN event ev ON ev.id = ct.event_id JOIN underpass u ON u.id = ev.underpass_id
+                   WHERE ct.manager_id IS NOT NULL AND ct.created_at >= :from AND ct.created_at < :to AND u.region_id IN (:regionIds)
+                  UNION ALL
+                  SELECT i.manager_id, 'inquiryAnswer'
+                    FROM inquiry i
+                   WHERE i.manager_id IS NOT NULL AND i.is_deleted = FALSE AND i.created_at >= :from AND i.created_at < :to
+                ) t
+                GROUP BY t.manager_id, t.kind
+                """).param("from", start).param("to", end).param("regionIds", regionIds)
+                .list(em, HandoverRows.StaffCountRow.class);
+
+        Map<Long, Map<String, Integer>> byManager = new LinkedHashMap<>();
+        for (HandoverRows.StaffCountRow r : counted) {
+            byManager.computeIfAbsent(r.getManagerId(), k -> new HashMap<>()).put(r.getKind(), r.getCnt().intValue());
+        }
+        Set<Long> assigned = new HashSet<>();
+        if (shiftId != null) {
+            for (HandoverRows.StaffInfoRow r : new NativeSql("""
+                    SELECT m.id AS manager_id, emp.name AS name, emp.phone AS phone
+                      FROM manager m JOIN employee emp ON emp.id = m.employee_id
+                     WHERE m.shift_id = :shiftId AND CAST(m.status AS text) = 'ACTIVE'
+                       AND EXISTS (SELECT 1 FROM manager_region mr WHERE mr.manager_id = m.id AND mr.region_id IN (:regionIds))
+                    """).param("shiftId", shiftId).param("regionIds", regionIds).list(em, HandoverRows.StaffInfoRow.class)) {
+                assigned.add(r.getManagerId());
+                byManager.computeIfAbsent(r.getManagerId(), k -> new HashMap<>());
+            }
+        }
+        if (byManager.isEmpty()) {
+            return List.of();
+        }
+        Map<Long, HandoverRows.StaffInfoRow> info = new HashMap<>();
+        for (HandoverRows.StaffInfoRow r : new NativeSql("""
+                SELECT m.id AS manager_id, emp.name AS name, emp.phone AS phone
+                  FROM manager m JOIN employee emp ON emp.id = m.employee_id WHERE m.id IN (:ids)
+                """).param("ids", byManager.keySet()).list(em, HandoverRows.StaffInfoRow.class)) {
+            info.put(r.getManagerId(), r);
+        }
+        List<HandoverSummary.StaffWork> result = new ArrayList<>();
+        for (Map.Entry<Long, Map<String, Integer>> e : byManager.entrySet()) {
+            Map<String, Integer> c = e.getValue();
+            int block = c.getOrDefault("block", 0), release = c.getOrDefault("release", 0),
+                    plate = c.getOrDefault("plateReview", 0), pmAction = c.getOrDefault("pmAction", 0),
+                    display = c.getOrDefault("displayEdit", 0), transfer = c.getOrDefault("transfer", 0),
+                    inquiry = c.getOrDefault("inquiryAnswer", 0);
+            HandoverRows.StaffInfoRow i = info.get(e.getKey());
+            result.add(new HandoverSummary.StaffWork(e.getKey(), i == null ? null : i.getName(), i == null ? null : i.getPhone(),
+                    assigned.contains(e.getKey()), block, release, plate, pmAction, display, transfer, inquiry,
+                    block + release + plate + pmAction + display + transfer + inquiry));
+        }
+        result.sort(Comparator.comparingInt(HandoverSummary.StaffWork::total).reversed()
+                .thenComparing(HandoverSummary.StaffWork::managerId));
+        return result;
     }
 
     private String levelLabel(RiskLevel level) {
@@ -348,7 +464,7 @@ public class HandoverServiceImpl implements HandoverService {
 
     /** 아직 아무도 안 쓴 시간대를 바로 집계한 결과 (저장 안 함) */
     private HandoverDetail computed(LoginUser loginUser, Shift shift, LocalDate date, LocalDateTime start, LocalDateTime end) {
-        HandoverSummary summary = buildSummary(scopeResolver.regionsOf(loginUser, null), start, end);
+        HandoverSummary summary = buildSummary(scopeResolver.regionsOf(loginUser, null), shift == null ? null : shift.getId(), start, end);
         return new HandoverDetail(null, false, shift == null ? null : shift.getId(), shift == null ? null : shift.getName(), date,
                 shift == null ? null : shift.getStartTime(), shift == null ? null : shift.getEndTime(), start, end,
                 null, null, null, null, null, objectMapper.valueToTree(summary));

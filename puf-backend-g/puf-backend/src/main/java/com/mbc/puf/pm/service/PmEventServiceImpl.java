@@ -38,7 +38,7 @@ public class PmEventServiceImpl implements PmEventService {
 
     private static final String EVENT_SELECT = """
             SELECT ev.id AS event_id, e.id AS equip_id, CAST(e.type AS text) AS type, e.name AS name, u.id AS underpass_id,
-                   u.name AS underpass_name, u.region_id AS region_id, CAST(ev.level AS text) AS level, ev.score AS score,
+                   u.name AS underpass_name, u.region_id AS region_id, CAST(ev.trigger_type AS text) AS trigger_type, CAST(ev.level AS text) AS level, ev.score AS score,
                    CAST(ev.status AS text) AS status, ev.created_at AS created_at,
                    ls.score AS current_score, CAST(ls.level AS text) AS current_level
              FROM pm_event ev

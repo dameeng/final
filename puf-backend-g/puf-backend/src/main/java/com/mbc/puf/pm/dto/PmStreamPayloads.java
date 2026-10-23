@@ -17,6 +17,8 @@ public final class PmStreamPayloads {
     public record PmUpdate(Long regionId, LocalDateTime predictedAt, List<Item> items) {
     }
 
-    public record Item(Long equipId, Long underpassId, PmEquipmentType type, BigDecimal score, PmLevel level) {
+    // stale=true 면 센서 데이터가 끊긴 설비 (이때 score·level 은 마지막으로 받은 값이거나 null)
+    public record Item(Long equipId, String name, Long underpassId, PmEquipmentType type, BigDecimal score, PmLevel level,
+            boolean stale) {
     }
 }

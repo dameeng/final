@@ -35,8 +35,9 @@ import jakarta.persistence.PersistenceContext;
 /**
  * 예지보전 리포트 집계. 저장하지 않고 요청할 때마다 pm_score / pm_event / pm_action 에서 계산한다.
  *
- * 설비 상태는 "기준 시각 이전 가장 최근 점수"로 본다. 그 점수가 기준 시각보다 no-data-hours 시간(기본 3) 넘게
- * 오래됐으면 미수신(noData), 점수가 아예 없으면 neverReceived.
+ * 설비 상태는 "기준 시각 이전 가장 최근 점수"로 본다. 점수 시각은 그 설비 센서의 마지막 측정 시각이라, 기준 시각보다
+ * 설비 종류별 기준(센서 주기 × puf.pm.stale.multiplier(기본 3), 최소 puf.pm.stale.min-seconds(기본 60초):
+ * 펌프 1분 / 수위 15분 / CCTV·전광판 3시간) 넘게 오래됐으면 미수신(noData), 점수가 아예 없으면 neverReceived.
  */
 @Service
 public class PmReportServiceImpl implements PmReportService {
@@ -48,7 +49,7 @@ public class PmReportServiceImpl implements PmReportService {
     private static final String SNAPSHOT_SQL = """
             SELECT e.id AS equip_id, CAST(e.type AS text) AS type, e.name AS name, u.id AS underpass_id, u.name AS underpass_name,
                    u.region_id AS region_id, ls.score AS score, CAST(ls.level AS text) AS level,
-                   ls.predicted_at AS last_received_at, oe.id AS open_event_id, CAST(oe.status AS text) AS open_event_status
+                   ls.predicted_at AS last_received_at, e.sensor_interval_sec AS sensor_interval_sec, oe.id AS open_event_id, CAST(oe.status AS text) AS open_event_status
              FROM pm_equipment e
              JOIN underpass u ON u.id = e.underpass_id AND u.is_deleted = FALSE AND e.is_deleted = FALSE
              LEFT JOIN LATERAL (SELECT s.score, s.level, s.predicted_at FROM pm_score s
@@ -63,7 +64,7 @@ public class PmReportServiceImpl implements PmReportService {
 
     private static final String EVENT_SELECT = """
             SELECT ev.id AS event_id, e.id AS equip_id, CAST(e.type AS text) AS type, e.name AS name, u.id AS underpass_id,
-                   u.name AS underpass_name, u.region_id AS region_id, CAST(ev.level AS text) AS level, ev.score AS score,
+                   u.name AS underpass_name, u.region_id AS region_id, CAST(ev.trigger_type AS text) AS trigger_type, CAST(ev.level AS text) AS level, ev.score AS score,
                    CAST(ev.status AS text) AS status, ev.created_at AS created_at,
                    ls.score AS current_score, CAST(ls.level AS text) AS current_level
              FROM pm_event ev
@@ -95,13 +96,16 @@ public class PmReportServiceImpl implements PmReportService {
 
     private final ScopeResolver scopeResolver;
     private final DbClock dbClock;
-    private final int noDataHours;
+    private final int multiplier;
+    private final int minSeconds;
 
     public PmReportServiceImpl(ScopeResolver scopeResolver, DbClock dbClock,
-                               @Value("${puf.pm.no-data-hours:3}") int noDataHours) {
+                               @Value("${puf.pm.stale.multiplier:3}") int multiplier,
+                               @Value("${puf.pm.stale.min-seconds:60}") int minSeconds) {
         this.scopeResolver = scopeResolver;
         this.dbClock = dbClock;
-        this.noDataHours = Math.max(1, noDataHours);
+        this.multiplier = Math.max(1, multiplier);
+        this.minSeconds = Math.max(1, minSeconds);
     }
 
     @Override
@@ -171,7 +175,11 @@ public class PmReportServiceImpl implements PmReportService {
     // ------------------------------------------------------------------
 
     private boolean isStale(PmReportEquipment e, LocalDateTime asOf) {
-        return e.getLastReceivedAt() != null && e.getLastReceivedAt().isBefore(asOf.minusHours(noDataHours));
+        if (e.getLastReceivedAt() == null) {
+            return false;
+        }
+        long threshold = Math.max((long) e.getSensorIntervalSec() * multiplier, minSeconds);   // 설비 종류(센서 주기)별 기준
+        return e.getLastReceivedAt().plusSeconds(threshold).isBefore(asOf);
     }
 
     private PmLevelCounts counts(List<PmReportEquipment> rows, LocalDateTime asOf) {

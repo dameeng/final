@@ -15,7 +15,7 @@ public interface PmEquipmentRepository extends JpaRepository<PmEquipment, Long> 
         String getType();
         String getName();
         Integer getSensorIntervalSec();
-        java.sql.Timestamp getDataStartedAt();
+        java.time.LocalDateTime getDataStartedAt();
         Long getUnderpassId();
         String getUnderpassName();
         Long getRegionId();

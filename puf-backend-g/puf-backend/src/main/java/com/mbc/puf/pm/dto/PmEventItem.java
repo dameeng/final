@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import com.mbc.puf.common.enums.PmEquipmentType;
 import com.mbc.puf.common.enums.PmEventStatus;
 import com.mbc.puf.common.enums.PmLevel;
+import com.mbc.puf.common.enums.PmTriggerType;
 
 /** 점검 대기(예지보전 이벤트) 1행 (GET /api/pm/events) */
 public class PmEventItem {
@@ -17,8 +18,9 @@ public class PmEventItem {
     private Long underpassId;
     private String underpassName;
     private Long regionId;
-    private PmLevel level;               // 넘은 단계 (주의 → 위험으로 오르면 올라감)
-    private BigDecimal score;            // 이벤트 발생(또는 단계 상승) 시점 점수
+    private PmTriggerType triggerType;   // 발생 이유: 위험진입 / 급상승 / 미수신
+    private PmLevel level;               // 넘은 단계 (주의 → 위험으로 오르면 올라감, 미수신이면 null)
+    private BigDecimal score;            // 이벤트 발생(또는 단계 상승) 시점 점수 (미수신이면 null)
     private PmEventStatus status;
     private LocalDateTime createdAt;     // 발생 시각
     private BigDecimal currentScore;     // 지금 점수 (가장 최근 pm_score)
@@ -50,6 +52,9 @@ public class PmEventItem {
 
     public Long getRegionId() { return regionId; }
     public void setRegionId(Long regionId) { this.regionId = regionId; }
+
+    public PmTriggerType getTriggerType() { return triggerType; }
+    public void setTriggerType(PmTriggerType triggerType) { this.triggerType = triggerType; }
 
     public PmLevel getLevel() { return level; }
     public void setLevel(PmLevel level) { this.level = level; }
