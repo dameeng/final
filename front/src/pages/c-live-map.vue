@@ -261,8 +261,11 @@ const customerRoot = ref<HTMLElement>(),
   riskForecast = ref<Json[]>([]),
   forecastError = ref('')
 function defaultDistrict() {
-  const districts = (app.account?.regions || []).map((region) => busanDistrict(region.name))
-  return districts.find(Boolean) || ''
+  const districts = [...new Set(
+    (app.account?.regions || []).map((region) => busanDistrict(region.name)).filter(Boolean),
+  )]
+  // 여러 담당 구 중 첫 구에 시설이 없어도 다른 담당 구의 시설을 가리지 않습니다.
+  return districts.length === 1 ? districts[0]! : ''
 }
 const district = ref(props.manager ? defaultDistrict() : ''),
   clusterFacilityIds = ref<string[]>([])

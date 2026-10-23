@@ -32,6 +32,12 @@ try {
         host.style.background = '#dce8ef'
       }
       setZoomable() {}
+      getBounds() {
+        return { contain: () => true }
+      }
+      getProjection() {
+        return { containerPointFromCoords: (point) => ({ x: point.lng * 1000, y: point.lat * 1000 }) }
+      }
       getCenter() {
         return this.center
       }
@@ -132,7 +138,7 @@ try {
     {
       id: 1,
       name: 'Facility 1',
-      regionId: 1,
+      regionId: 8,
       regionName: '부산광역시',
       roadAddress: '부산광역시 중구 중앙대로',
       latitude: 35.104,
@@ -146,7 +152,7 @@ try {
     {
       id: 2,
       name: 'Facility 2',
-      regionId: 1,
+      regionId: 9,
       regionName: '부산광역시',
       roadAddress: '부산광역시 서구 충무대로',
       latitude: 35.11,
@@ -160,7 +166,7 @@ try {
     {
       id: 3,
       name: 'Facility 3',
-      regionId: 1,
+      regionId: 10,
       regionName: '부산광역시',
       roadAddress: '부산광역시 해운대구 해운대로',
       latitude: 35.16,
@@ -184,6 +190,7 @@ try {
         name: 'Manager',
         role: 'REGIONAL_ADMIN',
         regions: [
+          { id: 5, name: '영도구' },
           { id: 8, name: '중구' },
           { id: 9, name: '서구' },
         ],
@@ -216,6 +223,11 @@ try {
   await page.goto(base + '/admin-dashboard')
   await page.locator('.handover-x').click()
   await page.locator('.test-map-marker').nth(2).waitFor()
+  assert.equal(
+    await page.locator('.underpass-map-form select').first().inputValue(),
+    '',
+    'an empty first assigned district must not hide other assigned facilities',
+  )
   assert.equal(
     await page.locator('.map-sidebar,.underpass-map-table,.live-cluster-list').count(),
     0,

@@ -662,8 +662,9 @@ watch(
     for (const field of resource.value.filters || [])
       filters[field.key] =
         field.type === 'checkbox' ? route.query[field.key] === 'true' : route.query[field.key] || ''
-    if (app.account?.role === 'REGIONAL_ADMIN' && app.account.regions?.length &&
-        resource.value.filters?.some(field => field.key === 'regionId') && route.query.regionId == null)
+    if (app.account?.role === 'REGIONAL_ADMIN' && app.account.regions?.length === 1 &&
+        resource.value.filters?.some(field => field.key === 'regionId') &&
+        route.query.regionId == null && route.query.underpassId == null)
       filters.regionId = String(app.account.regions[0]!.id)
     if (resourceId.value === 'alerts' && alertLogReturn.path) {
       Object.assign(filters, alertLogReturn.filters)
