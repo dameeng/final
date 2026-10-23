@@ -7,7 +7,11 @@ import { valueLabels } from '../data/backendResources'
 const props = defineProps<{ cameras: Record<string, any>[]; underpassId: string; facilityName?: string; compact?: boolean }>()
 const route = useRoute(),
   selected = ref('')
-const current = computed(() => props.cameras.find((camera) => String(camera.id) === selected.value))
+// A route change must never keep playing a camera registered to the previous facility.
+const availableCameras = computed(() => props.cameras.filter((camera) =>
+  camera.underpassId == null || String(camera.underpassId) === props.underpassId,
+))
+const current = computed(() => availableCameras.value.find((camera) => String(camera.id) === selected.value))
 const starting = ref(false)
 const stopping = ref(false)
 const recognitionMessage = ref('')
@@ -63,10 +67,10 @@ async function controlRecognition(action: 'start' | 'stop') {
   }
 }
 watch(
-  () => [props.underpassId, props.cameras] as const,
+  () => [props.underpassId, availableCameras.value] as const,
   () => {
-    if (!props.cameras.some((camera) => String(camera.id) === selected.value))
-      selected.value = String(props.cameras[0]?.id ?? '')
+    if (!availableCameras.value.some((camera) => String(camera.id) === selected.value))
+      selected.value = String(availableCameras.value[0]?.id ?? '')
   },
   { immediate: true },
 )
@@ -82,7 +86,7 @@ const app = computed(() => route.path.startsWith('/admin-app/'))
   <section class="facility-cctv-viewer" aria-label="시설 CCTV">
     <template v-if="current">
       <label class="facility-camera-select">CCTV 선택<select v-model="selected">
-          <option v-for="camera in cameras" :key="camera.id" :value="String(camera.id)">
+          <option v-for="camera in availableCameras" :key="camera.id" :value="String(camera.id)">
             {{label(camera)}}
           </option>
         </select>

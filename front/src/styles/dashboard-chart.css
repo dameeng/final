@@ -1,0 +1,89 @@
+/* Observed facility-risk charts, scoped to the administrator dashboard. */
+#app .water-dashboard .water-facility-widget {
+  min-width: 0;
+  color: var(--dash-ink,#152a43);
+}
+#app .water-dashboard .water-widget-controls {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  align-items: flex-end;
+  gap: 8px;
+}
+#app .water-dashboard .water-widget-controls:not(:has(button)) { grid-template-columns: minmax(0,1fr); }
+#app .water-dashboard .water-widget-controls label {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+  color: var(--dash-muted,#687e94);
+  font-size: 11px;
+  font-weight: 600;
+}
+#app .water-dashboard .water-widget-controls select {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 36px;
+  margin: 0;
+  padding: 7px 28px 7px 10px;
+  border: 1px solid var(--dash-line,#e0e9f2);
+  border-radius: 7px;
+  background-color: var(--r-surface,#fff);
+  color: var(--dash-ink,#152a43);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.45;
+}
+#app .water-dashboard .water-widget-controls button {
+  min-height: 36px;
+  padding: 7px 9px;
+  border-color: var(--dash-line,#e0e9f2);
+  font-size: 12px;
+  white-space: nowrap;
+}
+#app .water-dashboard .water-risk-figure { margin: 12px 0 0; min-width: 0; }
+#app .water-dashboard .water-risk-summary { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
+#app .water-dashboard .water-risk-summary > div { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; }
+#app .water-dashboard .water-risk-summary > div > span { color: var(--dash-muted,#687e94); font-size: 10px; }
+#app .water-dashboard .water-risk-summary strong { color: var(--dash-ink,#152a43); font-size: 24px; line-height: 1.1; font-weight: 750; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+#app .water-dashboard .water-risk-summary strong small { margin-left: 5px; color: var(--dash-muted,#687e94); font-size: 11px; font-weight: 500; letter-spacing: 0; }
+#app .water-dashboard .water-risk-legend { display: inline-flex; align-items: center; gap: 5px; color: var(--dash-muted,#687e94); font-size: 10px; white-space: nowrap; }
+#app .water-dashboard .water-risk-legend i { width: 6px; height: 6px; border-radius: 50%; background: var(--dash-accent,#227ce7); }
+#app .water-dashboard .water-risk-chart-surface { width: 100%; min-width: 0; }
+#app .water-dashboard .water-risk-chart { display: block; width: 100%; overflow: visible; }
+#app .water-dashboard .water-risk-chart :is(text,title,desc) { font-family: inherit; }
+#app .water-dashboard :is(.water-risk-axis-unit,.water-risk-grid text,.water-risk-time-tick text) { fill: var(--dash-muted,#687e94); font-size: 10px; font-weight: 400; font-variant-numeric: tabular-nums; }
+#app .water-dashboard .water-risk-axis-unit { font-size: 9px; }
+#app .water-dashboard .water-risk-grid line { stroke: var(--dash-line,#e0e9f2); stroke-width: 1; stroke-dasharray: 3 4; }
+#app .water-dashboard .water-risk-grid .water-risk-baseline { stroke-dasharray: none; }
+#app .water-dashboard .water-risk-time-tick line { stroke: var(--dash-line,#e0e9f2); stroke-width: 1; }
+#app .water-dashboard .water-risk-fill-top { stop-color: var(--dash-accent,#227ce7); stop-opacity: .22; }
+#app .water-dashboard .water-risk-fill-bottom { stop-color: var(--dash-teal,#0bb5ab); stop-opacity: .015; }
+#app .water-dashboard .water-risk-line { stroke: var(--dash-accent,#227ce7); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 0; animation: water-risk-observed-draw .65s ease-out both; }
+#app .water-dashboard .water-risk-area { animation: water-risk-observed-appear .5s ease-out both; }
+#app .water-dashboard .water-risk-sample { fill: var(--r-surface,#fff); stroke: var(--dash-accent,#227ce7); stroke-width: 1.4; cursor: crosshair; }
+#app .water-dashboard .water-risk-sample:is(:hover,:focus-visible,.is-active) { r: 4.5px; fill: var(--dash-accent,#227ce7); stroke: var(--r-surface,#fff); stroke-width: 2; outline: 2px solid var(--dash-accent,#227ce7); outline-offset: 3px; }
+#app .water-dashboard .water-risk-hit { fill: transparent; stroke: none; cursor: crosshair; }
+#app .water-dashboard .water-risk-latest-halo { fill: var(--dash-accent,#227ce7); fill-opacity: .13; }
+#app .water-dashboard .water-risk-latest-dot { fill: var(--dash-accent,#227ce7); stroke: var(--r-surface,#fff); stroke-width: 2; }
+#app .water-dashboard .water-risk-latest { animation: water-risk-observed-appear .4s .2s ease-out both; pointer-events: none; }
+#app .water-dashboard .water-risk-tooltip { pointer-events: none; }
+#app .water-dashboard .water-risk-tooltip rect { fill: var(--r-surface,#fff); stroke: var(--dash-line,#e0e9f2); stroke-width: 1; filter: drop-shadow(0 3px 5px #152a4314); }
+#app .water-dashboard .water-risk-tooltip text { fill: var(--dash-muted,#687e94); font-size: 9px; }
+#app .water-dashboard .water-risk-tooltip .water-risk-tooltip-value { fill: var(--dash-ink,#152a43); font-size: 12px; font-weight: 700; }
+#app .water-dashboard .water-risk-period { display: flex; flex-wrap: wrap; gap: 4px 7px; margin: 6px 0 0; color: var(--dash-muted,#687e94); font-size: 10px; line-height: 1.65; font-variant-numeric: tabular-nums; }
+#app .water-dashboard .water-widget-detail-link { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--dash-line,#e0e9f2); color: var(--dash-accent,#227ce7); font-size: 12px; font-weight: 600; text-decoration: none; }
+#app .water-dashboard .water-widget-detail-link:hover { text-decoration: underline; text-underline-offset: 4px; }
+#app .water-dashboard .water-widget-detail-link > span { font-size: 17px; line-height: 1; }
+#app .water-dashboard .water-widget-empty { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 11px; min-height: 160px; padding: 28px 16px; text-align: center; }
+#app .water-dashboard .water-widget-empty svg { width: 40px; height: 40px; color: var(--dash-accent,#227ce7); opacity: .45; }
+#app .water-dashboard .water-widget-empty p { margin: 0; color: var(--dash-muted,#687e94); font-size: 12px; line-height: 1.7; }
+#app .water-dashboard .water-widget-error { margin: 16px 0; color: #bd354a; font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }
+#app .water-dashboard .water-widget-detail { display: grid; grid-template-columns: minmax(68px,.8fr) minmax(0,1.2fr); margin: 20px 0 0; font-size: 12px; line-height: 1.6; }
+#app .water-dashboard .water-widget-detail :is(dt,dd) { min-width: 0; margin: 0; padding: 11px 0; border-bottom: 1px solid var(--dash-line,#e0e9f2); overflow-wrap: anywhere; }
+#app .water-dashboard .water-widget-detail dt { padding-right: 12px; color: var(--dash-muted,#687e94); }
+#app .water-dashboard .water-widget-detail dd { color: var(--dash-ink,#152a43); font-weight: 550; text-align: right; }
+@keyframes water-risk-observed-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes water-risk-observed-appear { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  #app .water-dashboard :is(.water-risk-line,.water-risk-area,.water-risk-latest) { animation: none; }
+}

@@ -32,7 +32,7 @@
 | ITS 도로 CCTV 중계 | `/api/navigation/cctv` | `https://openapi.its.go.kr:9443/cctvInfo`, `server/navigation-api.mjs` | ITS 키 |
 | 시설 CCTV·번호판 인식 | `/api/cctv/{id}/stream`, `/api/cctv/plate/start`, `/api/cctv/plate/stop` | Spring 백엔드를 통한 시설 영상·AI 제어. `src/components/FacilityCctvViewer.vue` | 로그인 쿠키; 부산 도로 CCTV와 별개 |
 | 우편번호 검색 | 우편번호 SDK 로딩 | `https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js`, `src/services/postcode.ts` | 현재 코드에 별도 키 없음 |
-| 서울터널 연결 설정 | `/tunnel-source/...` | `vite.config.ts`에서 `https://seoultunnel.co.kr/usage/...`로 중계하도록 설정 | 현재 설정에 별도 키 없음 |
+| 신월여의지하도로 공개 CCTV | `/tunnel-source/getCctv-data.do`, `/tunnel-source/getCctvInfo-data.do` | `vite.config.ts`의 서울터널 중계와 `src/services/seoulTunnelCctv.ts`를 통해 목록·선택 영상 조회 | 없음 |
 
 ### 부산 CCTV의 현재 동작
 
@@ -42,9 +42,11 @@
 
 길찾기 화면 `CustomerDirections.vue`도 현재 `getNearbyBusanCctvs()`를 사용합니다. ITS 중계 API가 구현되어 있다는 이유로 이 화면이 ITS API를 호출하는 것은 아닙니다.
 
-### ‘신원’과 서울터널 확인
+### 신월여의지하도로 공개 CCTV
 
-현재 코드에서 ‘신원’이라는 연동 이름은 확인되지 않았습니다. 만약 서울터널을 뜻한다면 `/tunnel-source` 프록시 설정은 있지만, `src`에서 이를 호출하는 코드는 확인되지 않았습니다. 따라서 현재 화면에서 데이터를 가져온다고 확정할 수 없습니다. 다른 서비스나 팀원을 뜻한다면 해당 이름·주소를 추가로 확인해야 합니다.
+관리자 시설 상세의 **내부 CCTV 보기**는 [서울터널 공식 교통정보](https://seoultunnel.co.kr/usage/traffic.do)의 신월여의지하도로 공개 CCTV를 별도 창에 표시합니다. 선택한 부산 시설의 자체 카메라와 다른 영상이므로 화면에 출처와 시설 구분을 표시하며, 기존 시설 CCTV·OCR 화면은 그대로 유지합니다.
+
+공식 페이지와 같은 조회 전용 POST 요청을 사용합니다. 목록은 `lvl=1`, 영상 정보는 선택한 `cctvId`로 조회하고, 공식 플레이어와 같은 HTTPS HLS 주소로 재생합니다. 선택한 영상만 재생하며 창을 닫거나 카메라를 바꾸면 이전 재생을 정리합니다. 영상 연결 실패 시 다시 연결과 공식 사이트 링크를 제공합니다. 별도 인증키나 환경변수 추가는 필요하지 않습니다. 배포 환경에서도 기존 `/tunnel-source/*` 경로를 서울터널 `/usage/*`로 중계해야 합니다.
 
 ## 팀원 실행 순서
 

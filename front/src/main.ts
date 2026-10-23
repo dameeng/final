@@ -26,6 +26,13 @@ import './styles/visual-consistency.css'
 import './styles/mobile-layout.css'
 import './styles/theme-switch.css'
 import './styles/auth-fields.css'
+import './styles/reference-finish.css'
+import './styles/customer-premium.css'
+import './styles/water-dashboard.css'
+import './styles/admin-interface.css'
+import './styles/overlay-polish.css'
+import './styles/interface-motion.css'
+import './styles/interface-refinements.css'
 createApp(App)
   .component('PasswordInput', PasswordInput)
   .component('UiIcon', UiIcon)

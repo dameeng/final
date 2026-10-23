@@ -8,10 +8,12 @@ import BackendLayout from '../components/BackendLayout.vue'
 import { backend, queryString, asPage } from '../services/backend'
 import { dashboardReports } from '../data/dashboardReports'
 import { valueLabels } from '../data/backendResources'
+import { useApp } from '../stores/app'
+const app = useApp()
 const route = useRoute(),
   selected = ref(String(route.query.report || 'kpi')),
   report = computed(() => dashboardReports[selected.value] || dashboardReports.kpi!),
-  values = reactive({ regionId: '', underpassId: '', days: 7 }),
+  values = reactive({ regionId: String(route.query.regionId ?? (app.account?.role === 'REGIONAL_ADMIN' ? app.account.regions?.[0]?.id ?? '' : '')), underpassId: '', days: 7 }),
   rows = ref<any[]>([]),
   error = ref(''),
   loading = ref(false)

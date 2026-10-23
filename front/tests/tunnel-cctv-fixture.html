@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>신월여의 공개 CCTV 검증</title>
+<div id="app"></div>
+<script type="module">
+import { createApp, h } from 'vue'
+import TunnelCctvDialog from '../src/components/TunnelCctvDialog.vue'
+import '../src/styles/overlay-polish.css'
+createApp({ render: () => h(TunnelCctvDialog, { facilityName: '부산 시설' }) }).mount('#app')
+</script>
+</html>

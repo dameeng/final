@@ -9,6 +9,7 @@ import { backend, asPage } from '../services/backend'
 import { backendResources, valueLabels, type Action } from '../data/backendResources'
 import BackendResource from './backend-resource.vue'
 import FacilityCctvViewer from '../components/FacilityCctvViewer.vue'
+import TunnelCctvDialog from '../components/TunnelCctvDialog.vue'
 const route = useRoute(),
   id = computed(() => String(route.query.id || '')),
   facility = ref<Record<string, any>>(),
@@ -19,11 +20,19 @@ const route = useRoute(),
 let abort: AbortController | undefined
 async function load() {
   abort?.abort()
-  if (!id.value) return
+  if (!id.value) {
+    facility.value = undefined
+    cameras.value = []
+    return
+  }
   const request = new AbortController()
   abort = request
   loading.value = true
   error.value = ''
+  if (String(facility.value?.id ?? '') !== id.value) {
+    facility.value = undefined
+    cameras.value = []
+  }
   try {
     facility.value = await backend('/api/underpasses/' + encodeURIComponent(id.value), {
       signal: request.signal,
@@ -34,7 +43,10 @@ async function load() {
       }),
     ).items
   } catch (e) {
-    if (!request.signal.aborted) error.value = (e as Error).message
+    if (!request.signal.aborted) {
+      cameras.value = []
+      error.value = (e as Error).message
+    }
   } finally {
     if (!request.signal.aborted) loading.value = false
   }
@@ -95,6 +107,7 @@ function action(item: Action) {
           <b>{{facility.pendingReviewCount??'—'}}건</b>
         </div>
       </div>
+      <TunnelCctvDialog :facility-name="facility.name" />
       <FacilityCctvViewer :cameras="cameras" :underpass-id="id" :facility-name="facility?.name" />
       <button
         type="button"

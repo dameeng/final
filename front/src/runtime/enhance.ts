@@ -100,6 +100,11 @@ export function enhance(name: string, ctx: any) {
   theme.className = 'iconbtn theme-toggle'
   theme.innerHTML = uiIconSvg('theme')
   theme.setAttribute('aria-label', '라이트·다크 모드 전환')
+  const stopTheme = watch(() => store.theme, (value) => {
+    theme.setAttribute('aria-pressed', String(value === 'dark'))
+    theme.title = value === 'dark' ? '라이트 모드로 전환' : '다크 모드로 전환'
+  }, { immediate: true })
+  ctx.on(root, 'page-dispose', stopTheme)
   ctx.on(theme, 'click', () => store.themeToggle())
   root.querySelector('.hdr-r,.top .me,.top .in')?.append(theme)
   const bell = root.querySelector('#bell-btn')

@@ -30,7 +30,7 @@ const trafficMap = shallowRef<any>(), trafficMaps = shallowRef<any>()
 const mapControlsExpanded = ref(true)
 const currentRoute = useRoute()
 
-const props = withDefaults(defineProps<{ manager?: boolean; mapOnly?: boolean }>(), {
+const props = withDefaults(defineProps<{ manager?: boolean; mapOnly?: boolean; dashboardVisual?: boolean }>(), {
   manager: false,
 })
 const emit = defineEmits<{ controlChanged: [] }>()
@@ -262,12 +262,13 @@ const customerRoot = ref<HTMLElement>(),
   forecastError = ref('')
 function defaultDistrict() {
   const districts = (app.account?.regions || []).map((region) => busanDistrict(region.name))
-  return districts.length && districts.every((name) => name && name === districts[0])
-    ? districts[0]!
-    : ''
+  return districts.find(Boolean) || ''
 }
-const district = ref(props.manager && !props.mapOnly ? defaultDistrict() : ''),
+const district = ref(props.manager ? defaultDistrict() : ''),
   clusterFacilityIds = ref<string[]>([])
+watch(() => app.account?.regions?.map(region => `${region.id}:${region.name}`).join('|'), () => {
+  if (props.manager) district.value = defaultDistrict()
+})
 const managerPanelExpanded = ref(true),
   managerOperations = ref<InstanceType<typeof BackendResource>>()
 function selectManagerRow(id: string) {
@@ -647,11 +648,13 @@ async function collection(path: string, signal: AbortSignal): Promise<Json[]> {
   }
   throw new Error('전체 목록을 불러오지 못했습니다. 조회 범위를 확인해 주세요.')
 }
-// 검색어·상태 필터와 관계없이, 실제 시설이 등록된 구·군만 선택지에 표시합니다.
+// 담당 지역은 등록 시설이 아직 없어도 기본 선택을 유지합니다.
 const availableDistricts = computed(() => {
   const populated = new Set(
     facilities.value.map((facility) => busanDistrict(facility.assignedRegionName, facility.address)),
   )
+  if (props.manager)
+    for (const region of app.account?.regions || []) populated.add(busanDistrict(region.name))
   return busanDistricts.filter((name) => populated.has(name))
 })
 watch(availableDistricts, (names) => {
@@ -2171,6 +2174,7 @@ onBeforeUnmount(() => {
       <p v-if="mapError" class="manager-sdk-error" role="status">{{mapError}}</p>
 <ManagerMapPanel
         v-model:expanded="managerPanelExpanded"
+        :dashboard-visual="props.dashboardVisual"
         :facility="selected"
         :cluster="clusterRows"
         :state="selected?stateLabel(selected):''"

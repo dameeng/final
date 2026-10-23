@@ -28,6 +28,7 @@ const props = defineProps<{
   forecastPoints?: string
   forecastError?: string
   canControl: boolean
+  dashboardVisual?: boolean
 }>()
 const expanded = defineModel<boolean>('expanded', { default: true }),
   panel = ref<HTMLElement>(),
@@ -78,6 +79,7 @@ watch(
     ><header
       ><h2>{{cluster.length&&!facility?'묶음 시설 '+cluster.length+'곳':'선택 시설'}}</h2
       ><button
+        v-if="!facility"
         class="manager-detail-toggle"
         type="button"
         :aria-expanded="expanded"
@@ -88,9 +90,16 @@ watch(
         <UiIcon name="close" />
       </button></header
     ><div v-if="facility" class="manager-facility-heading"
-      ><strong>{{facility.name}}</strong
+        ><strong>{{facility.name}}</strong
+        ><button
+          class="manager-detail-toggle"
+          type="button"
+          :aria-expanded="expanded"
+          aria-controls="manager-map-panel-body"
+          @click="expanded=!expanded"
+          >{{expanded?'상세 접기 ▴':'상세 펼치기 ▾'}}</button
       ><p>{{facility.address||'주소 미제공'}}</p
-      ><div
+      ><div class="manager-facility-status"
         ><RiskLevelBadge :value="riskLevel||state" /><span>{{control}}</span
         ></div
       ></div
@@ -122,9 +131,11 @@ watch(
           ><svg
             v-if="riskPoints||forecastPoints"
             viewBox="0 0 300 130"
+            :class="{'risk-history-chart':dashboardVisual}"
             role="img"
             aria-label="선택 시설 위험도 관측 기록"
           >
+            <g v-if="dashboardVisual" class="dashboard-chart-grid" aria-hidden="true"><path v-for="y in [10,35,60,85]" :key="y" :d="`M20 ${y}H280`" fill="none" stroke-width=".6" /><text x="2" y="13" font-size="8" fill="currentColor" stroke="none">100</text><text x="6" y="63" font-size="8" fill="currentColor" stroke="none">50</text><text x="10" y="113" font-size="8" fill="currentColor" stroke="none">0</text></g>
             <path d="M20 10V110H280" fill="none" stroke="#c9ced6" />
             <line
               v-if="chartSeries?.boundary!=null"
@@ -148,6 +159,7 @@ watch(
             </text>
             <circle
               v-if="chartSeries?.lastObserved"
+              class="dashboard-observed-point"
               :cx="chartSeries.lastObserved.x"
               :cy="chartSeries.lastObserved.y"
               r="3"
@@ -162,15 +174,18 @@ watch(
               stroke-width="2"
               stroke-dasharray="2 3"
             />
-            <path :d="chartSeries?.observedPath" fill="none" stroke="#225f9b" stroke-width="3" />
+            <path :key="dashboardVisual?chartSeries?.samples.map(sample=>sample.time+':'+sample.score).join(';'):undefined" :d="chartSeries?.observedPath" class="dashboard-observed-line dashboard-chart-motion" fill="none" stroke="#225f9b" stroke-width="3" :stroke-linecap="dashboardVisual?'round':undefined" :stroke-linejoin="dashboardVisual?'round':undefined" />
             <path
               v-if="chartSeries?.forecastPath"
+              class="dashboard-forecast-line"
               :d="chartSeries.forecastPath"
               fill="none"
               stroke="#225f9b"
               stroke-width="3"
               stroke-dasharray="6 4"
-            /></svg
+            />
+            <g v-if="dashboardVisual"><circle v-for="sample in chartSeries?.samples" :key="sample.time" :cx="sample.x" :cy="sample.y" r="2.5" stroke-width="1.5" class="dashboard-chart-hover" :tabindex="sample.time===chartSeries?.samples.at(-1)?.time?0:-1" role="img" :aria-label="`${new Date(sample.time).toLocaleTimeString('ko-KR',{timeZone:'Asia/Seoul',hour:'2-digit',minute:'2-digit'})}, 위험 점수 ${sample.score}점`"><title>{{new Date(sample.time).toLocaleTimeString('ko-KR',{timeZone:'Asia/Seoul',hour:'2-digit',minute:'2-digit'})}} · {{sample.score}}점</title></circle></g>
+            </svg
           ><p v-else>조회된 관측 기록이 없습니다.</p
           ><p v-if="forecastPoints">실선: 관측 · 점선: 향후 3시간 예측</p
           ><p v-if="chartSeries?.carryPath" class="sub"

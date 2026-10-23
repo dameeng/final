@@ -23,6 +23,7 @@ import LiveMap from './pages/c-live-map.vue'
 import { resourceRoutes } from './data/backendResources'
 import AdminHandover from './components/AdminHandover.vue'
 import CustomerHeader from './components/CustomerHeader.vue'
+import CustomerArrivalAlert from './components/CustomerArrivalAlert.vue'
 import CustomerFooter from './components/CustomerFooter.vue'
 import MyPageLayout from './components/MyPageLayout.vue'
 import CustomerPageLayout from './components/CustomerPageLayout.vue'
@@ -133,12 +134,13 @@ function unmounted(vnode: VNode) {
 </script>
 <template>
   <div
-    :class="{'manager-app-shell':managerApp,'customer-shell':customer,'service-mobile':appService,'admin-shell':!customer&&!route.path.startsWith('/admin-app/')&&!route.path.startsWith('/customer-app/')}"
+    :class="{'admin-interface':!customer&&!route.path.startsWith('/customer-app/'),'manager-app-shell':managerApp,'customer-shell':customer,'customer-editorial':customer&&!['/c-map','/c-live-map'].includes(route.path),'customer-app-editorial':route.path.startsWith('/customer-app/')&&!['/customer-app/screen-5','/customer-app/screen-6'].includes(route.path),'service-mobile':appService,'admin-shell':!customer&&!route.path.startsWith('/admin-app/')&&!route.path.startsWith('/customer-app/')}"
   >
     <AdminAppHeader v-if="managerApp&&route.path!=='/admin-app/menu'" />
     <PwaStatus :hide-install="managerApp" v-if="/^\/(admin|customer)-app\//.test(route.path)" />
     <AdminHandover v-if="app.account?.role==='REGIONAL_ADMIN'" />
     <CustomerHeader v-if="customer" />
+    <CustomerArrivalAlert />
     <RouterView v-slot="{Component}">
       <CustomerPageLayout v-if="customer">
         <MyPageLayout v-if="route.path.startsWith('/my-')">

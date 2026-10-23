@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import '../styles/customer-information.css'
 const visionRoadmap = [
   {
     year: '2026',
@@ -25,15 +26,22 @@ const visionRoadmap = [
 ]
 </script>
 <template>
-  <main class="wire-page customer-content">
-    <h1>비전·로드맵</h1>
-    <p>서비스 추진 목표이며 완료된 성과가 아닙니다.</p>
-    <ol>
-      <li v-for="goal in visionRoadmap" :key="goal.year" class="routel-vision-row">
-        <strong>{{goal.year}}</strong>
-        <div>
-          <h2>{{goal.title}}</h2>
-          <p>{{goal.description}}</p>
+  <main class="wire-page customer-content page-c-information page-c-vision">
+    <header class="information-page-heading">
+      <p class="routel-company-eyebrow">OUR NEXT CHAPTER</p>
+      <h1>비전·로드맵</h1>
+      <p>안전한 이동을 위한 연결, 한 단계씩 더 촘촘하게.</p>
+    </header>
+    <div class="vision-roadmap-note">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7" /><path d="M12 11v6m0-10v.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
+      <span>서비스 추진 목표이며 완료된 성과가 아닙니다.</span>
+    </div>
+    <ol class="information-roadmap" aria-label="연도별 추진 목표">
+      <li v-for="(goal, index) in visionRoadmap" :key="goal.year" class="information-roadmap-row">
+        <div class="information-roadmap-year"><strong>{{ goal.year }}</strong><span>STEP 0{{ index + 1 }}</span></div>
+        <div class="information-roadmap-card">
+          <h2>{{ goal.title }}</h2>
+          <p>{{ goal.description }}</p>
         </div>
       </li>
     </ol>
