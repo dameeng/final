@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import UiIcon from '../components/UiIcon.vue'
+import '../styles/customer-information.css'
 const principles = [
   {
     number: '01',
@@ -19,13 +21,36 @@ const principles = [
 ]
 </script>
 <template>
-  <main class="wire-page customer-content page-c-company">
+  <main class="wire-page customer-content page-c-information page-c-company">
     <header class="routel-company-hero">
-      <p class="routel-company-eyebrow">ABOUT ROUTEL</p>
-      <h1>도로의 정보를 연결해,<br />안전한 이동을 돕습니다.</h1>
-      <div class="routel-company-lead">
-        <p>ROUTEL은 지하차도 통제 현황을 한곳에서 확인할 수 있도록 돕는 교통안전 정보 서비스입니다.</p>
-        <p>이동을 준비하는 이용자가 필요한 정보를 쉽게 찾고 이해할 수 있는 서비스를 지향합니다.</p>
+      <div class="routel-company-hero-copy">
+        <p class="routel-company-eyebrow">ABOUT ROUTEL</p>
+        <h1>도로의 정보를 연결해,<br />안전한 이동을 돕습니다.</h1>
+        <div class="routel-company-lead">
+          <p>ROUTEL은 지하차도 통제 현황을 한곳에서 확인할 수 있도록 돕는 교통안전 정보 서비스입니다.</p>
+          <p>이동을 준비하는 이용자가 필요한 정보를 쉽게 찾고 이해할 수 있는 서비스를 지향합니다.</p>
+        </div>
+      </div>
+      <div class="routel-company-visual" aria-hidden="true">
+        <svg viewBox="0 0 440 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="34" y="44" width="350" height="268" rx="32" class="company-map-base" />
+          <path d="M83 44v268M163 44v268M243 44v268M323 44v268M34 111h350M34 178h350M34 245h350" class="company-map-grid" />
+          <path d="M34 277 138 215l61-101 185-39M34 124l124 75 122 113" class="company-map-road-edge" />
+          <path d="M34 277 138 215l61-101 185-39M34 124l124 75 122 113" class="company-map-road" />
+          <path d="m90 244 48-29 61-101 115-24" class="company-map-route" />
+          <circle cx="138" cy="215" r="27" class="company-map-halo" />
+          <circle cx="138" cy="215" r="10" class="company-map-point" />
+          <circle cx="199" cy="114" r="8" class="company-map-point" />
+          <circle cx="314" cy="90" r="8" class="company-map-point" />
+          <rect x="230" y="209" width="174" height="91" rx="18" class="company-map-panel" />
+          <circle cx="260" cy="239" r="10" class="company-map-halo" />
+          <path d="m255 239 4 4 7-8" class="company-map-check" />
+          <path d="M283 239h94M253 268h47m12 0h49" class="company-map-copy" />
+          <rect x="50" y="69" width="97" height="37" rx="12" class="company-map-panel" />
+          <circle cx="68" cy="87" r="4" class="company-map-point" />
+          <path d="M82 87h46" class="company-map-copy" />
+        </svg>
+        <span>안전한 이동을 위한 연결</span>
       </div>
     </header>
     <section class="routel-company-context" aria-labelledby="company-context-title">
@@ -42,12 +67,14 @@ const principles = [
       <p class="routel-company-eyebrow">OUR SERVICES</p>
       <h2 id="company-services-title">이동 전에 확인하는 안전 정보</h2>
       <div class="routel-services">
-        <div>
+        <div class="company-service-card">
+          <span class="company-service-icon"><UiIcon name="location" /></span>
           <h3>지하차도 통제 현황</h3>
           <p>지하차도의 위치와 통제 여부를 지도에서 확인합니다.</p>
           <RouterLink to="/c-map">통제 현황 확인 →</RouterLink>
         </div>
-        <div>
+        <div class="company-service-card">
+          <span class="company-service-icon"><UiIcon name="bell" /></span>
           <h3>안전 안내</h3>
           <p>공지사항과 이용 안내를 통해 필요한 정보를 확인합니다.</p>
           <RouterLink to="/c-notice">알림마당 →</RouterLink>
@@ -71,6 +98,14 @@ const principles = [
       <p class="routel-company-direction-copy">ROUTEL은 이용자가 이동 전 상황을 살펴보고 안전한 이동을 준비할 수 있도록, 정보의 연결과 전달 방식을 꾸준히 다듬어가겠습니다.</p>
     </section>
     <section class="routel-company-mascot" aria-labelledby="company-mascot-title">
+      <div class="routel-company-mascot-mark" aria-hidden="true">
+        <svg viewBox="0 0 120 120" fill="none">
+          <path d="M60 15 25 28v31c0 22 16 36 35 47 19-11 35-25 35-47V28L60 15Z" fill="currentColor" opacity=".1" />
+          <path d="M60 25 35 35v24c0 16 11 27 25 36 14-9 25-20 25-36V35L60 25Z" stroke="currentColor" stroke-width="3" />
+          <path d="m47 59 9 9 19-21" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <span>ROU</span>
+      </div>
       <div class="routel-company-mascot-copy">
         <p class="routel-company-eyebrow">ROUTEL MASCOT</p>
         <h2 id="company-mascot-title">ROUTEL의 작은 안전 안내자, 루</h2>

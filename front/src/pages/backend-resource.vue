@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import TunnelCctvDialog from '../components/TunnelCctvDialog.vue'
 import { useNotificationGlow } from '../stores/notificationGlow'
 const notificationGlow = useNotificationGlow()
 import RiskLevelBadge from '../components/RiskLevelBadge.vue'
@@ -406,6 +407,17 @@ function actionEnabled(row: Record<string, any>) {
 function openDialog() {
   if (modal.value && !modal.value.open) modal.value.showModal()
 }
+let summaryBackdropDown = false
+function isSummaryBackdrop(event: MouseEvent | PointerEvent) {
+  const dialog = modal.value
+  if (!dialog || event.target !== dialog || mode.value !== 'detail' || saving.value) return false
+  const rect = dialog.getBoundingClientRect()
+  return event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom
+}
+function closeSummaryBackdrop(event: MouseEvent) {
+  if (summaryBackdropDown && isSummaryBackdrop(event)) modal.value?.close()
+  summaryBackdropDown = false
+}
 async function open(kind: string, row?: Record<string, any>, itemAction?: Action) {
   if (resource.value.detailFromRow && row)
     row = data.value.items.find((item) => String(item.id) === String(row?.id)) || row
@@ -470,6 +482,9 @@ async function open(kind: string, row?: Record<string, any>, itemAction?: Action
                 ? ''
                 : String(value)
     }
+    if (kind === 'create' && !values.regionId && formFields.value.some(field => field.key === 'regionId') &&
+        app.account?.role === 'REGIONAL_ADMIN' && app.account.regions?.length)
+      values.regionId = String(app.account.regions[0]!.id)
     void lookup(formFields.value, row)
     openDialog()
     if (publicNotices.value && kind === 'detail' && row) {
@@ -647,6 +662,9 @@ watch(
     for (const field of resource.value.filters || [])
       filters[field.key] =
         field.type === 'checkbox' ? route.query[field.key] === 'true' : route.query[field.key] || ''
+    if (app.account?.role === 'REGIONAL_ADMIN' && app.account.regions?.length &&
+        resource.value.filters?.some(field => field.key === 'regionId') && route.query.regionId == null)
+      filters.regionId = String(app.account.regions[0]!.id)
     if (resourceId.value === 'alerts' && alertLogReturn.path) {
       Object.assign(filters, alertLogReturn.filters)
       page.value = alertLogReturn.page
@@ -1085,6 +1103,8 @@ defineExpose({ open, load })
         class="service-modal"
         :class="{'service-app-modal':route.path.startsWith('/customer-app/')||route.path.startsWith('/admin-app/'),'restored-summary-drawer':restored&&mode==='detail'&&['facilities','customers'].includes(resourceId)}"
         @close="mode=''"
+        @pointerdown="summaryBackdropDown = isSummaryBackdrop($event)"
+        @click="closeSummaryBackdrop"
       >
         <form @submit.prevent="submit">
           <header>
@@ -1154,6 +1174,10 @@ defineExpose({ open, load })
               </template>
             </template>
           </dl>
+          <div v-if="mode==='detail'&&facilityList" class="service-actions">
+            <TunnelCctvDialog :facility-name="detail.name" />
+            <RouterLink :to="{path:route.path.startsWith('/admin-app/')?'/admin-app/screen-5':'/fac-detail',query:{id:String(detail.id),underpassId:String(detail.id),tab:'cctv'}}">시설 CCTV 보기</RouterLink>
+          </div>
           <div v-if="mode==='detail'&&canWrite" class="service-actions">
             <button v-if="canEditRow(detail)" type="button" @click="open('edit',detail)">수정</button>
             <button v-if="resource.remove" type="button" @click="open('remove',detail)">삭제</button>

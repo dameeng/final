@@ -15,6 +15,16 @@ import '../styles/dashboard-fixed.css'
 const route = useRoute(),
   app = useApp()
 const dashboardGrid = ref<HTMLElement>()
+const kpiIcons: Record<string, string> = {
+  facilityCount: 'M4 21V5h16v16M2 21h20M8 9h2m4 0h2M8 13h2m4 0h2M10 21v-4h4v4',
+  blockedCount: 'M5 3h14l3 5v8l-3 5H5l-3-5V8l3-5ZM8 12h8',
+  dangerLevelCount: 'M12 3 2 21h20L12 3ZM12 9v5m0 3v1',
+  pendingReviewCount: 'M9 3h6v4H9ZM7 5H4v16h16V5h-3M8 12h8m-8 4h5',
+  remainingCount: 'M5 10 7 4h10l2 6M3 11h18v8H3ZM6 19v2m12-2v2M6 14h2m8 0h2',
+}
+function riskFill(value: unknown) {
+  return value != null && Number.isFinite(Number(value)) ? Math.max(0, Math.min(100, Number(value))) + '%' : '0%'
+}
 const appLink = (web: string, mobile: string) =>
   route.path.startsWith('/admin-app/') ? mobile : web
 const region = computed(
@@ -128,7 +138,7 @@ onBeforeUnmount(() => {
 })
 </script>
 <template>
-  <BackendLayout class="page-admin-dashboard"
+  <BackendLayout class="page-admin-dashboard" :class="{'water-dashboard':!route.path.startsWith('/admin-app/')}"
     ><section class="restored-dashboard service-workspace"
       ><div class="crumb">종합 현황</div
       ><div class="page-head service-heading"
@@ -149,8 +159,9 @@ onBeforeUnmount(() => {
                   class="tile"
                   v-for="[key,label] in [['facilityCount','담당 시설'],['blockedCount','통제 중'],['dangerLevelCount','위험'],['pendingReviewCount','판별 대기'],['remainingCount','잔류 차량']]"
                   :key="key"
-                  ><small>{{label}}</small
-                  ><strong class="big">{{summary?.[key!]??'—'}}</strong></div
+                  :data-kpi="key"
+                  ><span v-if="!route.path.startsWith('/admin-app/')" class="dashboard-kpi-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path :d="kpiIcons[key!]" /></svg></span><small>{{label}}</small
+                  ><strong :key="String(summary?.[key!]??'empty')" class="big dashboard-value">{{summary?.[key!]??'—'}}</strong></div
                 ></div
               ></section
             ></div
@@ -161,7 +172,7 @@ onBeforeUnmount(() => {
             ><section class="card map-w widget-original-content" aria-label="지하차도 지도"
               ><div class="map-top"
                 ><h2>{{region}} 지하차도 지도</h2></div
-              ><LiveMap manager @control-changed="load" /></section></div
+              ><LiveMap manager :dashboard-visual="!route.path.startsWith('/admin-app/')" @control-changed="load" /></section></div
         ></div>
 <div class="dashboard-fixed-item fixed-events" @wheel="scrollEvents"
           ><div class="dashboard-fixed-content"
@@ -171,16 +182,17 @@ onBeforeUnmount(() => {
                 ><RouterLink to="/admin-reports?report=timeline">로그 전체 보기</RouterLink></div
               ><p v-if="!events.length">표시할 이벤트가 없습니다.</p
               ><ol class="tl" tabindex="0" aria-label="최근 이벤트 목록"
-                ><li v-for="event in pageEvents" :key="eventKey(event)" :class="{'notification-arrival-glow':isNewEvent(event)}"
+                ><li v-for="event in pageEvents" :key="eventKey(event)" :data-event="event.eventType" :data-risk="event.riskLevel"
+                  ><div class="timeline-event-card" :class="{'notification-arrival-glow':isNewEvent(event)}"
                   ><time :datetime="event.createdAt">{{displayDate(event.createdAt)}}</time
-                  ><div
+                  ><div class="timeline-event-body"
                     ><span
                       class="cat"
                       >{{valueLabels[event.eventType]||event.eventType||'이벤트'}}</span
                     ><strong>{{event.underpassName}}</strong
                     ><small
                       >{{event.reason||valueLabels[event.riskLevel]||event.riskLevel}}</small
-                    ></div
+                    ></div></div
                   ></li
                 ></ol
               ><nav v-if="events.length" class="event-pagination" aria-label="최근 이벤트 페이지"
@@ -200,12 +212,12 @@ onBeforeUnmount(() => {
                   ><RouterLink to="/admin-reports?report=margin">전체 보기</RouterLink></div
                 ><p v-if="!margins.length">위험 임박 시설이 없습니다.</p
                 ><ol class="rank"
-                  ><li v-for="(facility,index) in margins" :key="facility.underpassId"
+                  ><li v-for="(facility,index) in margins" :key="facility.underpassId" :style="{'--risk-fill':riskFill(facility.riskScore)}"
                     ><span class="n">{{index+1}}</span
                     ><RouterLink class="t" :to="'/fac-detail?id='+facility.underpassId"
                       >{{facility.underpassName
                       }}<small>위험 임계치까지 {{facility.margin}}점</small></RouterLink
-                    ><span class="sc">{{facility.riskScore}}</span></li
+                    ><span class="sc">{{facility.riskScore}}</span><span v-if="!route.path.startsWith('/admin-app/')" class="dashboard-score-track" aria-hidden="true"><i></i></span></li
                   ></ol
                 ></section
               ></div

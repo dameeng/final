@@ -17,3 +17,7 @@ releases/
 *.zip
 
 ROUTEL-PWA/
+
+# Local reference inspection tools and generated design previews
+.codex/pdf-tools/
+tests/design-preview/

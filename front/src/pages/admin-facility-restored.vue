@@ -6,6 +6,7 @@ import { useRoute } from 'vue-router'
 import BackendLayout from '../components/BackendLayout.vue'
 import BackendResource from './backend-resource.vue'
 import FacilityCctvViewer from '../components/FacilityCctvViewer.vue'
+import TunnelCctvDialog from '../components/TunnelCctvDialog.vue'
 import { riskGroup } from '../services/backendCatalog'
 import { riskChartSeries } from '../utils/risk-chart'
 import { useBackendEvents } from '../composables/useBackendEvents'
@@ -21,17 +22,29 @@ const facility = ref<Record<string, any>>(),
   forecast = ref<any[]>([]),
   forecastError = ref(''),
   cameras = ref<any[]>([]),
+  cameraError = ref(''),
   error = ref(''),
   loading = ref(false),
   operations = ref<InstanceType<typeof BackendResource>>()
 let controller: AbortController | undefined
 async function load() {
   controller?.abort()
-  if (!id.value) return
+  if (!id.value) {
+    facility.value = undefined
+    cameras.value = []
+    return
+  }
   const current = new AbortController()
   controller = current
   loading.value = true
   error.value = ''
+  cameraError.value = ''
+  if (String(facility.value?.id ?? '') !== id.value) {
+    facility.value = undefined
+    cameras.value = []
+    history.value = []
+    forecast.value = []
+  }
   try {
     facility.value = await backend('/api/underpasses/' + encodeURIComponent(id.value), {
       signal: current.signal,
@@ -51,6 +64,10 @@ async function load() {
     if (current.signal.aborted) return
     if (results[0]?.status === 'fulfilled') history.value = asPage<any>(results[0].value).items
     if (results[1]?.status === 'fulfilled') cameras.value = asPage<any>(results[1].value).items
+    else {
+      cameras.value = []
+      cameraError.value = '시설 CCTV 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'
+    }
     if (results[2]?.status === 'fulfilled') {
       forecast.value = Array.isArray(results[2].value) ? results[2].value : []
       forecastError.value = ''
@@ -129,7 +146,11 @@ function control() {
           </h1>
           <div class="sub">{{facility?.roadAddress}}</div>
         </div>
-        <RouterLink class="btn" to="/fac-list">← 목록으로</RouterLink>
+        <div class="facility-detail-actions">
+          <TunnelCctvDialog v-if="facility" :facility-name="facility.name" />
+          <RouterLink v-if="facility&&tab!=='cctv'" class="btn primary" :to="{path:'/fac-detail',query:{id,underpassId:id,tab:'cctv'}}">시설 CCTV 보기</RouterLink>
+          <RouterLink class="btn" to="/fac-list">← 목록으로</RouterLink>
+        </div>
       </div>
       <p v-if="!id">지하차도 목록에서 시설을 선택해 주세요.</p>
       <p v-if="error" role="alert" class="service-error">
@@ -267,7 +288,8 @@ function control() {
 <BackendResource v-else-if="tab==='equip'" embedded resource-key="cameras" />
 <BackendResource v-else-if="tab==='sign'" embedded resource-key="display" />
 <section v-else-if="tab==='cctv'" class="restored-cctv">
-          <FacilityCctvViewer :cameras="cameras" :underpass-id="id" :facility-name="facility?.name" />
+          <p v-if="cameraError" role="alert" class="service-error">{{cameraError}} <button type="button" @click="load">다시 시도</button></p>
+          <FacilityCctvViewer v-else :cameras="cameras" :underpass-id="id" :facility-name="facility?.name" />
         </section>
 <section v-else-if="tab==='settings'" class="restored-overview-grid">
           <section class="card">
@@ -299,3 +321,6 @@ function control() {
     </section>
   </BackendLayout>
 </template>
+<style scoped>
+.facility-detail-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+</style>

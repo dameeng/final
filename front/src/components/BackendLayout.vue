@@ -97,6 +97,7 @@ async function logout() {
             {{app.account?.name||'관리자'}}님</RouterLink>
           <button class="btn sm" v-if="app.account" @click="logout">로그아웃</button>
           <RouterLink v-else to="/admin-login">관리자 로그인</RouterLink>
+          <button class="ui-icon-button theme-toggle" type="button" aria-label="라이트·다크 모드 전환" :aria-pressed="app.theme==='dark'" :title="app.theme==='dark'?'라이트 모드로 전환':'다크 모드로 전환'" @click="app.themeToggle()"><UiIcon name="theme" /></button>
         </div>
       </header>
       <div v-if="open" class="backend-scrim scrim" @click="open=false"></div>

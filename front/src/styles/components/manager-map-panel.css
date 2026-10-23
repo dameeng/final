@@ -40,6 +40,9 @@
   grid-row: 2;
   justify-self: end;
 }
+.manager-map-panel>header:not(:has(.ui-icon-button)) .manager-detail-toggle {
+  grid-row: 1;
+}
 .manager-map-panel h2 {
   margin-right: auto;
   font-size: 14px;
@@ -60,32 +63,42 @@
   white-space: nowrap;
 }
 .manager-facility-heading {
-  padding: 12px 12px 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: 12px;
+  padding: 16px 16px 0;
   flex-shrink: 0;
 }
 .manager-facility-heading>strong {
+  min-width: 0;
   font-size: 17px;
   line-height: 1.5;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.manager-facility-heading>.manager-detail-toggle {
+  min-height: 32px;
+  padding: 6px 9px;
+  font-size: 11px;
+  line-height: 18px;
+  white-space: nowrap;
 }
 .manager-facility-heading p {
+  grid-column: 1 / -1;
   font-size: 11px;
   margin: 4px 0 8px;
   line-height: 1.5;
   color: var(--ink-sub,#64748b);
 }
-.manager-facility-heading>div {
+.manager-facility-status {
+  grid-column: 1 / -1;
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 11px;
-  margin-bottom: 10px;
-}
-.manager-facility-heading>div>button {
-  margin-left: auto;
-  border: 0;
-  min-height: 26px;
-  padding: 0 5px;
-  font-size: 18px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
 }
 .manager-state {
   padding: 3px 7px;
@@ -108,7 +121,7 @@
   min-height: 0;
   overflow: auto;
   overscroll-behavior: auto;
-  padding: 0 12px 12px;
+  padding: 0 16px 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -235,7 +248,7 @@
   .manager-facility-heading p {
     display: none;
   }
-  .manager-facility-heading>div {
+  .manager-facility-status {
     margin-top: 5px;
     margin-bottom: 6px;
   }

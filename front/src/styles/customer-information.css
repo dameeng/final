@@ -1,0 +1,153 @@
+/* Customer editorial pages only. Map and application screens keep their own layouts. */
+#app .customer-content.page-c-information {
+  min-width: 0;
+  padding: 0;
+  color: var(--r-ink);
+  background: transparent;
+}
+#app .page-c-information :is(h1,h2,h3,p) { word-break: keep-all; overflow-wrap: anywhere; }
+#app .page-c-information p { line-height: 1.8; color: var(--r-muted); }
+#app .page-c-information h1 { margin: 0 0 22px; font-size: clamp(30px,3.3vw,44px); line-height: 1.35; font-weight: 760; letter-spacing: -.045em; }
+#app .page-c-information h2 { margin: 0 0 18px; font-size: clamp(23px,2.1vw,30px); line-height: 1.45; font-weight: 720; letter-spacing: -.035em; }
+#app .page-c-information h3 { margin: 0 0 12px; font-size: 19px; line-height: 1.5; letter-spacing: -.02em; }
+#app .page-c-information .routel-company-eyebrow { margin: 0 0 18px; color: var(--r-accent); font-size: 12px; line-height: 1.5; font-weight: 750; letter-spacing: .12em; }
+#app .page-c-information > section { margin: 0 0 56px; }
+#app .page-c-information .information-page-heading { margin: 0 0 28px; padding: 12px 0 0; }
+#app .page-c-information .information-page-heading h1 { margin-bottom: 12px; }
+#app .page-c-information .information-page-heading > p:last-child { margin: 0; font-size: 16px; }
+
+/* Company: spacious copy, a continuous brand illustration, and compact service cards. */
+#app .page-c-company .routel-company-hero {
+  display: grid;
+  grid-template-columns: minmax(0,1.3fr) minmax(230px,.9fr);
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 56px;
+  padding: clamp(28px,3.3vw,48px);
+  border: 1px solid var(--r-line);
+  border-radius: 24px;
+  background: linear-gradient(125deg,var(--r-surface) 40%,var(--r-soft));
+  overflow: hidden;
+}
+#app .page-c-company .routel-company-lead { max-width: 580px; }
+#app .page-c-company .routel-company-lead p { margin-bottom: 14px; font-size: 15px; }
+#app .page-c-company .routel-company-lead p:last-child { margin-bottom: 0; }
+#app .page-c-company .routel-company-visual { min-width: 0; text-align: center; }
+#app .page-c-company .routel-company-visual svg { display: block; width: 100%; height: auto; overflow: visible; }
+#app .page-c-company .routel-company-visual > span { display: block; color: var(--r-muted); font-size: 12px; letter-spacing: .04em; }
+.company-map-base { fill: var(--r-selected); }
+.company-map-grid { stroke: var(--r-accent); stroke-opacity: .09; }
+.company-map-road-edge { stroke: var(--r-line); stroke-width: 18; }
+.company-map-road { stroke: var(--r-surface); stroke-width: 14; }
+.company-map-route { stroke: var(--r-accent); stroke-width: 4; stroke-linecap: round; }
+.company-map-halo { fill: var(--r-accent); fill-opacity: .12; }
+.company-map-point { fill: var(--r-accent); stroke: var(--r-surface); stroke-width: 4; }
+.company-map-panel { fill: var(--r-surface); stroke: var(--r-line); }
+.company-map-check { stroke: var(--r-accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.company-map-copy { stroke: var(--r-muted); stroke-opacity: .45; stroke-width: 4; stroke-linecap: round; }
+#app .page-c-company .routel-company-context { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); align-items: start; gap: 40px; padding: 0 4px; }
+#app .page-c-company .routel-company-context h2 { margin-bottom: 0; }
+#app .page-c-company .routel-company-prose { padding-top: 34px; }
+#app .page-c-company .routel-company-prose p { margin-bottom: 14px; }
+#app .page-c-company .routel-company-prose p:last-child { margin-bottom: 0; }
+#app .page-c-company .routel-services { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 20px; margin-top: 24px; }
+#app .page-c-company .company-service-card { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; padding: 28px; border: 1px solid var(--r-line); border-radius: 18px; background: var(--r-surface); box-shadow: 0 6px 24px #142d4c04; }
+#app .page-c-company .company-service-icon { display: grid; place-items: center; width: 44px; height: 44px; margin-bottom: 22px; border-radius: 13px; background: var(--r-selected); color: var(--r-accent); }
+#app .page-c-company .company-service-card p { margin-bottom: 24px; font-size: 15px; }
+#app .page-c-company .company-service-card a { margin-top: auto; color: var(--r-accent); font-size: 14px; font-weight: 650; text-decoration: none; }
+#app .page-c-company .company-service-card a:hover { text-decoration: underline; text-underline-offset: 4px; }
+#app .page-c-company .routel-company-principle-list { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 0; margin-top: 26px; padding: 0; border: 1px solid var(--r-line); border-radius: 18px; background: var(--r-surface); overflow: hidden; list-style: none; }
+#app .page-c-company .routel-company-principle-list li { padding: 28px 24px; }
+#app .page-c-company .routel-company-principle-list li + li { border-left: 1px solid var(--r-line); }
+#app .page-c-company .routel-company-number { display: block; margin-bottom: 26px; color: var(--r-accent); font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+#app .page-c-company .routel-company-principle-list h3 { font-size: 17px; }
+#app .page-c-company .routel-company-principle-list p { margin: 0; font-size: 14px; }
+#app .page-c-company .routel-company-direction { padding: 36px 40px; border-left: 3px solid var(--r-accent); border-radius: 0 18px 18px 0; background: var(--r-soft); }
+#app .page-c-company .routel-company-direction-copy { max-width: 700px; margin: 0; }
+#app .page-c-company .routel-company-mascot { display: grid; grid-template-columns: 160px minmax(0,1fr); align-items: center; gap: 32px; margin-bottom: 12px; padding-top: 10px; }
+#app .page-c-company .routel-company-mascot-mark { display: flex; flex-direction: column; align-items: center; padding: 20px; color: var(--r-accent); background: var(--r-selected); border-radius: 24px; }
+#app .page-c-company .routel-company-mascot-mark svg { width: 100%; max-width: 120px; height: auto; }
+#app .page-c-company .routel-company-mascot-mark span { font-size: 13px; font-weight: 750; letter-spacing: .22em; }
+#app .page-c-company .routel-company-mascot h2 { font-size: 23px; }
+#app .page-c-company .routel-company-mascot p { margin-bottom: 12px; font-size: 14px; }
+#app .page-c-company .routel-company-mascot p:last-child { margin-bottom: 0; }
+
+/* Roadmap: a readable timeline rather than an unbounded text list. */
+#app .page-c-vision .vision-roadmap-note { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; padding: 14px 18px; border: 1px solid var(--r-line); border-radius: 12px; background: var(--r-soft); color: var(--r-muted); font-size: 14px; line-height: 1.6; }
+#app .page-c-vision .vision-roadmap-note svg { width: 19px; height: 19px; flex: none; color: var(--r-accent); }
+#app .page-c-vision .information-roadmap { display: grid; gap: 18px; margin: 0; padding: 0; list-style: none; }
+#app .page-c-vision .information-roadmap-row { display: grid; grid-template-columns: 124px minmax(0,1fr); align-items: stretch; gap: 24px; padding: 0; }
+#app .page-c-vision .information-roadmap-year { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding-top: 26px; }
+#app .page-c-vision .information-roadmap-year::after { position: absolute; content: ''; width: 1px; top: 86px; bottom: -6px; left: 17px; background: var(--r-line); }
+#app .page-c-vision .information-roadmap-row:last-child .information-roadmap-year::after { display: none; }
+#app .page-c-vision .information-roadmap-year strong { color: var(--r-accent); font-size: 30px; line-height: 1; font-weight: 750; font-variant-numeric: tabular-nums; letter-spacing: -.04em; }
+#app .page-c-vision .information-roadmap-year span { color: var(--r-muted); font-size: 10px; letter-spacing: .1em; }
+#app .page-c-vision .information-roadmap-card { padding: 28px 32px; border: 1px solid var(--r-line); border-radius: 18px; background: var(--r-surface); }
+#app .page-c-vision .information-roadmap-card h2 { margin-bottom: 10px; font-size: 21px; }
+#app .page-c-vision .information-roadmap-card p { max-width: 720px; margin: 0; font-size: 15px; }
+
+/* Official external destinations: one consistent, intentionally compact card. */
+#app .page-c-links .information-link-card { display: grid; grid-template-columns: 220px minmax(0,1fr); gap: 40px; align-items: center; margin: 0; padding: 44px; border: 1px solid var(--r-line); border-radius: 24px; background: var(--r-surface); }
+#app .page-c-links .information-link-visual { display: grid; place-items: center; width: 100%; max-width: 220px; min-width: 0; aspect-ratio: 3 / 2; padding: 24px; background: #fff; border: 1px solid #dde5ee; border-radius: 16px; box-sizing: border-box; }
+/* Keep each official logo's own colors; the negative STraffic mark has a navy field. */
+#app .page-c-links .information-link-visual--dark { background: #193954; border-color: #294c68; }
+#app .page-c-links .information-partner-logo { display: block; width: 100%; height: auto; max-height: 88px; object-fit: contain; }
+#app .page-c-links .information-partner-logo[src$="/its.png"] { max-width: 155px; }
+:root[data-theme=dark] #app .page-c-links .information-link-visual--light { background: #f1f5f9; border-color: #d8e2ec; }
+:root[data-theme=dark] #app .page-c-links .information-link-visual--dark { background: #193954; border-color: #3a5a74; }
+#app .page-c-links .information-link-category { display: inline-block; margin-bottom: 12px; padding: 5px 10px; color: var(--r-accent); background: var(--r-selected); font-size: 12px; font-weight: 650; border-radius: 6px; }
+#app .page-c-links .information-link-copy h2 { margin-bottom: 12px; }
+#app .page-c-links .information-link-copy > p { max-width: 480px; margin-bottom: 24px; font-size: 15px; }
+#app .page-c-links .information-link-button { display: inline-flex; align-items: center; justify-content: center; gap: 16px; min-height: 48px; padding: 12px 18px; color: #fff; background: var(--r-primary); border: 1px solid transparent; border-radius: 10px; font-size: 14px; font-weight: 650; line-height: 1.5; text-decoration: none; box-shadow: 0 4px 12px #17487918; }
+#app .page-c-links .information-link-button:hover { filter: brightness(1.1); }
+#app .page-c-links .information-link-button svg { width: 18px; height: 18px; flex: none; }
+#app .page-c-links .information-link-copy small { display: block; margin-top: 14px; color: var(--r-muted); font-size: 12px; line-height: 1.6; }
+#app .page-c-information .information-screen-reader { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+@media (max-width: 1100px) {
+  #app .page-c-company .routel-company-hero { grid-template-columns: minmax(0,1fr); }
+  #app .page-c-company .routel-company-visual { display: none; }
+  #app .page-c-company .routel-company-context { gap: 28px; }
+  #app .page-c-company .routel-company-principle-list { grid-template-columns: minmax(0,1fr); }
+  #app .page-c-company .routel-company-principle-list li { display: grid; grid-template-columns: 36px minmax(0,1fr); gap: 6px 16px; padding: 24px; }
+  #app .page-c-company .routel-company-principle-list li + li { border-left: 0; border-top: 1px solid var(--r-line); }
+  #app .page-c-company .routel-company-number { grid-row: 1 / 3; margin-bottom: 0; padding-top: 3px; }
+  #app .page-c-company .routel-company-principle-list h3 { margin-bottom: 0; }
+  #app .page-c-company .routel-company-principle-list p { grid-column: 2; }
+  #app .page-c-links .information-link-card { grid-template-columns: 160px minmax(0,1fr); gap: 28px; padding: 32px; }
+}
+@media (max-width: 640px) {
+  #app .page-c-information h1 { font-size: 30px; }
+  #app .page-c-information h2 { font-size: 23px; }
+  #app .page-c-information > section { margin-bottom: 36px; }
+  #app .page-c-information .routel-company-eyebrow { margin-bottom: 14px; font-size: 11px; }
+  #app .page-c-information .information-page-heading { margin-bottom: 24px; }
+  #app .page-c-information .information-page-heading > p:last-child { font-size: 14px; }
+  #app .page-c-company .routel-company-hero { margin-bottom: 36px; padding: 26px 22px; border-radius: 18px; }
+  #app .page-c-company .routel-company-hero h1 { font-size: 27px; }
+  #app .page-c-company .routel-company-lead p { font-size: 14px; }
+  #app .page-c-company .routel-company-context { grid-template-columns: minmax(0,1fr); gap: 20px; padding: 0; }
+  #app .page-c-company .routel-company-prose { padding-top: 0; font-size: 14px; }
+  #app .page-c-company .routel-services { grid-template-columns: minmax(0,1fr); gap: 14px; }
+  #app .page-c-company .company-service-card { padding: 24px; }
+  #app .page-c-company .company-service-icon { margin-bottom: 18px; }
+  #app .page-c-company .routel-company-principle-list li { padding: 22px 18px; gap: 6px 10px; }
+  #app .page-c-company .routel-company-direction { padding: 26px 24px; font-size: 14px; }
+  #app .page-c-company .routel-company-mascot { grid-template-columns: minmax(0,1fr); gap: 20px; }
+  #app .page-c-company .routel-company-mascot-mark { width: 88px; padding: 12px; border-radius: 18px; }
+  #app .page-c-company .routel-company-mascot-mark span { font-size: 10px; }
+  #app .page-c-company .routel-company-mascot h2 { font-size: 21px; }
+  #app .page-c-vision .vision-roadmap-note { margin-bottom: 24px; padding: 13px 14px; font-size: 12px; }
+  #app .page-c-vision .information-roadmap { gap: 24px; }
+  #app .page-c-vision .information-roadmap-row { grid-template-columns: minmax(0,1fr); gap: 12px; }
+  #app .page-c-vision .information-roadmap-year { flex-direction: row; align-items: center; gap: 12px; padding: 0; }
+  #app .page-c-vision .information-roadmap-year strong { font-size: 26px; }
+  #app .page-c-vision .information-roadmap-year::after { display: none; }
+  #app .page-c-vision .information-roadmap-card { padding: 24px 22px; }
+  #app .page-c-vision .information-roadmap-card h2 { font-size: 19px; }
+  #app .page-c-vision .information-roadmap-card p { font-size: 14px; }
+  #app .page-c-links .information-link-card { grid-template-columns: minmax(0,1fr); gap: 24px; padding: 26px 22px; border-radius: 18px; }
+  #app .page-c-links .information-link-visual { width: 180px; max-width: 100%; padding: 20px; }
+  #app .page-c-links .information-link-copy > p { font-size: 14px; }
+  #app .page-c-links .information-link-button { width: 100%; }
+}

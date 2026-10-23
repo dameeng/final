@@ -56,7 +56,7 @@ const section = computed(() => route.path.split('/').at(-1)!.replace('screen-', 
     <div class="manager-app-titlebar">
       <AdminBackButton :fallback="fallback" />
       <strong>{{title}}</strong>
-      <button class="ui-icon-button" type="button" aria-label="라이트·다크 전환" @click="app.themeToggle()">
+      <button class="ui-icon-button theme-toggle" type="button" aria-label="라이트·다크 전환" :aria-pressed="app.theme==='dark'" @click="app.themeToggle()">
           <UiIcon name="theme" />
         </button>
     </div>

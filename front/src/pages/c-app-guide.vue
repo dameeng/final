@@ -104,20 +104,20 @@ const steps = computed(() =>
               role="img"
               aria-label="지하차도 위치를 보여주는 앱 화면 예시"
             >
-              <rect width="280" height="280" fill="#e8eee8" />
+              <rect width="280" height="280" fill="#edf2f7" />
               <path
                 d="M210-20c-80 70 80 95 20 160s-70 80-40 160"
                 fill="none"
-                stroke="#bddbe9"
+                stroke="#bfd8ee"
                 stroke-width="40"
               />
               <g fill="none" stroke="#fff" stroke-width="14">
                 <path d="m-20 50 320 170M25-20l120 320M-20 200 320-120" />
               </g>
-              <g fill="none" stroke="#e1caa0" stroke-width="4">
+              <g fill="none" stroke="#d7c8a9" stroke-width="4">
                 <path d="m-20 50 320 170M25-20l120 320M-20 200 320-120" />
               </g>
-              <g fill="#cfdcc9">
+              <g fill="#d4e2dd">
                 <rect x="16" y="92" width="35" height="35" rx="8" />
                 <rect x="150" y="20" width="25" height="40" rx="7" />
                 <rect x="65" y="210" width="25" height="32" rx="7" />
@@ -152,11 +152,17 @@ const steps = computed(() =>
         ><button
           v-for="feature in features"
           :key="feature.id"
+          :aria-label="feature.label"
           :aria-pressed="selected===feature.id"
           @click="selected=feature.id"
-          ><span>{{feature.number}}</span
-          >{{feature.label
-          }}<svg
+          ><span class="app-guide-feature-icon" aria-hidden="true"
+            ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <template v-if="feature.id==='map'"><path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2V5Z"/><path d="M9 3v16m6-14v16"/></template>
+              <template v-else-if="feature.id==='alert'"><path d="M6 8a6 6 0 0 1 12 0c0 6 2 7 2 9H4c0-2 2-3 2-9Z"/><path d="M10 21h4"/></template>
+              <template v-else><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M6 9v6a3 3 0 0 0 3 3h6M12 6h7m-3-3 3 3-3 3"/></template>
+            </svg></span
+          ><span class="app-guide-feature-label"><small>{{feature.number}}</small>{{feature.label}}</span
+          ><svg class="app-guide-feature-arrow"
             viewBox="0 0 24 24"
             width="20"
             height="20"
