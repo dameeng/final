@@ -89,10 +89,9 @@ onBeforeUnmount(() => {
         <label>생년월일<BirthDateInput v-model="birthDate" required />
         </label>
         <div class="pass-phone">
-          <span>전화번호 인증</span>
-          <input :value="phone" type="text" aria-label="인증 전화번호" disabled aria-describedby="pass-phone-lock-notice" />
+          <span>인증할 휴대전화</span>
+          <input :value="phone" type="text" aria-label="인증할 휴대전화" readonly />
         </div>
-        <p id="pass-phone-lock-notice" class="phone-lock-notice">이 화면에서는 전화번호를 변경할 수 없습니다. 다른 번호를 사용하려면 인증창을 닫고 이전 화면에서 수정해 주세요.</p>
         <div class="pass-agreements">
           <label class="pass-agree-all">
             <input v-model="allAgreed" type="checkbox" />필수 항목 전체 동의</label>

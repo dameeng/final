@@ -130,9 +130,9 @@ export const useCustomerNotifications = defineStore('customer-notifications', ()
     }
     seen.add(row.id)
   }
-  async function list(filters: { page: number; size?: number; category?: string; unreadOnly?: boolean }) {
+  async function list(filters: { page: number; category?: string; unreadOnly?: boolean }) {
     return asPage<CustomerNotification>(
-      await backend('/api/customers/me/notifications' + queryString({ ...filters, size: filters.size ?? 20 })),
+      await backend('/api/customers/me/notifications' + queryString({ ...filters, size: 20 })),
     )
   }
   async function read(id: number) {

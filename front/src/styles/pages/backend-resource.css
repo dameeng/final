@@ -83,19 +83,3 @@
   color: var(--ink-sub,#64748b);
   font-size: 12px;
 }
-.service-modal.service-app-modal {
-  box-sizing: border-box;
-  width: min(398px, calc(100vw - 24px));
-  max-width: calc(100vw - 24px);
-  max-height: calc(100dvh - 32px);
-  padding: 20px;
-  overflow: auto;
-  overscroll-behavior: contain;
-}
-.service-app-modal .service-detail {
-  grid-template-columns: 82px minmax(0, 1fr);
-}
-.service-app-modal .service-detail dd {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}

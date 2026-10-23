@@ -74,16 +74,8 @@
 }
 .wire-page.page-admin-dashboard .fixed-events .tl {
   max-height: none;
-  min-height: 0;
-  flex: 1;
-  overflow: auto;
+  overflow: visible;
 }
-.wire-page.page-admin-dashboard .fixed-events .widget-original-content { display:flex; flex-direction:column; min-height:0; box-sizing:border-box; }
-.fixed-events .wg-head { flex-shrink:0; }
-.event-pagination { display:flex; flex-shrink:0; align-items:center; justify-content:center; gap:14px; padding-top:12px; margin-top:10px; border-top:1px solid var(--line); }
-.event-pagination button { padding:6px 12px; border:1px solid var(--line); border-radius:7px; background:var(--surface); color:var(--ink); cursor:pointer; }
-.event-pagination button:disabled { opacity:.4; cursor:default; }
-.event-pagination span { font-size:12px; white-space:nowrap; }
 .page-admin-dashboard .facility-detail-body {
   display: flex;
   flex-direction: column;

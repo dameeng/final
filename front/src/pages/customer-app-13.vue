@@ -9,6 +9,9 @@ const app = useApp(),
   error = ref(''),
   member = computed(() => app.account?.role === 'customer')
 const menus = [
+  ['회원정보 수정', 'profile'],
+  ['비상 연락처', 'emergency'],
+  ['내 차량', 'cars'],
   ['알림 수신 설정', 'alerts'],
   ['내 문의', 'inquiries'],
   ['회원 탈퇴', 'withdraw'],
@@ -42,10 +45,6 @@ async function signout() {
       </RouterLink>
       <RouterLink to="/customer-app/faq">FAQ <span>›</span>
       </RouterLink>
-        <RouterLink :to="target('profile')">
-          내 정보 관리 <small v-if="!member">로그인 필요</small>
-          <span>›</span>
-        </RouterLink>
       <RouterLink v-for="[label,section] in menus" :key="section" :to="target(section!)">
         {{label}} <small v-if="!member">로그인 필요</small>
         <span>›</span>

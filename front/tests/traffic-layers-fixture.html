@@ -1,8 +1,9 @@
 <!doctype html><html lang="ko"><meta charset="utf-8"><body><div id="app"></div>
 <script type="module">
-import { createApp, h } from 'vue'
+import { createApp, h, ref } from 'vue'
 import TrafficMapLayers from '../src/components/TrafficMapLayers.vue'
-import '../src/styles/customer-map-live.css'
+import InternalUnderpassModal from '../src/components/InternalUnderpassModal.vue'
+import TunnelReferenceVideo from '../src/components/TunnelReferenceVideo.vue'
 const host = document.createElement('div'); host.id = 'map'; host.style.marginTop='200px'; document.body.append(host)
 let level = 5
 let overlap = false
@@ -15,7 +16,10 @@ const maps = {
   CustomOverlay: class { constructor(options) { this.content=options.content; host.append(this.content) } setMap(value) { if (!value) this.content.remove() } },
   event: { addListener(target,type,listener) { if (!listeners.has(type)) listeners.set(type,new Set()); listeners.get(type).add(listener) }, removeListener(target,type,listener) { listeners.get(type)?.delete(listener) }, preventMap() {} },
 }
-createApp({ setup() { return () => h('div', [
-  h('div', {class:'map-overlay-toolbar'}, [h(TrafficMapLayers, { map, maps, toggleControls:true })]),
+createApp({ setup() { const open = ref(false); return () => h('div', [
+  location.search.includes('tunnel=1') ? h(TunnelReferenceVideo) : null,
+  h(TrafficMapLayers, { map, maps }),
+  h('button', { onClick: () => open.value=true }, '내부 지하차도 보기'),
+  h(InternalUnderpassModal, { modelValue:open.value, 'onUpdate:modelValue':value => open.value=value, facilityId:61, facilityName:'테스트 지하차도' }),
 ]) } }).mount('#app')
 </script></body></html>

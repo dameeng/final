@@ -49,23 +49,13 @@ const historyPath = computed(() =>
 function locate() {
   const rect = button.value?.getBoundingClientRect()
   if (!rect) return
-  const shell = button.value?.closest<HTMLElement>('.service-app-layout,.manager-app-shell,.mobile-page .ph,.mobile-page')
-  const bounds = shell?.getBoundingClientRect()
-  const viewport = window.visualViewport
-  const viewportLeft = viewport?.offsetLeft || 0
-  const viewportTop = viewport?.offsetTop || 0
-  const viewportRight = viewportLeft + (viewport?.width || innerWidth)
-  const viewportBottom = viewportTop + (viewport?.height || innerHeight)
-  const leftEdge = Math.max(viewportLeft, bounds?.left ?? viewportLeft) + 12
-  const rightEdge = Math.min(viewportRight, bounds?.right ?? viewportRight) - 12
-  const bottomEdge = Math.min(viewportBottom, bounds?.bottom ?? viewportBottom) - 12
-  const width = Math.max(1, Math.min(360, rightEdge - leftEdge))
-  const top = Math.max(viewportTop + 8, Math.min(rect.bottom + 8, bottomEdge - 120))
+  const width = Math.min(360, innerWidth - 24),
+    top = rect.bottom + 8
   position.value = {
     top: top + 'px',
-    left: Math.max(leftEdge, Math.min(rect.right - width, rightEdge - width)) + 'px',
+    left: Math.max(12, Math.min(rect.right - width, innerWidth - width - 12)) + 'px',
     width: width + 'px',
-    maxHeight: Math.max(0, Math.min(420, bottomEdge - top)) + 'px',
+    maxHeight: Math.max(120, Math.min(420, innerHeight - top - 12)) + 'px',
   }
 }
 async function toggle() {
@@ -115,16 +105,12 @@ onMounted(() => {
   document.addEventListener('keydown', escape)
   window.addEventListener('resize', changed)
   window.addEventListener('scroll', changed, true)
-  window.visualViewport?.addEventListener('resize', changed)
-  window.visualViewport?.addEventListener('scroll', changed)
 })
 onBeforeUnmount(() => {
   document.removeEventListener('pointerdown', outside)
   document.removeEventListener('keydown', escape)
   window.removeEventListener('resize', changed)
   window.removeEventListener('scroll', changed, true)
-  window.visualViewport?.removeEventListener('resize', changed)
-  window.visualViewport?.removeEventListener('scroll', changed)
 })
 </script>
 <template>

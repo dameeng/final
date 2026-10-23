@@ -71,7 +71,7 @@ onBeforeUnmount(() => dispose?.())
           </svg>
           <span id="bell-count" class="count">3</span>
         </button>
-    <AccountName class="user" />
+    <span class="user">부산 · ○○○님</span>
       </div>
   <section id="bell-pop" class="bell-pop" hidden aria-label="최근 알림">
         <div class="pop-top">

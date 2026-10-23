@@ -1,9 +1,0 @@
-<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><div id="app"></div><script type="module">
-import {createApp,h} from 'vue'
-import {createRouter,createMemoryHistory} from 'vue-router'
-import DashboardWidgets from '../src/components/DashboardWidgets.vue'
-import '../src/styles/shared.css'
-import '../src/styles/visual-consistency.css'
-const router=createRouter({history:createMemoryHistory(),routes:[{path:'/:pathMatch(.*)*',component:{render:()=>null}}]})
-createApp({render:()=>h(DashboardWidgets,{accountId:'widget-test',summary:{facilityCount:45,blockedCount:2,pendingReviewCount:3,remainingCount:1},events:[],margins:[]})}).use(router).mount('#app')
-</script></html>

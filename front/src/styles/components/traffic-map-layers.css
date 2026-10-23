@@ -3,9 +3,7 @@
 .map-overlay-toolbar .traffic-layer-switches { flex-wrap:wrap; }
 .map-overlay-toolbar>.map-only-legend,
 .manager-live-map .map-overlay-toolbar>.manager-map-legend,
-.restored-dashboard .fixed-map .map-overlay-toolbar>.manager-map-legend { position:static; margin:0; max-width:100%; width:fit-content; box-sizing:border-box; flex-wrap:nowrap; overflow-x:auto; pointer-events:auto; }
-.map-overlay-toolbar>.map-only-legend>li,
-.map-overlay-toolbar>.manager-map-legend>li { flex:0 0 auto; white-space:nowrap; }
+.restored-dashboard .fixed-map .map-overlay-toolbar>.manager-map-legend { position:static; margin:0; max-width:100%; width:fit-content; box-sizing:border-box; flex-wrap:wrap; }
 button.traffic-device-marker.device-group { color:#365977; border-color:#a4bbcc; font-size:14px; font-weight:800; box-shadow:0 0 0 3px #ffffffb3,0 2px 6px #203c5333; }
 .traffic-device-list { list-style:none; padding:0; margin:16px 0 0; }
 .traffic-device-list li+li { border-top:1px solid #e7edf2; }
@@ -28,8 +26,7 @@ button.traffic-device-marker.vms { background:#fff; border-color:#d9cfac; color:
 button.traffic-device-marker:hover { background:#f6f9fc; box-shadow:0 3px 8px #203c5333; transform:translateY(-2px); }
 button.traffic-device-marker:focus-visible { outline:2px solid #287ed2; outline-offset:2px; }
 .traffic-device-dialog { border:0; border-radius:16px; padding:20px; width:min(640px,92vw); max-height:85dvh; overflow:auto; color:#243447; background:#fff; box-shadow:0 16px 60px #172b4d44; }
-.traffic-device-dialog { pointer-events:auto; }
-.traffic-device-dialog::backdrop { background:#10203388; pointer-events:auto; }
+.traffic-device-dialog::backdrop { background:#10203388; }
 .traffic-device-dialog header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .traffic-device-dialog header button { min-width:40px; min-height:40px; border:0; background:#f0f4f8; border-radius:50%; cursor:pointer; }
 .traffic-device-dialog h2 { font-size:20px; margin:12px 0; }.traffic-device-type { color:#2468a4; font-weight:700; font-size:13px; }

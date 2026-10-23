@@ -56,7 +56,7 @@ try {
     assert.match(await viewer.locator('a').first().getAttribute('href'), /ocr\?underpassId=1/)
     await viewer.locator('select').selectOption('200')
     assert.equal(await page.locator('video').count(), 0)
-    assert.equal(await viewer.locator('.facility-camera-links a').count(), 1)
+    assert.equal(await viewer.locator('a').count(), 1)
     assert.equal(
       await page.evaluate(() => document.documentElement.scrollWidth > innerWidth),
       false,

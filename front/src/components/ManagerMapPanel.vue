@@ -57,7 +57,7 @@ function scrollPanel(event: WheelEvent) {
   event.preventDefault()
 }
 
-defineEmits<{ select: [id: string]; clear: []; control: [index: number] }>()
+defineEmits<{ select: [id: string]; clear: []; control: [index: number]; cctv: [] }>()
 watch(
   () => props.facility?.id,
   async (id) => {
@@ -189,6 +189,7 @@ watch(
             @click="$emit('control',1)"
             >통제 해제</button
           ></div
+        ><button type="button" @click="$emit('cctv')">내부 지하차도 보기</button
         ><RouterLink :to="'/fac-detail?id='+facility.id">시설 상세 →</RouterLink></template
       ><ul v-else-if="cluster.length" class="manager-cluster-options"
         ><li v-for="row in cluster" :key="row.id"

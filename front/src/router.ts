@@ -4,7 +4,6 @@ import { useApp } from './stores/app'
 import { restoreSession } from './services/session'
 import { requiresCustomer, requiresManager } from './services/access'
 const routes = [
-  { path: '/admin-app/menu', component: pages['./pages/admin-app-menu.vue'] },
   {
     path: '/admin-app/:resource(ocr|reviews|transits)',
     component: pages['./pages/backend-resource.vue'],
@@ -119,7 +118,7 @@ const routes = [
   { path: '/admin-app/screen-10', component: pages['./pages/admin-app-10.vue'] },
   { path: '/admin-app/screen-11', component: pages['./pages/admin-app-11.vue'] },
   { path: '/admin-app/screen-12', component: pages['./pages/admin-app-12.vue'] },
-  { path: '/admin-app/screen-13', redirect: '/admin-app/notifications' },
+  { path: '/admin-app/screen-13', component: pages['./pages/admin-app-13.vue'] },
   { path: '/admin-app/screen-14', component: pages['./pages/admin-app-14.vue'] },
   { path: '/c-app-screens', redirect: '/customer-app/screen-5' },
   { path: '/m-app-screens', redirect: '/admin-app/screen-3' },

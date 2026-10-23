@@ -140,6 +140,9 @@ export function initialize(ctx) {
       document.querySelectorAll('#qchips .chip').forEach(function (x) {
         x.setAttribute('aria-pressed', String(x === c))
       })
+      ;[].forEach.call(document.querySelectorAll('#qtbl tbody tr'), function (tr) {
+        tr.hidden = c.dataset.st && tr.dataset.st !== c.dataset.st
+      })
     })
   })
 

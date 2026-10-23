@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useNotificationGlow } from '../stores/notificationGlow'
 const notificationGlow = useNotificationGlow()
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   useCustomerNotifications,
@@ -24,7 +24,6 @@ const route = useRoute(),
   busy = ref(false),
   error = ref(''),
   expanded = ref<number | null>(null)
-const pageSize = computed(() => route.path.startsWith('/customer-app/') ? 20 : 10)
 useBackendEvents(({ name, data }) => {
   if (name === 'connected') {
     void refresh()
@@ -40,12 +39,12 @@ useBackendEvents(({ name, data }) => {
   const previous = rows.value.find((item) => item.id === data.id)
   if (!previous) {
     total.value++
-    pages.value = Math.max(1, Math.ceil(total.value / pageSize.value))
+    pages.value = Math.max(1, Math.ceil(total.value / 20))
   }
   rows.value = [
     { ...data, read: previous?.read ?? false } as CustomerNotification,
     ...rows.value.filter((item) => item.id !== data.id),
-  ].slice(0, pageSize.value)
+  ].slice(0, 20)
 })
 let alive = true,
   sequence = 0
@@ -56,7 +55,6 @@ async function load() {
   try {
     const result = await notifications.list({
       page: page.value,
-      size: pageSize.value,
       category: category.value,
       unreadOnly: unreadOnly.value,
     })

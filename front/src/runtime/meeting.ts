@@ -1,7 +1,6 @@
 import facilities from '../data/c-map.json'
 import { workflows } from '../services/workflows'
 import { loadKakao, geocode } from '../services/kakao'
-import { tablePagination } from './table-pagination'
 export function meeting(name: string, ctx: any) {
   const root = ctx.root as HTMLElement
   root.querySelectorAll('.bot-fab').forEach((e) => e.remove())
@@ -45,9 +44,8 @@ export function meeting(name: string, ctx: any) {
       o.textContent = n
       select!.append(o)
     })
-    const paginate = tablePagination(ctx, name==='pm-equipment'?'#tbl':'#qtbl')
     const filter = () =>
-      paginate((row: HTMLTableRowElement) => {
+      rows.forEach((row) => {
         const facility =
           (!select!.value || row.textContent?.includes(select!.value)) &&
           (!ctx.router.currentRoute.value.query.pending || row.dataset.st !== 'done')
@@ -56,7 +54,7 @@ export function meeting(name: string, ctx: any) {
           root.querySelector<HTMLElement>('#qchips [aria-pressed="true"]')?.dataset.st || ''
         const level =
           root.querySelector<HTMLElement>('.chip[aria-pressed="true"][data-lv]')?.dataset.lv || ''
-        return !!(
+        row.hidden = !(
           facility &&
           (!type || row.dataset.type === type) &&
           (!state || row.dataset.st === state) &&
@@ -64,7 +62,7 @@ export function meeting(name: string, ctx: any) {
         )
       })
     ctx.on(root, 'change', () => ctx.setTimeout(filter, 0))
-    ctx.on(root, 'click', (event: Event) => {if(!(event.target as Element).closest('.service-pagination'))ctx.setTimeout(filter, 0)})
+    ctx.on(root, 'click', () => ctx.setTimeout(filter, 0))
     ctx.setTimeout(filter, 0)
     const dialog = root.querySelector<HTMLDialogElement>('#reg')
     if (dialog) {

@@ -10,9 +10,6 @@
   cursor: pointer;
 }
 .facility-cctv-layout { min-width:0; }
-.compact-cctv .facility-camera-row { display:block; }
-.compact-cctv .facility-camera-stage { aspect-ratio:1; min-height:0; }
-.compact-cctv .facility-camera-stage > img,.compact-cctv .facility-camera-stage :deep(video) { width:100%; height:100%; object-fit:contain; }
 .facility-camera-row { display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:24px; align-items:stretch; min-width:0; }
 .facility-ocr-column { position:relative; min-width:0; min-height:0; }
 .facility-ocr-column :deep(.facility-ocr-log) { position:absolute; inset:0; height:100%; max-height:none; }

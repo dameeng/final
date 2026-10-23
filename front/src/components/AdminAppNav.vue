@@ -16,7 +16,7 @@ const items = [
   },
   {
     label: '알림',
-    path: '/admin-app/notifications',
+    path: '/admin-app/screen-13',
     icon: uiIconPaths.bell,
   },
   { label: '더보기', path: '/admin-app/screen-14', icon: uiIconPaths.menu },
@@ -26,7 +26,7 @@ function active(path: string) {
   if (path.endsWith('screen-4'))
     return /^\/admin-app\/(screen-[4-8]|ocr|reviews|transits)$/.test(current)
   if (path.endsWith('screen-9')) return /^\/admin-app\/(screen-(9|10|11|12)|history)$/.test(current)
-  if (path === '/admin-app/notifications')
+  if (path.endsWith('screen-13'))
     return ['/admin-app/screen-13', '/admin-app/notifications'].includes(current)
   if (path.endsWith('screen-14'))
     return ['/admin-app/screen-14', '/admin-app/contacts', '/admin-app/document'].includes(current)

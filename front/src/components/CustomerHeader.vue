@@ -122,7 +122,7 @@ const menus = [
             <RouterLink to="/login">로그인</RouterLink>
             <RouterLink to="/signup">회원가입</RouterLink>
           </template>
-    <button class="ui-icon-button theme-toggle" type="button" aria-label="라이트·다크 모드 전환" @click="app.themeToggle()">
+    <button class="ui-icon-button" type="button" aria-label="라이트·다크 모드 전환" @click="app.themeToggle()">
           <UiIcon name="theme" />
         </button>
         </nav>
