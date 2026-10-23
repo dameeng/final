@@ -16,6 +16,7 @@ import com.mbc.puf.common.enums.PmLevel;
 public class PmEquipmentListItem {
 
     private Long equipId;
+    private String name;                // 설비 이름 (예: P-12-1)
     private PmEquipmentType type;
     private Long underpassId;
     private String underpassName;
@@ -32,10 +33,12 @@ public class PmEquipmentListItem {
     public PmEquipmentListItem() {
     }
 
-    // 화면 설비 코드 (예: P-02)
-    public String getCode() {
-        return PmCodes.code(type, equipId);
-    }
+    // 화면 설비 코드 = 설비 이름
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+
+    /** name 과 같은 값 (프런트가 code 를 쓰던 때와 호환) */
+    public String getCode() { return name; }
 
     // 7일 변화 (최근 점수 - 7일 안 가장 오래된 점수)
     public BigDecimal getScoreChange7d() {

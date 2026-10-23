@@ -60,6 +60,8 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.GET, "/api/its-cctvs", "/api/its-cctvs/nearby", "/api/its-vms", "/api/its-vms/*").permitAll()
 						// ---- 로그인 없이 조회 가능한 날씨 (CP-08) ----
 						.requestMatchers(HttpMethod.GET, "/api/weather").permitAll()
+						// ---- 로그인 없이 조회 가능한 신월여의지하도로 공개 CCTV (서버가 서울터널 제공처를 대신 조회) ----
+						.requestMatchers(HttpMethod.GET, "/api/tunnel-cctv/cameras", "/api/tunnel-cctv/cameras/*/stream").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/navigation/places", "/api/navigation/directions", "/api/navigation/weather").permitAll()
 						// ---- API 문서(Swagger UI) 화면과 문서 JSON. 화면만 열릴 뿐이고, 화면에서 실제 API를 호출할 때는
 						//                  각 API의 로그인 규칙이 그대로 적용된다. 운영에서는 springdoc.swagger-ui.enabled=false 로 끈다 ----

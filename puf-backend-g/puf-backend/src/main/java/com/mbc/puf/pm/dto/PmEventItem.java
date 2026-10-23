@@ -12,6 +12,7 @@ public class PmEventItem {
 
     private Long eventId;
     private Long equipId;
+    private String name;                // 설비 이름 (예: P-12-1)
     private PmEquipmentType type;
     private Long underpassId;
     private String underpassName;
@@ -26,9 +27,11 @@ public class PmEventItem {
     public PmEventItem() {
     }
 
-    public String getCode() {
-        return PmCodes.code(type, equipId);
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+
+    /** name 과 같은 값 (프런트가 code 를 쓰던 때와 호환) */
+    public String getCode() { return name; }
 
     public Long getEventId() { return eventId; }
     public void setEventId(Long eventId) { this.eventId = eventId; }

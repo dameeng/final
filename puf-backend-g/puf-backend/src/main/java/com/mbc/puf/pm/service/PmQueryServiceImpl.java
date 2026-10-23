@@ -49,7 +49,7 @@ public class PmQueryServiceImpl implements PmQueryService {
 
     // ---- 설비 목록·상세 공통 ----
     private static final String EQUIP_SELECT = """
-            SELECT e.id AS equip_id, CAST(e.type AS text) AS type, u.id AS underpass_id, u.name AS underpass_name,
+            SELECT e.id AS equip_id, CAST(e.type AS text) AS type, e.name AS name, u.id AS underpass_id, u.name AS underpass_name,
                    u.region_id AS region_id, ls.score AS score, CAST(ls.level AS text) AS level,
                    ls.predicted_at AS last_received_at, ls.reasons AS reasons_json,
                    oe.id AS open_event_id, CAST(oe.status AS text) AS open_event_status,
@@ -59,7 +59,7 @@ public class PmQueryServiceImpl implements PmQueryService {
             """;
     private static final String EQUIP_FROM = """
              FROM pm_equipment e
-             JOIN underpass u ON u.id = e.underpass_id AND u.is_deleted = FALSE
+             JOIN underpass u ON u.id = e.underpass_id AND u.is_deleted = FALSE AND e.is_deleted = FALSE
              LEFT JOIN LATERAL (SELECT s.score, s.level, s.predicted_at, CAST(s.reasons AS text) AS reasons
                                   FROM pm_score s WHERE s.equip_id = e.id
                                  ORDER BY s.predicted_at DESC LIMIT 1) ls ON TRUE
@@ -71,7 +71,7 @@ public class PmQueryServiceImpl implements PmQueryService {
 
     // ---- 점검 대기 ----
     private static final String EVENT_SELECT = """
-            SELECT ev.id AS event_id, e.id AS equip_id, CAST(e.type AS text) AS type, u.id AS underpass_id,
+            SELECT ev.id AS event_id, e.id AS equip_id, CAST(e.type AS text) AS type, e.name AS name, u.id AS underpass_id,
                    u.name AS underpass_name, u.region_id AS region_id, CAST(ev.level AS text) AS level, ev.score AS score,
                    CAST(ev.status AS text) AS status, ev.created_at AS created_at,
                    ls.score AS current_score, CAST(ls.level AS text) AS current_level
@@ -79,7 +79,7 @@ public class PmQueryServiceImpl implements PmQueryService {
     private static final String EVENT_FROM = """
              FROM pm_event ev
              JOIN pm_equipment e ON e.id = ev.equip_id
-             JOIN underpass u ON u.id = e.underpass_id AND u.is_deleted = FALSE
+             JOIN underpass u ON u.id = e.underpass_id AND u.is_deleted = FALSE AND e.is_deleted = FALSE
              LEFT JOIN LATERAL (SELECT s.score, s.level FROM pm_score s WHERE s.equip_id = e.id
                                  ORDER BY s.predicted_at DESC LIMIT 1) ls ON TRUE
              WHERE CAST(ev.status AS text) IN (:statuses)
@@ -87,7 +87,7 @@ public class PmQueryServiceImpl implements PmQueryService {
 
     // ---- 점검 이력 ----
     private static final String ACTION_SELECT = """
-            SELECT a.id AS action_id, ev.id AS event_id, e.id AS equip_id, CAST(e.type AS text) AS type,
+            SELECT a.id AS action_id, ev.id AS event_id, e.id AS equip_id, CAST(e.type AS text) AS type, e.name AS name,
                    u.id AS underpass_id, u.name AS underpass_name, u.region_id AS region_id, a.content AS content,
                    a.manager_id AS manager_id, emp.name AS manager_name, a.created_at AS created_at,
                    CAST(ev.level AS text) AS event_level, ev.score AS score_before,
@@ -98,7 +98,7 @@ public class PmQueryServiceImpl implements PmQueryService {
              FROM pm_action a
              JOIN pm_event ev ON ev.id = a.event_id
              JOIN pm_equipment e ON e.id = ev.equip_id
-             JOIN underpass u ON u.id = e.underpass_id AND u.is_deleted = FALSE
+             JOIN underpass u ON u.id = e.underpass_id AND u.is_deleted = FALSE AND e.is_deleted = FALSE
              LEFT JOIN manager m ON m.id = a.manager_id
              LEFT JOIN employee emp ON emp.id = m.employee_id
              WHERE 1 = 1

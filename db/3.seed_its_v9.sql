@@ -1,16 +1,17 @@
 -- =====================================================================
--- PUF ITS CCTV / 전광판(VMS) 시드 (seed_its_v8.sql)
--- 실행 전제: puf_db_schema_v8.sql → seed_all_v8.sql 실행 완료 (이 파일은 그 바로 다음에 실행, 그 사이에 camera/pm_equipment 를 추가하지 말 것)
+-- PUF ITS CCTV / 전광판(VMS) 시드 (3.seed_its_v9.sql)
+-- 실행 순서: 1.puf_db_schema_v9 → 2.seed_general_v9 → 3.seed_its_v9(이 파일) → 4.seed_pm_v9
+-- 실행 전제: 2.seed_general_v9 실행 완료 (이 파일은 그 바로 다음에 실행, 그 사이에 camera 를 추가하지 말 것)
+-- 예지보전 설비(CCTV·전광판 연결)·임계치는 4.seed_pm_v9 에서 넣음(이 파일에는 없음)
 -- 원본: its_cctv_all.csv(258행), its_vms_all.csv(121행)
 --   · its_cctv 241개: 원본 258행 중 좌표 0,0 이거나 스트림(hls) 없는 17행 제외
 --   · its_vms  실제 120개(좌표 0,0 인 강풍전광판 제외) + 더미 50개(근접 35 + 원거리 15)
--- ※ 지하차도 id: 1=초량지하차도(시연), 금호=2 … (seed_all_v8 의 id 순서 기준. 이 파일의 지하차도 id 는 모두 그 기준)
+-- ※ 지하차도 id: 1=초량지하차도(시연), 금호=2 … (2.seed_general_v9 의 id 순서 기준. 이 파일의 지하차도 id 는 모두 그 기준)
 -- 카메라(CCTV): seed_all 은 카메라를 일괄 생성하지 않는다(시연용 번호판 카메라 226~229 제외). 여기서 지하차도마다 필요한 만큼만 만든다.
 --   · 각 ITS CCTV 를 가장 가까운 지하차도 1곳에만 귀속(반경 1000m 이내) → 그 개수만큼 CCTV 카메라 (지하차도마다 개수 다름, 1대면 1대)
 --   · 귀속된 ITS CCTV 가 없는 지하차도는 더미 CCTV 카메라 1대(rtsp://cam-dummy-{지하차도id}.puf.local/stream)
 --   · 카메라 id 는 230번부터 지하차도 id 순서로 부여. 입구/출구(LPR) 카메라는 만들지 않음
--- 예지보전 VMS: 각 VMS 를 가장 가까운 지하차도 1곳에만 귀속(반경 300m 이내). 귀속 VMS 없는 지하차도는 근접 더미 VMS(100m 지점)를 대신 연결
---   · 첫 번째 전광판은 기존 DISPLAY 설비 행의 its_vms_id 를 채우고, 두 번째부터는 pm_equipment 136번~ 로 추가
+-- 예지보전 VMS: 귀속 VMS 없는 지하차도는 근접 더미 VMS(100m 지점)를 둠 (vms_underpass 에 들어감). 어느 전광판을 예지보전 설비로 쓰는지는 4.seed_pm_v9 가 정함
 -- 표출 매핑(vms_underpass): 지하차도 반경 1000m 이내 실제 VMS 전부(여러 지하차도와 겹침 허용) + 각 지하차도의 더미. dist 는 지하차도~전광판 직선거리(m)
 --   · 근접(300m 이하)/원거리(300m 초과 1000m 이하) 구분 기준은 백엔드 설정값으로 둠. 지하차도마다 근접·원거리 전광판이 최소 1개씩 있도록 없으면 더미 생성(원거리 더미는 950m 지점)
 -- =====================================================================
@@ -577,85 +578,7 @@ FROM underpass u
 WHERE NOT EXISTS (SELECT 1 FROM camera c WHERE c.underpass_id = u.id AND c.its_cctv_id IS NOT NULL)
 ORDER BY u.id;
 
--- =====================================================================
--- 5. pm_equipment — 카메라(230번~)마다 예지보전 CCTV 설비 1개 (seed_all 의 DISPLAY/PUMP 설비 1~90번 뒤에 이어 붙임)
--- =====================================================================
-INSERT INTO pm_equipment (underpass_id, type, cam_id)
-SELECT c.underpass_id, 'CCTV', c.id FROM camera c WHERE c.id > 229 ORDER BY c.id;   -- 역할(CCTV/FINAL_LPR/APPROACH_LPR)과 상관없이 ITS·더미 카메라마다 1개
-
--- =====================================================================
--- 6. pm_equipment — 지하차도별 DISPLAY 설비에 전광판(its_vms) 연결. 귀속 전광판이 없으면 근접 더미 연결
---    VALUES = (지하차도 id, its_vms id)
--- =====================================================================
-UPDATE pm_equipment e
-SET its_vms_id = m.its_vms_id
-FROM (VALUES
-  (2, 121),
-  (3, 122),
-  (4, 123),
-  (5, 124),
-  (6, 125),
-  (7, 126),
-  (8, 127),
-  (9, 128),
-  (10, 24),
-  (11, 7),
-  (12, 129),
-  (13, 130),
-  (1, 57),
-  (14, 131),
-  (15, 132),
-  (16, 133),
-  (17, 134),
-  (18, 135),
-  (19, 136),
-  (20, 117),
-  (21, 80),
-  (22, 137),
-  (23, 138),
-  (24, 139),
-  (25, 140),
-  (26, 141),
-  (27, 142),
-  (28, 143),
-  (29, 144),
-  (30, 145),
-  (31, 146),
-  (32, 30),
-  (33, 61),
-  (34, 147),
-  (35, 113),
-  (36, 148),
-  (37, 149),
-  (38, 150),
-  (39, 151),
-  (40, 152),
-  (41, 153),
-  (42, 100),
-  (43, 75),
-  (44, 154),
-  (45, 155)
-) AS m(underpass_id, its_vms_id)
-WHERE e.underpass_id = m.underpass_id AND e.type = 'DISPLAY' AND e.its_vms_id IS NULL;
-
--- 한 지하차도에 300m 안 전광판이 2개 이상 귀속되는 경우의 추가 DISPLAY 설비 1개
-INSERT INTO pm_equipment (underpass_id, type, its_vms_id) VALUES
-  (11, 'DISPLAY', 52);
-
--- =====================================================================
--- 7. pm_threshold — 아직 임계치가 없는 예지보전 설비(CCTV 설비 + 추가 DISPLAY 설비)의 임계치. seed_all 13번과 같은 기준
--- =====================================================================
-INSERT INTO pm_threshold (equip_id, level, min_score, updated_by)
-SELECT e.id, s.level::pm_level, s.min_score, (SELECT MIN(mr.manager_id) FROM manager_region mr WHERE mr.region_id = u.region_id)
-FROM pm_equipment e
-JOIN underpass u ON u.id = e.underpass_id
-JOIN (VALUES
-  ('CCTV',    '안전', 0), ('CCTV',    '주의', 40), ('CCTV',    '위험', 65),
-  ('DISPLAY', '안전', 0), ('DISPLAY', '주의', 50), ('DISPLAY', '위험', 80),
-  ('PUMP',    '안전', 0), ('PUMP',    '주의', 45), ('PUMP',    '위험', 75)
-) AS s(type, level, min_score) ON s.type = e.type::text
-WHERE NOT EXISTS (SELECT 1 FROM pm_threshold t WHERE t.equip_id = e.id)
-ORDER BY e.id, s.min_score;
+-- (5~7번: 예지보전 설비·전광판 연결·임계치는 4.seed_pm_v9 로 이동)
 
 -- =====================================================================
 -- 8. vms_underpass — 지하차도 ↔ 전광판 표출 매핑 132행 (반경 1000m 이내 실제 82쌍 + 더미 50쌍)

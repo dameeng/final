@@ -2,6 +2,7 @@ package com.mbc.puf.notification.service;
 
 import java.time.LocalDateTime;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -29,6 +30,7 @@ import com.mbc.puf.notification.entity.CustomerNotification;
 import com.mbc.puf.notification.entity.ManagerNotification;
 import com.mbc.puf.notification.repository.CustomerNotificationRepository;
 import com.mbc.puf.notification.repository.ManagerNotificationRepository;
+import com.mbc.puf.notification.dto.PushMessage;
 import com.mbc.puf.stream.StreamPayloads;
 import com.mbc.puf.stream.StreamPublisher;
 
@@ -49,11 +51,13 @@ public class NotificationServiceImpl implements NotificationService {
     private final ManagerRegionRepository managerRegionRepository;
     private final EntityManager em;
     private final StreamPublisher streamPublisher;
+    private final PushService pushService;
 
     public NotificationServiceImpl(CustomerNotificationRepository customerRepository,
                                    ManagerNotificationRepository managerRepository,
                                    ManagerRegionRepository managerRegionRepository, EntityManager em,
-                                   StreamPublisher streamPublisher) {
+                                   StreamPublisher streamPublisher, PushService pushService) {
+        this.pushService = pushService;
         this.customerRepository = customerRepository;
         this.managerRepository = managerRepository;
         this.managerRegionRepository = managerRegionRepository;
@@ -87,6 +91,9 @@ public class NotificationServiceImpl implements NotificationService {
         // 고객 수만큼 알림 행이 한 번에 생기므로 개인 이벤트 대신 공개 이벤트 1건만 보낸다.
         // 로그인한 고객의 프런트는 이걸 받으면 안 읽은 알림 개수를 다시 조회한다
         streamPublisher.publishPublic("notice-new", null, new StreamPayloads.NoticeNew(noticeId, noticeTitle, important));
+        // 앱·웹 푸시: 푸시 토큰을 등록한 모든 고객 기기에 한 번에 (커밋 뒤 비동기)
+        pushService.sendToAllAfterCommit(new PushMessage(important ? "[긴급] 새 공지" : "새 공지", noticeTitle,
+                Map.of("category", "NOTICE", "refType", "NOTICE", "refId", String.valueOf(noticeId))));
     }
 
     @Override
@@ -101,6 +108,8 @@ public class NotificationServiceImpl implements NotificationService {
         n.setRefId(inquiryId);
         customerRepository.save(n);
         pushToCustomer(n);
+        pushService.sendToCustomerAfterCommit(customerId, new PushMessage(n.getTitle(), inquiryTitle,
+                Map.of("category", "INQUIRY", "refType", "INQUIRY", "refId", String.valueOf(inquiryId))));
     }
 
     // ================= 고객 알림: 조회·읽음 =================
@@ -170,6 +179,16 @@ public class NotificationServiceImpl implements NotificationService {
         streamPublisher.publishToAdmins(regionId, "notification-new",
                 new StreamPayloads.ManagerNotificationNew(n.getId(), n.getCategory(), n.getRegionId(), n.getTitle(),
                         n.getBody(), n.getRefType(), n.getRefId(), createdOrNow(n.getCreatedAt())));
+        // 관리자 기기 푸시: 같은 대상(해당 지역 담당 관리자, null 이면 전체)에게 커밋 뒤 비동기로
+        Map<String, String> data = new HashMap<>();
+        data.put("category", String.valueOf(category));
+        if (refType != null) {
+            data.put("refType", refType);
+        }
+        if (refId != null) {
+            data.put("refId", String.valueOf(refId));
+        }
+        pushService.sendToManagersAfterCommit(regionId, new PushMessage(title, body, data));
     }
 
     @Override
@@ -281,4 +300,4 @@ public class NotificationServiceImpl implements NotificationService {
     private BusinessException notFound(Long id) {
         return new BusinessException(HttpStatus.NOT_FOUND, "존재하지 않는 알림입니다. id=" + id);
     }
-}
+}

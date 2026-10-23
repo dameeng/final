@@ -53,9 +53,6 @@ import tools.jackson.databind.ObjectMapper;
 public class PmIngestServiceImpl implements PmIngestService {
 
     private static final List<PmEventStatus> OPEN_STATUSES = List.of(PmEventStatus.CHECK_NEEDED, PmEventStatus.IN_PROGRESS);
-    // 임계치 행이 없는 설비에 쓰는 기본값 (프론트 표시 기준 0~39 안전 · 40~69 주의 · 70 이상 위험)
-    private static final BigDecimal DEFAULT_CAUTION = new BigDecimal("40");
-    private static final BigDecimal DEFAULT_DANGER = new BigDecimal("70");
     private static final Map<PmEquipmentType, String> TYPE_KO = Map.of(
             PmEquipmentType.CCTV, "CCTV", PmEquipmentType.DISPLAY, "전광판",
             PmEquipmentType.PUMP, "배수펌프", PmEquipmentType.WATER_LEVEL, "수위센서");
@@ -84,7 +81,8 @@ public class PmIngestServiceImpl implements PmIngestService {
     @Transactional(readOnly = true)
     public List<PmInternalEquipmentItem> getEquipments() {
         return equipmentRepository.findAllRows().stream()
-                .map(r -> new PmInternalEquipmentItem(r.getEquipId(), r.getType(), r.getUnderpassId(), r.getUnderpassName()))
+                .map(r -> new PmInternalEquipmentItem(r.getEquipId(), r.getName(), r.getType(), r.getUnderpassId(), r.getUnderpassName(),
+                        r.getSensorIntervalSec(), r.getDataStartedAt() == null ? null : r.getDataStartedAt().toLocalDateTime()))
                 .toList();
     }
 
@@ -169,19 +167,9 @@ public class PmIngestServiceImpl implements PmIngestService {
         return new PmScoreIngestResponse(items.size(), saved, duplicated, unknown, created, raised);
     }
 
-    /** 점수가 넘은 임계치 중 가장 높은 단계 */
+    /** 점수가 넘은 임계치 중 가장 높은 단계 (판정 규칙은 PmJudge, 임계치 수정 후 재판정과 같이 쓴다) */
     private PmLevel judge(BigDecimal score, List<PmThreshold> rows) {
-        if (rows == null || rows.isEmpty()) {
-            return score.compareTo(DEFAULT_DANGER) >= 0 ? PmLevel.DANGER
-                    : score.compareTo(DEFAULT_CAUTION) >= 0 ? PmLevel.CAUTION : PmLevel.SAFE;
-        }
-        PmLevel result = PmLevel.SAFE;
-        for (PmThreshold t : rows) {
-            if (score.compareTo(t.getMinScore()) >= 0 && t.getLevel().ordinal() > result.ordinal()) {
-                result = t.getLevel();
-            }
-        }
-        return result;
+        return PmJudge.judge(score, rows);
     }
 
     private void notify(EquipmentRow eq, PmEquipmentType type, PmLevel level, BigDecimal score, Long eventId, String title) {
