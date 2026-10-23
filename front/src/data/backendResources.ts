@@ -635,6 +635,8 @@ export const resourceRoutes: Record<string, string> = {
   '/my-alerts': 'my-alerts',
 }
 export const valueLabels: Record<string, string> = {
+  RISK_LEVEL_UP: '위험도 상승',
+  RISK_LEVEL_DOWN: '위험도 하락',
   NORMAL: '정상',
   BLOCKED: '통제',
   SAFE: '안전',
@@ -694,7 +696,7 @@ Object.assign(valueLabels, { ACTIVE: '활성', WITHDRAWN: '탈퇴' })
 
 resourceRoutes['/admin-app/screen-4'] = 'facilities'
 resourceRoutes['/admin-app/screen-5'] = 'facilities'
-resourceRoutes['/admin-app/screen-13'] = 'alerts'
+resourceRoutes['/admin-app/screen-13'] = 'manager-notifications'
 
 cameraFields[0]!.required = true
 

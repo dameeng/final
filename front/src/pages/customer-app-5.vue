@@ -82,7 +82,8 @@ const listed = computed(() =>
   shown.value.filter((x) => !cluster.value || cluster.value.includes(x.i)),
 )
 const current = computed(() => (selected.value === null ? null : facilities[selected.value])),
-  districts = [...new Set(Object.values(facilityDistricts))].filter((n) => n !== '구 확인 필요')
+  districts = [...new Set(facilities.map((f) => facilityDistricts[String(f[0])]))]
+    .filter((name): name is string => !!name && name !== '구 확인 필요')
 const stage = ref<HTMLElement>(),
   dragHeight = ref<number | null>(null)
 const sheetStyle = computed(() =>

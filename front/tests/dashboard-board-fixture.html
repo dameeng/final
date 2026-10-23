@@ -1,0 +1,25 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><div id="app"></div><script type="module">
+import {createApp,h} from 'vue'
+import {createPinia} from 'pinia'
+import {createRouter,createMemoryHistory} from 'vue-router'
+import Dashboard from '../src/pages/service-dashboard.vue'
+import UiIcon from '../src/components/UiIcon.vue'
+import '../src/styles/shared.css'
+import '../src/styles/meeting-layout.css'
+import '../src/styles/mypage.css'
+import '../src/styles/customer-navigation.css'
+import '../src/styles/full-width.css'
+import '../src/styles/responsive-fixes.css'
+import '../src/styles/admin-controls.css'
+import '../src/styles/dark-mode.css'
+import '../src/styles/admin-header.css'
+import '../src/styles/customer-qa.css'
+import '../src/styles/customer-responsive.css'
+import '../src/styles/customer-map-viewport.css'
+import '../src/styles/admin-restored.css'
+import '../src/styles/app-restored.css'
+import '../src/styles/ui-icons.css'
+import '../src/styles/visual-consistency.css'
+const router=createRouter({history:createMemoryHistory(),routes:[{path:'/:pathMatch(.*)*',component:{render:()=>null}}]})
+createApp({render:()=>h('div',{class:'admin-shell'},[h(Dashboard)])}).component('UiIcon',UiIcon).use(createPinia()).use(router).mount('#app')
+</script></html>

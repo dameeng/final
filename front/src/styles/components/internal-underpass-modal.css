@@ -1,3 +1,0 @@
-.internal-underpass-modal { width:min(720px,92vw); max-height:85dvh; overflow:auto; border:0; border-radius:16px; padding:20px; background:#fff; color:#17212b; }
-dialog::backdrop { background:#10203399; }
-header { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:16px; } h2 { margin:0; font-size:18px; } button,select { min-height:40px; } :deep(video) { width:100%; margin-top:16px; background:#17212b; }

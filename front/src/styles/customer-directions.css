@@ -262,6 +262,26 @@
   font-size: 24px;
   border: 0!important;
 }
+.navigation-search-title .navigation-search-toggle {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: auto;
+  min-width: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.navigation-search-toggle>span {
+  font-size: 22px;
+}
+#navigation-search-fields {
+  padding-top: 10px;
+}
 .navigation-search .directions-avoid {
   margin-top: 12px;
 }
@@ -670,6 +690,26 @@ dialog.navigation-detail-dialog[open] {
   max-height: 50dvh;
   object-fit: contain;
 }
+dialog.navigation-video-dialog,
+dialog.navigation-weather-dialog {
+  height: fit-content;
+}
+.navigation-video-dialog .navigation-detail-content,
+.navigation-weather-dialog .navigation-detail-content {
+  flex: 0 1 auto;
+  padding: 12px 16px 16px;
+}
+.navigation-video-dialog .directions-camera-player h3 {
+  margin: 8px 0 12px;
+}
+.navigation-video-dialog .directions-camera-player video {
+  display: block;
+  height: auto;
+  min-height: 0;
+  max-height: 45dvh;
+  aspect-ratio: 16 / 9;
+  background: #17212b;
+}
 .navigation-detail-dialog .directions-weather {
   margin: 0;
 }
@@ -726,4 +766,51 @@ dialog.navigation-detail-dialog[open] {
   .navigation-gps-error {
     bottom: 175px;
   }
+}
+.navigation-demo-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+.navigation-demo-controls label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.navigation-demo-controls select,
+.navigation-demo-controls button {
+  min-height: 36px;
+  padding: 4px 8px;
+  font: inherit;
+}
+.navigation-demo-controls small { flex-basis: 100%; }
+.navigation-summary {
+  touch-action: pan-x;
+}
+.navigation-body .navigation-summary .navigation-summary-handle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 32px;
+  padding: 0 0 6px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-sub,#64748b);
+  cursor: grab;
+  touch-action: none;
+}
+.navigation-summary-handle>span {
+  width: 36px;
+  height: 4px;
+  border-radius: 4px;
+  background: #91a1af;
+}
+.navigation-summary-handle small { font-size: 10px; }
+.navigation-summary.summary-collapsed>:not(.navigation-summary-handle):not(.navigation-arrival) {
+  display: none;
 }
