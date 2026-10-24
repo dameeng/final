@@ -16,6 +16,7 @@ const eventNames = [
   'display-change',
   'notification-new',
   'data-changed',
+  'pm-update', // 예지보전 점수 묶음 (관리자 스트림, 지역당 1번)
 ]
 // One stream for the app, restarted when the authenticated identity changes.
 export function useBackendStream() {

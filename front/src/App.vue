@@ -18,6 +18,10 @@ import ServiceNotifications from './pages/service-notifications.vue'
 import ServiceAccount from './pages/service-account.vue'
 import ServiceDashboard from './pages/service-dashboard.vue'
 import AdminFacilityRestored from './pages/admin-facility-restored.vue'
+import PmEquipmentLive from './pages/pm-equipment-live.vue'
+import PmEquipmentDetailLive from './pages/pm-equipment-detail-live.vue'
+import PmQueueLive from './pages/pm-queue-live.vue'
+import PmHistoryLive from './pages/pm-history-live.vue'
 import ServiceResource from './pages/backend-resource.vue'
 import LiveMap from './pages/c-live-map.vue'
 import { resourceRoutes } from './data/backendResources'
@@ -91,6 +95,10 @@ const serviceComponent = computed(() => {
     return ServiceResource
   if (['/c-map', '/customer-app/screen-5', '/customer-app/screen-6'].includes(path)) return LiveMap
   if (path === '/fac-detail') return AdminFacilityRestored
+  if (path === '/pm-equipment') return PmEquipmentLive
+  if (path === '/pm-equipment-detail') return PmEquipmentDetailLive
+  if (path === '/pm-queue') return PmQueueLive
+  if (path === '/pm-history') return PmHistoryLive
   if (path === '/admin-app/screen-5') return AdminAppFacilityLive
   if (path === '/admin-app/screen-3') return AdminAppOverview
   if (path === '/admin-dashboard') return ServiceDashboard
