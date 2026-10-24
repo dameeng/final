@@ -319,6 +319,8 @@ async function lookup(fields: Field[], row?: Record<string, any>) {
             ? '/api/shifts'
             : field.source === 'presets'
               ? '/api/display/presets'
+              : field.source === 'vms'
+                ? '/api/its-vms'
               : field.source === 'reasons'
                 ? '/api/control/reason-presets' +
                   (action.value?.path.endsWith('/release')
@@ -333,7 +335,10 @@ async function lookup(fields: Field[], row?: Record<string, any>) {
       if (alive && scope === resourceId.value && (!row || selected.value?.id === row.id))
         choices[field.key] = asPage<any>(result).items.map((item) => ({
           value: String(item.id),
-          label: item.name || item.content || `${item.cameraRole} · ${item.id}`,
+          label:
+            field.source === 'vms'
+              ? `${item.name}${item.dummy ? ' (시연용)' : ''} · ${item.id}`
+              : item.name || item.content || `${item.cameraRole} · ${item.id}`,
         }))
     } catch {
       /* Main list retains its own request error. */
@@ -444,6 +449,13 @@ async function open(kind: string, row?: Record<string, any>, itemAction?: Action
     if (row && resource.value.detail && !resource.value.detailFromRow) {
       detail.value = await backend(`${path(resource.value.path)}/${encodeURIComponent(row.id)}`)
     }
+    // 전광판: 기본 문구(defaultPage)와 자동 표출 페이지(manual=false)는 서버가 만들고 수정·삭제를 막는다
+    if (resourceId.value === 'display' && ['edit', 'remove'].includes(kind) && row && (row.defaultPage || row.manual === false))
+      throw new Error(
+        row.defaultPage
+          ? '기본 문구는 수정·삭제할 수 없어요. 새 페이지를 등록하면 기본 문구 대신 표출돼요.'
+          : '자동 표출 페이지는 수정·삭제할 수 없어요. 지하차도 상태가 바뀌면 자동으로 바뀌어요.',
+      )
     if (resourceId.value === 'my-inquiries' && kind === 'edit' && detail.value.status !== 'PENDING')
       throw new Error('답변이 등록된 문의는 수정할 수 없습니다.')
     if (
@@ -485,6 +497,9 @@ async function open(kind: string, row?: Record<string, any>, itemAction?: Action
     if (kind === 'create' && !values.regionId && formFields.value.some(field => field.key === 'regionId') &&
         app.account?.role === 'REGIONAL_ADMIN' && app.account.regions?.length)
       values.regionId = String(app.account.regions[0]!.id)
+    // 전광판 새 페이지: 지하차도 상세 탭에서 열었으면 그 지하차도를 원인 지하차도로 미리 고른다
+    if (kind === 'create' && resourceId.value === 'display' && !values.underpassId && route.query.underpassId)
+      values.underpassId = String(route.query.underpassId)
     void lookup(formFields.value, row)
     openDialog()
     if (publicNotices.value && kind === 'detail' && row) {
@@ -537,6 +552,8 @@ async function submit() {
       !String(values.content || '').trim()
     )
       throw new Error('문구를 선택하거나 입력해 주세요.')
+    if (resourceId.value === 'display' && mode.value === 'create' && !values.underpassId)
+      throw new Error('원인 지하차도를 선택해 주세요.')
     if (resourceId.value === 'customers' && mode.value === 'edit' && !acknowledge.value)
       throw new Error('주소·비상 연락처 교체 내용을 확인해 주세요.')
     let url = path(resource.value.path),
@@ -809,7 +826,7 @@ useBackendEvents((event) => {
     (resourceId.value === 'events' && name === 'control-change') ||
     (resourceId.value === 'display' &&
       name === 'display-change' &&
-      String(parents.equipId) === String(payload.equipId)) ||
+      String(parents.vmsId) === String(payload.vmsId)) ||
     (resourceId.value === 'alerts' &&
       ['risk-level-change', 'control-change', 'notification-new'].includes(name))
   )
