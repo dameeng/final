@@ -310,7 +310,7 @@ public class UnderpassServiceImpl implements UnderpassService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<ControlHistoryItem> getControlHistory(LoginUser loginUser, Long id, String kind,
-                                                              PeriodQuery period, PageQuery page) {
+                                                              String operatorName, PeriodQuery period, PageQuery page) {
         Underpass underpass = requireExistingUnderpass(id);
         scopeResolver.resolve(loginUser, ScopeQuery.of(null, id));   // 담당 지역 밖의 제어이력은 볼 수 없다(403)
         PageParams pageParams = page.toParams();
@@ -322,7 +322,9 @@ public class UnderpassServiceImpl implements UnderpassService {
         long total = 0;
 
         if (!"DISPLAY".equals(kind)) {
-            QueryConditions c = new QueryConditions().add("e.underpassId = ?", id).periodIfPresent("e.createdAt", period);
+            QueryConditions c = new QueryConditions().add("e.underpassId = ?", id)
+                    .managerNameIfPresent(operatorName, "e.operatorId")   // 처리한 직원 이름
+                    .periodIfPresent("e.createdAt", period);
             merged.addAll(top(c, "select e from UnderpassEvent e", " order by e.createdAt desc, e.id desc",
                     UnderpassEvent.class, needed).stream()
                     .map(e -> {
@@ -337,7 +339,10 @@ public class UnderpassServiceImpl implements UnderpassService {
         }
         if (!"EVENT".equals(kind)) {
             // 전광판 문구 변경 이력: display_history.underpass_id (자동 표출은 가장 가까운 전광판 것만 남는다)
+            String opLike = com.mbc.puf.common.util.LikePattern.lowerContainsOrNull(operatorName);
             String where = " WHERE dh.underpass_id = :id"
+                    + (opLike == null ? "" : " AND dh.changed_by IN (SELECT mm.id FROM manager mm JOIN employee ee ON ee.id = mm.employee_id"
+                    + " WHERE LOWER(ee.name) LIKE :opLike ESCAPE '\\')")
                     + (period != null && period.startAt() != null ? " AND dh.changed_at >= :fromAt" : "")
                     + (period != null && period.endAtExclusive() != null ? " AND dh.changed_at < :toAt" : "");
             String from = " FROM display_history dh";
@@ -352,6 +357,9 @@ public class UnderpassServiceImpl implements UnderpassService {
                 if (period != null && period.endAtExclusive() != null) {
                     q.setParameter("toAt", period.endAtExclusive());
                 }
+                if (opLike != null) {
+                    q.setParameter("opLike", opLike);
+                }
             }
             for (Object row : rowsQuery.getResultList()) {
                 Object[] r = (Object[]) row;
@@ -364,7 +372,24 @@ public class UnderpassServiceImpl implements UnderpassService {
         merged.sort(Comparator.comparing(ControlHistoryItem::getCreatedAt).reversed());
         int from = (int) Math.min(pageParams.getOffset(), merged.size());
         int to = Math.min(from + pageParams.getSize(), merged.size());
-        return new PageResponse<>(merged.subList(from, to), pageParams.getPage(), pageParams.getSize(), total);
+        List<ControlHistoryItem> pageItems = merged.subList(from, to);
+        fillOperatorNames(pageItems);
+        return new PageResponse<>(pageItems, pageParams.getPage(), pageParams.getSize(), total);
+    }
+
+    // 이 페이지 항목들의 처리 직원 이름을 한 번에 채운다 (항목마다 조회하지 않게 모아서)
+    private void fillOperatorNames(List<ControlHistoryItem> items) {
+        List<Long> ids = items.stream().map(ControlHistoryItem::getOperatorId).filter(java.util.Objects::nonNull)
+                .distinct().toList();
+        if (ids.isEmpty()) {
+            return;
+        }
+        java.util.Map<Long, String> names = new java.util.HashMap<>();
+        for (Object[] r : em.createQuery("select m.id, e.name from Manager m, Employee e"
+                + " where e.id = m.employeeId and m.id in :ids", Object[].class).setParameter("ids", ids).getResultList()) {
+            names.put((Long) r[0], (String) r[1]);
+        }
+        items.forEach(i -> i.setOperatorName(names.get(i.getOperatorId())));
     }
 
     // ---- 통과 기록 수동 완료 (단건) ----

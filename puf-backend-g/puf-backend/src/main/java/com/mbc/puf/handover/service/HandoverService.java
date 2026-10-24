@@ -21,7 +21,7 @@ public interface HandoverService {
     /** 작성: 지금 시점을 스냅샷으로 저장 */
     HandoverDetail create(LoginUser loginUser, HandoverCreateRequest request);
 
-    PageResponse<HandoverListItem> list(Long shiftId, PeriodQuery period, PageQuery page);
+    PageResponse<HandoverListItem> list(Long shiftId, String managerName, PeriodQuery period, PageQuery page);
 
     HandoverDetail get(Long id);
 

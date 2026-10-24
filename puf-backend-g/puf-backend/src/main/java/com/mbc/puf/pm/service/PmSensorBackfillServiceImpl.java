@@ -145,6 +145,8 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
         if (normalWeeks < 0 || normalWeeks > weeks) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, "normalWeeks는 0 이상 weeks 이하여야 합니다.");
         }
+        // 센서 스텁 및 다른 백필과 같은 트랜잭션 잠금으로 중복 대량 생성을 막는다.
+        em.createNativeQuery("SELECT TRUE FROM pg_advisory_xact_lock(731905210)").getSingleResult();
         LocalDateTime endAt = (endAtArg == null ? dbClock.now() : endAtArg).truncatedTo(ChronoUnit.SECONDS);
         if (endAt.isAfter(dbClock.now())) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, "endAt은 지금보다 이후일 수 없습니다.");
@@ -154,6 +156,12 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
         int skipped = 0;
         for (Spec spec : List.of(PUMP, CCTV, DISPLAY, WATER)) {
             long started = System.currentTimeMillis();
+            // 과거 버전에서 메타데이터만 빠졌어도 실제 센서가 있으면 다시 생성하지 않는다.
+            em.createNativeQuery("UPDATE pm_equipment e SET data_started_at = (SELECT MIN(s.recorded_at) FROM "
+                    + spec.table() + " s WHERE s.equip_id = e.id)"
+                    + " WHERE e.data_started_at IS NULL AND e.is_deleted = FALSE AND CAST(e.type AS text) = :type"
+                    + " AND EXISTS (SELECT 1 FROM " + spec.table() + " s WHERE s.equip_id = e.id)")
+                    .setParameter("type", spec.type().name()).executeUpdate();
             int typeWeeks = spec == PUMP && pumpWeeks > 0 ? Math.min(weeks, pumpWeeks) : weeks;
             int typeNormal = Math.min(normalWeeks, typeWeeks);
 
@@ -189,8 +197,7 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
                     .executeUpdate();
 
             em.createNativeQuery("UPDATE pm_equipment e SET data_started_at = (SELECT MIN(s.recorded_at) FROM " + spec.table()
-                    + " s WHERE s.equip_id = e.id) WHERE e.id IN (:ids) AND (e.data_started_at IS NULL OR e.data_started_at > "
-                    + "(SELECT MIN(s.recorded_at) FROM " + spec.table() + " s WHERE s.equip_id = e.id))")
+                    + " s WHERE s.equip_id = e.id) WHERE e.id IN (:ids)")
                     .setParameter("ids", targets).executeUpdate();
             results.add(new PmSensorBackfillResponse.TypeResult(spec.type(), targets.size(), rows, start,
                     System.currentTimeMillis() - started));
@@ -199,6 +206,68 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
     }
 
     // 종류별 번호(rk)는 지워지지 않은 같은 종류 전체에서 id 순으로 매긴다 (대상을 골라도 시나리오가 바뀌지 않게)
+    /**
+     * 실시간 시연 센서. 과거 백필과 같은 값 범위·설비별 시나리오를 재사용한다.
+     * DB 시계, 장비의 sensor_interval_sec, 조회 API와 같은 2000년 버킷 기준을 사용한다.
+     * 중단 중 생긴 공백은 최근 maxSamples개만 채운다 (장기 이력은 기존 backfill API 담당).
+     */
+    @Override
+    @Transactional
+    public int appendRecent(int maxSamples) {
+        if (maxSamples < 1 || maxSamples > 360) {
+            throw new IllegalArgumentException("maxSamples must be between 1 and 360");
+        }
+        // 여러 인스턴스가 동시에 떠도 생성 쿼리는 한 인스턴스만 실행한다.
+        if (!Boolean.TRUE.equals(em.createNativeQuery("SELECT pg_try_advisory_xact_lock(731905210)").getSingleResult())) {
+            return 0;
+        }
+        LocalDateTime now = dbClock.now();
+        int total = 0;
+        for (Spec spec : List.of(PUMP, CCTV, DISPLAY, WATER)) {
+            String times = """
+                    WITH ranked AS (
+                        SELECT e.id, e.sensor_interval_sec AS step,
+                               row_number() OVER (ORDER BY e.id) AS rk
+                          FROM pm_equipment e
+                          JOIN underpass u ON u.id = e.underpass_id AND u.is_deleted = FALSE
+                         WHERE e.is_deleted = FALSE AND CAST(e.type AS text) = :type
+                    ), eq AS (
+                        SELECT r.*,
+                               date_bin(make_interval(secs => r.step), CAST(:now AS timestamp),
+                                        TIMESTAMP '2000-01-01 00:00:00') AS until_at,
+                               (SELECT MAX(s.recorded_at) FROM {TABLE} s WHERE s.equip_id = r.id) AS last_at
+                          FROM ranked r
+                    )
+                    SELECT e.id, e.rk, g.t,
+                           CASE MOD(e.rk, 4) WHEN 1 THEN CAST(:ampD AS double precision)
+                                            WHEN 2 THEN CAST(:ampC AS double precision) ELSE 0.0 END AS s
+                      FROM eq e
+                     CROSS JOIN LATERAL generate_series(
+                         GREATEST(COALESCE(
+                             date_bin(make_interval(secs => e.step), e.last_at, TIMESTAMP '2000-01-01')
+                                 + make_interval(secs => e.step), e.until_at),
+                             e.until_at - make_interval(secs => e.step * (:maxSamples - 1))),
+                         e.until_at, make_interval(secs => e.step)) AS g(t)
+                    """.replace("{TABLE}", spec.table());
+            String sql = spec.insertSql().replace("{SEV}", times).replace("{N}", NOISE);
+            int added = em.createNativeQuery(sql)
+                    .setParameter("type", spec.type().name()).setParameter("now", now)
+                    .setParameter("ampD", spec.ampDanger()).setParameter("ampC", spec.ampCaution())
+                    .setParameter("maxSamples", maxSamples).executeUpdate();
+            total += added;
+            // 새 설비 또는 기존 메타데이터가 비어 있는 설비의 시작 시각을 기록한다.
+            if (added > 0) {
+                em.createNativeQuery("UPDATE pm_equipment e SET data_started_at = (SELECT MIN(s.recorded_at) FROM "
+                        + spec.table() + " s WHERE s.equip_id = e.id)"
+                        + " WHERE e.data_started_at IS NULL AND CAST(e.type AS text) = :type"
+                        + " AND e.is_deleted = FALSE AND EXISTS (SELECT 1 FROM " + spec.table()
+                        + " s WHERE s.equip_id = e.id)")
+                        .setParameter("type", spec.type().name()).executeUpdate();
+            }
+        }
+        return total;
+    }
+
     private static final String RANKED = """
             SELECT r.id, r.rk,
                    CASE MOD(r.rk, 4) WHEN 1 THEN 'D' WHEN 2 THEN 'D' WHEN 0 THEN 'S' ELSE 'N' END AS kind,
@@ -213,7 +282,7 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
     private List<Long> targets(Spec spec, boolean reset, List<Long> equipIds) {
         String sql = "SELECT e.id FROM pm_equipment e JOIN underpass u ON u.id = e.underpass_id AND u.is_deleted = FALSE"
                 + " WHERE e.is_deleted = FALSE AND CAST(e.type AS text) = :type"
-                + (reset ? "" : " AND e.data_started_at IS NULL")
+                + (reset ? "" : " AND NOT EXISTS (SELECT 1 FROM " + spec.table() + " s WHERE s.equip_id = e.id)")
                 + (equipIds == null || equipIds.isEmpty() ? "" : " AND e.id IN (:ids)") + " ORDER BY e.id";
         var q = em.createNativeQuery(sql).setParameter("type", spec.type().name());
         if (equipIds != null && !equipIds.isEmpty()) {

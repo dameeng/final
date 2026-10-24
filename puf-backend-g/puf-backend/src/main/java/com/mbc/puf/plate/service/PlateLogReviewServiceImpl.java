@@ -79,7 +79,8 @@ public class PlateLogReviewServiceImpl implements PlateLogReviewService {
     @Transactional(readOnly = true)
     public PageResponse<PlateLogListItem> getPlateLogs(LoginUser loginUser, ScopeQuery scope,
                                                        ReviewStatus reviewStatus, RecognitionStatus recognitionStatus,
-                                                       VehicleQuery vehicle, PeriodQuery period, PageQuery page) {
+                                                       VehicleQuery vehicle, String reviewerName, String customerName,
+                                                       PeriodQuery period, PageQuery page) {
         // REGIONAL_ADMIN은 본인 담당 지역 소속 지하차도만 (Scope 공통 규칙)
         ScopeQuery resolved = scopeResolver.resolve(loginUser, scope);
         QueryConditions c = new QueryConditions()
@@ -88,6 +89,8 @@ public class PlateLogReviewServiceImpl implements PlateLogReviewService {
                 .eqIfPresent("p.reviewStatus", reviewStatus)
                 .eqIfPresent("p.recognitionStatus", recognitionStatus)
                 .carNumIfPresent(vehicle.getCarNum(), "p.detectedNum", "p.correctedNum")   // 인식값·정정값 둘 다
+                .managerNameIfPresent(reviewerName, "p.reviewedBy")   // 검토한 직원 이름
+                .carOwnerNameIfPresent(customerName, "p.carId")   // 매칭된 차량의 고객 이름
                 .periodIfPresent("p.detectedAt", period);
 
         // 판별대기 목록은 마감 임박한 것부터, 그 외에는 최근 인식순
@@ -96,7 +99,7 @@ public class PlateLogReviewServiceImpl implements PlateLogReviewService {
                 : " order by p.detectedAt desc, p.id desc";
 
         var now = dbClock.now();   // 남은 시간도 DB 시계 기준 (마감 판정과 같은 시계)
-        return PagedQuery.fetch(em, "select p, c.underpassId, u.name" + FROM, "select count(p)" + FROM, c, orderBy,
+        PageResponse<PlateLogListItem> result = PagedQuery.fetch(em, "select p, c.underpassId, u.name" + FROM, "select count(p)" + FROM, c, orderBy,
                 Object[].class, row -> {
                     PlateLog p = (PlateLog) row[0];
                     return new PlateLogListItem(p.getId(), p.getCameraId(), (Long) row[1], (String) row[2],
@@ -105,6 +108,36 @@ public class PlateLogReviewServiceImpl implements PlateLogReviewService {
                             p.getReviewedBy(), p.getReviewedAt(), p.getDetectedAt(),
                             com.mbc.puf.stream.StreamPayloads.remainingSeconds(p.getReviewStatus(), p.getReviewDeadline(), now));
                 }, page.toParams());
+        fillNames(result.getItems());
+        return result;
+    }
+
+    // 이 페이지 항목들의 검토 직원 이름·매칭 고객 이름을 한 번에 채운다 (항목마다 조회하지 않게 모아서)
+    private void fillNames(List<PlateLogListItem> items) {
+        List<Long> managerIds = items.stream().map(PlateLogListItem::getReviewedBy).filter(java.util.Objects::nonNull)
+                .distinct().toList();
+        List<Long> carIds = items.stream().map(PlateLogListItem::getCarId).filter(java.util.Objects::nonNull)
+                .distinct().toList();
+        java.util.Map<Long, String> managers = new java.util.HashMap<>();
+        java.util.Map<Long, String> customers = new java.util.HashMap<>();
+        if (!managerIds.isEmpty()) {
+            for (Object[] r : em.createQuery("select m.id, e.name from Manager m, Employee e"
+                    + " where e.id = m.employeeId and m.id in :ids", Object[].class)
+                    .setParameter("ids", managerIds).getResultList()) {
+                managers.put((Long) r[0], (String) r[1]);
+            }
+        }
+        if (!carIds.isEmpty()) {
+            for (Object[] r : em.createQuery("select cr.id, cu.name from Car cr, Customer cu"
+                    + " where cu.id = cr.customerId and cr.id in :ids", Object[].class)
+                    .setParameter("ids", carIds).getResultList()) {
+                customers.put((Long) r[0], (String) r[1]);
+            }
+        }
+        for (PlateLogListItem item : items) {
+            item.setReviewerName(managers.get(item.getReviewedBy()));
+            item.setCustomerName(customers.get(item.getCarId()));
+        }
     }
 
     @Override

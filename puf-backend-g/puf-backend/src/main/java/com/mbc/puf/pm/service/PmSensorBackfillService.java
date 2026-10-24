@@ -20,4 +20,7 @@ public interface PmSensorBackfillService {
      * @param equipIds    대상 설비 (null 이면 삭제되지 않은 전체)
      */
     PmSensorBackfillResponse backfill(Integer weeks, Integer normalWeeks, LocalDateTime endAt, boolean reset, List<Long> equipIds);
+    /** 최신 센서를 장비당 maxSamples개까지 추가. 기존 데이터는 수정하지 않는다. */
+    int appendRecent(int maxSamples);
 }
+

@@ -64,13 +64,14 @@ public class HandoverController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(handoverService.create(loginUser, request)));
     }
 
-    @Operation(summary = "인수인계 목록", description = "근무일(startDate~endDate) 최근 순. shiftId 로 근무조 필터")
+    @Operation(summary = "인수인계 목록", description = "근무일(startDate~endDate) 최근 순. shiftId 로 근무조, managerName 으로 작성자 이름(부분일치) 필터")
     @GetMapping
     public ApiResponse<PageResponse<HandoverListItem>> list(
             @RequestParam(name = "shiftId", required = false) Long shiftId,
+            @RequestParam(name = "managerName", required = false) String managerName,
             @ModelAttribute PeriodQuery period,
             @ModelAttribute PageQuery page) {
-        return ApiResponse.ok(handoverService.list(shiftId, period, page));
+        return ApiResponse.ok(handoverService.list(shiftId, managerName, period, page));
     }
 
     @Operation(summary = "인수인계 상세", description = "저장된 집계 스냅샷 + 메모")

@@ -11,6 +11,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.SecurityFilterChain;
+import jakarta.servlet.DispatcherType;
 
 @Configuration
 @EnableWebSecurity
@@ -31,8 +32,10 @@ public class SecurityConfig {
 				.logout(AbstractHttpConfigurer::disable).formLogin(AbstractHttpConfigurer::disable)
 				.httpBasic(AbstractHttpConfigurer::disable)
 				.exceptionHandling(e -> e.authenticationEntryPoint(errorHandler).accessDeniedHandler(errorHandler))
-				.authorizeHttpRequests(auth -> auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // 브라우저 사전
-																												// 요청(CORS)
+				.authorizeHttpRequests(auth -> auth
+					    .dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
+					    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()																		// 요청(CORS)
+
 
 						// ---- 로그인 없이 쓰는 API ----
 						.requestMatchers("/api/customers/signup", "/api/customers/login",
