@@ -1,6 +1,8 @@
 -- =====================================================================
--- PUF 더미 데이터 시드 (seed_all.sql)
--- 실행 전제: puf_db_schema_v8.sql 실행 완료 (region id=1 '미배정' 존재, delivery_status 의 PENDING 도 스키마에 포함됨)
+-- PUF 일반 더미 데이터 시드 (2.seed_general_v9.sql)
+-- 실행 순서: 1.puf_db_schema_v9 → 2.seed_general_v9(이 파일) → 3.seed_its_v9 → 4.seed_pm_v9
+-- 예지보전 설비·임계치는 4.seed_pm_v9 에서 넣음(이 파일에는 없음)
+-- 실행 전제: puf_db_schema_v9.sql 실행 완료 (region id=1 '미배정' 존재, delivery_status 의 PENDING 도 스키마에 포함됨)
 -- 실행 순서: FK 의존성 순서대로 정렬됨, 위에서 아래로 순서대로 실행
 -- 비밀번호: 모든 계정의 비밀번호 = 로그인 아이디 (BCrypt 해시)
 -- 지역: 부산광역시 16개 구/군
@@ -63,21 +65,21 @@ INSERT INTO manager (employee_id, login_id, password, role, status, shift_id, cr
 --    강서구=13, 연제구=14, 수영구=15, 사상구=16, 기장군=17
 --    지하차도 개수: 사상 9, 해운대 7, 강서 5, 동구·부산진·동래·북 각 4, 남 3, 사하·금정 각 2, 기장 1, 나머지 0 (합 45)
 --    가장 많은 사상구(9개)에 맞춰 관리자 5명이 구를 묶어 맡는다 (각 9개). 일 없는 관리자 계정은 두지 않는다.
---      manager01: 사상 / manager02: 해운대+금정+연제+수영 / manager03: 동구+사하+서구+중구+영도+남(초량 시연)
+--      manager01: 동구+사하+서구+중구+영도+남(초량 시연. 초량지하차도 id=1 이 있는 동구 담당 = 관리자 id 1) / manager02: 해운대+금정+연제+수영 / manager03: 사상
 --      manager04: 강서+북 / manager05: 부산진+동래+기장
 -- =====================================================================
 INSERT INTO manager_region (manager_id, region_id) VALUES
-( 1, 16),   -- manager01: 사상구
+( 1,  2),   -- manager01: 중구
+( 1,  3),   -- manager01: 서구
+( 1,  4),   -- manager01: 동구 (초량지하차도)
+( 1,  5),   -- manager01: 영도구
+( 1,  8),   -- manager01: 남구
+( 1, 11),   -- manager01: 사하구
 ( 2, 10),   -- manager02: 해운대구
 ( 2, 12),   -- manager02: 금정구
 ( 2, 14),   -- manager02: 연제구
 ( 2, 15),   -- manager02: 수영구
-( 3,  2),   -- manager03: 중구
-( 3,  3),   -- manager03: 서구
-( 3,  4),   -- manager03: 동구
-( 3,  5),   -- manager03: 영도구
-( 3,  8),   -- manager03: 남구
-( 3, 11),   -- manager03: 사하구
+( 3, 16),   -- manager03: 사상구
 ( 4,  9),   -- manager04: 북구
 ( 4, 13),   -- manager04: 강서구
 ( 5,  6),   -- manager05: 부산진구
@@ -203,15 +205,7 @@ ORDER BY s.slot;
 UPDATE underpass SET up_entry_cam_id = 228, up_exit_cam_id = 229 WHERE id = 1;
 
 -- =====================================================================
--- 11. pm_equipment — 지하차도별 설비 (DISPLAY 1 + PUMP 1). CCTV 설비는 카메라를 만드는 seed_its 에서 카메라마다 추가
---     equip_id 배치: 지하차도 N → (N-1)*2+1(DISPLAY), +2(PUMP)
--- =====================================================================
-INSERT INTO pm_equipment (underpass_id, type)
-SELECT u.id, s.type::pm_equipment_type
-FROM underpass u
-CROSS JOIN (VALUES (1, 'DISPLAY'), (2, 'PUMP')) AS s(slot, type)
-ORDER BY u.id, s.slot;
-
+-- 11. (예지보전 설비는 4.seed_pm_v9 로 이동)
 -- 11-1. 선제 차단 대상 (수위 5cm 에서 차단) — 시연/테스트용 1곳 지정. 실제 운영에서는 관리자가 지정
 UPDATE underpass SET early_block = TRUE WHERE name = '초량지하차도';
 
@@ -225,21 +219,7 @@ FROM underpass u
 CROSS JOIN (VALUES ('안전', 0), ('관심', 40), ('주의', 70)) AS s(level, min_score)
 ORDER BY u.id, s.min_score;
 
--- =====================================================================
--- 13. pm_threshold — 설비별 예지보전 임계치
---     CCTV 안전 0 / 주의 40 / 위험 65 (recognition_rate 기반 별도 기준. CCTV 설비는 seed_its 에서 만들고 거기서 임계치도 넣음)
---     DISPLAY 안전 0 / 주의 50 / 위험 80,  PUMP 안전 0 / 주의 45 / 위험 75
--- =====================================================================
-INSERT INTO pm_threshold (equip_id, level, min_score, updated_by)
-SELECT e.id, s.level::pm_level, s.min_score, (SELECT MIN(mr.manager_id) FROM manager_region mr WHERE mr.region_id = u.region_id)
-FROM pm_equipment e
-JOIN underpass u ON u.id = e.underpass_id
-JOIN (VALUES
-  ('CCTV',    '안전', 0), ('CCTV',    '주의', 40), ('CCTV',    '위험', 65),
-  ('DISPLAY', '안전', 0), ('DISPLAY', '주의', 50), ('DISPLAY', '위험', 80),
-  ('PUMP',    '안전', 0), ('PUMP',    '주의', 45), ('PUMP',    '위험', 75)
-) AS s(type, level, min_score) ON s.type = e.type::text
-ORDER BY e.id, s.min_score;
+-- 13. (예지보전 임계치는 4.seed_pm_v9 로 이동)
 
 -- =====================================================================
 -- 14. weather_area — 부산 16개 구/군 중심 좌표
@@ -374,15 +354,12 @@ INSERT INTO device_token (customer_id, token, platform) VALUES
 -- region:       1=미배정, 2=중구, ..., 17=기장군
 -- employee:     1~16
 -- shift:        1=주간, 2=오후, 3=야간
--- manager:      1~5 (login: manager01~05)
+-- manager:      1~5 (login: manager01~05. manager01 = 초량지하차도가 속한 동구 담당)
 -- customer:     1~13 (login: customer01~13)
 -- car:          1~39 (고객당 3대. 시연용 번호 23대 + 일반 더미 16대)
 -- underpass:    1~45 (1=초량지하차도, 이후 엑셀 순서: 금호(강서구)=2 → … → 해운대구)
--- camera:       226 접근 APPROACH_LPR(roi), 227 roi FINAL_LPR, 228 입구 FINAL_LPR, 229 출구 FINAL_LPR (초량지하차도, id 1) — 나머지 카메라(CCTV)는 seed_its 가 230번부터 추가
--- pm_equipment: 1~90 (지하차도당 2대: DISPLAY/PUMP). CCTV 설비는 seed_its 가 91번부터 추가
---   DISPLAY 설비 ID: (지하차도 id - 1) * 2 + 1  (1, 3, 5, ...)
+-- camera:       226 접근 APPROACH_LPR(roi), 227 roi FINAL_LPR, 228 입구 FINAL_LPR, 229 출구 FINAL_LPR (초량지하차도, id 1) — 나머지 카메라(CCTV)는 3.seed_its_v9 가 230번부터 추가
 -- threshold:    1~135 (지하차도당 3단계)
--- pm_threshold: 1~270 (DISPLAY/PUMP 설비당 3단계). CCTV 설비 임계치는 seed_its 에서 추가
 -- weather_area: 1~16 (부산 16구군)
 -- reason_preset:  1~12
 -- display_preset: 1~5 (SAFE/WATCH/CAUTION/BLOCK/RELEASE)

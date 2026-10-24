@@ -15,15 +15,29 @@ public class PmEquipmentDetailResponse {
     private final BigDecimal dangerMin;            // 이 설비의 위험 기준 점수
     private final LocalDateTime lastCheckedAt;     // 최근 점검일 (마지막 조치 기록 시각)
     private final List<PmActionItem> recentActions;   // 최근 점검 이력 (최대 5건)
+    private final String modelVersion;             // 최근 점수를 계산한 모델 버전
+    private final LocalDateTime scoredAt;          // 최근 점수 시각
+    private final String anomalyStartedAt;         // 이상이 시작된 시각 (detail.anomalyStartedAt, 없으면 null)
+    private final List<PmTopCause> topCauses;      // 점수를 끌어올린 주요 원인 상위 3개 (영향도 × 점수 / 100 = 기여 점수)
+
+    /** 주요 원인 한 줄: 특징 이름·현재 값·평소 값·기여 점수 */
+    public record PmTopCause(String key, String label, Double value, String unit, Double median,
+                             int contribution, double points, String direction) {
+    }
 
     public PmEquipmentDetailResponse(PmEquipmentListItem equipment, JsonNode detail, BigDecimal cautionMin,
-                                     BigDecimal dangerMin, LocalDateTime lastCheckedAt, List<PmActionItem> recentActions) {
+                                     BigDecimal dangerMin, LocalDateTime lastCheckedAt, List<PmActionItem> recentActions, String modelVersion,
+                                     LocalDateTime scoredAt, String anomalyStartedAt, List<PmTopCause> topCauses) {
         this.equipment = equipment;
         this.detail = detail;
         this.cautionMin = cautionMin;
         this.dangerMin = dangerMin;
         this.lastCheckedAt = lastCheckedAt;
         this.recentActions = recentActions;
+        this.modelVersion = modelVersion;
+        this.scoredAt = scoredAt;
+        this.anomalyStartedAt = anomalyStartedAt;
+        this.topCauses = topCauses;
     }
 
     public PmEquipmentListItem getEquipment() { return equipment; }
@@ -32,4 +46,8 @@ public class PmEquipmentDetailResponse {
     public BigDecimal getDangerMin() { return dangerMin; }
     public LocalDateTime getLastCheckedAt() { return lastCheckedAt; }
     public List<PmActionItem> getRecentActions() { return recentActions; }
+    public String getModelVersion() { return modelVersion; }
+    public LocalDateTime getScoredAt() { return scoredAt; }
+    public String getAnomalyStartedAt() { return anomalyStartedAt; }
+    public List<PmTopCause> getTopCauses() { return topCauses; }
 }

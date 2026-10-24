@@ -1,6 +1,6 @@
 package com.mbc.puf.common.enums;
 
-/** 예지보전 설비 종류 (DB: pm_equipment_type). WATER_LEVEL 은 pm_update_v1.sql 에서 추가 */
+/** 예지보전 설비 종류 (DB: pm_equipment_type). WATER_LEVEL 은 1.puf_db_schema_v9.sql 부터 포함 */
 public enum PmEquipmentType {
     CCTV,         // CCTV
     DISPLAY,      // 전광판

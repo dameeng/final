@@ -26,6 +26,7 @@ import com.mbc.puf.pm.dto.PmEquipmentDetailResponse;
 import com.mbc.puf.pm.dto.PmEquipmentListItem;
 import com.mbc.puf.pm.dto.PmEventItem;
 import com.mbc.puf.pm.dto.PmScorePoint;
+import com.mbc.puf.pm.dto.PmSensorTrendResponse;
 import com.mbc.puf.pm.entity.PmThreshold;
 import com.mbc.puf.pm.repository.PmThresholdRepository;
 
@@ -49,7 +50,7 @@ public class PmQueryServiceImpl implements PmQueryService {
 
     // ---- 설비 목록·상세 공통 ----
     private static final String EQUIP_SELECT = """
-            SELECT e.id AS equip_id, CAST(e.type AS text) AS type, u.id AS underpass_id, u.name AS underpass_name,
+            SELECT e.id AS equip_id, CAST(e.type AS text) AS type, e.name AS name, u.id AS underpass_id, u.name AS underpass_name,
                    u.region_id AS region_id, ls.score AS score, CAST(ls.level AS text) AS level,
                    ls.predicted_at AS last_received_at, ls.reasons AS reasons_json,
                    oe.id AS open_event_id, CAST(oe.status AS text) AS open_event_status,
@@ -59,7 +60,7 @@ public class PmQueryServiceImpl implements PmQueryService {
             """;
     private static final String EQUIP_FROM = """
              FROM pm_equipment e
-             JOIN underpass u ON u.id = e.underpass_id AND u.is_deleted = FALSE
+             JOIN underpass u ON u.id = e.underpass_id AND u.is_deleted = FALSE AND e.is_deleted = FALSE
              LEFT JOIN LATERAL (SELECT s.score, s.level, s.predicted_at, CAST(s.reasons AS text) AS reasons
                                   FROM pm_score s WHERE s.equip_id = e.id
                                  ORDER BY s.predicted_at DESC LIMIT 1) ls ON TRUE
@@ -71,15 +72,15 @@ public class PmQueryServiceImpl implements PmQueryService {
 
     // ---- 점검 대기 ----
     private static final String EVENT_SELECT = """
-            SELECT ev.id AS event_id, e.id AS equip_id, CAST(e.type AS text) AS type, u.id AS underpass_id,
-                   u.name AS underpass_name, u.region_id AS region_id, CAST(ev.level AS text) AS level, ev.score AS score,
+            SELECT ev.id AS event_id, e.id AS equip_id, CAST(e.type AS text) AS type, e.name AS name, u.id AS underpass_id,
+                   u.name AS underpass_name, u.region_id AS region_id, CAST(ev.trigger_type AS text) AS trigger_type, CAST(ev.level AS text) AS level, ev.score AS score,
                    CAST(ev.status AS text) AS status, ev.created_at AS created_at,
                    ls.score AS current_score, CAST(ls.level AS text) AS current_level
             """;
     private static final String EVENT_FROM = """
              FROM pm_event ev
              JOIN pm_equipment e ON e.id = ev.equip_id
-             JOIN underpass u ON u.id = e.underpass_id AND u.is_deleted = FALSE
+             JOIN underpass u ON u.id = e.underpass_id AND u.is_deleted = FALSE AND e.is_deleted = FALSE
              LEFT JOIN LATERAL (SELECT s.score, s.level FROM pm_score s WHERE s.equip_id = e.id
                                  ORDER BY s.predicted_at DESC LIMIT 1) ls ON TRUE
              WHERE CAST(ev.status AS text) IN (:statuses)
@@ -87,7 +88,7 @@ public class PmQueryServiceImpl implements PmQueryService {
 
     // ---- 점검 이력 ----
     private static final String ACTION_SELECT = """
-            SELECT a.id AS action_id, ev.id AS event_id, e.id AS equip_id, CAST(e.type AS text) AS type,
+            SELECT a.id AS action_id, ev.id AS event_id, e.id AS equip_id, CAST(e.type AS text) AS type, e.name AS name,
                    u.id AS underpass_id, u.name AS underpass_name, u.region_id AS region_id, a.content AS content,
                    a.manager_id AS manager_id, emp.name AS manager_name, a.created_at AS created_at,
                    CAST(ev.level AS text) AS event_level, ev.score AS score_before,
@@ -98,7 +99,7 @@ public class PmQueryServiceImpl implements PmQueryService {
              FROM pm_action a
              JOIN pm_event ev ON ev.id = a.event_id
              JOIN pm_equipment e ON e.id = ev.equip_id
-             JOIN underpass u ON u.id = e.underpass_id AND u.is_deleted = FALSE
+             JOIN underpass u ON u.id = e.underpass_id AND u.is_deleted = FALSE AND e.is_deleted = FALSE
              LEFT JOIN manager m ON m.id = a.manager_id
              LEFT JOIN employee emp ON emp.id = m.employee_id
              WHERE 1 = 1
@@ -132,6 +133,7 @@ public class PmQueryServiceImpl implements PmQueryService {
         NativeSql count = equipFilters(new NativeSql("SELECT COUNT(*) AS total" + EQUIP_FROM), resolved, type, level);
         List<PmEquipmentListItem> items = rows.list(em, PmEquipmentListItem.class);
         items.forEach(this::fillReasons);
+        fillSparklines(items);
         return new PageResponse<>(items, p.getPage(), p.getSize(), count.single(em, Total.class).getTotal());
     }
 
@@ -148,10 +150,14 @@ public class PmQueryServiceImpl implements PmQueryService {
     public PmEquipmentDetailResponse getEquipment(LoginUser loginUser, Long equipId) {
         PmEquipmentListItem item = findEquipment(loginUser, equipId);
 
-        String detailJson = new NativeSql("SELECT CAST(s.detail AS text) AS detail_json FROM pm_score s"
+        DetailRow row = new NativeSql("SELECT CAST(s.detail AS text) AS detail_json, s.model_version AS model_version,"
+                + " s.predicted_at AS predicted_at, s.score AS score FROM pm_score s"
                 + " WHERE s.equip_id = :equipId ORDER BY s.predicted_at DESC LIMIT 1")
-                .param("equipId", equipId).single(em, DetailRow.class).getDetailJson();
+                .param("equipId", equipId).single(em, DetailRow.class);
+        String detailJson = row == null ? null : row.getDetailJson();
         JsonNode detail = detailJson == null ? null : objectMapper.readTree(detailJson);
+        String anomalyStartedAt = detail != null && detail.hasNonNull("anomalyStartedAt")
+                ? detail.get("anomalyStartedAt").asString() : null;
 
         BigDecimal cautionMin = null, dangerMin = null;
         for (PmThreshold t : thresholdRepository.findByEquipIdOrderByMinScoreAsc(equipId)) {
@@ -162,7 +168,84 @@ public class PmQueryServiceImpl implements PmQueryService {
         List<PmActionItem> recent = new NativeSql(ACTION_SELECT + ACTION_FROM + " AND e.id = :equipId"
                 + " ORDER BY a.created_at DESC LIMIT " + RECENT_ACTIONS).param("equipId", equipId).list(em, PmActionItem.class);
         LocalDateTime lastCheckedAt = recent.isEmpty() ? null : recent.get(0).getCreatedAt();
-        return new PmEquipmentDetailResponse(item, detail, cautionMin, dangerMin, lastCheckedAt, recent);
+        return new PmEquipmentDetailResponse(item, detail, cautionMin, dangerMin, lastCheckedAt, recent,
+                row == null ? null : row.getModelVersion(), row == null ? null : row.getPredictedAt(),
+                anomalyStartedAt, topCauses(detail, row == null ? null : row.getScore()));
+    }
+
+    /** detail.features 에서 영향도 상위 3개를 골라 기여 점수(영향도 × 점수 / 100)로 바꾼다. features 가 없으면 빈 목록 */
+    private List<PmEquipmentDetailResponse.PmTopCause> topCauses(JsonNode detail, BigDecimal score) {
+        if (detail == null || !detail.has("features") || !detail.get("features").isArray() || score == null) {
+            return List.of();
+        }
+        List<PmEquipmentDetailResponse.PmTopCause> all = new java.util.ArrayList<>();
+        for (JsonNode f : detail.get("features")) {
+            int c = f.path("contribution").asInt(0);
+            if (c <= 0) continue;
+            all.add(new PmEquipmentDetailResponse.PmTopCause(f.path("key").asString(""), f.path("label").asString(""),
+                    f.hasNonNull("value") ? f.get("value").asDouble() : null, f.path("unit").asString(""),
+                    f.path("normal").hasNonNull("median") ? f.get("normal").get("median").asDouble() : null, c,
+                    Math.round(c * score.doubleValue()) / 100.0, f.path("direction").asString("")));
+        }
+        all.sort((a, b) -> Integer.compare(b.contribution(), a.contribution()));
+        return all.size() > 3 ? all.subList(0, 3) : all;
+    }
+
+    /** 목록 한 쪽 설비들의 최근 24시간 1시간 평균 점수 (쿼리 1번) */
+    private void fillSparklines(List<PmEquipmentListItem> items) {
+        if (items.isEmpty()) return;
+        java.util.Map<Long, List<BigDecimal>> byEquip = new java.util.HashMap<>();
+        List<Object[]> rows = new NativeSql("""
+                SELECT s.equip_id, date_trunc('hour', s.predicted_at) AS h, ROUND(AVG(s.score), 1) AS v
+                FROM pm_score s WHERE s.equip_id IN (:ids) AND s.predicted_at >= :from
+                GROUP BY 1, 2 ORDER BY 2
+                """).param("ids", items.stream().map(PmEquipmentListItem::getEquipId).toList())
+                .param("from", dbClock.now().minusHours(24)).rows(em);
+        for (Object[] r : rows) {
+            byEquip.computeIfAbsent(((Number) r[0]).longValue(), k -> new java.util.ArrayList<>()).add((BigDecimal) r[2]);
+        }
+        items.forEach(i -> i.setSparkline(byEquip.getOrDefault(i.getEquipId(), List.of())));
+    }
+
+    // ------------------------------------------------------------------ 원인 센서 시계열
+    @Override
+    public PmSensorTrendResponse getSensorTrend(LoginUser loginUser, Long equipId, String column, int days) {
+        if (days < 1 || days > 30) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "days는 1 이상 30 이하여야 합니다.");
+        }
+        PmEquipmentListItem item = findEquipment(loginUser, equipId);
+        List<String> cols = PmSensorServiceImpl.columnsOf(item.getType());
+        if (cols == null || !cols.contains(column)) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "이 설비에서 쓸 수 있는 센서 컬럼: " + cols);
+        }
+        String table = PmSensorServiceImpl.tableOf(item.getType());   // 화이트리스트 값이라 SQL 에 그대로 붙인다
+        LocalDateTime from = dbClock.now().minusDays(days);
+        List<PmSensorTrendResponse.Point> points = new java.util.ArrayList<>();
+        for (Object[] r : new NativeSql("SELECT date_trunc('hour', s.recorded_at) AS h, AVG(s." + column + ") AS v FROM " + table
+                + " s WHERE s.equip_id = :equipId AND s.recorded_at >= :from GROUP BY 1 ORDER BY 1")
+                .param("equipId", equipId).param("from", from).rows(em)) {
+            points.add(new PmSensorTrendResponse.Point(toLdt(r[0]), r[1] == null ? null : round3(((Number) r[1]).doubleValue())));
+        }
+        // 평소 범위: 이 설비의 가장 오래된 데이터부터 28일 (센서는 자동 삭제하지 않으므로 처음 28일이 기준)
+        Object[] b = new NativeSql("SELECT MIN(s.recorded_at), AVG(s." + column + "), STDDEV_POP(s." + column + "), COUNT(s." + column + ")"
+                + " FROM " + table + " s WHERE s.equip_id = :equipId AND s.recorded_at < (SELECT MIN(x.recorded_at) FROM " + table
+                + " x WHERE x.equip_id = :equipId) + INTERVAL '28 days'").param("equipId", equipId).rows(em).get(0);
+        PmSensorTrendResponse.Band band = null;
+        if (b[0] != null && b[1] != null && ((Number) b[3]).longValue() >= 24) {
+            double mean = ((Number) b[1]).doubleValue(), sd = b[2] == null ? 0 : ((Number) b[2]).doubleValue();
+            LocalDateTime start = toLdt(b[0]);
+            band = new PmSensorTrendResponse.Band(round3(mean), round3(sd), round3(mean - 2 * sd), round3(mean + 2 * sd),
+                    start, start.plusDays(28));
+        }
+        return new PmSensorTrendResponse(column, points, band);
+    }
+
+    private static double round3(double v) {
+        return Math.round(v * 1000) / 1000.0;
+    }
+
+    private static LocalDateTime toLdt(Object o) {
+        return o instanceof java.sql.Timestamp ts ? ts.toLocalDateTime() : (LocalDateTime) o;
     }
 
     // ------------------------------------------------------------------ 점수 추이 (그래프)
@@ -254,9 +337,18 @@ public class PmQueryServiceImpl implements PmQueryService {
     /** 최근 점수의 세부값(jsonb → 문자열) 한 칸 */
     public static class DetailRow {
         private String detailJson;
+        private String modelVersion;
+        private LocalDateTime predictedAt;
+        private BigDecimal score;
 
         public String getDetailJson() { return detailJson; }
         public void setDetailJson(String detailJson) { this.detailJson = detailJson; }
+        public String getModelVersion() { return modelVersion; }
+        public void setModelVersion(String modelVersion) { this.modelVersion = modelVersion; }
+        public LocalDateTime getPredictedAt() { return predictedAt; }
+        public void setPredictedAt(LocalDateTime predictedAt) { this.predictedAt = predictedAt; }
+        public BigDecimal getScore() { return score; }
+        public void setScore(BigDecimal score) { this.score = score; }
     }
 
     /** COUNT(*) 결과 한 칸 */

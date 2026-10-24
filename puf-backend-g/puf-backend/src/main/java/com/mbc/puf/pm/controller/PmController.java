@@ -25,6 +25,7 @@ import com.mbc.puf.pm.dto.PmEquipmentDetailResponse;
 import com.mbc.puf.pm.dto.PmEquipmentListItem;
 import com.mbc.puf.pm.dto.PmEventItem;
 import com.mbc.puf.pm.dto.PmScorePoint;
+import com.mbc.puf.pm.dto.PmSensorTrendResponse;
 import com.mbc.puf.pm.service.PmQueryService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -75,6 +76,15 @@ public class PmController {
                                                   @RequestParam(name = "days", defaultValue = "7") int days,
                                                   @RequestParam(name = "bucketMinutes", required = false) Integer bucketMinutes) {
         return ApiResponse.ok(pmQueryService.getScores(loginUser, equipId, days, bucketMinutes));
+    }
+
+    @Operation(summary = "원인 센서 시계열", description = "센서 컬럼(column)의 최근 days일(1~30, 기본 7) 1시간 평균 + 평소 범위(처음 28일 평균 ± 2σ). 컬럼 이름은 설비 종류별 센서 컬럼")
+    @GetMapping("/equipments/{equipId}/sensor-trend")
+    public ApiResponse<PmSensorTrendResponse> sensorTrend(@AuthenticationPrincipal LoginUser loginUser,
+                                                          @PathVariable("equipId") Long equipId,
+                                                          @RequestParam(name = "column") String column,
+                                                          @RequestParam(name = "days", defaultValue = "7") int days) {
+        return ApiResponse.ok(pmQueryService.getSensorTrend(loginUser, equipId, column, days));
     }
 
     /**

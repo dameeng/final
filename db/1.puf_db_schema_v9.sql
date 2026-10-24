@@ -7,6 +7,11 @@
 -- v7 변경 요약: 전광판 자동 표출 — display_page.is_manual 추가(수동/자동 페이지 구분), display_page UNIQUE(its_vms_id,page_no)를 DEFERRABLE 로 변경,
 --              display_history 에 its_vms_id/underpass_id 추가 + page_id NULL 허용(페이지가 지워져도 이력 유지, ON DELETE SET NULL)
 -- v8 변경 요약: DDL 구조는 v7과 같음(카메라 역할 설명 주석만 수정). 시드 쪽이 바뀜 — 카메라 일괄 5대 생성 폐지, 초량지하차도 id=1
+-- v9 변경 요약: 예지보전 개편(4.pm_update_v1 · 5.pm_update_v2 를 이 DDL 에 합침)
+--              · 설비 종류에 WATER_LEVEL 추가, pm_equipment 에 name(자동 부여) · installed_at(설치일) · sensor_interval_sec · data_started_at · is_deleted 추가
+--              · 세로형 pm_sensor 폐지 → 설비 종류별 센서 테이블 4개(pm_sensor_cctv/_pump/_display/_water_level)
+--              · pm_score 에 level/reasons/detail/model_version + (설비, 시각) 중복 금지, pm_event 에 trigger_type(위험진입/급상승/미수신)
+--              · manager_device_token(관리자 푸시 토큰) 추가
 -- ⚠️ 개발 DB 전용. public 스키마를 통째로 지우므로 되돌릴 수 없음. 운영 DB 실행 금지.
 -- 실행 순서: 스키마 리셋 → ENUM → 테이블 → CHECK → FK/인덱스 → 필수 기준행
 -- 약어 사전: cam(카메라) num(번호) addr(주소) dist(거리) lat/lng(위경도) ctrl(통제) pm(예지보전) recog(인식)
@@ -35,8 +40,9 @@ CREATE TYPE transit_status AS ENUM ('IN_TRANSIT', 'EXITED', 'REMAINING'); -- 지
 CREATE TYPE transit_direction AS ENUM ('UP', 'DOWN'); -- 통행 방향(상행/하행)
 CREATE TYPE transfer_agency AS ENUM ('POLICE', 'FIRE'); -- 통제정보 이관 대상(경찰/소방서)
 CREATE TYPE display_category AS ENUM ('SAFE', 'WATCH', 'CAUTION', 'BLOCK', 'RELEASE'); -- 전광판 프리셋 문구 분류(안전/관심/주의/차단/해제. 경계·심각은 차단 문구 사용)
-CREATE TYPE pm_equipment_type AS ENUM ('CCTV', 'DISPLAY', 'PUMP'); -- 예지보전 설비 종류(CCTV/전광판/배수펌프)
+CREATE TYPE pm_equipment_type AS ENUM ('CCTV', 'DISPLAY', 'PUMP', 'WATER_LEVEL'); -- 예지보전 설비 종류(CCTV/전광판/배수펌프/수위센서)
 CREATE TYPE pm_event_status AS ENUM ('CHECK_NEEDED', 'IN_PROGRESS', 'RESOLVED', 'ETC'); -- 예지보전 처리 상태(확인필요/점검중/조치완료/기타)
+CREATE TYPE pm_trigger_type AS ENUM ('위험진입', '급상승', '미수신'); -- 예지보전 이벤트 발생 이유(점수가 위험 임계치 넘음/짧은 시간에 점수 급상승/센서 데이터 끊김)
 CREATE TYPE inquiry_status AS ENUM ('PENDING', 'ANSWERED'); -- 접수의견 답변 여부(대기/답변완료)
 CREATE TYPE customer_notification_category AS ENUM ('RISK', 'NOTICE', 'INQUIRY'); -- 고객 알림 분류(위험/공지/문의)
 CREATE TYPE manager_notification_category AS ENUM ('RISK', 'EQUIPMENT', 'TASK', 'SYSTEM'); -- 관리자 알림 분류(위험/설비/업무/시스템)
@@ -119,6 +125,15 @@ CREATE TABLE device_token ( -- 고객 푸시 토큰 테이블(고객 1명이 웹
     token VARCHAR(255) UNIQUE NOT NULL, -- 푸시 토큰
     platform device_platform NOT NULL, -- 발급 환경
     is_active BOOLEAN NOT NULL DEFAULT TRUE, -- 사용 여부(만료/로그아웃/탈퇴 시 FALSE, 행은 보존)
+    created_at TIMESTAMP NOT NULL DEFAULT NOW() -- 등록일
+);
+
+CREATE TABLE manager_device_token ( -- 관리자 푸시 토큰 테이블(관리자 1명이 웹/앱 여러 기기 보유 가능)
+    id BIGSERIAL PRIMARY KEY, -- 아이디
+    manager_id BIGINT NOT NULL, -- 관리자 아이디
+    token VARCHAR(255) UNIQUE NOT NULL, -- 푸시 토큰
+    platform device_platform NOT NULL, -- 발급 환경
+    is_active BOOLEAN NOT NULL DEFAULT TRUE, -- 사용 여부(만료/로그아웃 시 FALSE, 행은 보존)
     created_at TIMESTAMP NOT NULL DEFAULT NOW() -- 등록일
 );
 
@@ -331,6 +346,7 @@ CREATE TABLE manager_notification ( -- 관리자 알림 센터 테이블(알림 
     body VARCHAR(255), -- 알림 내용
     ref_type VARCHAR(20), -- 눌렀을 때 이동할 대상 종류(UNDERPASS/INQUIRY 등)
     ref_id BIGINT, -- 이동할 대상 아이디
+    is_urgent BOOLEAN NOT NULL DEFAULT FALSE, -- 긴급 여부(TRUE 면 화면에 긴급 팝업, 기기 푸시도 높은 우선순위. 예: 설비 위험 진입, 수위 자동 차단)
     created_at TIMESTAMP NOT NULL DEFAULT NOW() -- 알림 생성 시각
 );
 
@@ -471,28 +487,74 @@ CREATE TABLE weather_forecast ( -- 날씨 예보 테이블(같은 시점은 덮�
 
 -- ---- 예지보전(pm) ----
 
-CREATE TABLE pm_equipment ( -- 예지보전 설비 테이블(지하차도별 CCTV/전광판/배수펌프)
+CREATE TABLE pm_equipment ( -- 예지보전 설비 테이블(지하차도별 CCTV/전광판/배수펌프/수위센서)
     id BIGSERIAL PRIMARY KEY, -- 아이디
     underpass_id BIGINT NOT NULL, -- 지하차도 아이디
     type pm_equipment_type NOT NULL, -- 설비 종류
+    name VARCHAR(30) NOT NULL UNIQUE, -- 설비 이름(종류 글자-지하차도id-번호. 예: P-12-1. 비워서 넣으면 트리거가 자동 부여: CCTV=C, 전광판=D, 배수펌프=P, 수위센서=W)
     cam_id BIGINT, -- 카메라 아이디(type=CCTV일 때만 값 있음)
-    its_vms_id BIGINT UNIQUE, -- ITS 전광판 아이디(type=DISPLAY일 때만 값 있음, 더미 전광판 포함. 한 전광판은 한 지하차도 설비에만 귀속)
+    its_vms_id BIGINT, -- ITS 전광판 아이디(type=DISPLAY일 때만 값 있음, 더미 전광판 포함. 삭제되지 않은 설비끼리는 한 전광판을 한 설비에만 연결)
+    installed_at DATE, -- 설치일(모르면 NULL)
+    sensor_interval_sec INTEGER NOT NULL, -- 센서 측정 주기(초). 비워서 넣으면 종류별 기본값: CCTV 3600 / 전광판 3600 / 수위센서 300 / 배수펌프 10
+    data_started_at TIMESTAMP, -- 센서 데이터가 시작된 시각(Spring 이 stub/백필을 시작할 때 기록. 모델의 이력 부족 판단용)
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE, -- 삭제 여부(TRUE 면 FastAPI 조회·화면에서 제외, 행은 보존)
     created_at TIMESTAMP NOT NULL DEFAULT NOW() -- 등록일
 );
 
-CREATE TABLE pm_sensor ( -- 예지보전 센서 데이터 테이블(설비별 측정 항목을 행으로 저장)
-    id BIGSERIAL PRIMARY KEY, -- 아이디
-    equip_id BIGINT NOT NULL, -- 설비 아이디
-    metric VARCHAR(50) NOT NULL, -- 측정 항목명(예: recognition_rate, flow_rate)
-    value DECIMAL(12,3) NOT NULL, -- 측정값
-    recorded_at TIMESTAMP NOT NULL -- 측정 시각
+-- 센서 테이블 4개(설비 종류별, 한 행 = 한 시각의 측정값 전체). 기본키 (설비, 시각)이 중복 방지 + 설비별 기간·최신 시각 조회 인덱스 역할
+-- 측정값 컬럼은 NULL 허용(결측을 그대로 저장, 모델이 결측을 센서 이상으로 판단). 컬럼 이름은 FastAPI 가 읽는 이름과 같음
+-- FastAPI 는 기간·버킷별 집계(count, sum, sum_sq, min, max)로 조회. stub 은 INSERT ... ON CONFLICT DO NOTHING 으로 넣으면 재실행해도 안전
+CREATE TABLE pm_sensor_cctv ( -- CCTV 센서 데이터(1시간 간격)
+    equip_id BIGINT NOT NULL, -- 설비 아이디(CCTV)
+    recorded_at TIMESTAMP NOT NULL, -- 측정 시각
+    video_receive_rate DOUBLE PRECISION, -- 영상 수신률
+    response_time_ms DOUBLE PRECISION, -- 응답 시간(ms)
+    packet_loss_rate DOUBLE PRECISION, -- 패킷 손실률
+    image_blur_score DOUBLE PRECISION, -- 영상 흐림 정도
+    PRIMARY KEY (equip_id, recorded_at)
+);
+
+CREATE TABLE pm_sensor_pump ( -- 배수펌프 센서 데이터(10초 간격)
+    equip_id BIGINT NOT NULL, -- 설비 아이디(PUMP)
+    recorded_at TIMESTAMP NOT NULL, -- 측정 시각
+    vibration DOUBLE PRECISION, -- 진동
+    pressure DOUBLE PRECISION, -- 압력
+    temperature DOUBLE PRECISION, -- 온도
+    current DOUBLE PRECISION, -- 전류
+    flow DOUBLE PRECISION, -- 유량
+    rpm DOUBLE PRECISION, -- 회전수
+    PRIMARY KEY (equip_id, recorded_at)
+);
+
+CREATE TABLE pm_sensor_display ( -- 전광판 센서 데이터(1시간 간격)
+    equip_id BIGINT NOT NULL, -- 설비 아이디(DISPLAY)
+    recorded_at TIMESTAMP NOT NULL, -- 측정 시각
+    temperature_c DOUBLE PRECISION, -- 본체 온도(℃)
+    ambient_c DOUBLE PRECISION, -- 주변 온도(℃)
+    ripple_v DOUBLE PRECISION, -- 전원 리플 전압(V)
+    response_time_ms DOUBLE PRECISION, -- 응답 시간(ms)
+    error_count INTEGER, -- 오류 횟수
+    bad_pixel_pct DOUBLE PRECISION, -- 불량 화소 비율(%)
+    PRIMARY KEY (equip_id, recorded_at)
+);
+
+CREATE TABLE pm_sensor_water_level ( -- 수위센서 장비 센서 데이터(5분 간격. 수위계 장비 자체의 측정값이며 지하차도 물 높이 water_level 테이블과 별개)
+    equip_id BIGINT NOT NULL, -- 설비 아이디(WATER_LEVEL)
+    recorded_at TIMESTAMP NOT NULL, -- 측정 시각
+    level_m DOUBLE PRECISION, -- 수위(m)
+    PRIMARY KEY (equip_id, recorded_at)
 );
 
 CREATE TABLE pm_score ( -- 예지보전 위험도 점수 테이블(FastAPI 계산 결과, 침수 위험도 모델 입력으로도 사용)
     id BIGSERIAL PRIMARY KEY, -- 아이디
     equip_id BIGINT NOT NULL, -- 설비 아이디
     score DECIMAL(5,2) NOT NULL, -- 고장 위험도 점수(0~100)
-    predicted_at TIMESTAMP NOT NULL -- 예측 계산 시각
+    predicted_at TIMESTAMP NOT NULL, -- 예측 계산 시각(센서 마지막 시각 기준)
+    level pm_level, -- 판정 단계(Spring 이 pm_threshold 로 판정해서 저장)
+    reasons JSONB, -- 사유 문장 목록(예: ["영상 수신률 평소보다 매우 많이 낮아요"])
+    detail JSONB, -- 모델별 세부값(features[] 특징값 · anomalyStartedAt · extra. 펌프 센서별 현재/평소는 extra.sensors)
+    model_version VARCHAR(30), -- 점수를 만든 모델 버전(시연 재생 = 'replay-v1')
+    CONSTRAINT uq_pm_score_equip_time UNIQUE (equip_id, predicted_at) -- 같은 설비·같은 시각 점수 중복 금지(예지보전 서버가 다시 켜져 같은 시각을 또 보내면 Spring 이 ON CONFLICT DO NOTHING 으로 건너뜀)
 );
 
 CREATE TABLE pm_threshold ( -- 설비별 예지보전 임계치 테이블
@@ -517,8 +579,9 @@ CREATE TABLE pm_threshold_history ( -- 예지보전 임계치 변경 이력 테�
 CREATE TABLE pm_event ( -- 예지보전 이벤트 테이블(점검 목록 역할, 상태로 처리 진행 관리)
     id BIGSERIAL PRIMARY KEY, -- 아이디
     equip_id BIGINT NOT NULL, -- 설비 아이디
-    level pm_level NOT NULL, -- 넘은 임계치 단계
-    score DECIMAL(5,2) NOT NULL, -- 이벤트 발생 시점 점수
+    trigger_type pm_trigger_type NOT NULL, -- 발생 이유(위험진입/급상승/미수신)
+    level pm_level, -- 넘은 임계치 단계(미수신이면 NULL)
+    score DECIMAL(5,2), -- 이벤트 발생 시점 점수(미수신이면 NULL)
     status pm_event_status NOT NULL DEFAULT 'CHECK_NEEDED', -- 처리 상태
     created_at TIMESTAMP NOT NULL DEFAULT NOW() -- 발생 시각
 );
@@ -666,6 +729,16 @@ ALTER TABLE pm_equipment
 ADD CONSTRAINT chk_pm_equipment_vms
 CHECK (type = 'DISPLAY' OR its_vms_id IS NULL);
 
+-- 센서 주기는 0보다 커야 함
+ALTER TABLE pm_equipment
+ADD CONSTRAINT chk_pm_equipment_interval
+CHECK (sensor_interval_sec > 0);
+
+-- 미수신 이벤트만 점수·단계가 없을 수 있음
+ALTER TABLE pm_event
+ADD CONSTRAINT chk_pm_event_trigger
+CHECK (trigger_type = '미수신' OR (score IS NOT NULL AND level IS NOT NULL));
+
 ALTER TABLE inquiry
 ADD CONSTRAINT chk_inquiry_author
 CHECK ((customer_id IS NULL) <> (manager_id IS NULL));
@@ -682,6 +755,7 @@ ALTER TABLE shift_handover ADD CONSTRAINT fk_handover_shift FOREIGN KEY (shift_i
 ALTER TABLE shift_handover ADD CONSTRAINT fk_handover_manager FOREIGN KEY (manager_id) REFERENCES manager(id);
 
 ALTER TABLE device_token ADD CONSTRAINT fk_dtoken_customer FOREIGN KEY (customer_id) REFERENCES customer(id);
+ALTER TABLE manager_device_token ADD CONSTRAINT fk_mdtoken_manager FOREIGN KEY (manager_id) REFERENCES manager(id);
 
 ALTER TABLE phone_verify ADD CONSTRAINT fk_pverify_customer FOREIGN KEY (customer_id) REFERENCES customer(id);
 ALTER TABLE phone_verify ADD CONSTRAINT fk_pverify_manager FOREIGN KEY (manager_id) REFERENCES manager(id);
@@ -762,7 +836,10 @@ ALTER TABLE pm_equipment ADD CONSTRAINT fk_pmequip_underpass FOREIGN KEY (underp
 ALTER TABLE pm_equipment ADD CONSTRAINT fk_pmequip_cam FOREIGN KEY (cam_id) REFERENCES camera(id);
 ALTER TABLE pm_equipment ADD CONSTRAINT fk_pmequip_its_vms FOREIGN KEY (its_vms_id) REFERENCES its_vms(id);
 
-ALTER TABLE pm_sensor ADD CONSTRAINT fk_pmsensor_equip FOREIGN KEY (equip_id) REFERENCES pm_equipment(id);
+ALTER TABLE pm_sensor_cctv ADD CONSTRAINT fk_pmsensor_cctv_equip FOREIGN KEY (equip_id) REFERENCES pm_equipment(id);
+ALTER TABLE pm_sensor_pump ADD CONSTRAINT fk_pmsensor_pump_equip FOREIGN KEY (equip_id) REFERENCES pm_equipment(id);
+ALTER TABLE pm_sensor_display ADD CONSTRAINT fk_pmsensor_display_equip FOREIGN KEY (equip_id) REFERENCES pm_equipment(id);
+ALTER TABLE pm_sensor_water_level ADD CONSTRAINT fk_pmsensor_wlevel_equip FOREIGN KEY (equip_id) REFERENCES pm_equipment(id);
 ALTER TABLE pm_score ADD CONSTRAINT fk_pmscore_equip FOREIGN KEY (equip_id) REFERENCES pm_equipment(id);
 
 ALTER TABLE pm_threshold ADD CONSTRAINT fk_pmthreshold_equip FOREIGN KEY (equip_id) REFERENCES pm_equipment(id);
@@ -817,11 +894,15 @@ CREATE INDEX idx_alert_customer_time ON alert (customer_id, created_at);
 CREATE INDEX idx_notice_alert_customer ON notice_alert (customer_id, is_read);
 CREATE INDEX idx_customer_notification_list ON customer_notification (customer_id, is_read, created_at DESC);
 CREATE INDEX idx_manager_notification_list ON manager_notification (region_id, category, created_at DESC);
+CREATE INDEX idx_manager_notification_urgent ON manager_notification (created_at DESC) WHERE is_urgent;
 CREATE UNIQUE INDEX uq_manager_notification_read ON manager_notification_read (notification_id, manager_id);
 CREATE INDEX idx_risk_score_underpass_time ON risk_score (underpass_id, predicted_at);
 CREATE INDEX idx_water_level_underpass_time ON water_level (underpass_id, measured_at);
-CREATE INDEX idx_pm_sensor_equip_time ON pm_sensor (equip_id, recorded_at);
-CREATE INDEX idx_pm_score_equip_time ON pm_score (equip_id, predicted_at);
+-- 점수 조회는 uq_pm_score_equip_time (설비, 시각) 인덱스를 그대로 사용
+CREATE UNIQUE INDEX uq_pm_equipment_its_vms ON pm_equipment (its_vms_id) WHERE is_deleted = FALSE AND its_vms_id IS NOT NULL; -- 삭제되지 않은 설비끼리만 한 전광판을 한 설비에 연결
+CREATE INDEX idx_pm_equipment_underpass_type ON pm_equipment (underpass_id, type) WHERE is_deleted = FALSE;
+CREATE UNIQUE INDEX uq_pm_event_open_stale ON pm_event (equip_id) WHERE trigger_type = '미수신' AND status IN ('CHECK_NEEDED', 'IN_PROGRESS'); -- 같은 설비의 처리 안 끝난 미수신 이벤트는 1건만
+CREATE INDEX idx_mdtoken_manager ON manager_device_token (manager_id) WHERE is_active;
 CREATE INDEX idx_pm_event_equip_status ON pm_event (equip_id, status);
 CREATE INDEX idx_chat_log_answered ON chat_log (is_answered, created_at);
 CREATE INDEX idx_its_cctv_pos ON its_cctv (lat, lng);
@@ -829,6 +910,35 @@ CREATE INDEX idx_its_vms_pos ON its_vms (lat, lng);
 CREATE INDEX idx_vms_underpass_up ON vms_underpass (underpass_id, dist);
 CREATE INDEX idx_display_page_underpass ON display_page (underpass_id);
 CREATE INDEX idx_display_history_underpass ON display_history (underpass_id, changed_at DESC);
+
+-- 5-1. 트리거
+
+-- 설비 이름·센서 주기 자동 부여: name 을 비워서 INSERT 하면 종류글자-지하차도id-번호 로 채움(삭제된 설비 번호도 세어서 이름 재사용 방지)
+CREATE FUNCTION pm_equipment_before_insert() RETURNS trigger AS $$
+DECLARE
+    v_letter CHAR(1);
+    v_seq    INTEGER;
+BEGIN
+    IF NEW.sensor_interval_sec IS NULL THEN
+        NEW.sensor_interval_sec := CASE NEW.type::text
+            WHEN 'CCTV' THEN 3600 WHEN 'DISPLAY' THEN 3600 WHEN 'WATER_LEVEL' THEN 300 WHEN 'PUMP' THEN 10 END;
+    END IF;
+    IF NEW.name IS NULL THEN
+        v_letter := CASE NEW.type::text
+            WHEN 'CCTV' THEN 'C' WHEN 'DISPLAY' THEN 'D' WHEN 'WATER_LEVEL' THEN 'W' WHEN 'PUMP' THEN 'P' END;
+        PERFORM pg_advisory_xact_lock(7001, NEW.underpass_id::int);  -- 같은 지하차도 설비를 동시에 만들어도 번호가 겹치지 않게
+        SELECT COALESCE(MAX(split_part(e.name, '-', 3)::int), 0) + 1 INTO v_seq
+        FROM pm_equipment e
+        WHERE e.underpass_id = NEW.underpass_id AND e.type = NEW.type;
+        NEW.name := v_letter || '-' || NEW.underpass_id || '-' || v_seq;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_pm_equipment_before_insert
+    BEFORE INSERT ON pm_equipment
+    FOR EACH ROW EXECUTE FUNCTION pm_equipment_before_insert();
 
 -- 6. 필수 기준행 (시드 데이터가 아니라 서비스 로직이 참조하는 고정 행)
 -- 지역 삭제 시 소속 underpass/manager_region을 옮겨두는 특수 지역. 서비스 로직에서 삭제 금지 처리 필요.

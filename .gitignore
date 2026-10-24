@@ -92,3 +92,8 @@ spring_url.txt
 /flood_server/data/flood_training_dataset.csv
 /flood_server/data/flood_training_inputs.csv
 /flood_server/data/busan_underpass_master_backup_*.csv
+
+
+# FCM 서비스 계정 키
+/keys/*
+!/keys/.gitkeep
