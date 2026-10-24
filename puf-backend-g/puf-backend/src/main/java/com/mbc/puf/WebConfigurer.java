@@ -41,7 +41,7 @@ public class WebConfigurer implements WebMvcConfigurer {
 		registry.addMapping("/**")
 		.allowedOriginPatterns("http://localhost:[*]", "http://127.0.0.1:[*]",
 				"http://10.*:[*]", "http://172.*:[*]", "http://192.168.*:[*]")
-		.allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS") // PATCH: 예지보전 점검 상태 변경(/api/pm/events/{id}/status)
+		.allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
 		.allowCredentials(true);
 	}
 

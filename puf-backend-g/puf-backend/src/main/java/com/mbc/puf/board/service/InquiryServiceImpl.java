@@ -102,7 +102,7 @@ public class InquiryServiceImpl implements InquiryService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<InquiryListItem> getInquiryListForAdmin(String keyword, InquiryStatus status,
+    public PageResponse<InquiryListItem> getInquiryListForAdmin(String keyword, String customerName, InquiryStatus status,
                                                                  PeriodQuery period, int page, int size) {
         // 항상 원글(parent_id IS NULL)만, 상태/키워드/작성일 기간은 선택
         QueryConditions c = new QueryConditions()
@@ -110,6 +110,7 @@ public class InquiryServiceImpl implements InquiryService {
                 .add("o.deleted = false")
                 .eqIfPresent("o.status", status)
                 .containsIfPresent(keyword, "o.title", "o.content")
+                .containsIfPresent(customerName, "c.name")   // 문의한 고객 이름
                 .periodIfPresent("o.createdAt", period);
         return fetchList(c, PageParams.of(page, size));
     }

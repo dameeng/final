@@ -120,7 +120,7 @@ public class PmDailyReportPdfGenerator {
                 t4.addCell(cell(fmt(a.getCreatedAt()), font, alt, TextAlignment.LEFT));
                 t4.addCell(cell(equipLabel(a.getName(), a.getType(), a.getEquipId()) + "\n" + dash(a.getUnderpassName()), font, alt, TextAlignment.LEFT));
                 t4.addCell(cell(dash(a.getManagerName()), font, alt, TextAlignment.LEFT));
-                t4.addCell(cell(dash(a.getContent()), font, alt, TextAlignment.LEFT));
+                t4.addCell(cell((a.getKindLabel() == null ? "" : "[" + a.getKindLabel() + "] ") + dash(a.getContent()), font, alt, TextAlignment.LEFT));
                 t4.addCell(cell(num(a.getScoreBefore()), font, alt, TextAlignment.CENTER));
                 t4.addCell(cell(num(a.getScoreAfter()), font, alt, TextAlignment.CENTER));
             }

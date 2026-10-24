@@ -42,6 +42,7 @@ CREATE TYPE transfer_agency AS ENUM ('POLICE', 'FIRE'); -- 통제정보 이관 �
 CREATE TYPE display_category AS ENUM ('SAFE', 'WATCH', 'CAUTION', 'BLOCK', 'RELEASE'); -- 전광판 프리셋 문구 분류(안전/관심/주의/차단/해제. 경계·심각은 차단 문구 사용)
 CREATE TYPE pm_equipment_type AS ENUM ('CCTV', 'DISPLAY', 'PUMP', 'WATER_LEVEL'); -- 예지보전 설비 종류(CCTV/전광판/배수펌프/수위센서)
 CREATE TYPE pm_event_status AS ENUM ('CHECK_NEEDED', 'IN_PROGRESS', 'RESOLVED', 'ETC'); -- 예지보전 처리 상태(확인필요/점검중/조치완료/기타)
+CREATE TYPE pm_action_kind AS ENUM ('START', 'RECORD', 'RESOLVED', 'ETC'); -- 예지보전 조치 기록 종류(점검 시작/기록 추가/조치 완료/기타 종료)
 CREATE TYPE pm_trigger_type AS ENUM ('위험진입', '급상승', '미수신'); -- 예지보전 이벤트 발생 이유(점수가 위험 임계치 넘음/짧은 시간에 점수 급상승/센서 데이터 끊김)
 CREATE TYPE inquiry_status AS ENUM ('PENDING', 'ANSWERED'); -- 접수의견 답변 여부(대기/답변완료)
 CREATE TYPE customer_notification_category AS ENUM ('RISK', 'NOTICE', 'INQUIRY'); -- 고객 알림 분류(위험/공지/문의)
@@ -591,6 +592,7 @@ CREATE TABLE pm_action ( -- 예지보전 조치 기록 테이블(조치 로그 �
     event_id BIGINT NOT NULL, -- 예지보전 이벤트 아이디
     content TEXT NOT NULL, -- 조치 내용
     manager_id BIGINT NOT NULL, -- 조치한 관리자 아이디
+    kind pm_action_kind NOT NULL DEFAULT 'RECORD', -- 기록 종류(점검 시작/기록 추가/조치 완료/기타 종료)
     created_at TIMESTAMP NOT NULL DEFAULT NOW() -- 조치 기록 시각
 );
 

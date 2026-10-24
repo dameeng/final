@@ -89,7 +89,7 @@ public class PmQueryServiceImpl implements PmQueryService {
     // ---- 점검 이력 ----
     private static final String ACTION_SELECT = """
             SELECT a.id AS action_id, ev.id AS event_id, e.id AS equip_id, CAST(e.type AS text) AS type, e.name AS name,
-                   u.id AS underpass_id, u.name AS underpass_name, u.region_id AS region_id, a.content AS content,
+                   u.id AS underpass_id, u.name AS underpass_name, u.region_id AS region_id, a.content AS content, CAST(a.kind AS text) AS kind,
                    a.manager_id AS manager_id, emp.name AS manager_name, a.created_at AS created_at,
                    CAST(ev.level AS text) AS event_level, ev.score AS score_before,
                    (SELECT s.score FROM pm_score s WHERE s.equip_id = e.id AND s.predicted_at > a.created_at
@@ -294,19 +294,21 @@ public class PmQueryServiceImpl implements PmQueryService {
     // ------------------------------------------------------------------ 점검 이력
     @Override
     public PageResponse<PmActionItem> getActions(LoginUser loginUser, ScopeQuery scope, PmEquipmentType type, Long equipId,
-                                                 PeriodQuery period, PageQuery page) {
+                                                 String managerName, PeriodQuery period, PageQuery page) {
         ScopeQuery resolved = scopeResolver.resolve(loginUser, scope);
         PageParams p = page.toParams();
-        NativeSql rows = actionFilters(new NativeSql(ACTION_SELECT + ACTION_FROM), resolved, type, equipId, period)
+        NativeSql rows = actionFilters(new NativeSql(ACTION_SELECT + ACTION_FROM), resolved, type, equipId, managerName, period)
                 .append(" ORDER BY a.created_at DESC, a.id DESC LIMIT :size OFFSET :offset")
                 .param("size", p.getSize()).param("offset", p.getOffset());
-        NativeSql count = actionFilters(new NativeSql("SELECT COUNT(*) AS total" + ACTION_FROM), resolved, type, equipId, period);
+        NativeSql count = actionFilters(new NativeSql("SELECT COUNT(*) AS total" + ACTION_FROM), resolved, type, equipId, managerName, period);
         return new PageResponse<>(rows.list(em, PmActionItem.class), p.getPage(), p.getSize(),
                 count.single(em, Total.class).getTotal());
     }
 
-    private NativeSql actionFilters(NativeSql sql, ScopeQuery scope, PmEquipmentType type, Long equipId, PeriodQuery period) {
+    private NativeSql actionFilters(NativeSql sql, ScopeQuery scope, PmEquipmentType type, Long equipId, String managerName, PeriodQuery period) {
+        String nameLike = com.mbc.puf.common.util.LikePattern.lowerContainsOrNull(managerName);
         return sql
+                .andIf(nameLike != null, " AND LOWER(emp.name) LIKE :nameLike ESCAPE '\\'", "nameLike", nameLike)
                 .andIf(scope.getRegionIds() != null, " AND u.region_id IN (:regionIds)", "regionIds", scope.getRegionIds())
                 .andIf(scope.getUnderpassId() != null, " AND u.id = :underpassId", "underpassId", scope.getUnderpassId())
                 .andIf(type != null, " AND CAST(e.type AS text) = :type", "type", type == null ? null : type.name())

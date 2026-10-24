@@ -77,7 +77,7 @@ public class PmReportServiceImpl implements PmReportService {
 
     private static final String ACTION_SELECT = """
             SELECT a.id AS action_id, ev.id AS event_id, e.id AS equip_id, CAST(e.type AS text) AS type, e.name AS name,
-                   u.id AS underpass_id, u.name AS underpass_name, u.region_id AS region_id, a.content AS content,
+                   u.id AS underpass_id, u.name AS underpass_name, u.region_id AS region_id, a.content AS content, CAST(a.kind AS text) AS kind,
                    a.manager_id AS manager_id, emp.name AS manager_name, a.created_at AS created_at,
                    CAST(ev.level AS text) AS event_level, ev.score AS score_before,
                    (SELECT s.score FROM pm_score s WHERE s.equip_id = e.id AND s.predicted_at > a.created_at

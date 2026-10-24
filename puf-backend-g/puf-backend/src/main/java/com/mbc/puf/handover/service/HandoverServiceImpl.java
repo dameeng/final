@@ -158,7 +158,7 @@ public class HandoverServiceImpl implements HandoverService {
     // ------------------------------------------------------------------ 조회·수정
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<HandoverListItem> list(Long shiftId, PeriodQuery period, PageQuery page) {
+    public PageResponse<HandoverListItem> list(Long shiftId, String managerName, PeriodQuery period, PageQuery page) {
         period.validate();
         PageParams p = page.toParams();
         String from = """
@@ -171,16 +171,18 @@ public class HandoverServiceImpl implements HandoverService {
         NativeSql rows = filters(new NativeSql("""
                 SELECT h.id AS id, h.shift_id AS shift_id, s.name AS shift_name, h.shift_date AS shift_date,
                        h.manager_id AS manager_id, emp.name AS author_name, h.memo AS memo, h.created_at AS created_at
-                """ + from), shiftId, period)
+                """ + from), shiftId, managerName, period)
                 .append(" ORDER BY h.shift_date DESC, h.id DESC LIMIT :size OFFSET :offset")
                 .param("size", p.getSize()).param("offset", p.getOffset());
-        NativeSql count = filters(new NativeSql("SELECT COUNT(*) AS total" + from), shiftId, period);
+        NativeSql count = filters(new NativeSql("SELECT COUNT(*) AS total" + from), shiftId, managerName, period);
         return new PageResponse<>(rows.list(em, HandoverListItem.class), p.getPage(), p.getSize(),
                 count.single(em, com.mbc.puf.pm.service.PmQueryServiceImpl.Total.class).getTotal());
     }
 
-    private NativeSql filters(NativeSql sql, Long shiftId, PeriodQuery period) {
+    private NativeSql filters(NativeSql sql, Long shiftId, String managerName, PeriodQuery period) {
+        String nameLike = com.mbc.puf.common.util.LikePattern.lowerContainsOrNull(managerName);
         return sql.andIf(shiftId != null, " AND h.shift_id = :shiftId", "shiftId", shiftId)
+                .andIf(nameLike != null, " AND LOWER(emp.name) LIKE :nameLike ESCAPE '\\'", "nameLike", nameLike)
                 .andIf(period.getStartDate() != null, " AND h.shift_date >= :startDate", "startDate", period.getStartDate())
                 .andIf(period.getEndDate() != null, " AND h.shift_date <= :endDate", "endDate", period.getEndDate());
     }
@@ -254,7 +256,7 @@ public class HandoverServiceImpl implements HandoverService {
         }
         pm.newEvents().forEach(ev -> activities.add(new HandoverSummary.Activity(ev.getCreatedAt(), "설비", pmEventText(ev), null)));
         pm.actions().forEach(a -> activities.add(new HandoverSummary.Activity(a.getCreatedAt(), "점검",
-                String.format("%s %s 점검 기록: %s", a.getCode(), a.getUnderpassName(), a.getContent()), a.getManagerName())));
+                String.format("%s %s %s: %s", a.getCode(), a.getUnderpassName(), a.getKindLabel() == null ? "점검 기록" : a.getKindLabel(), a.getContent()), a.getManagerName())));
         List<HandoverRows.DisplayEditRow> displayEdits = new NativeSql("""
                 SELECT h.changed_at AS changed_at, u.name AS underpass_name, h.new_content AS new_content, emp.name AS actor_name
                   FROM display_history h
