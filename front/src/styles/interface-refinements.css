@@ -4,7 +4,7 @@
 #app .customer-shell .customer-header .customer-header-inner {
   position:relative; display:grid; align-items:center; width:100%; max-width:1600px;
   margin-inline:auto; min-width:0; min-height:84px; padding:8px 0;
-  grid-template-columns:minmax(0,1fr) 560px minmax(0,1fr); grid-template-rows:auto; gap:16px;
+  grid-template-columns:minmax(0,1fr) 800px minmax(0,1fr); grid-template-rows:auto; gap:16px;
 }
 #app .customer-shell .customer-header .customer-logo { grid-column:1; grid-row:1; font-size:28px; line-height:36px; justify-self:start; }
 #app .customer-shell .customer-header .customer-main-nav {
@@ -16,7 +16,7 @@
 #app .customer-shell .customer-header .customer-member-nav .theme-toggle { position:static; }
 #app .customer-shell .customer-header .header-download { padding:10px 12px; white-space:nowrap; }
 #app .customer-shell .customer-header .customer-header-dropdown { display:block; border-top:1px solid var(--r-line); border-bottom:1px solid var(--r-line); }
-#app .customer-shell .customer-header .header-dropdown-columns { width:560px; max-width:100%; margin-inline:auto; padding:20px 0; gap:0; }
+#app .customer-shell .customer-header .header-dropdown-columns { width:800px; max-width:100%; margin-inline:auto; padding:20px 0; gap:0; }
 #app .customer-shell .customer-header .header-dropdown-column a { padding:9px 6px; font-size:15px; line-height:23px; border-radius:8px; }
 
 /* Apply the same visible switch to modern and legacy administrator headers. */
@@ -93,9 +93,9 @@
 @media (max-width:1399px) {
   #app .customer-shell .customer-header .customer-header-inner { grid-template-columns:auto minmax(0,1fr); grid-template-rows:auto auto; gap:6px 20px; padding:10px 0 4px; }
   #app .customer-shell .customer-header .customer-member-nav { grid-column:2; grid-row:1; }
-  #app .customer-shell .customer-header .customer-main-nav { grid-column:1/-1; grid-row:2; max-width:720px; }
+  #app .customer-shell .customer-header .customer-main-nav { grid-column:1/-1; grid-row:2; max-width:800px; }
   #app .customer-shell .customer-header .customer-menu-link { height:48px; }
-  #app .customer-shell .customer-header .header-dropdown-columns { width:720px; }
+  #app .customer-shell .customer-header .header-dropdown-columns { width:800px; }
 }
 @media (max-width:700px) {
   #app .customer-shell .customer-header { padding-inline:16px; }

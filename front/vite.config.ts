@@ -13,11 +13,6 @@ export default defineConfig(({ mode }) => ({
         changeOrigin: true,
         rewrite: path => path.replace(/^\/tunnel-source/, '/usage'),
       },
-      '/control/plate': {
-        target: loadEnv(mode, '.', '').AI_SERVER_URL || 'http://localhost:8000',
-        changeOrigin: true,
-        headers: { 'X-Internal-Api-Key': loadEnv(mode, '.', '').INTERNAL_API_KEY || '' },
-      },
       '/api': {
         target: loadEnv(mode, '.', '').BACKEND_URL || 'http://localhost:5555',
         changeOrigin: true,
@@ -35,11 +30,6 @@ export default defineConfig(({ mode }) => ({
         target: 'https://seoultunnel.co.kr',
         changeOrigin: true,
         rewrite: path => path.replace(/^\/tunnel-source/, '/usage'),
-      },
-      '/control/plate': {
-        target: loadEnv(mode, '.', '').AI_SERVER_URL || 'http://localhost:8000',
-        changeOrigin: true,
-        headers: { 'X-Internal-Api-Key': loadEnv(mode, '.', '').INTERNAL_API_KEY || '' },
       },
       '/api': {
         target: loadEnv(mode, '.', '').BACKEND_URL || 'http://localhost:5555',

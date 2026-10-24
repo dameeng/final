@@ -13,11 +13,9 @@
 | `KMA_SERVICE_KEY` | 공공데이터포털 기상청 단기예보 서비스 인증키 | 초단기실황의 기온·습도·강수·풍속 조회 |
 | `ITS_API_KEY` | 국가교통정보센터 ITS 인증키 | 별도로 구현된 ITS 도로 CCTV 중계용. 현재 부산 CCTV 화면에는 사용하지 않음 |
 | `BACKEND_URL` | Spring Boot 백엔드 주소 | 일반 `/api` 요청 전달. 미설정 시 `http://localhost:5555` |
-| `AI_SERVER_URL` | 차량번호 인식 AI 서버 주소 | `/control/plate` 프록시 대상. 미설정 시 `http://localhost:8000` |
-| `INTERNAL_API_KEY` | 내부 서버 간 인증키 | `/control/plate` 프록시의 `X-Internal-Api-Key`. 백엔드 `puf.internal.api-key` 및 AI 서버 설정과 일치 필요 |
 | `VITE_DATA_MODE` | 키가 아닌 데이터 모드 | `server`: 백엔드 연동, `example`: 예시 데이터 |
 
-`VITE_` 변수는 브라우저 코드에 포함됩니다. REST·기상청·ITS·내부 인증키에는 `VITE_`를 붙이지 마세요. `.env`와 `.env.local`은 현재 `.gitignore`에 등록되어 있습니다. 팀원은 키 소유자에게 별도로 키를 전달받아야 합니다.
+`VITE_` 변수는 브라우저 코드에 포함됩니다. REST·기상청·ITS 키에는 `VITE_`를 붙이지 마세요. `.env`와 `.env.local`은 현재 `.gitignore`에 등록되어 있습니다. 팀원은 키 소유자에게 별도로 키를 전달받아야 합니다.
 
 ## 외부 API와 CCTV 연결
 

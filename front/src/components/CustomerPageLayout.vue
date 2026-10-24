@@ -78,16 +78,14 @@ const current = computed(() =>
     class="customer-page-layout"
     :class="{'is-mypage':myPage,'is-home':route.path==='/','is-auth':authPage,'is-map':mapPage,'is-board':['/c-notice','/info/faq'].includes(route.path)}"
   >
-    <nav class="customer-breadcrumb" aria-label="현재 위치">
+    <nav v-if="route.path!=='/'" class="customer-breadcrumb" aria-label="현재 위치">
       <RouterLink to="/">홈</RouterLink>
-      <template v-if="route.path!=='/'">
-        <span aria-hidden="true">›</span>
-        <RouterLink :to="myPage?'/my-home':group.to">
-          {{myPage?'마이페이지':group.title}}
-        </RouterLink>
-        <span aria-hidden="true">›</span>
-        <span aria-current="page">{{current}}</span>
-      </template>
+      <span aria-hidden="true">›</span>
+      <RouterLink :to="myPage?'/my-home':group.to">
+        {{myPage?'마이페이지':group.title}}
+      </RouterLink>
+      <span aria-hidden="true">›</span>
+      <span aria-current="page">{{current}}</span>
     </nav>
   <aside
       v-if="!myPage&&route.path!=='/'"
