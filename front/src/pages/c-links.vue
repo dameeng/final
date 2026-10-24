@@ -14,7 +14,6 @@ const entry = computed(() =>
 <template>
   <main class="wire-page customer-content page-c-information page-c-links">
     <header class="information-page-heading">
-      <p class="routel-company-eyebrow">CONNECTED SERVICES</p>
       <h1>{{ entry.name }}</h1>
       <p>안전한 이동에 도움이 되는 정보를 연결합니다.</p>
     </header>

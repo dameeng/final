@@ -11,8 +11,10 @@
   min-width: 0;
   width: 72px;
 }
-.phone-country select {
+#app .phone-country select {
   width: 100%;
+  appearance: none;
+  background-image: none!important;
   color: transparent!important;
 }
 .phone-country select option {
@@ -25,7 +27,11 @@
   right: 0;
   top: 50%;
   transform: translateY(-50%);
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  z-index: 1;
   pointer-events: none;
   color: var(--foreground,#20252b);
 }

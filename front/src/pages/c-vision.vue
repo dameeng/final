@@ -28,7 +28,6 @@ const visionRoadmap = [
 <template>
   <main class="wire-page customer-content page-c-information page-c-vision">
     <header class="information-page-heading">
-      <p class="routel-company-eyebrow">OUR NEXT CHAPTER</p>
       <h1>비전·로드맵</h1>
       <p>안전한 이동을 위한 연결, 한 단계씩 더 촘촘하게.</p>
     </header>

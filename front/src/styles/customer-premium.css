@@ -70,6 +70,7 @@
 /* Login and sign-up remain readable forms rather than full-width empty panels. */
 #app .customer-editorial .is-auth .customer-page-body { width:100%; max-width:660px; justify-self:center; }
 #app .customer-editorial .auth-service { padding:32px; border:1px solid var(--r-line); border-radius:18px; background:var(--r-surface); box-shadow:0 10px 32px #14375109; }
+#app .customer-editorial .customer-page-body>.customer-content.auth-service { max-width:680px; margin:24px auto; padding:32px; background:var(--r-surface); }
 #app .customer-editorial .auth-service .service-heading { margin-bottom:28px; }
 #app .customer-editorial .auth-service .service-heading h1 { font-size:28px; }
 #app .customer-editorial .auth-service :is(.auth-field-group,.service-form-fields) { margin:0; }
@@ -191,6 +192,7 @@
   #app .customer-editorial .service-table tr:has(.notice-title-button)>td[data-label="제목"] { flex:0 0 100%; }
   #app .customer-editorial .service-table .service-actions { margin-top:6px; flex-wrap:wrap; }
   #app .customer-editorial .auth-service { padding:24px 20px; border-radius:14px; }
+  #app .customer-editorial .customer-page-body>.customer-content.auth-service { padding:24px 20px; }
   #app .customer-editorial .auth-service .service-heading h1 { font-size:25px; }
   #app .customer-editorial :is(.account-panel,.account-actions,.profile-form,.mypage-card) { padding:20px; margin-bottom:18px; }
   #app .customer-editorial :is(.account-panel,.account-actions,.profile-form) h2 { font-size:20px; margin-bottom:20px; }

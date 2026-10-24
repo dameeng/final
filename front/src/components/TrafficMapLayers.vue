@@ -143,7 +143,7 @@ onBeforeUnmount(() => { disposed = true; generation++; clear(); if (props.map &&
       <header><button v-if="groupItems.length" type="button" @click="active=undefined" aria-label="목록으로 돌아가기">←</button><span class="traffic-device-type">{{active.kind==='cctv'?'도로 CCTV':'VMS 전광판'}}</span><button type="button" aria-label="닫기" @click="closeInfo">✕</button></header>
       <h2>{{active.name}}</h2><p v-if="active.address">{{active.address}}</p>
       <TrafficVideo v-if="active.kind==='cctv' && active.url" :key="active.id" :src="active.url" hls />
-      <template v-else-if="active.kind==='vms'"><p v-if="active.type">전광판 규격: {{active.type}}</p><p>위치: {{active.lat}}, {{active.lng}}</p><p v-if="active.example" class="vms-example-note">예시 문구 · 실제 전광판 표출 내용과 다를 수 있습니다.</p><VmsLedDisplay v-if="active.content || active.messages?.length" :key="active.id" :content="active.content" :messages="active.messages" :example="active.example" /><p v-else>현재 표출 문구는 제공되지 않습니다.</p><p v-if="active.updatedAt">갱신 시각: {{active.updatedAt}}</p></template>
+      <template v-else-if="active.kind==='vms'"><p v-if="active.example" class="vms-example-note">예시 문구 · 실제 전광판 표출 내용과 다를 수 있습니다.</p><VmsLedDisplay v-if="active.content || active.messages?.length" :key="active.id" :content="active.content" :messages="active.messages" :example="active.example" /><p v-else>현재 표출 문구는 제공되지 않습니다.</p><p v-if="active.updatedAt">갱신 시각: {{active.updatedAt}}</p></template>
       <small v-if="active.kind==='cctv'">부산광역시 교통정보 제공 · 제공처 사정에 따라 영상이 지연되거나 중단될 수 있습니다.</small>
     </template>
   </dialog>

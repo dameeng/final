@@ -588,7 +588,7 @@ async function resend() {
             expired-label="승인 예상 시간이 지났습니다. 로그인으로 승인 여부를 확인해 주세요." /></p
         ><small>서버가 15초 간격으로 승인 대상을 확인합니다.</small></section
       ><nav class="auth-links"
-        ><RouterLink :to="authLink('login')">로그인</RouterLink
+        ><RouterLink v-if="kind==='signup'" :to="authLink('login')">로그인</RouterLink
         ><RouterLink v-if="kind!=='signup'" :to="authLink('signup')">회원가입</RouterLink
         ><RouterLink
           v-if="!manager"

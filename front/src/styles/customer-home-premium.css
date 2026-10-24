@@ -4,8 +4,6 @@
 #app .home-premium section { margin:0 0 64px; }
 #app .home-premium .home-hero { --home-photo-exposure:1; --home-photo-saturation:.92; --home-photo-seam:90deg; display:grid; grid-template-columns:1fr 1.12fr; background:var(--r-surface); border:1px solid var(--r-line); border-radius:24px; overflow:hidden; box-shadow:0 16px 50px #1538590b; }
 #app .home-premium .home-hero-copy { padding:clamp(28px,4vw,64px); align-self:center; min-width:0; }
-#app .home-premium .home-eyebrow { display:flex; align-items:center; gap:8px; color:var(--r-accent); font-size:11px; font-weight:700; letter-spacing:.12em; line-height:1.6; }
-#app .home-eyebrow>span { width:6px; height:6px; flex:none; background:currentColor; border-radius:50%; }
 #app .home-premium .home-hero h1 { margin:24px 0 22px; color:var(--r-ink); font-size:clamp(32px,3.45vw,54px); font-weight:750; letter-spacing:-.055em; line-height:1.22; word-break:keep-all; }
 #app .home-premium .home-hero-lead { color:var(--r-brand); font-size:19px; font-weight:600; line-height:1.65; letter-spacing:-.025em; }
 #app .home-premium .home-description { margin-top:16px; font-size:15px; color:var(--r-muted); line-height:1.85; word-break:keep-all; }
@@ -30,20 +28,18 @@
 #app .home-service-card { display:flex; flex-direction:column; align-items:flex-start; padding:32px; border:1px solid var(--r-line); border-radius:16px; background:var(--r-surface); box-shadow:0 6px 24px #18345206; }
 #app .home-card-top { display:flex; justify-content:space-between; align-items:center; gap:16px; width:100%; margin-bottom:24px; }
 #app .home-service-icon { display:grid; place-items:center; width:48px; height:48px; color:var(--r-accent); background:var(--r-selected); border-radius:14px; }
-#app .home-card-number { color:var(--r-muted); font-size:10px; font-weight:650; letter-spacing:.08em; }
 #app .home-premium .home-service-card h3 { font-size:21px; line-height:1.5; letter-spacing:-.03em; }
 #app .home-premium .home-service-card p { margin:12px 0 24px; color:var(--r-muted); line-height:1.8; font-size:15px; }
 #app .home-service-card>a { display:flex; align-items:center; justify-content:space-between; gap:20px; width:100%; padding-top:20px; margin-top:auto; border-top:1px solid var(--r-line); font-size:14px; font-weight:650; color:var(--r-accent); text-decoration:none; }
 #app .home-premium .home-brand { display:grid; grid-template-columns:1fr .9fr; align-items:center; gap:32px; padding:44px 52px; background:#142f4b; color:#fff; border-radius:20px; overflow:hidden; }
-#app .home-brand .home-eyebrow { color:#a3c5e5; }
 #app .home-premium .home-brand h2 { margin:18px 0; color:#fff; font-size:36px; }
-#app .home-premium .home-brand-copy>p:not(.home-eyebrow) { color:#c6d8e9; font-size:14px; line-height:1.85; }
+#app .home-premium .home-brand-copy>p { color:#c6d8e9; font-size:14px; line-height:1.85; }
 #app .home-brand-copy>a { display:inline-flex; gap:30px; margin-top:24px; font-size:14px; color:#fff; text-decoration:none; }
 #app .home-brand-art { position:relative; }
 #app .home-brand-art>svg { display:block; width:100%; height:auto; }
-#app .home-art-label { position:absolute; padding:11px 16px; border:1px solid #ffffff26; border-radius:10px; color:#d8e7f5; background:#1c3b59; font-size:12px; box-shadow:0 8px 22px #0a1a2b20; }
-#app .home-art-label-one { left:6%; top:16%; }
-#app .home-art-label-two { right:1%; bottom:12%; }
+#app .home-art-label { position:absolute; min-width:180px; padding:14px 22px; text-align:center; border:1px solid #ffffff26; border-radius:10px; color:#d8e7f5; background:#1c3b59; font-size:15px; font-weight:600; box-shadow:0 8px 22px #0a1a2b20; }
+#app .home-art-label-one { left:0; top:0; }
+#app .home-art-label-two { right:0; bottom:0; }
 #app .home-premium .home-roadmap { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:18px; list-style:none; padding:0; }
 #app .home-premium .home-roadmap>li { padding:26px 22px; background:var(--r-surface); border:1px solid var(--r-line); border-radius:14px; }
 #app .home-roadmap-year { display:inline-block; padding:5px 10px; border-radius:6px; color:var(--r-accent); background:var(--r-selected); font-size:14px; font-weight:700; font-variant-numeric:tabular-nums; }
@@ -91,6 +87,4 @@
 @media (max-width:360px) {
   #app .home-premium .home-hero h1 { font-size:31px; }
   #app .home-premium .home-roadmap { grid-template-columns:minmax(0,1fr); }
-  #app .home-premium .home-eyebrow { font-size:10px; letter-spacing:.07em; }
-  #app .home-card-number { font-size:9px; }
 }

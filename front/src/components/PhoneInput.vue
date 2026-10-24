@@ -83,7 +83,7 @@ function paste(event: ClipboardEvent) {
 <template>
   <span class="phone-input" role="group" :aria-label="label">
     <span v-if="international" class="phone-country">
-      <span class="phone-country-code" aria-hidden="true">{{country}}</span>
+      <span class="phone-country-code" aria-hidden="true">{{country}}<svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m2.5 4.5 3.5 3.5 3.5-3.5" /></svg></span>
       <select
         v-model="country"
         :aria-label="label+' 국가번호'"

@@ -131,7 +131,7 @@ async function submit() {
 }
 </script>
 <template>
-  <main class="wire-page customer-content auth-page">
+  <main class="wire-page customer-content auth-page auth-service">
     <h1>{{title}}</h1>
  <form @submit.prevent="submit">
       <template v-if="mode==='login'">
@@ -301,9 +301,9 @@ async function submit() {
         </template>
       </template>
   <template v-else>
-        <label>휴대폰 번호<input v-model.trim="form.phone" type="tel" autocomplete="tel" required />
-        </label>
         <label>이름<input v-model.trim="form.name" autocomplete="name" required />
+        </label>
+        <label>휴대폰 번호<input v-model.trim="form.phone" type="tel" autocomplete="tel" required />
         </label>
       </template>
   <button type="submit" :disabled="loading">
@@ -312,7 +312,6 @@ async function submit() {
   <p v-if="message" role="status">{{message}}</p>
     </form>
  <nav class="auth-links">
-      <RouterLink to="/login">로그인</RouterLink>
       <RouterLink to="/signup">회원가입</RouterLink>
       <RouterLink to="/password-reset">비밀번호 찾기</RouterLink>
       <RouterLink to="/find-id">아이디 찾기</RouterLink>
@@ -320,3 +319,34 @@ async function submit() {
     </nav>
   </main>
 </template>
+
+<style scoped>
+.auth-service h1 {
+  margin: 0 0 28px;
+  font-size: 28px;
+}
+.auth-service form {
+  gap: 18px;
+}
+.auth-service label {
+  font-size: 14px;
+  font-weight: 500;
+}
+.auth-service button[type=submit] {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 6px;
+  border-radius: 9px;
+}
+.auth-service [role=status] {
+  margin: 0;
+  font-size: 13px;
+}
+.auth-links {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--r-line, var(--line));
+  gap: 12px 18px;
+  font-size: 13px;
+}
+</style>

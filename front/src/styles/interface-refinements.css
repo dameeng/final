@@ -69,8 +69,9 @@
 #app .legacy-live-map .risk-history-chart path[stroke='#225f9b'] { stroke:var(--r-accent); }
 #app .legacy-live-map .risk-history-chart circle[fill='#225f9b'] { fill:var(--r-accent); }
 #app .legacy-live-map .risk-history-chart path[stroke-width='3']:not([stroke-dasharray]) { animation:routel-observation-enter 550ms var(--motion-ease); }
-#app .legacy-live-map .map-weather-widget { background:transparent; box-shadow:none; }
 #app :is(.map-weather-marker,.map-weather-detail) { background:var(--r-surface); color:var(--r-ink); border-color:var(--r-line); box-shadow:var(--r-shadow); }
+#app .legacy-live-map .mapw .map-weather-widget { background:transparent; border:0; box-shadow:none; }
+#app .legacy-live-map .mapw :is(.customer-map-control-dock,.customer-map-control-dock .map-control-toggle,.kakao-map-controls) { border-radius:999px; }
 /* Earlier mobile dark rules use !important; keep the weather card on the
    shared surface as well, including its expanded state. */
 #app .mobile-app-map .map-weather-widget :is(.map-weather-marker,.map-weather-detail) { background:var(--r-surface)!important; color:var(--r-ink)!important; border-color:var(--r-line); }

@@ -24,7 +24,6 @@ const principles = [
   <main class="wire-page customer-content page-c-information page-c-company">
     <header class="routel-company-hero">
       <div class="routel-company-hero-copy">
-        <p class="routel-company-eyebrow">ABOUT ROUTEL</p>
         <h1>도로의 정보를 연결해,<br />안전한 이동을 돕습니다.</h1>
         <div class="routel-company-lead">
           <p>ROUTEL은 지하차도 통제 현황을 한곳에서 확인할 수 있도록 돕는 교통안전 정보 서비스입니다.</p>
@@ -64,7 +63,6 @@ const principles = [
       </div>
     </section>
     <section class="company-services" aria-labelledby="company-services-title">
-      <p class="routel-company-eyebrow">OUR SERVICES</p>
       <h2 id="company-services-title">이동 전에 확인하는 안전 정보</h2>
       <div class="routel-services">
         <div class="company-service-card">
@@ -93,7 +91,6 @@ const principles = [
       </ol>
     </section>
     <section class="routel-company-direction" aria-labelledby="company-direction-title">
-      <p class="routel-company-eyebrow">OUR DIRECTION</p>
       <h2 id="company-direction-title">더 많은 정보보다,<br />더 이해하기 쉬운 안전 정보로.</h2>
       <p class="routel-company-direction-copy">ROUTEL은 이용자가 이동 전 상황을 살펴보고 안전한 이동을 준비할 수 있도록, 정보의 연결과 전달 방식을 꾸준히 다듬어가겠습니다.</p>
     </section>
@@ -107,7 +104,6 @@ const principles = [
         <span>ROU</span>
       </div>
       <div class="routel-company-mascot-copy">
-        <p class="routel-company-eyebrow">ROUTEL MASCOT</p>
         <h2 id="company-mascot-title">ROUTEL의 작은 안전 안내자, 루</h2>
         <p>루는 ROUTEL의 앞부분인 ‘ROU’에서 이름을 따온 마스코트입니다. 짧고 친근한 이름처럼, 누구나 편하게 도로 안전 정보를 만날 수 있도록 곁에서 안내합니다.</p>
         <p>루는 위험을 마법처럼 없애는 영웅보다, 작은 변화도 그냥 지나치지 않는 꼼꼼한 친구에 가깝습니다. 주황색 안전 조끼를 챙겨 입고, 어렵게 느껴지는 도로 정보를 알기 쉬운 말로 전하는 것이 루의 역할입니다.</p>
