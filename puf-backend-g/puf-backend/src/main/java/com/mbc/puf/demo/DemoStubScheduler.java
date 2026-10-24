@@ -32,6 +32,9 @@ import tools.jackson.databind.JsonNode;
  *
  * 침수모델·수위계는 실제와 똑같이 HTTP 로 내부 API(/api/internal/**)를 호출한다.
  * 시나리오는 선택한 지역에만 적용되므로 다른 지역에는 알림이 가지 않는다.
+ *
+ * puf.demo.model-stub-enabled=false 면 가짜 침수모델(현재·미래 점수)은 보내지 않고 날씨·수위만 만든다.
+ * 진짜 침수 서버(FastAPI 8001)가 이 날씨를 읽어 점수를 계산하므로, 둘을 같이 켜면 점수가 섞인다.
  */
 @Component
 @ConditionalOnProperty(name = "puf.demo.enabled", havingValue = "true")
@@ -58,6 +61,7 @@ public class DemoStubScheduler {
     // 평상시 위험점수가 조금씩 오르내리게 하는 값 (지하차도별 현재값). 안전 ~ 주의 사이를 왔다갔다 한다
     private final double calmMaxScore;
     private final double calmStep;
+    private final boolean modelStubEnabled;     // false = 점수는 진짜 침수 서버가 보낸다
     private final Map<Long, Double> calmScores = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.Random random = new java.util.Random();
 
@@ -70,7 +74,8 @@ public class DemoStubScheduler {
                              @Value("${puf.demo.calm-water-minutes:5}") int calmWaterMinutes,
                              @Value("${puf.demo.calm-forecast-minutes:10}") int calmForecastMinutes,
                              @Value("${puf.demo.calm-max-score:75}") double calmMaxScore,
-                             @Value("${puf.demo.calm-step:10}") double calmStep) {
+                             @Value("${puf.demo.calm-step:10}") double calmStep,
+                             @Value("${puf.demo.model-stub-enabled:true}") boolean modelStubEnabled) {
         this.state = state;
         this.scenarioService = scenarioService;
         this.api = api;
@@ -83,6 +88,7 @@ public class DemoStubScheduler {
         this.calmForecastEvery = ticks(calmForecastMinutes);
         this.calmMaxScore = calmMaxScore;
         this.calmStep = calmStep;
+        this.modelStubEnabled = modelStubEnabled;
     }
 
     // 평상시 점수: 중간값(35) 쪽으로 살짝 끌려가면서 매번 조금씩(±calmStep 정도) 움직인다. 바닥은 baseline, 위는 calmMaxScore
@@ -150,11 +156,13 @@ public class DemoStubScheduler {
                 continue;
             }
             try {
-                modelStub(uid, active);
+                if (modelStubEnabled) {
+                    modelStub(uid, active);
+                }
                 if (active || calmWater) {
                     waterStub(uid, active, t);
                 }
-                if (active || calmForecast) {
+                if (modelStubEnabled && (active || calmForecast)) {
                     forecastStub(uid, active);
                 }
             } catch (RuntimeException e) {
