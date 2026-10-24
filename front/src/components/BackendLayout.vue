@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import NotificationBell from './NotificationBell.vue'
+import DemoRainButton from './DemoRainButton.vue'
 import AdminSidebarLinks from '../components/AdminSidebarLinks.vue'
 import '../styles/fac-list.css'
 import MenuIcon from './MenuIcon.vue'
@@ -92,6 +93,7 @@ async function logout() {
           <RouterLink class="admin-home-logo" :to="mobile?'/admin-app/screen-3':'/admin-dashboard'">ROUTEL</RouterLink>
         </div>
         <div class="hdr-r">
+          <DemoRainButton />
           <NotificationBell class="manager-header-bell" @opened="open=false" />
           <RouterLink class="user backend-user" to="/admin-profile">
             {{app.account?.name||'관리자'}}님</RouterLink>
