@@ -10,27 +10,33 @@
   border-radius: 8px;
   background: var(--surface);
 }
+/* 필수 선택칸 묶음과 나머지 필터 묶음이 각자 넓게 자리 잡아 두 줄로 흩어지지 않게, 내용 폭만큼만 차지하고 한 줄로 이어 붙인다 */
 .service-workspace.restored-admin-workspace .service-filters :deep(.service-form-fields) {
-  flex: 1 1 640px;
+  flex: 0 0 auto;
+  max-width: 100%;
   display: flex;
   flex-wrap: wrap;
   gap: 14px 16px;
   min-width: 0;
 }
+/* 칸 폭은 px로 고정하고 max-width로만 줄인다 (퍼센트 폭이면 묶음 폭 계산 때 칸이 좁게 잡혀 세로로 쌓인다) */
 .service-workspace.restored-admin-workspace .service-filters :deep(label) {
   min-width: 0;
-  max-width: none;
-  width: min(260px,100%);
+  max-width: 100%;
+  width: 240px;
   gap: 8px;
 }
 .service-workspace.restored-admin-workspace .service-filters :deep(.field-type-select) {
-  width: min(180px,100%);
+  width: 180px;
 }
 .service-workspace.restored-admin-workspace .service-filters :deep(.field-type-number) {
-  width: min(140px,100%);
+  width: 140px;
+}
+.service-workspace.restored-admin-workspace .service-filters :deep(.field-type-date) {
+  width: 170px;
 }
 .service-workspace.restored-admin-workspace .service-filters :deep(.field-type-datetime-local) {
-  width: min(230px,100%);
+  width: 230px;
 }
 .service-workspace.restored-admin-workspace .service-filters :deep(input:not([type=checkbox])),.service-workspace.restored-admin-workspace .service-filters :deep(select) {
   width: 100%;

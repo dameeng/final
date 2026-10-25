@@ -19,7 +19,7 @@ defineProps<{
     ><label
       v-for="field in fields"
       :key="field.key"
-      :class="[{wide:field.type==='textarea'||field.type==='lines', 'postcode-field':field.key==='zipcode','checkbox-field':field.type==='checkbox'}, 'field-type-'+(field.type||'text')]"
+      :class="[{wide:field.wide||field.type==='textarea'||field.type==='lines', 'postcode-field':field.key==='zipcode','checkbox-field':field.type==='checkbox'}, 'field-type-'+(field.type||'text')]"
       ><span class="service-field-label"
         >{{field.label
         }}<small v-if="field.required" class="required-label" aria-label="필수">*</small></span

@@ -29,7 +29,7 @@ try {
  assert.equal(await eventRows.count(),10)
  assert.equal(await page.locator('.dashboard-fixed-item').count(),7)
  assert.equal(await page.locator('.board-customized').count(),0)
- await page.getByRole('button',{name:'위젯 리스트',exact:true}).click()
+ await page.getByRole('button',{name:'화면편집',exact:true}).click()
  assert.equal(await page.locator('.board-library>div').count(),10)
  assert.equal(await page.locator('.board-resize').count(),28)
  const library=page.getByRole('complementary',{name:'위젯 리스트'})
@@ -76,7 +76,7 @@ try {
  await page.locator('.board-customized').waitFor()
  assert.equal(await map.getAttribute('style'),saved)
  assert.equal(await page.locator('[data-widget-id=ocr]').count(),1)
- await page.getByRole('button',{name:'위젯 리스트',exact:true}).click()
+ await page.getByRole('button',{name:'화면편집',exact:true}).click()
  await page.getByRole('button',{name:'기본 구성',exact:true}).click()
  assert.equal(await page.locator('.board-customized').count(),0)
  assert.equal(await page.locator('.dashboard-fixed-item').count(),7)
@@ -108,7 +108,7 @@ try {
   const x=rectangles[a],y=rectangles[b]
   assert(!(x.x<y.right-1&&x.right>y.x+1&&x.y<y.bottom-1&&x.bottom>y.y+1),'Widgets do not overlap')
  }
- await page.getByRole('button',{name:'위젯 리스트',exact:true}).click()
+ await page.getByRole('button',{name:'화면편집',exact:true}).click()
  await page.getByRole('button',{name:'위젯 리스트 닫기'}).click()
  await map.locator('.board-resize-top').waitFor()
  await page.evaluate(()=>{

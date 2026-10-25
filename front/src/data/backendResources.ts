@@ -15,6 +15,7 @@ export type Field = {
   required?: boolean
   options?: [string, string][]
   source?: 'regions' | 'underpasses' | 'shifts' | 'cameras' | 'presets' | 'reasons' | 'vms'
+  wide?: boolean // 등록·수정 창에서 한 줄 전체 폭을 쓴다
 }
 export type Action = {
   label: string
@@ -248,7 +249,13 @@ export const backendResources: Record<string, Resource> = {
       ['displayContent', '전광판 문구'],
       ['createdAt', '발생 시각'],
     ],
-    filters: [text('kind', '이력 종류'), ...period],
+    filters: [
+      select('kind', '이력 종류', [
+        ['EVENT', '차단·해제·위험도'],
+        ['DISPLAY', '전광판 문구'],
+      ]),
+      ...period,
+    ],
   },
   ocr: {
     title: 'OCR 인식 기록',
@@ -517,10 +524,11 @@ export const backendResources: Record<string, Resource> = {
       ['viewCount', '조회수'],
     ],
     filters: [text('keyword', '제목·내용'), select('category', '분류', noticeCategories)],
+    // 제목·내용·분류는 한 줄 전체, 체크 두 개(중요 공지·고객 알림 발송)는 마지막 줄에 나란히
     fields: [
-      text('title', '제목', true),
+      { ...text('title', '제목', true), wide: true },
       area('content', '내용', true),
-      select('category', '분류', noticeCategories),
+      { ...select('category', '분류', noticeCategories), wide: true },
       { key: 'important', label: '중요 공지', type: 'checkbox' },
       { key: 'sendPush', label: '고객 알림 발송', type: 'checkbox' },
     ],
@@ -757,3 +765,5 @@ backendResources['manager-notifications'] = {
 }
 resourceRoutes['/admin-app/notifications'] = 'manager-notifications'
 Object.assign(valueLabels, { RISK: '위험', EQUIPMENT: '설비', TASK: '업무', SYSTEM: '시스템' })
+// 시설 제어 이력의 유형(kind) 값: 영문 그대로 나오지 않게
+Object.assign(valueLabels, { EVENT: '시설 제어', DISPLAY: '전광판' })

@@ -140,12 +140,14 @@ onBeforeUnmount(() => {
 <template>
   <BackendLayout class="page-admin-dashboard" :class="{'water-dashboard':!route.path.startsWith('/admin-app/')}"
     ><section class="restored-dashboard service-workspace"
-      ><div class="crumb">종합 현황</div
       ><div class="page-head service-heading"
         ><h1>종합 현황</h1
-        ><button class="btn sm" :disabled="loading" @click="load">새로고침</button></div
+        ><div class="dashboard-head-actions"
+          ><DashboardEditor :grid="dashboardGrid"
+          /><button class="btn sm" :disabled="loading" @click="load">새로고침</button></div
+        ></div
       ><p v-if="error" class="service-error" role="alert">{{error}}</p
-      ><DashboardEditor :grid="dashboardGrid" /><div id="grid" ref="dashboardGrid" class="dashboard-fixed-layout">
+      ><div id="grid" ref="dashboardGrid" class="dashboard-fixed-layout">
         <div class="dashboard-fixed-item fixed-summary"
           ><div class="dashboard-fixed-content"
             ><section class="card wg widget-original-content" aria-label="지하차도 현황"

@@ -93,6 +93,11 @@
 #app .water-dashboard .tile .big { color:var(--kpi-color); font-weight:750; letter-spacing:-.04em; font-variant-numeric:tabular-nums; }
 #app .water-dashboard .tile[data-kpi=dangerLevelCount] .big { color:var(--dash-orange-ink); }
 #app .water-dashboard .tile[data-kpi=remainingCount] .big { color:var(--dash-teal-ink); }
+/* 숫자 카드를 세로로 더 길게, 글자·아이콘도 크게 (Canva 10번) */
+#app .water-dashboard .fixed-summary .tile { min-height:96px; padding:16px 18px !important; display:flex; flex-direction:column; justify-content:center; gap:6px; }
+#app .water-dashboard .fixed-summary .tile small { font-size:14px; }
+#app .water-dashboard .fixed-summary .tile .big { font-size:38px; line-height:1.1; }
+#app .water-dashboard .fixed-summary .dashboard-kpi-icon { width:46px; height:46px; padding:10px; right:16px; border-radius:12px; }
 #app .water-dashboard .dashboard-kpi-icon {
   position:absolute; right:12px; top:50%; transform:translateY(-50%);
   width:34px; height:34px; padding:8px; border-radius:10px;
@@ -181,3 +186,7 @@
 @media (prefers-reduced-motion:reduce) {
   #app .water-dashboard :is(.dashboard-value,.dashboard-score-track>i,.dashboard-chart-motion,.dashboard-chart-hover,.manager-gauge>b) { animation:none; transition:none; }
 }
+/* 최근 이벤트가 없을 때 안내 문구를 칸 가운데에 두어 아래가 텅 비어 보이지 않게 */
+#app .water-dashboard .fixed-events .wg { display:flex; flex-direction:column; height:100%; }
+#app .water-dashboard .fixed-events .wg>p { flex:1; display:flex; align-items:center; justify-content:center; margin:12px 0 0; border:1px dashed var(--dash-line); border-radius:10px; color:var(--dash-muted); font-size:14px; text-align:center; }
+#app .water-dashboard .fixed-events .wg>p~.tl:empty { display:none; }

@@ -1,5 +1,6 @@
+/* 이름(왼쪽)과 전화번호(오른쪽)가 너무 멀지 않게 폭을 좁혀 가운데에 둔다 */
 .contacts-page {
-  max-width: 1100px;
+  max-width: 680px;
   margin: auto;
 }
 .contacts-page h1 {

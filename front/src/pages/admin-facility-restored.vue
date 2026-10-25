@@ -171,13 +171,15 @@ function control() {
       </p>
       <p v-if="loading" role="status">시설 정보를 불러오는 중입니다.</p>
       <nav class="tabs" aria-label="지하차도 상세 탭">
+        <!-- 다섯 탭이 같은 경로(?tab= 만 다름)라 라우터 기본 활성 표시는 전부 켜진다. 현재 탭 하나에만 직접 표시 -->
         <RouterLink
           v-for="[value,label] in [['overview','개요'],['equip','설비'],['sign','전광판'],['cctv','CCTV'],['settings','설정']]"
           :key="value"
+          v-slot="{href,navigate}"
           :to="{path:'/fac-detail',query:{id,underpassId:id,tab:value}}"
-          :class="{'is-current':tab===value}"
+          custom
         >
-          {{label}}
+          <a :href="href" :class="{'is-current':tab===value}" :aria-current="tab===value?'page':undefined" @click="navigate">{{label}}</a>
         </RouterLink>
       </nav>
 <template v-if="facility">

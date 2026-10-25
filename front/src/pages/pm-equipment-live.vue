@@ -161,7 +161,7 @@ function act(row: Equipment) {
             v-for="[value,label] in levelTabs"
             :key="value"
             type="button"
-            :class="{'is-current':level===value}"
+            :class="{'is-current':level===value,on:level===value}" :aria-pressed="level===value"
             @click="level=value"
           >
             {{label}}
@@ -253,6 +253,17 @@ function act(row: Equipment) {
 .pm-name { font-family: ui-monospace, Consolas, monospace; white-space: nowrap; }
 .pm-table td:nth-child(4), .pm-table td:last-child, .pm-table td:nth-child(8) { white-space: nowrap; }
 .pm-table td:last-child .btn { white-space: nowrap; }
+/* 필터를 바꿔도 칸 너비가 내용에 따라 바뀌지 않게 고정 (주요 사유 칸이 남는 폭을 가져간다) */
+.pm-table { table-layout: fixed; width: 100%; }
+.pm-table td { vertical-align: middle; }
+.pm-table th:nth-child(1) { width: 80px; }
+.pm-table th:nth-child(2) { width: 80px; }
+.pm-table th:nth-child(3) { width: 140px; }
+.pm-table th:nth-child(4) { width: 120px; }
+.pm-table th:nth-child(5) { width: 80px; }
+.pm-table th:nth-child(6) { width: 110px; }
+.pm-table th:nth-child(8) { width: 150px; }
+.pm-table th:nth-child(9) { width: 110px; }
 .pm-score { margin-left: 6px; }
 .pm-up { color: var(--danger, #c0392b); }
 .pm-reason { max-width: 320px; }

@@ -159,7 +159,7 @@ function act(row: PmEvent, mode: 'start' | 'note' | 'resolve') {
 
       <div class="pm-filters">
         <nav class="tabs" aria-label="점검 상태">
-          <button v-for="[value,label] in tabs" :key="value" type="button" :class="{'is-current':status===value}" @click="status=value">
+          <button v-for="[value,label] in tabs" :key="value" type="button" :class="{'is-current':status===value,on:status===value}" :aria-pressed="status===value" @click="status=value">
             {{label+(tabCount(value)!=null?' '+tabCount(value):'')}}
           </button>
         </nav>
@@ -235,7 +235,7 @@ function act(row: PmEvent, mode: 'start' | 'note' | 'resolve') {
 .pm-type { display: flex; align-items: center; gap: 8px; font-size: 14px; }
 .pm-table tbody tr { cursor: pointer; }
 .pm-table tbody tr:hover, .pm-table tbody tr:focus-visible { background: var(--line-soft, rgba(0,0,0,.04)); }
-.pm-table td { white-space: nowrap; }
+.pm-table td { white-space: nowrap; vertical-align: middle; }
 .pm-name { font-family: ui-monospace, Consolas, monospace; }
 .pm-scores { display: inline-flex; align-items: center; gap: 6px; }
 .pm-now--down { color: #3b8c3e; }

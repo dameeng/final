@@ -521,3 +521,8 @@
     min-width: 0;
   }
 }
+
+/* 지도 조작 버튼(전체보기·확대·축소)을 하나의 묶음으로 */
+#app .manager-live-map .manager-map-controls { gap:0; padding:0; overflow:hidden; border:1px solid var(--r-line,#d5dce4); border-radius:10px; background:var(--r-surface,#fff); }
+#app .manager-live-map .manager-map-controls>button { border:0 !important; border-radius:0 !important; box-shadow:none !important; }
+#app .manager-live-map .manager-map-controls>button+button { border-top:1px solid var(--r-line,#d5dce4) !important; }

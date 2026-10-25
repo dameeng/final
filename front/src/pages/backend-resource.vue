@@ -723,6 +723,9 @@ watch(
     }
     for (const field of resource.value.parents || [])
       parents[field.key] = route.query[field.key] || ''
+    // 지하차도 상세 안의 설비·설정 표: 주소에 underpassId 없이 ?id= 만 와도 그 지하차도로 본다
+    if (props.embedded && route.path === '/fac-detail' && 'underpassId' in parents && !parents.underpassId)
+      parents.underpassId = route.query.id || ''
     if (vmsSplit.value) parents.underpassId = route.query.underpassId || ''
     for (const field of resource.value.filters || [])
       filters[field.key] =
@@ -911,7 +914,8 @@ defineExpose({ open, load })
         :to="alertLogReturn.path"
         class="alert-log-return"
       >← 알림 발송 기록으로 돌아가기</RouterLink>
-      <div v-if="restored" class="crumb">{{customerService?'고객 서비스':pageTitle}}</div>
+      <!-- 제목과 같은 글자를 위에 한 번 더 쓰지 않는다 (고객 서비스 묶음 이름만 표시) -->
+      <div v-if="restored&&customerService" class="crumb">고객 서비스</div>
       <div class="service-heading page-head">
         <component :is="props.embedded?'h2':'h1'">{{pageTitle}}</component>
         <div class="service-actions">
@@ -1009,7 +1013,7 @@ defineExpose({ open, load })
         <label class="manager-unread-filter"><input v-model="filters.unreadOnly" type="checkbox" @change="search" />안 읽은 알림만</label>
       </form>
       <form
-        v-else-if="!customer||resource.parents?.length||resource.filters?.length"
+        v-else-if="resource.parents?.length||resource.filters?.length"
         class="service-filters filters"
         @submit.prevent="submitFilters"
         @change="customer&&search()"
@@ -1019,7 +1023,7 @@ defineExpose({ open, load })
           :fields="vmsSplit?splitUnderpassFields:resource.parents"
           :values="parents"
           :choices="underpassSplit?splitChoices:choices"
-          :hide-guide="underpassSplit"
+          hide-guide
         />
         <input
           v-if="underpassSplit"
@@ -1035,7 +1039,7 @@ defineExpose({ open, load })
           :fields="resource.filters"
           :values="filters"
           :choices="choices"
-          :empty-label="customer?'전체':undefined"
+          empty-label="전체"
         />
         <button v-if="!customer" type="submit" :disabled="loading">
           {{resourceId==='my-inquiries'?'검색':'조회'}}

@@ -189,7 +189,7 @@ try {
     }
     await page.setViewportSize({ width: 1440, height: 1000 })
     await panel.getByRole('button', { name: '시설 선택 해제', exact: true }).click()
-    await page.getByRole('button', { name: '위젯 리스트', exact: true }).click()
+    await page.getByRole('button', { name: '화면편집', exact: true }).click()
     await page.getByRole('complementary', { name: '위젯 리스트' }).getByRole('button', { name: /위험 추이/ }).click()
     await page.getByRole('button', { name: '위젯 리스트 닫기' }).click()
     const risk = page.locator('[data-widget-id="risk"]')

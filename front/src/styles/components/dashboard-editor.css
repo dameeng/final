@@ -65,3 +65,9 @@
 .board-editing .board-resize-left::after { left:4px; }
 .board-editing .board-resize-right::after { left:auto; right:4px; }
 .board-editing .board-resize:hover { background:#497eaa18; }
+/* 종합 현황: 화면편집 버튼을 새로고침과 함께 제목 오른쪽에 둔다 */
+.dashboard-head-actions { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:8px; }
+.dashboard-head-actions .board-toolbar { margin:0; }
+/* 편집 중에는 오른쪽 위젯 서랍에 가리지 않도록 버튼 줄(기본 구성·취소·저장)을 제목 아래 왼쪽으로 내린다 */
+.page-head:has(.board-toolbar.is-editing) { flex-wrap:wrap; }
+.dashboard-head-actions:has(.board-toolbar.is-editing) { order:3; flex-basis:100%; justify-content:flex-start; }
