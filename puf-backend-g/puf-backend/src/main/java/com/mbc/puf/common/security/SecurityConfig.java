@@ -50,7 +50,8 @@ public class SecurityConfig {
 						// ---- 로그인 없이 조회 가능한 게시판 (공지사항 목록·상세, CP-09) ----
 						.requestMatchers(HttpMethod.GET, "/api/notices", "/api/notices/**").permitAll()
 						// ---- 로그인 없이 조회 가능한 게시판 (자주 묻는 질문 목록·상세, CP-10) ----
-						.requestMatchers(HttpMethod.GET, "/api/faqs", "/api/faqs/**").permitAll()
+						.requestMatchers(HttpMethod.POST, "/api/chat").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/faqs", "/api/faqs/**").permitAll()
 						// ---- 로그인 없이 조회 가능한 지하차도 목록·상세 (CP-05~07). 등록/수정/삭제/차단 등
 						//                  나머지 경로는 각 컨트롤러 메서드의 @PreAuthorize 가 여전히 관리자만 허용한다 ----
 						// 통과 기록(차량번호)은 개인정보라 공개 목록·상세 규칙보다 먼저 로그인 필수로 막는다 (/api/underpasses/* 에 걸리지 않게)
