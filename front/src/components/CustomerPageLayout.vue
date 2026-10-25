@@ -38,8 +38,8 @@ const groups = [
     items: [
       ['로그인', '/login'],
       ['회원가입', '/signup'],
-      ['비밀번호 찾기', '/password-reset'],
       ['아이디 찾기', '/find-id'],
+      ['비밀번호 찾기', '/password-reset'],
     ],
   },
 ]
@@ -80,15 +80,19 @@ const current = computed(() =>
   >
     <nav v-if="route.path!=='/'" class="customer-breadcrumb" aria-label="현재 위치">
       <RouterLink to="/">홈</RouterLink>
-      <span aria-hidden="true">›</span>
-      <RouterLink :to="myPage?'/my-home':group.to">
-        {{myPage?'마이페이지':group.title}}
-      </RouterLink>
+      <!-- 메뉴 이름과 현재 페이지 이름이 같으면(지하차도 현황 › 지하차도 현황) 한 번만 -->
+      <template v-if="myPage||current!==group.title">
+        <span aria-hidden="true">›</span>
+        <RouterLink :to="myPage?'/my-home':group.to">
+          {{myPage?'마이페이지':group.title}}
+        </RouterLink>
+      </template>
       <span aria-hidden="true">›</span>
       <span aria-current="page">{{current}}</span>
     </nav>
+  <!-- 하위 메뉴가 하나뿐인 묶음(지하차도 현황)은 왼쪽 메뉴를 두지 않는다 -->
   <aside
-      v-if="!myPage&&route.path!=='/'"
+      v-if="!myPage&&route.path!=='/'&&group.items.length>1"
       class="customer-section-sidebar"
       aria-label="페이지 메뉴"
     >

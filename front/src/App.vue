@@ -99,7 +99,9 @@ const serviceComponent = computed(() => {
   if (path === '/pm-equipment-detail') return PmEquipmentDetailLive
   if (path === '/pm-queue') return PmQueueLive
   if (path === '/pm-history') return PmHistoryLive
-  if (path === '/admin-app/screen-5') return AdminAppFacilityLive
+  // screen-6(통제)·7(통제 중)·8(해제)은 시설 0번 고정 목업이었다. 실제 통제·해제 API를 쓰는 시설 화면으로 보낸다
+  if (['/admin-app/screen-5', '/admin-app/screen-6', '/admin-app/screen-7', '/admin-app/screen-8'].includes(path))
+    return AdminAppFacilityLive
   if (path === '/admin-app/screen-3') return AdminAppOverview
   if (path === '/admin-dashboard') return ServiceDashboard
   if (

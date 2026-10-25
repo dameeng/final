@@ -23,7 +23,7 @@
 #app .home-image-mark { display:grid; place-items:center; flex:0 0 44px; height:44px; background:#ffffff1a; border:1px solid #ffffff50; border-radius:12px; }
 #app .home-premium .home-section-heading { display:flex; justify-content:space-between; align-items:flex-end; gap:28px; margin-bottom:26px; }
 #app .home-premium h2 { margin-top:12px; font-size:clamp(25px,2.4vw,34px); line-height:1.4; letter-spacing:-.04em; word-break:keep-all; }
-#app .home-section-heading>p { max-width:440px; font-size:14px; line-height:1.85; color:var(--r-muted); }
+#app .home-section-heading>p { max-width:440px; font-size:14px; line-height:1.85; color:var(--r-muted); text-align:right; }
 #app .home-service-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:22px; }
 #app .home-service-card { display:flex; flex-direction:column; align-items:flex-start; padding:32px; border:1px solid var(--r-line); border-radius:16px; background:var(--r-surface); box-shadow:0 6px 24px #18345206; }
 #app .home-card-top { display:flex; justify-content:space-between; align-items:center; gap:16px; width:100%; margin-bottom:24px; }
@@ -71,6 +71,7 @@
   #app .home-premium .home-hero-visual figcaption { bottom:20px; left:20px; right:20px; }
   #app .home-hero-visual figcaption strong { font-size:15px; }
   #app .home-premium .home-section-heading { flex-direction:column; gap:16px; margin-bottom:22px; }
+  #app .home-section-heading>p { text-align:left; }
   #app .home-premium .home-service-grid { grid-template-columns:minmax(0,1fr); gap:16px; }
   #app .home-premium .home-service-card { padding:24px; }
   #app .home-premium .home-brand { grid-template-columns:minmax(0,1fr); gap:12px; padding:30px 24px; }

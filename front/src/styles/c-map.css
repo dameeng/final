@@ -636,3 +636,7 @@
 .page-c-map .inl-8a77e5a311 {
   margin-top: 8px;
 }
+/* 상태 탭 5개(전체·통제·위험·주의·안전)와 새로고침을 한 줄에 */
+.page-c-map .ph .seg { flex-wrap: nowrap; align-items: center; }
+.page-c-map .ph .seg .chip { flex: 1 1 0; min-width: 0; padding: 4px 6px; font-size: 14px; white-space: nowrap; }
+.page-c-map .ph .seg .refresh-facilities { flex: none; padding: 6px 8px; }

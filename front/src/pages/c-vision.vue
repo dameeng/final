@@ -36,8 +36,8 @@ const visionRoadmap = [
       <span>서비스 추진 목표이며 완료된 성과가 아닙니다.</span>
     </div>
     <ol class="information-roadmap" aria-label="연도별 추진 목표">
-      <li v-for="(goal, index) in visionRoadmap" :key="goal.year" class="information-roadmap-row">
-        <div class="information-roadmap-year"><strong>{{ goal.year }}</strong><span>STEP 0{{ index + 1 }}</span></div>
+      <li v-for="goal in visionRoadmap" :key="goal.year" class="information-roadmap-row">
+        <div class="information-roadmap-year"><strong>{{ goal.year }}</strong></div>
         <div class="information-roadmap-card">
           <h2>{{ goal.title }}</h2>
           <p>{{ goal.description }}</p>

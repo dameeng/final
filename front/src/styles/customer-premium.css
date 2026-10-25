@@ -52,7 +52,8 @@
 #app .customer-editorial .service-workspace { font-size:14px; line-height:1.65; }
 #app .customer-editorial :is(.service-filters,.notification-center-tools) { padding:20px 22px; margin-bottom:24px; gap:16px; border:1px solid var(--r-line); border-radius:14px; }
 #app .customer-editorial .service-filters label { gap:8px; min-width:0; color:var(--r-muted); font-size:13px; }
-#app .customer-editorial .service-filters .service-form-fields { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; flex:1 1 100%; width:100%; }
+/* 칸 폭을 260px 이하로 묶어 검색 칸(제목·내용)과 분류 선택이 양 끝으로 벌어지지 않고 왼쪽부터 나란히 오게 한다 */
+#app .customer-editorial .service-filters .service-form-fields { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,260px)); gap:16px; flex:1 1 100%; width:100%; }
 #app .customer-editorial .service-filters .service-form-fields>label { width:auto; min-width:0; }
 #app .customer-editorial .service-filters .service-form-fields :is(input:not([type=checkbox]):not([type=radio]),select) { width:100%; max-width:100%; }
 #app .customer-editorial :is(.service-filters,.service-form-fields) :is(input:not([type=checkbox]):not([type=radio]),select,textarea) { min-height:44px; padding:10px 12px; line-height:1.5; }
@@ -65,7 +66,7 @@
 #app .customer-editorial .service-pagination button { min-width:40px; min-height:40px; }
 #app .customer-editorial .faq-accordion summary { padding:20px; gap:14px; }
 #app .customer-editorial .faq-accordion summary strong { line-height:1.7; }
-#app .customer-editorial .faq-inline-answer { padding:20px 24px; line-height:1.85; }
+#app .customer-editorial .faq-inline-answer { padding:18px 22px; line-height:1.85; }
 
 /* Login and sign-up remain readable forms rather than full-width empty panels. */
 #app .customer-editorial .is-auth .customer-page-body { width:100%; max-width:660px; justify-self:center; }
@@ -93,6 +94,8 @@
 #app .customer-editorial .mypage-sidebar nav a[aria-current=page] { background:var(--r-selected); color:var(--r-accent); }
 #app .customer-editorial .mypage-body { min-width:0; }
 #app .customer-editorial .account-service { max-width:900px; margin:0; }
+/* 마이페이지 안에서는 알림 내역·내 문의와 같은 전체 폭으로 맞춘다 */
+#app .customer-editorial .mypage-body .account-service { max-width:none; }
 #app .customer-editorial :is(.account-panel,.account-actions,.profile-form,.mypage-card) { padding:26px; margin-bottom:22px; border-radius:14px !important; }
 #app .customer-editorial :is(.account-panel,.account-actions,.profile-form) h2 { margin:0 0 22px; font-size:21px; }
 #app .customer-editorial .account-summary { gap:14px 20px; margin:0; }
@@ -152,6 +155,8 @@
   #app .customer-editorial .mypage-sidebar nav { flex-direction:row; flex-wrap:wrap; }
   #app .customer-editorial .mypage-sidebar nav a { background:var(--r-soft); font-size:13px; min-height:42px; padding:10px 14px; }
   #app .customer-editorial .mypage-sidebar>button { margin-top:14px; }
+  /* 메뉴 버튼들과 왼쪽 끝을 맞춘다 (데스크톱 세로 메뉴용 안쪽 여백 제거) */
+  #app .customer-editorial .mypage-sidebar .customer-logout { padding:14px 0 0; }
 }
 @media (max-width:600px) {
   #app .customer-editorial .customer-header { padding:0 16px; }

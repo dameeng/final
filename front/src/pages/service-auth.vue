@@ -587,7 +587,7 @@ async function resend() {
             :deadline="approvalEstimate"
             expired-label="승인 예상 시간이 지났습니다. 로그인으로 승인 여부를 확인해 주세요." /></p
         ><small>서버가 15초 간격으로 승인 대상을 확인합니다.</small></section
-      ><nav class="auth-links"
+      ><!-- 웹 고객 회원서비스는 왼쪽 사이드바에 같은 메뉴가 있어서 하단 링크 줄을 숨긴다 --><nav v-if="!['/login','/signup','/password-reset'].includes(route.path)" class="auth-links"
         ><RouterLink v-if="kind==='signup'" :to="authLink('login')">로그인</RouterLink
         ><RouterLink v-if="kind!=='signup'" :to="authLink('signup')">회원가입</RouterLink
         ><RouterLink

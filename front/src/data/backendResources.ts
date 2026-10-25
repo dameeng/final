@@ -215,7 +215,8 @@ export const backendResources: Record<string, Resource> = {
     path: '/api/underpasses/transits',
     columns: [
       ['underpassName', '지하차도'],
-      ['carNum', '차량 번호'],
+      // 정정한 번호가 있으면 그 값 (서버가 없으면 원본 carNum 을 채워 준다)
+      ['displayCarNum', '차량 번호'],
       ['status', '상태'],
       ['entryAt', '진입 시각'],
       ['exitAt', '통과 시각'],

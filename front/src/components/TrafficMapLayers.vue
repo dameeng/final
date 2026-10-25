@@ -117,7 +117,7 @@ onBeforeUnmount(() => { disposed = true; generation++; clear(); if (props.map &&
 <template>
   <div class="traffic-map-layers" :class="{'traffic-map-toggles':toggleControls,'traffic-controls-collapsed':toggleControls&&!controlsExpanded}" aria-label="교통 시설 표시">
     <button v-if="toggleControls" type="button" class="traffic-controls-heading" :aria-expanded="controlsExpanded" @click="controlsExpanded=!controlsExpanded">
-      <span>교통 시설</span><span aria-hidden="true">{{controlsExpanded?'‹':'›'}}</span>
+      <span>교통 시설</span><span v-if="!controlsExpanded" aria-hidden="true">›</span>
     </button>
     <div v-show="!toggleControls||controlsExpanded" class="traffic-controls-body">
     <div class="traffic-layer-switches">
@@ -127,6 +127,8 @@ onBeforeUnmount(() => { disposed = true; generation++; clear(); if (props.map &&
     <p v-if="loading" role="status">교통 시설을 불러오는 중…</p>
     <p v-if="error" role="status">{{error}} <button type="button" @click="load">다시 조회</button></p>
     </div>
+    <!-- 펼쳤을 때는 접기 화살표를 맨 뒤(VMS 전광판 다음)에 둔다 -->
+    <button v-if="toggleControls&&controlsExpanded" type="button" class="traffic-controls-heading traffic-controls-collapse" aria-label="교통 시설 접기" @click="controlsExpanded=false"><span aria-hidden="true">‹</span></button>
   </div>
   <Teleport to="body">
   <dialog ref="dialog" class="traffic-device-dialog" aria-label="교통 시설 정보" @cancel.prevent="closeInfo" @close="closeInfo" @pointerdown.stop="backdropPress=outsideDialog($event)" @pointercancel="backdropPress=false" @click.stop="backdropClick">

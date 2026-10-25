@@ -63,7 +63,6 @@ const steps = computed(() =>
   <main class="wire-page app-guide-page">
     <section class="app-guide-hero" aria-labelledby="app-guide-title">
       <div class="app-guide-hero-copy"
-        ><p class="app-guide-eyebrow"><span></span> YOUR EVERYDAY SAFETY PARTNER</p
         ><p class="app-guide-kicker">ROUTEL APP · 앱 소개</p
         ><h1 id="app-guide-title">비 오는 날에도,<br />안전한 길을 먼저.</h1
         ><p class="app-guide-lead"
@@ -145,7 +144,6 @@ const steps = computed(() =>
     </section>
   <section class="app-guide-feature-section" aria-labelledby="app-features-title"
       ><div class="app-guide-section-heading"
-        ><p class="app-guide-eyebrow">LESS WORRY, SAFER JOURNEY</p
         ><h2 id="app-features-title">복잡한 정보는 덜고,<br />필요한 안전 정보만.</h2
         ><p>지도부터 알림까지, 한곳에서 편하게 확인하세요.</p></div
       ><div class="app-guide-feature-tabs" role="group" aria-label="앱 주요 기능"
@@ -184,7 +182,6 @@ const steps = computed(() =>
     >
   <section id="install" class="app-guide-install" aria-labelledby="app-install-title"
       ><div
-        ><p class="app-guide-eyebrow">READY FOR YOUR NEXT JOURNEY</p
         ><h2 id="app-install-title">안전한 이동의 시작,<br />ROUTEL과 함께하세요.</h2
         ><p
           >Android와 iPhone에서 만날 준비를 하고 있어요.<br />공식 설치 주소는 준비되는 대로 안내합니다.</p

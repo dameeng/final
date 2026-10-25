@@ -311,19 +311,14 @@ async function submit() {
       </button>
   <p v-if="message" role="status">{{message}}</p>
     </form>
- <nav class="auth-links">
-      <RouterLink to="/signup">회원가입</RouterLink>
-      <RouterLink to="/password-reset">비밀번호 찾기</RouterLink>
-      <RouterLink to="/find-id">아이디 찾기</RouterLink>
-      <RouterLink to="/">고객 홈</RouterLink>
-    </nav>
   </main>
 </template>
 
 <style scoped>
-.auth-service h1 {
+/* 제목·버튼 크기를 로그인·회원가입·비밀번호 찾기 화면과 같게 (공통 고객 제목 규칙보다 우선) */
+#app .auth-service h1 {
   margin: 0 0 28px;
-  font-size: 28px;
+  font-size: 24px;
 }
 .auth-service form {
   gap: 18px;
@@ -333,10 +328,15 @@ async function submit() {
   font-weight: 500;
 }
 .auth-service button[type=submit] {
-  width: 100%;
+  width: auto;
+  min-width: 160px;
   min-height: 48px;
   margin-top: 6px;
+  padding-inline: 24px;
   border-radius: 9px;
+  font-size: 14px;
+  align-self: flex-end;
+  justify-self: end;
 }
 .auth-service [role=status] {
   margin: 0;

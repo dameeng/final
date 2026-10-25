@@ -23,3 +23,12 @@
   color: #173d62;
   border-color: #225f9b;
 }
+
+/* 카메라 관리: 왼쪽 내 지하차도 목록 / 오른쪽 카메라 표 */
+.resource-body { display: contents; }
+.underpass-split { display: grid; grid-template-columns: minmax(240px, 300px) minmax(0, 1fr); gap: 16px; align-items: stretch; }
+.underpass-split-main { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+@media (max-width: 900px) { .underpass-split { grid-template-columns: minmax(0, 1fr); } }
+.service-workspace.restored-admin-workspace .underpass-split-main .service-filters :deep(.service-form-fields) { flex: 0 1 auto; }
+.service-workspace.restored-admin-workspace .underpass-split-main .service-filters .split-search { flex: 0 1 240px; width: 240px; max-width: 100%; height: 42px; padding: 6px 12px; border: 1px solid var(--line, #dce3e9); border-radius: 6px; background: var(--surface, #fff); color: inherit; font: inherit; font-size: 13px; box-sizing: border-box; }
+@media (max-width: 600px) { .service-workspace.restored-admin-workspace .underpass-split-main .service-filters .split-search { flex-basis: 100%; width: 100%; } }

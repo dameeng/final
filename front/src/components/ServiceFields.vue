@@ -8,11 +8,13 @@ defineProps<{
   values: Record<string, any>
   choices: Record<string, { value: string; label: string }[]>
   disabled?: boolean
+  hideGuide?: boolean
+  emptyLabel?: string
 }>()
 </script>
 <template>
   <div class="service-form-fields"
-    ><p v-if="fields.some(field=>field.required)" class="required-guide"
+    ><p v-if="!hideGuide&&fields.some(field=>field.required)" class="required-guide"
       ><span>*</span> 표시는 필수 입력 항목입니다.</p
     ><label
       v-for="field in fields"
@@ -36,7 +38,7 @@ defineProps<{
         :required="field.required"
         :multiple="field.type==='multi'"
         :disabled="disabled"
-        ><option v-if="field.type!=='multi'" value="">선택</option
+        ><option v-if="field.type!=='multi'" value="">{{emptyLabel||'선택'}}</option
         ><option
           v-for="option in choices[field.key]||field.options?.map(([value,label])=>({value,label}))||[]"
           :key="option.value"

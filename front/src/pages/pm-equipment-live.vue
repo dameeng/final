@@ -31,7 +31,7 @@ type Equipment = {
 }
 type Engine = { status: string; lastReceivedAt: string | null; equipmentTotal: number; sensorStale: number }
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 10
 const router = useRouter(),
   level = ref(''),
   type = ref(''),

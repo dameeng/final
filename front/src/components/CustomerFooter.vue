@@ -20,22 +20,6 @@ const links = [
           </RouterLink>
           <p>이동 전 작은 확인, 더 안전한 일상.</p>
         </div>
-        <RouterLink to="/customer-app/screen-1" class="customer-footer-app">
-          <svg
-            viewBox="0 0 24 24"
-            width="20"
-            height="20"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.7"
-            aria-hidden="true"
-          >
-            <rect x="6" y="2" width="12" height="20" rx="3" />
-            <path d="M10 5h4m-3 14h2" />
-          </svg>
-          <span>고객 앱</span>
-          <span aria-hidden="true">↗</span>
-        </RouterLink>
       </div>
       <nav class="customer-footer-links" aria-label="하단 메뉴">
         <RouterLink v-for="link in links" :key="link.to" :to="link.to">{{link.label}}</RouterLink>
@@ -43,8 +27,6 @@ const links = [
       </nav>
       <div class="customer-footer-bottom">
         <p>© ROUTEL. All rights reserved.</p>
-        <RouterLink to="/info/app-guide#install">Android · iPhone 설치 안내 <span aria-hidden="true">→</span>
-        </RouterLink>
       </div>
     </div>
   </footer>

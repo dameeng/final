@@ -6,6 +6,7 @@ import { useRoute } from 'vue-router'
 import BackendLayout from '../components/BackendLayout.vue'
 import BackendResource from './backend-resource.vue'
 import FacilityCctvViewer from '../components/FacilityCctvViewer.vue'
+import UnderpassVmsPanel from '../components/UnderpassVmsPanel.vue'
 import TunnelCctvDialog from '../components/TunnelCctvDialog.vue'
 import { riskGroup } from '../services/backendCatalog'
 import { riskChartSeries } from '../utils/risk-chart'
@@ -26,6 +27,18 @@ const facility = ref<Record<string, any>>(),
   error = ref(''),
   loading = ref(false),
   operations = ref<InstanceType<typeof BackendResource>>()
+// 상세 응답에는 regionId 만 있어서 지역 목록으로 이름을 찾는다 (한 번만 조회)
+const regionNames = ref<Record<string, string>>({}),
+  regionName = computed(
+    () => facility.value?.regionName || regionNames.value[String(facility.value?.regionId ?? '')],
+  )
+backend<{ id: number; name: string }[]>('/api/regions')
+  .then((list) => {
+    regionNames.value = Object.fromEntries((list || []).map((region) => [String(region.id), region.name]))
+  })
+  .catch(() => {
+    /* 지역명은 보조 정보라 실패하면 하이픈으로 둔다 */
+  })
 let controller: AbortController | undefined
 async function load() {
   controller?.abort()
@@ -273,7 +286,7 @@ function control() {
               <h2>시설 정보</h2>
               <dl class="service-detail">
                 <dt>지역</dt>
-                <dd>{{facility.regionName||'—'}}</dd>
+                <dd>{{regionName||'—'}}</dd>
                 <dt>도로명 주소</dt>
                 <dd>{{facility.roadAddress||'—'}}</dd>
                 <dt>높이</dt>
@@ -286,7 +299,7 @@ function control() {
           </div>
         </section>
 <BackendResource v-else-if="tab==='equip'" embedded resource-key="cameras" />
-<BackendResource v-else-if="tab==='sign'" embedded resource-key="display" />
+<UnderpassVmsPanel v-else-if="tab==='sign'" :underpass-id="id" :underpass-name="facility?.name" :manageable="!!facility&&ownsFacility(facility)" />
 <section v-else-if="tab==='cctv'" class="restored-cctv">
           <p v-if="cameraError" role="alert" class="service-error">{{cameraError}} <button type="button" @click="load">다시 시도</button></p>
           <FacilityCctvViewer v-else :cameras="cameras" :underpass-id="id" :facility-name="facility?.name" />

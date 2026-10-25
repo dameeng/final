@@ -65,7 +65,8 @@ const tabs = computed<[string, string][]>(() => {
 const position = computed(() => order.value.indexOf(Number(id.value)))
 const scoreValue = computed(() => (eq.value.score == null ? null : Number(eq.value.score)))
 
-async function load() {
+// withTrend: 실시간 이벤트로 다시 읽을 때 센서 추이도 같이 갱신 (처음 열 때는 항상 갱신)
+async function load(withTrend = false) {
   controller?.abort()
   if (!id.value) return
   const current = new AbortController()
@@ -98,7 +99,7 @@ async function load() {
         ? ev.value.items.find((e) => e.eventId === detail.equipment.openEventId)
         : undefined
     if (list.status === 'fulfilled') order.value = list.value.items.map((r) => r.equipId)
-    if (firstLoad) void loadTrend()
+    if (firstLoad || withTrend) void loadTrend()
   } catch (e) {
     if (!current.signal.aborted) error.value = (e as Error).message
   } finally {
@@ -140,7 +141,7 @@ useBackendEvents(({ name, data: payload }) => {
   if (name === 'pm-update' && !(payload?.items || []).some((i: any) => String(i.equipId) === id.value)) return
   if (name === 'connected' || isPmChange(name, payload, ['pm-equipment', 'pm-event', 'pm-action', 'pm-threshold'])) {
     clearTimeout(refreshTimer)
-    refreshTimer = setTimeout(() => void load(), 300)
+    refreshTimer = setTimeout(() => void load(true), 300)
   }
 })
 watch(id, () => {
@@ -280,7 +281,7 @@ const tabLabel = computed(() => tabs.value.find(([c]) => c === column.value)?.[1
         </div>
       </div>
       <p v-if="!id">설비 목록에서 설비를 선택해 주세요.</p>
-      <p v-if="error" role="alert" class="service-error">{{error}} <button @click="load">다시 시도</button></p>
+      <p v-if="error" role="alert" class="service-error">{{error}} <button @click="load(true)">다시 시도</button></p>
       <p v-if="loading&&!data" role="status">설비 정보를 불러오는 중입니다.</p>
 
       <template v-if="data">

@@ -7,7 +7,9 @@ import { formatPhone } from '../utils/phone'
 import { dateParts } from '../utils/display-date'
 import { riskGroup, matchesRisk, boardCategoryLabel } from '../services/backendCatalog'
 import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
-import { useRoute, onBeforeRouteLeave } from 'vue-router'
+import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
+import MyUnderpassList from '../components/MyUnderpassList.vue'
+import UnderpassVmsPanel from '../components/UnderpassVmsPanel.vue'
 import AdminFacilityList from '../components/AdminFacilityList.vue'
 import AdminAppFacilityRows from '../components/AdminAppFacilityRows.vue'
 import OcrRecordDetail from '../components/OcrRecordDetail.vue'
@@ -52,6 +54,40 @@ const route = useRoute(),
   )
 const restored = computed(() => !customer.value && !route.path.startsWith('/admin-app/'))
 const facilityList = computed(() => restored.value && resourceId.value === 'facilities')
+// 카메라·임계치·전광판 관리: 왼쪽 내 지하차도 목록 + 오른쪽 선택한 지하차도의 화면
+const splitTargets: Record<string, string> = { cameras: '카메라', thresholds: '위험도 임계치', display: '전광판' }
+const underpassSplit = computed(
+  () => restored.value && !props.embedded && Object.hasOwn(splitTargets, resourceId.value),
+)
+// 전광판은 부모 키가 vmsId라서, 지하차도 선택을 따로 두고 범용 표 대신 지하차도별 전광판 패널을 쓴다
+const vmsSplit = computed(() => underpassSplit.value && resourceId.value === 'display')
+const splitUnderpassFields: Field[] = [
+  { key: 'underpassId', label: '지하차도', type: 'select', source: 'underpasses', required: true },
+]
+const router = useRouter()
+const splitKeyword = ref(''),
+  splitMatches = ref<string[]>([])
+// 왼쪽 목록과 같은 검색 결과로 셀렉트 박스도 거른다 (선택된 항목은 남김)
+const splitChoices = computed(() => {
+  if (!splitKeyword.value.trim()) return choices
+  return {
+    ...choices,
+    underpassId: (choices.underpassId || []).filter(
+      (option) => splitMatches.value.includes(option.value) || option.value === String(parents.underpassId || ''),
+    ),
+  }
+})
+const splitUnderpassName = computed(
+  () => choices.underpassId?.find((option) => option.value === String(parents.underpassId || ''))?.label,
+)
+function selectUnderpass(id: string) {
+  void router.replace({ query: { ...route.query, underpassId: id, id: undefined } })
+}
+function submitFilters() {
+  if (underpassSplit.value && parents.underpassId && String(parents.underpassId) !== String(route.query.underpassId || ''))
+    selectUnderpass(String(parents.underpassId))
+  else if (!vmsSplit.value) search()
+}
 const appFacilityList = computed(
   () => route.path === '/admin-app/screen-4' && resourceId.value === 'facilities',
 )
@@ -158,10 +194,13 @@ function markNoticeRead(row: Record<string, any>) {
   }
 }
 async function loadCollection(signal: AbortSignal) {
+  // 관리자 시설 목록은 담당 지역만 (서버 기본값은 전체 ALL)
+  const scope =
+    (facilityList.value || appFacilityList.value) && app.account?.role === 'REGIONAL_ADMIN' ? 'MINE' : ''
   const fetchPage = async (current: number) =>
     asPage<Record<string, any>>(
       await backend(
-        path(resource.value.path) + queryString({ ...filters, page: current, size: 100 }),
+        path(resource.value.path) + queryString({ ...filters, scope, page: current, size: 100 }),
         { signal },
       ),
       current,
@@ -312,7 +351,7 @@ async function lookup(fields: Field[], row?: Record<string, any>) {
     if (!field.source) continue
     let url =
       field.source === 'underpasses'
-        ? '/api/underpasses?size=500'
+        ? '/api/underpasses?size=500' + (underpassSplit.value ? '&scope=MINE&sort=NAME' : '')
         : field.source === 'regions'
           ? '/api/regions'
           : field.source === 'shifts'
@@ -332,8 +371,16 @@ async function lookup(fields: Field[], row?: Record<string, any>) {
     if (field.source === 'cameras' && !row?.id && !parents.underpassId) continue
     try {
       const result = await backend(url)
+      // 관리자 시설 목록의 지역 필터는 담당 지역만 (목록 자체가 scope=MINE 이라 다른 지역은 0건)
+      const mine =
+        field.source === 'regions' &&
+        (facilityList.value || appFacilityList.value) &&
+        resource.value.filters?.includes(field) &&
+        app.account?.role === 'REGIONAL_ADMIN'
+          ? new Set((app.account.regions || []).map((region) => String(region.id)))
+          : undefined
       if (alive && scope === resourceId.value && (!row || selected.value?.id === row.id))
-        choices[field.key] = asPage<any>(result).items.map((item) => ({
+        choices[field.key] = asPage<any>(result).items.filter((item) => !mine || mine.has(String(item.id))).map((item) => ({
           value: String(item.id),
           label:
             field.source === 'vms'
@@ -676,6 +723,7 @@ watch(
     }
     for (const field of resource.value.parents || [])
       parents[field.key] = route.query[field.key] || ''
+    if (vmsSplit.value) parents.underpassId = route.query.underpassId || ''
     for (const field of resource.value.filters || [])
       filters[field.key] =
         field.type === 'checkbox' ? route.query[field.key] === 'true' : route.query[field.key] || ''
@@ -689,7 +737,7 @@ watch(
     }
     if (props.operationsOnly) return
     if (resourceId.value === 'reviews' && !filters.reviewStatus) filters.reviewStatus = 'PENDING'
-    void lookup([...(resource.value.parents || []), ...(resource.value.filters || [])])
+    void lookup([...(vmsSplit.value ? splitUnderpassFields : resource.value.parents || []), ...(resource.value.filters || [])])
     void load().then(() => {
       if (!props.embedded && route.query.id && resource.value.detail && resourceId.value !== 'faqs')
         void open('detail', { id: Number(route.query.id) })
@@ -769,6 +817,10 @@ useBackendEvents((event) => {
   if (resourceId.value === 'facilities' && facilityEvents.includes(name)) {
     data.value.items = data.value.items.map((row) => patchFacility(row, event))
     if (mode.value === 'detail') detail.value = patchFacility(detail.value, event)
+    // 행만 고치면 필터에서 빠져야 할 행·새로 들어올 행·정렬·건수가 안 맞으니, 그 조건에 걸리는 값이 바뀌면 다시 조회
+    const levelOrStatus = name === 'control-change' || name === 'risk-level-change'
+    if ((levelOrStatus && (filters.status || riskFilter.value)) || filters.sort === 'RISK_SCORE')
+      queueLiveRefresh()
     return
   }
   if (resourceId.value === 'ocr' && name.startsWith('plate-queue-')) {
@@ -869,8 +921,8 @@ defineExpose({ open, load })
             :disabled="saving"
             @click="readAllManagerNotifications"
           >모두 읽음</button>
-          <button type="button" :disabled="loading||missingParent" @click="load">새로고침</button>
-          <button v-if="resource.create&&canWrite" type="button" @click="open('create')">
+          <button v-if="!vmsSplit" type="button" :disabled="loading||missingParent" @click="load">새로고침</button>
+          <button v-if="resource.create&&canWrite&&!vmsSplit" type="button" @click="open('create')">
             {{resourceId==='cars'?'차량 등록':resourceId==='my-inquiries'?'문의 등록':facilityList?'+ 지하차도 등록':'새로 등록'}}
           </button>
         </div>
@@ -912,6 +964,9 @@ defineExpose({ open, load })
           @click="reviewTab('')"
         >처리 이력</button>
       </nav>
+      <div :class="underpassSplit?'underpass-split':'resource-body'">
+      <MyUnderpassList v-if="underpassSplit" :selected-id="String(parents.underpassId||'')" :keyword="splitKeyword" @select="selectUnderpass" @matches="splitMatches=$event" :target="splitTargets[resourceId]" />
+      <div :class="underpassSplit?'underpass-split-main':'resource-body'">
       <form
         v-if="facilityList||appFacilityList"
         class="filters restored-facility-filters"
@@ -956,20 +1011,31 @@ defineExpose({ open, load })
       <form
         v-else-if="!customer||resource.parents?.length||resource.filters?.length"
         class="service-filters filters"
-        @submit.prevent="search"
+        @submit.prevent="submitFilters"
         @change="customer&&search()"
       >
         <ServiceFields
           v-if="resource.parents?.length"
-          :fields="resource.parents"
+          :fields="vmsSplit?splitUnderpassFields:resource.parents"
           :values="parents"
-          :choices="choices"
+          :choices="underpassSplit?splitChoices:choices"
+          :hide-guide="underpassSplit"
+        />
+        <input
+          v-if="underpassSplit"
+          v-model="splitKeyword"
+          type="search"
+          class="split-search"
+          placeholder="지하차도·지역 검색"
+          aria-label="지하차도 검색"
+          @keydown.enter.prevent
         />
         <ServiceFields
           v-if="resource.filters?.length"
           :fields="resource.filters"
           :values="filters"
           :choices="choices"
+          :empty-label="customer?'전체':undefined"
         />
         <button v-if="!customer" type="submit" :disabled="loading">
           {{resourceId==='my-inquiries'?'검색':'조회'}}
@@ -987,7 +1053,15 @@ defineExpose({ open, load })
         {{error}} <RouterLink v-if="!app.account" :to="customer?'/login':'/admin-login'">로그인</RouterLink>
       </p>
       <p v-if="message" class="service-message" role="status">{{message}}</p>
-      <p v-if="missingParent">위에서 {{resource.parents?.map(field=>field.label).join(' · ')}}를 선택하고 조회하세요.</p>
+      <p v-if="underpassSplit&&!parents.underpassId">왼쪽 목록에서 지하차도를 누르면 {{splitTargets[resourceId]}} 화면이 나옵니다.</p>
+      <UnderpassVmsPanel
+        v-else-if="vmsSplit"
+        :key="String(parents.underpassId)"
+        :underpass-id="String(parents.underpassId)"
+        :underpass-name="splitUnderpassName"
+        :manageable="!!splitUnderpassName"
+      />
+      <p v-else-if="missingParent">위에서 {{resource.parents?.map(field=>field.label).join(' · ')}}를 선택하고 조회하세요.</p>
       <p v-else-if="loading" role="status">불러오는 중입니다.</p>
       <template v-else>
         <p class="service-result-count" role="status">총 {{data.totalItems}}건</p>
@@ -1110,12 +1184,15 @@ defineExpose({ open, load })
             </tbody>
           </table>
         </div>
-        <div class="service-pagination">
+        <!-- 지하차도별 화면은 한 페이지가 대부분이라, 표 아래 끝을 왼쪽 목록 끝과 맞추려고 한 페이지면 숨긴다 -->
+        <div v-if="!underpassSplit||data.totalPages>1" class="service-pagination">
           <button :disabled="page<=1" @click="navigatePage(page-1)">이전</button>
           <span>{{page}} / {{Math.max(1,data.totalPages)}} 페이지</span>
           <button :disabled="page>=data.totalPages" @click="navigatePage(page+1)">다음</button>
         </div>
       </template>
+      </div>
+      </div>
       <dialog
         ref="modal"
         class="service-modal"

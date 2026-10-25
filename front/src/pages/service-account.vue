@@ -167,7 +167,7 @@ onBeforeUnmount(() => controller.abort())
           v-if="manager||['summary','profile','settings'].includes(accountSection)"
           :id="!manager?'account-settings':undefined"
           class="account-panel"
-          ><summary v-if="managerApp" class="manager-profile-summary"><span class="manager-profile-avatar" aria-hidden="true">{{profile.name?.slice(0,1)}}</span><span><strong>{{profile.name}}님</strong><small>기본 정보 확인 및 수정</small></span><span class="manager-profile-chevron" aria-hidden="true">⌄</span></summary><h2>내 정보</h2
+          ><summary v-if="managerApp" class="manager-profile-summary"><span class="manager-profile-avatar" aria-hidden="true">{{profile.name?.slice(0,1)}}</span><span><strong>{{profile.name}}님</strong><small>기본 정보 확인 및 수정</small></span><span class="manager-profile-chevron" aria-hidden="true">⌄</span></summary><h2 v-if="pageTitle!=='내 정보'">내 정보</h2
           ><p>{{profile.name}} · {{profile.loginId}}</p
           ><template v-if="manager"
             ><p
@@ -211,7 +211,7 @@ onBeforeUnmount(() => controller.abort())
             ><button :disabled="busy" type="submit">비밀번호 변경</button></form
           ></section
         ><section v-if="!manager&&accountSection==='withdraw'" class="account-panel"
-          ><h2>회원 탈퇴</h2><p>탈퇴하면 계정과 연결된 정보를 더 이상 이용할 수 없습니다.</p
+          ><h2 v-if="pageTitle!=='회원 탈퇴'">회원 탈퇴</h2><p>탈퇴하면 계정과 연결된 정보를 더 이상 이용할 수 없습니다.</p
           ><form @submit.prevent="withdraw"
             ><label
               >본인 확인 비밀번호<PasswordInput

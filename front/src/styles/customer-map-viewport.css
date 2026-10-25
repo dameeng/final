@@ -1,7 +1,8 @@
 /* The public map uses the viewport below the shared header and breadcrumb. */
 .customer-shell .customer-page-layout.is-map {
   display: grid;
-  grid-template-columns: 190px minmax(0,1fr);
+  /* 지하차도 현황은 하위 메뉴가 하나라 왼쪽 메뉴 없이 지도를 전체 폭으로 쓴다 */
+  grid-template-columns: minmax(0,1fr);
   column-gap: 20px;
   min-height: 0;
   padding: 12px 20px 16px;
@@ -18,6 +19,9 @@
 }
 .customer-shell .customer-page-layout.is-map>.customer-breadcrumb {
   margin: 0 0 12px;
+}
+.customer-shell .customer-page-layout.is-map>:is(.customer-breadcrumb,.customer-page-body) {
+  grid-column: 1;
 }
 .customer-shell .customer-page-layout.is-map .legacy-live-map {
   min-height: 0;

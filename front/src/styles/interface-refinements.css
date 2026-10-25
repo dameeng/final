@@ -91,6 +91,12 @@
   #app .legacy-live-map .lst .it:hover { background:var(--r-selected); }
   #app .customer-header .header-dropdown-column a:hover { background:var(--r-selected); color:var(--r-accent); }
 }
+/* 노트북 폭(1400~1700px)에서는 가운데 정렬하면 메뉴가 오른쪽 버튼(로그인 시 알림·마이페이지·로그아웃)과
+   겹치므로 메뉴를 로고 바로 옆에서 시작한다. 펼침 메뉴도 같은 위치로 맞춘다. 더 넓은 화면은 가운데 정렬 그대로. */
+@media (min-width:1400px) and (max-width:1700px) {
+  #app .customer-shell .customer-header .customer-header-inner { grid-template-columns:140px 760px minmax(0,1fr); }
+  #app .customer-shell .customer-header .header-dropdown-columns { width:760px; margin-left:calc(max(0px, (100% - 1600px) / 2) + 156px); margin-right:auto; }
+}
 @media (max-width:1399px) {
   #app .customer-shell .customer-header .customer-header-inner { grid-template-columns:auto minmax(0,1fr); grid-template-rows:auto auto; gap:6px 20px; padding:10px 0 4px; }
   #app .customer-shell .customer-header .customer-member-nav { grid-column:2; grid-row:1; }

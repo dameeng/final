@@ -46,16 +46,19 @@
 .faq-accordion-item[open] .faq-expand-icon {
   transform: rotate(180deg);
 }
+/* 질문 줄은 열려도 흰 배경 그대로, 답변은 질문 글자 아래로 들여쓴 회색 박스로 구분 */
 .faq-accordion-item[open] summary {
-  background: var(--soft,#f3f6fa);
+  background: var(--surface,#fff);
 }
 .faq-inline-answer {
   display: flex;
   gap: 14px;
-  padding: 22px 24px 22px 48px;
+  margin: 0 20px 20px 54px;
+  padding: 18px 22px;
+  border-radius: 10px;
+  border-left: 3px solid #225f9b;
   background: var(--soft,#f3f6fa);
   color: var(--foreground,#27384a);
-  border-top: 1px solid var(--line,#c9ced6);
 }
 .faq-answer-content {
   min-width: 0;
@@ -84,7 +87,8 @@
     gap: 10px;
   }
   .faq-inline-answer {
-    padding: 18px 14px 18px 30px;
+    margin: 0 12px 16px 34px;
+    padding: 14px;
     gap: 10px;
   }
 }

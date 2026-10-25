@@ -260,7 +260,7 @@
   .recognition-error,.ocr-log-error,.required-label,.required-guide span) {
   color: var(--dark-danger);
 }
-:root[data-theme=dark] :is(.ocr-image,.faq-inline-answer,.faq-accordion-item[open] summary) {
+:root[data-theme=dark] :is(.ocr-image,.faq-inline-answer) {
   background: #2b333b;
   color: #edf1f5;
 }

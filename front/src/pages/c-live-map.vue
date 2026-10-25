@@ -2059,7 +2059,7 @@ onBeforeUnmount(() => {
             aria-label="검색"
           /><div class="seg"
             ><button
-              v-for="[label,value] in [['전체',''],['위험','위험'],['주의','경고'],['안전','정상']]"
+              v-for="[label,value] in [['전체',''],['통제','통제'],['위험','위험'],['주의','경고'],['안전','정상']]"
               :key="label"
               type="button"
               class="chip"
@@ -2121,7 +2121,7 @@ onBeforeUnmount(() => {
             ><button type="button" :disabled="page===pages" @click="changePage(page+1)"
               >다음</button
             ></div
-          ><small>{{page}} / {{pages}} 페이지 · 전체 {{listRows.length}}개</small></nav
+          ></nav
         >
       </aside>
     </div>

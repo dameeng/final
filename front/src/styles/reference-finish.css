@@ -208,3 +208,5 @@ dialog.service-modal, dialog.overview-control-notice, dialog.account-withdraw,
 /* Legacy dark tab fills are literal colors; keep these in the shared palette. */
 :root[data-theme=dark] #app .service-tabs>a { background:var(--r-surface) !important; color:var(--r-muted) !important; border-color:var(--r-line) !important; }
 :root[data-theme=dark] #app .service-tabs>a:is([aria-current=page],.router-link-active) { background:var(--r-selected) !important; color:var(--r-accent) !important; border-color:var(--r-accent) !important; }
+/* 마이페이지 본문 카드 그림자 통일: 알림 내역의 박스도 내 정보·내 문의 카드와 같은 그림자 */
+#app .mypage-body :is(.notification-settings,.notification-center-tools,.notification-center-list) { box-shadow:var(--r-shadow); }
