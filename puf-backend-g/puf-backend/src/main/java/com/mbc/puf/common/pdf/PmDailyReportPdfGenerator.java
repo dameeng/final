@@ -37,6 +37,8 @@ import com.mbc.puf.pm.dto.PmLevelCounts;
 import com.mbc.puf.pm.dto.PmPeriodSummary;
 import com.mbc.puf.pm.dto.PmReportEquipment;
 import com.mbc.puf.pm.dto.PmTypeCounts;
+import com.mbc.puf.pm.dto.PmSinkholeSummary;
+import com.mbc.puf.pm.dto.PmControlSummary;
 
 /**
  * 예지보전 데일리 리포트 PDF (관리자가 "PDF 뽑기" 버튼을 누르면 그 순간 만든다).
@@ -101,6 +103,23 @@ public class PmDailyReportPdfGenerator {
             }
             doc.add(t2);
 
+            // 단계별 비율을 숫자와 길이로 같이 표시한다. 신뢰도와 고장 점수는 섞지 않는다.
+            int total = now.safe() + now.caution() + now.danger() + now.noData();
+            doc.add(new Paragraph("전체 " + total + "대 · 안전 " + now.safe() + " / 주의 " + now.caution()
+                    + " / 위험 " + now.danger() + " / 미수신 " + now.noData())
+                    .setFont(font).setFontSize(9).setFontColor(MUTED));
+            if (total > 0) {
+                Table bar = table(Math.max(0.001f,now.safe()), Math.max(0.001f,now.caution()),
+                        Math.max(0.001f,now.danger()), Math.max(0.001f,now.noData()));
+                DeviceRgb[] colors = {new DeviceRgb(0x27,0x98,0x78), new DeviceRgb(0xE8,0xA1,0x38),
+                        new DeviceRgb(0xDB,0x56,0x56), new DeviceRgb(0x9A,0xA5,0xB2)};
+                int[] values = {now.safe(),now.caution(),now.danger(),now.noData()};
+                for (int j=0;j<4;j++) bar.addCell(new Cell().setHeight(12).setBackgroundColor(colors[j])
+                        .setBorder(null).add(new Paragraph(values[j]==0?"":String.valueOf(values[j]))
+                                .setFont(font).setFontSize(7).setFontColor(ColorConstants.WHITE)));
+                doc.add(bar);
+            }
+
             // 3. 신규 점검 대기
             section(doc, font, "3. 오늘 새로 생긴 점검 대기 (" + s.newEventCount() + "건)");
             doc.add(eventTable(font, s.newEvents(), "신규 점검 대기가 없습니다."));
@@ -138,6 +157,58 @@ public class PmDailyReportPdfGenerator {
             // 7. 점검 권장
             section(doc, font, "7. 점검 권장 설비 (주의 이상, 점수 높은 순)");
             doc.add(equipTable(font, s.recommended(), "점검 권장 설비가 없습니다."));
+            // 8. 싱크홀: 영상 신뢰도를 설비 위험 점수로 해석하지 않는다.
+            PmSinkholeSummary road = s.sinkhole();
+            if (road != null) {
+                section(doc, font, "8. 노면 싱크홀 영상 분석");
+                doc.add(new Paragraph("분석 " + road.analysisCount() + "건 · 의심 탐지 " + road.detectedCount()
+                        + "건 · 신규 사건 " + road.newEventCount() + "건 · 미처리 " + road.openEventCount() + "건")
+                        .setFont(font).setFontSize(10));
+                doc.add(new Paragraph("신뢰도는 영상 탐지 확률(0~100%)이며 설비 고장 점수가 아닙니다. 판정 상태는 출력 시점 기준입니다.")
+                        .setFont(font).setFontSize(8).setFontColor(MUTED));
+                Table t8=table(2,2,2,1,1,2);
+                for(String h:new String[]{"분석 시각","설비 / 지하차도","분석 결과","신뢰도","탐지 수","확인·조치"})t8.addHeaderCell(header(h,font));
+                if (road.results().isEmpty()) t8.addCell(empty("분석 결과가 없습니다.",font,6));
+                int ri=0;
+                for(PmSinkholeSummary.Item r:road.results()) {
+                    boolean alt=ri++%2==1;
+                    t8.addCell(cell(fmt(r.analyzedAt()),font,alt,TextAlignment.LEFT));
+                    t8.addCell(cell(dash(r.name())+" / "+dash(r.underpassName()),font,alt,TextAlignment.LEFT));
+                    t8.addCell(cell(r.detected()?"싱크홀 의심":"이상 미탐지",font,alt,TextAlignment.CENTER));
+                    t8.addCell(cell(r.confidence()==null?"-":r.confidence().multiply(new BigDecimal("100")).stripTrailingZeros().toPlainString()+"%",font,alt,TextAlignment.CENTER));
+                    t8.addCell(cell(String.valueOf(r.detectionCount()),font,alt,TextAlignment.CENTER));
+                    t8.addCell(cell(roadStatus(r),font,alt,TextAlignment.LEFT));
+                }
+                doc.add(t8);
+                if (road.analysisCount()>road.results().size())doc.add(new Paragraph("최근 "+road.results().size()+"건 표시 / 전체 "+road.analysisCount()+"건")
+                        .setFont(font).setFontSize(8).setFontColor(MUTED));
+                section(doc,font,"미처리 싱크홀 의심 ("+road.openEventCount()+"건)");
+                for(PmSinkholeSummary.Item r:road.openIncidents())doc.add(new Paragraph(
+                        dash(r.underpassName())+" · "+dash(r.name())+" · "+roadStatus(r)+" · "+fmt(r.analyzedAt()))
+                        .setFont(font).setFontSize(9));
+                if(road.openIncidents().isEmpty())doc.add(new Paragraph("미처리 사건이 없습니다.").setFont(font).setFontSize(9));
+            }
+            // 9. 이 문서와 근무 인수인계가 같은 기간의 통제 이력을 공유한다.
+            PmControlSummary control = s.control();
+            if (control != null) {
+                section(doc,font,"9. 지하차도 차단·해제 (차단 "+control.blockCount()+"건 / 해제 "+control.releaseCount()+"건)");
+                Table t9=table(2,2,1,1,4);
+                for(String h:new String[]{"발생 시각","지하차도","구분","담당","사유"})t9.addHeaderCell(header(h,font));
+                if(control.events().isEmpty())t9.addCell(empty("기간 내 차단·해제 내역이 없습니다.",font,5));
+                int ci=0;
+                for(PmControlSummary.Item e:control.events()) {
+                    boolean alt=ci++%2==1;
+                    t9.addCell(cell(fmt(e.createdAt()),font,alt,TextAlignment.LEFT));
+                    t9.addCell(cell(dash(e.underpassName()),font,alt,TextAlignment.LEFT));
+                    t9.addCell(cell("BLOCK".equals(e.type())?"차단":"해제",font,alt,TextAlignment.CENTER));
+                    t9.addCell(cell(e.automatic()?"자동":dash(e.operatorName()),font,alt,TextAlignment.CENTER));
+                    t9.addCell(cell(dash(e.reason())+(e.reasonNote()==null?"":" · "+e.reasonNote()),font,alt,TextAlignment.LEFT));
+                }
+                doc.add(t9);
+                long count=control.blockCount()+control.releaseCount();
+                if(count>control.events().size())doc.add(new Paragraph("최근 "+control.events().size()+"건 표시 / 전체 "+count+"건")
+                        .setFont(font).setFontSize(8).setFontColor(MUTED));
+            }
         } catch (Exception e) {
             throw new RuntimeException("예지보전 데일리 리포트 PDF 생성 실패", e);
         }
@@ -186,11 +257,19 @@ public class PmDailyReportPdfGenerator {
         return t;
     }
 
+    private String roadStatus(PmSinkholeSummary.Item r) {
+        if (!r.detected()) return "이상 미탐지";
+        if ("FALSE_POSITIVE".equals(r.reviewStatus())) return "오탐 확인";
+        if ("RESOLVED".equals(r.reviewStatus())) return "조치 완료";
+        if ("CONFIRMED".equals(r.reviewStatus())) return "싱크홀 확인";
+        return "확인 필요";
+    }
+
     // ---- 헬퍼 ----
 
     private void section(Document doc, PdfFont font, String title) {
         doc.add(new Paragraph(title).setFont(font).setFontSize(12).setFontColor(DARK)
-                .setMarginTop(14f).setMarginBottom(6f));
+                .setMarginTop(14f).setMarginBottom(6f).setKeepWithNext(true));
     }
 
     private Table table(float... widths) {

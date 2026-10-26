@@ -6,6 +6,7 @@ import com.mbc.puf.common.security.LoginUser;
 import com.mbc.puf.common.security.ScopeResolver;
 import com.mbc.puf.notification.service.NotificationService;
 import com.mbc.puf.stream.StreamPublisher;
+import com.mbc.puf.stream.StreamPayloads;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.*;
@@ -111,11 +112,19 @@ public class SinkholeService {
                 request.detected(),request.confidence(),request.detectionCount(),request.frameSeconds(),
                 request.modelVersion(),imageName,verdict);
         long regionId=number(target.get("region_id"));
-        if(newEvent) notifications.notifyManagers(ManagerNotificationCategory.EQUIPMENT,regionId,
+        if(newEvent) notifications.notifyManagersUrgent(ManagerNotificationCategory.EQUIPMENT,regionId,
                 "노면 싱크홀 의심",underpassName+" 노면에서 싱크홀 의심이 탐지되었습니다. 사진을 확인해 주세요.","PM_EVENT",eventId);
         stream.dataChangedToAdmins(regionId,"pm-equipment","UPDATE",equipId);
         if(newEvent) stream.dataChangedToAdmins(regionId,"pm-event","CREATE",eventId);
-        return result(db.queryForList(RESULT_SQL+" WHERE r.id=?",id).get(0));
+        Result saved = result(db.queryForList(RESULT_SQL+" WHERE r.id=?",id).get(0));
+        publishResult(regionId, number(target.get("underpass_id")), equipId, saved);
+        return saved;
+    }
+
+    private void publishResult(long regionId, long underpassId, long equipId, Result r) {
+        stream.publishToAdmins(regionId,"sinkhole-update", new StreamPayloads.SinkholeUpdate(
+                equipId,underpassId,r.id(),r.eventId(),r.detected(),r.confidence(),r.reviewStatus(),
+                r.eventStatus(),r.imageUrl(),r.analyzedAt()));
     }
 
     static void validateEvidence(SinkholeResultRequest request, MultipartFile image) throws IOException {
@@ -164,10 +173,16 @@ public class SinkholeService {
         db.update("UPDATE pm_event SET status=CAST(? AS pm_event_status) WHERE id=?",to,review.eventId());
         String kind="CONFIRMED".equals(review.verdict())?"START":to;
         String content=label+(review.content()==null||review.content().isBlank()?"":" · "+review.content().trim());
-        db.update("INSERT INTO pm_action(event_id,content,manager_id,kind) VALUES (?,?,?,CAST(? AS pm_action_kind))",review.eventId(),content,user.id(),kind);
+        Long actionId = db.queryForObject("INSERT INTO pm_action(event_id,content,manager_id,kind) VALUES (?,?,?,CAST(? AS pm_action_kind)) RETURNING id",
+                Long.class,review.eventId(),content,user.id(),kind);
+        long regionId = number(equipment.get("region_id"));
+        stream.dataChangedToAdmins(regionId,"pm-action","CREATE",actionId);
         stream.dataChangedToAdmins(number(equipment.get("region_id")),"pm-event","UPDATE",review.eventId());
         stream.dataChangedToAdmins(number(equipment.get("region_id")),"pm-equipment","UPDATE",equipId);
-        return detail(user,equipId);
+        Detail updated = detail(user,equipId);
+        Result reviewed = result(db.queryForList(RESULT_SQL+" WHERE r.event_id=? ORDER BY r.analyzed_at DESC,r.id DESC LIMIT 1",review.eventId()).get(0));
+        publishResult(regionId, number(equipment.get("underpass_id")), equipId, reviewed);
+        return updated;
     }
 
     @Transactional(readOnly=true)
@@ -183,7 +198,7 @@ public class SinkholeService {
     }
 
     private Map<String,Object> owned(LoginUser user,long equipId,boolean lock) {
-        var rows=db.queryForList("SELECT e.name,u.region_id,u.name AS underpass_name FROM pm_equipment e JOIN underpass u ON u.id=e.underpass_id WHERE e.id=? AND e.type::text='ROAD' AND NOT e.is_deleted AND NOT u.is_deleted"+(lock?" FOR UPDATE OF e":""),equipId);
+        var rows=db.queryForList("SELECT e.name,u.id AS underpass_id,u.region_id,u.name AS underpass_name FROM pm_equipment e JOIN underpass u ON u.id=e.underpass_id WHERE e.id=? AND e.type::text='ROAD' AND NOT e.is_deleted AND NOT u.is_deleted"+(lock?" FOR UPDATE OF e":""),equipId);
         if(rows.isEmpty()) throw new BusinessException(HttpStatus.NOT_FOUND,"노면 관리 대상이 없습니다.");
         scope.requireOwnable(user,number(rows.get(0).get("region_id")));
         return rows.get(0);

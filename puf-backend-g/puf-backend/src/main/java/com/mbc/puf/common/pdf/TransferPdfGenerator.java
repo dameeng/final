@@ -58,7 +58,14 @@ public class TransferPdfGenerator {
             PdfFont font = loadFont();
 
             addTitle(doc, font, "도로 통제 정보 전달서");
-            addSubtitle(doc, font, "발송 대상: 관할 경찰서 교통과 · 관할 소방서 (시연: 실제 전송 없이 PDF 저장)");
+            addSubtitle(doc, font, "PUF 지하차도 통합 관제");
+            Table heading=twoColTable();
+            addNoticeRow(heading,font,"시행일자",fmt(d.eventAt()));
+            addNoticeRow(heading,font,"수신","관할 경찰서 교통과 · 관할 소방서");
+            addNoticeRow(heading,font,"제목",orDash(d.underpassName())+(d.blockEvent()?" 통제 시작 알림":" 통제 해제 알림"));
+            doc.add(heading);
+            doc.add(new Paragraph("아래와 같이 지하차도 통제 정보를 전달하오니 현장 대응에 참고하여 주시기 바랍니다.")
+                    .setFont(font).setFontSize(10).setMarginTop(16f).setMarginBottom(16f));
 
             Table table = new Table(UnitValue.createPercentArray(new float[]{2.2f, 7.8f}))
                     .setWidth(UnitValue.createPercentValue(100))
@@ -170,8 +177,15 @@ public class TransferPdfGenerator {
             doc.setMargins(MARGIN, MARGIN, MARGIN, MARGIN);
             PdfFont font = loadFont();
 
-            addTitle(doc, font, "소방서 잔류차량 구조 요청 보고서");
-            addSubtitle(doc, font, "지하차도 내 잔류차량 현황 이관");
+            addTitle(doc, font, "잔류차량 구조 요청서");
+            addSubtitle(doc, font, "PUF 지하차도 통합 관제");
+            Table heading=twoColTable();
+            addNoticeRow(heading,font,"시행일자",transferAt.format(DT_FMT));
+            addNoticeRow(heading,font,"수신","관할 소방서");
+            addNoticeRow(heading,font,"제목",orDash(underpassName)+" 잔류차량 현황 이관");
+            doc.add(heading);
+            doc.add(new Paragraph("아래와 같이 지하차도 내 잔류차량 현황을 전달하오니 구조 업무에 참고하여 주시기 바랍니다.")
+                    .setFont(font).setFontSize(10).setMarginTop(16f).setMarginBottom(16f));
 
             Table infoTable = twoColTable();
             addNoticeRow(infoTable, font, "지하차도", underpassName);
