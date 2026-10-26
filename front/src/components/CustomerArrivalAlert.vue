@@ -1,17 +1,24 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useApp } from '../stores/app'
 import { notificationCategory, useCustomerNotifications } from '../stores/customerNotifications'
 import { displayDate } from '../utils/display-date'
 import UiIcon from './UiIcon.vue'
 
-const app = useApp(), route = useRoute(), router = useRouter()
+const app = useApp(), route = useRoute()
 const notifications = useCustomerNotifications()
 const dialog = ref<HTMLDialogElement>(), heading = ref<HTMLElement>()
 const busy = ref(false), actionError = ref('')
 const eligible = computed(() => route.path.startsWith('/customer-app/') && app.account?.role === 'customer')
 const current = computed(() => notifications.appArrivals[0])
+const batchTotal=ref(0), batchConfirmed=ref(0)
+watch(()=>notifications.appArrivals.length,(count,previous=0)=>{
+  if(!count){batchTotal.value=0;batchConfirmed.value=0}
+  else if(count>previous)batchTotal.value+=count-previous
+  else batchConfirmed.value+=previous-count
+},{immediate:true})
+const body=computed(()=>String(current.value?.body||'').replace(/^\s*(?:\[ROUTEL\]|ROUTEL\s*[:：·-])\s*/i,''))
 const isSafety = computed(() => current.value?.category === 'RISK')
 const tone = computed(() => {
   if (!isSafety.value) return 'info'
@@ -23,12 +30,10 @@ const label = computed(() => isSafety.value
   : notificationCategory(current.value?.category || ''))
 let interval: ReturnType<typeof setInterval> | undefined
 let previousFocus: HTMLElement | null = null
-let restoreFocus = true
 
 function restorePreviousFocus() {
-  if (restoreFocus && previousFocus?.isConnected) previousFocus.focus({ preventScroll: true })
+  if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true })
   previousFocus = null
-  restoreFocus = true
 }
 async function syncDialog() {
   await nextTick()
@@ -58,13 +63,6 @@ async function acknowledge() {
   } finally {
     if (app.account?.id === owner) busy.value = false
   }
-}
-async function details() {
-  if (!current.value) return
-  const id = current.value.id
-  restoreFocus = false
-  notifications.dismissAppArrivals()
-  await router.push({ path: '/customer-app/screen-12', query: { notification: id } })
 }
 function receive(event: Event) {
   if (!eligible.value) return
@@ -121,21 +119,21 @@ onBeforeUnmount(() => {
       @cancel.prevent="dismiss">
       <template v-if="current">
         <header class="arrival-heading">
-          <span class="arrival-symbol" aria-hidden="true"><UiIcon name="bell" /></span>
-          <div><span class="arrival-brand">ROUTEL</span><strong>{{ isSafety ? '안전 알림' : '새 알림' }}</strong></div>
-          <button type="button" class="arrival-close" aria-label="알림 창 닫기" @click="dismiss">×</button>
+          <span class="arrival-symbol" aria-hidden="true">
+            <svg v-if="isSafety" class="arrival-warning-icon" viewBox="0 0 36 36" width="36" height="36"><path d="M15.4 5.5a3 3 0 0 1 5.2 0l13 22.5a3 3 0 0 1-2.6 4.5H5A3 3 0 0 1 2.4 28Z" fill="currentColor"/><path d="M18 12v9" stroke="#242428" stroke-width="3" stroke-linecap="round"/><circle cx="18" cy="26" r="1.7" fill="#242428"/></svg>
+            <UiIcon v-else name="bell" />
+          </span>
+          <div><strong>{{ isSafety ? tone==='danger'?'긴급 안전 안내':'안전 안내 문자' : '새 알림' }}</strong></div>
+          <button v-if="!isSafety" type="button" class="arrival-close" aria-label="알림 창 닫기" @click="dismiss">×</button>
         </header>
         <div class="arrival-content">
-          <div class="arrival-meta"><span class="arrival-category">{{ label }}</span><time :datetime="current.createdAt">{{ displayDate(current.createdAt) }}</time></div>
+          <div class="arrival-meta"><span v-if="!isSafety" class="arrival-category">{{ label }}</span><time :datetime="current.createdAt">{{ displayDate(current.createdAt) }}</time></div>
           <h2 id="customer-arrival-title" ref="heading" tabindex="-1">{{ current.title }}</h2>
-          <p id="customer-arrival-body" class="arrival-body">{{ current.body }}</p>
-          <p class="arrival-origin">ROUTEL 서비스에서 보낸 알림입니다.</p>
-          <p v-if="notifications.appArrivals.length > 1" class="arrival-queue">대기 중인 새 알림 {{ notifications.appArrivals.length - 1 }}개</p>
+          <p id="customer-arrival-body" class="arrival-body">{{ body }}</p>
           <p v-if="actionError" class="arrival-error" role="alert">{{ actionError }}</p>
         </div>
         <footer class="arrival-actions">
-          <button type="button" class="arrival-details" @click="details">상세 보기</button>
-          <button type="button" class="arrival-confirm" :disabled="busy" @click="acknowledge">{{ busy ? '확인 중…' : '확인' }}</button>
+          <button type="button" class="arrival-confirm" :disabled="busy" @click="acknowledge">{{ busy ? '확인 중…' : '확인' }}<span v-if="batchTotal>1"> ({{batchConfirmed+1}}/{{batchTotal}})</span></button>
         </footer>
       </template>
     </dialog>
@@ -171,7 +169,6 @@ dialog.customer-arrival-alert::backdrop { background: #10243d9c; backdrop-filter
 .customer-arrival-alert .arrival-heading { display: flex; align-items: center; gap: 12px; margin: 0; padding: 19px 20px; background: color-mix(in srgb, var(--arrival-accent) 8%, var(--r-surface, white)); border-bottom: 1px solid var(--r-line, #dbe3ed); }
 .customer-arrival-alert .arrival-symbol { display: grid; place-items: center; flex: 0 0 42px; width: 42px; height: 42px; border: 1px solid color-mix(in srgb, var(--arrival-accent) 25%, transparent); border-radius: 13px; color: var(--arrival-accent); }
 .customer-arrival-alert .arrival-heading>div { display: grid; gap: 1px; }
-.customer-arrival-alert .arrival-brand { font-size: 11px; font-weight: 800; letter-spacing: .1em; color: var(--arrival-accent); }
 .customer-arrival-alert .arrival-heading strong { font-size: 17px; line-height: 1.4; }
 .customer-arrival-alert button { box-sizing: border-box; font: inherit; cursor: pointer; }
 .customer-arrival-alert .arrival-close { flex: 0 0 40px; width: 40px; height: 40px; margin: 0 -7px 0 auto; padding: 0; background: transparent; border: 0; border-radius: 9px; color: var(--r-muted, #63748a); font-size: 27px; line-height: 1; }
@@ -180,16 +177,40 @@ dialog.customer-arrival-alert::backdrop { background: #10243d9c; backdrop-filter
 .customer-arrival-alert .arrival-category { padding: 2px 8px; border: 1px solid color-mix(in srgb, var(--arrival-accent) 25%, transparent); border-radius: 5px; color: var(--arrival-accent); font-weight: 700; }
 .customer-arrival-alert h2 { margin: 0 0 13px; color: var(--r-ink, #172d48); font-size: 22px; font-weight: 750; line-height: 1.45; letter-spacing: -.025em; overflow-wrap: anywhere; }
 .customer-arrival-alert .arrival-body { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 16px; line-height: 1.75; color: var(--r-ink, #172d48); }
-.customer-arrival-alert .arrival-origin { margin: 22px 0 0; font-size: 11px; line-height: 1.6; color: var(--r-muted, #63748a); }
-.customer-arrival-alert .arrival-queue { margin: 8px 0 0; color: var(--arrival-accent); font-size: 12px; font-weight: 600; }
 .customer-arrival-alert .arrival-error { margin: 12px 0 0; color: var(--r-danger, #b92e47); font-size: 13px; }
 .customer-arrival-alert .arrival-actions { position: sticky; bottom: 0; display: flex; gap: 10px; padding: 16px 22px 20px; background: var(--r-surface, #fff); border-top: 1px solid var(--r-line, #dbe3ed); }
 .customer-arrival-alert .arrival-actions>button { flex: 1; min-width: 0; min-height: 46px; padding: 10px 12px; border: 1px solid var(--r-line, #dbe3ed); border-radius: 10px; line-height: 1.5; font-size: 14px; font-weight: 700; }
-.customer-arrival-alert .arrival-details { color: var(--r-ink, #172d48); background: var(--r-surface, #fff); }
 .customer-arrival-alert .arrival-confirm { color: var(--r-surface, #fff); background: var(--arrival-accent); border-color: var(--arrival-accent); }
 .customer-arrival-alert button:disabled { opacity: .65; cursor: wait; }
 .customer-arrival-alert button:focus-visible { outline: 3px solid var(--arrival-accent); outline-offset: 3px; }
 .customer-arrival-alert h2:focus { outline: none; }
+/* Safety arrivals use a compact alert card; general notices keep the usual app surface. */
+dialog.customer-arrival-alert.customer-arrival-alert:is([data-tone="caution"],[data-tone="danger"]) {
+  --arrival-accent: #ffb454;
+  width: min(380px, calc(100vw - 32px));
+  border: 1px solid #ffffff26;
+  border-radius: 26px;
+  background: #414147f5;
+  color: #fff;
+  box-shadow: 0 24px 90px #00000066, inset 0 1px #ffffff12;
+  backdrop-filter: blur(24px);
+}
+dialog.customer-arrival-alert.customer-arrival-alert[data-tone="danger"] { --arrival-accent: #ff695d; }
+dialog.customer-arrival-alert:is([data-tone="caution"],[data-tone="danger"])::backdrop { background: #11131a66; backdrop-filter: blur(5px); }
+.customer-arrival-alert:is([data-tone="caution"],[data-tone="danger"]) .arrival-heading { padding: 22px 24px 12px; gap: 12px; background: transparent; border: 0; }
+.customer-arrival-alert:is([data-tone="caution"],[data-tone="danger"]) .arrival-symbol { flex-basis: 36px; width: 36px; height: 40px; border: 0; border-radius: 0; color: var(--arrival-accent); }
+.customer-arrival-alert:is([data-tone="caution"],[data-tone="danger"]) .arrival-heading strong { color: #fff; font-size: 18px; font-weight: 750; }
+.customer-arrival-alert:is([data-tone="caution"],[data-tone="danger"]) .arrival-close { color: #dadbe4; }
+.customer-arrival-alert:is([data-tone="caution"],[data-tone="danger"]) .arrival-content { padding: 10px 24px 24px; }
+.customer-arrival-alert:is([data-tone="caution"],[data-tone="danger"]) .arrival-meta { margin-bottom: 12px; color: #d4d5de; font-size: 11px; }
+.customer-arrival-alert:is([data-tone="caution"],[data-tone="danger"]) .arrival-category { border: 0; padding: 0; color: var(--arrival-accent); }
+.customer-arrival-alert:is([data-tone="caution"],[data-tone="danger"]) h2 { margin-bottom: 10px; color: #fff; font-size: 16px; line-height: 1.5; }
+.customer-arrival-alert:is([data-tone="caution"],[data-tone="danger"]) .arrival-body { color: #f7f7fb; font-size: 18px; line-height: 1.6; font-weight: 650; letter-spacing: -.015em; }
+.customer-arrival-alert:is([data-tone="caution"],[data-tone="danger"]) .arrival-error { color: #ffbcb6; }
+.customer-arrival-alert:is([data-tone="caution"],[data-tone="danger"]) .arrival-actions { padding: 0; background: #303036; border-top: 1px solid #ffffff24; }
+.customer-arrival-alert:is([data-tone="caution"],[data-tone="danger"]) .arrival-confirm { min-height: 58px; border: 0; border-radius: 0; color: #e1edff; background: transparent; font-size: 15px; }
+.customer-arrival-alert:is([data-tone="caution"],[data-tone="danger"]) .arrival-confirm:hover { background: #ffffff0d; }
+.customer-arrival-alert:is([data-tone="caution"],[data-tone="danger"]) button:focus-visible { outline-color: #e1edff; outline-offset: -4px; }
 @media (prefers-reduced-motion: reduce) {
   dialog.customer-arrival-alert, dialog.customer-arrival-alert::backdrop { animation: none; transition: none; }
 }
