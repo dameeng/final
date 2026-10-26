@@ -123,6 +123,7 @@ function openDetail(row: PmEvent) {
   void router.push({ path: '/pm-equipment-detail', query: { id: String(row.equipId) } })
 }
 function act(row: PmEvent, mode: 'start' | 'note' | 'resolve') {
+  if(row.type==='ROAD'){openDetail(row);return}
   modal.value?.open({ eventId: row.eventId, name: row.name, status: row.status, underpassName: row.underpassName }, mode)
 }
 </script>

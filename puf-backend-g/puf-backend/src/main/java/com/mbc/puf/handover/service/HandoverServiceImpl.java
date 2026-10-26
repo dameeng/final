@@ -297,6 +297,9 @@ public class HandoverServiceImpl implements HandoverService {
 
     /** 새 점검 대기 한 줄. 미수신은 점수·단계가 없다 */
     private String pmEventText(PmEventItem ev) {
+        if (ev.getTriggerType() == PmTriggerType.SINKHOLE) {
+            return String.format("%s %s 노면 싱크홀 의심 탐지 · 사진 확인 필요", ev.getCode(), ev.getUnderpassName());
+        }
         if (ev.getTriggerType() == PmTriggerType.NO_DATA) {
             return String.format("%s %s 센서 데이터 미수신 점검 대기 등록", ev.getCode(), ev.getUnderpassName());
         }

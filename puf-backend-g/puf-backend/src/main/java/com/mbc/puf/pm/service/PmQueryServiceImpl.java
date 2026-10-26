@@ -52,7 +52,12 @@ public class PmQueryServiceImpl implements PmQueryService {
     private static final String EQUIP_SELECT = """
             SELECT e.id AS equip_id, CAST(e.type AS text) AS type, e.name AS name, u.id AS underpass_id, u.name AS underpass_name,
                    u.region_id AS region_id, ls.score AS score, CAST(ls.level AS text) AS level,
-                   ls.predicted_at AS last_received_at, ls.reasons AS reasons_json,
+                   CASE WHEN e.type::text='ROAD' THEN rr.analyzed_at ELSE ls.predicted_at END AS last_received_at, ls.reasons AS reasons_json,
+                   CASE WHEN e.type::text='ROAD' THEN
+                     CASE WHEN rr.id IS NULL THEN '미분석' WHEN re.status::text='RESOLVED' THEN '조치 완료'
+                          WHEN re.status::text='ETC' THEN CASE WHEN rr.review_status='FALSE_POSITIVE' THEN '오탐 확인' ELSE '기타 종료' END
+                          WHEN NOT rr.detected THEN '이상 미탐지' WHEN rr.review_status='CONFIRMED' THEN '싱크홀 확인' ELSE '싱크홀 의심' END
+                     ELSE NULL END AS road_status, rr.confidence AS detection_confidence,
                    oe.id AS open_event_id, CAST(oe.status AS text) AS open_event_status,
                    (SELECT s2.score FROM pm_score s2
                      WHERE s2.equip_id = e.id AND s2.predicted_at >= ls.predicted_at - INTERVAL '7 days'
@@ -67,6 +72,10 @@ public class PmQueryServiceImpl implements PmQueryService {
              LEFT JOIN LATERAL (SELECT ev.id, ev.status FROM pm_event ev
                                  WHERE ev.equip_id = e.id AND CAST(ev.status AS text) IN (:openStatuses)
                                  ORDER BY ev.id DESC LIMIT 1) oe ON TRUE
+             LEFT JOIN LATERAL (SELECT r.* FROM pm_road_result r WHERE r.equip_id=e.id
+                 ORDER BY CASE WHEN r.event_id=oe.id AND r.detected THEN 0 ELSE 1 END,
+                          r.analyzed_at DESC, r.id DESC LIMIT 1) rr ON e.type::text='ROAD'
+             LEFT JOIN pm_event re ON re.id=rr.event_id
              WHERE 1 = 1
             """;
 
@@ -128,7 +137,7 @@ public class PmQueryServiceImpl implements PmQueryService {
         ScopeQuery resolved = scopeResolver.resolve(loginUser, scope);
         PageParams p = page.toParams();
         NativeSql rows = equipFilters(new NativeSql(EQUIP_SELECT + EQUIP_FROM), resolved, type, level)
-                .append(" ORDER BY ls.score DESC NULLS LAST, e.id LIMIT :size OFFSET :offset")
+                .append(" ORDER BY CASE WHEN e.type::text='ROAD' AND oe.id IS NOT NULL THEN 0 ELSE 1 END, ls.score DESC NULLS LAST, e.id LIMIT :size OFFSET :offset")
                 .param("size", p.getSize()).param("offset", p.getOffset());
         NativeSql count = equipFilters(new NativeSql("SELECT COUNT(*) AS total" + EQUIP_FROM), resolved, type, level);
         List<PmEquipmentListItem> items = rows.list(em, PmEquipmentListItem.class);

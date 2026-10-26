@@ -104,3 +104,10 @@ JOIN underpass u ON u.id = e.underpass_id
 JOIN region r ON r.id = u.region_id
 GROUP BY u.id, u.name, r.name
 ORDER BY u.id;
+
+
+-- 초량지하차도 노면: 반복 실행 시 중복 등록하지 않는다. 카메라는 사진 전송 시 소속을 검증한다.
+INSERT INTO pm_equipment (underpass_id, type)
+SELECT u.id, 'ROAD'::pm_equipment_type FROM underpass u
+WHERE u.name = '초량지하차도' AND u.is_deleted = FALSE
+AND NOT EXISTS (SELECT 1 FROM pm_equipment e WHERE e.underpass_id = u.id AND e.type = 'ROAD' AND e.is_deleted = FALSE);

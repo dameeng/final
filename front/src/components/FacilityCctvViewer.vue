@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { backend, queryString } from '../services/backend'
 import { useRoute } from 'vue-router'
 import TrafficVideo from './TrafficVideo.vue'
 import FacilityOcrLog from './FacilityOcrLog.vue'
@@ -12,6 +13,37 @@ const availableCameras = computed(() => props.cameras.filter((camera) =>
   camera.underpassId == null || String(camera.underpassId) === props.underpassId,
 ))
 const current = computed(() => availableCameras.value.find((camera) => String(camera.id) === selected.value))
+const isRoadCamera = computed(() => String(current.value?.id) === '230')
+const roadStatus = ref<Record<string, any>>()
+const roadEquipmentId = ref<number>()
+let statusTimer: ReturnType<typeof setInterval> | undefined
+let statusBusy = false
+async function refreshRoadStatus() {
+  if (!isRoadCamera.value || statusBusy) return
+  statusBusy = true
+  const camera = selected.value, facility = props.underpassId
+  try {
+    const data = await backend<Record<string, any>>('/api/cctv/analysis/state?cameraId=' + encodeURIComponent(camera))
+    if (selected.value !== camera || props.underpassId !== facility) return
+    roadStatus.value = data.cameras?.find((item: Record<string, any>) => String(item.cameraId) === camera)
+    if (!roadEquipmentId.value) {
+      const equipment = await backend<{ items: { equipId: number }[] }>('/api/pm/equipments' + queryString({type:'ROAD',underpassId:facility,size:1}))
+      if (selected.value === camera && props.underpassId === facility) roadEquipmentId.value = equipment.items?.[0]?.equipId
+    }
+  } catch { /* 실행 요청 실패는 버튼에서 안내한다. 상태 조회 실패가 기존 OCR 화면에 영향을 주지 않는다. */ }
+  finally { statusBusy = false }
+}
+watch(() => [selected.value, props.underpassId], () => {
+  clearInterval(statusTimer)
+  roadStatus.value = undefined
+  roadEquipmentId.value = undefined
+  if (isRoadCamera.value) {
+    void refreshRoadStatus()
+    statusTimer = setInterval(() => void refreshRoadStatus(), 2000)
+  }
+}, { immediate: true })
+onBeforeUnmount(() => clearInterval(statusTimer))
+const roadStateLabel = computed(() => ({STARTING:'시작 중',RUNNING:'영상 분석 중',STOPPING:'정지 중',STOPPED:'정지',COMPLETED:'분석 완료',ERROR:'분석 오류'}[String(roadStatus.value?.state)] || '실행 대기'))
 const starting = ref(false)
 const stopping = ref(false)
 const recognitionMessage = ref('')
@@ -39,7 +71,7 @@ async function controlRecognition(action: 'start' | 'stop') {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 30000)
   try {
-    const response = await fetch(`/api/cctv/plate/${action}?cameraId=${encodeURIComponent(cameraId)}`, {
+    const response = await fetch(`/api/cctv/analysis/${action}?cameraId=${encodeURIComponent(cameraId)}`, {
       method: 'POST',
       credentials: 'include',
       signal: controller.signal,
@@ -47,13 +79,14 @@ async function controlRecognition(action: 'start' | 'stop') {
     const data = await response.json().catch(() => null)
     if (!response.ok || data?.success === false)
       throw new Error(typeof data?.detail === 'string' ? data.detail : data?.message
-        || (action === 'start' ? '번호판 인식을 시작하지 못했습니다.' : '번호판 인식을 정지하지 못했습니다.') + ' AI 서버 연결과 카메라 설정을 확인해 주세요.')
+        || (action === 'start' ? '영상 분석을 시작하지 못했습니다.' : '영상 분석을 정지하지 못했습니다.') + ' AI 서버 연결과 카메라 설정을 확인해 주세요.')
     streamFailed.value = false
     streamVersion.value++
+    if (cameraId === '230') void refreshRoadStatus()
     if (selected.value === cameraId && props.underpassId === facilityId)
       recognitionMessage.value = action === 'start'
-        ? '번호판 인식 시작 요청이 완료되었습니다. OCR 인식 기록에서 결과를 확인하세요.'
-        : '번호판 인식을 정지했습니다.'
+        ? (cameraId === '230' ? '초량 CCTV230 싱크홀 분석을 시작했습니다. 탐지 사진은 장비 현황의 노면에서 확인하세요.' : '번호판 인식 시작 요청이 완료되었습니다. OCR 인식 기록에서 결과를 확인하세요.')
+        : (cameraId === '230' ? '싱크홀 영상 분석 정지를 요청했습니다.' : '번호판 인식을 정지했습니다.')
   } catch (error) {
     if (selected.value === cameraId && props.underpassId === facilityId) {
       recognitionError.value = true
@@ -75,7 +108,7 @@ watch(
   { immediate: true },
 )
 // 초량지하차도 시연용 번호판 카메라 이름 (DB camera 테이블에 이름 칸이 없어서 번호로 정함. seed_all_v8.sql 9-1 참고)
-const demoCameraNames: Record<string, string> = { '226': 'APPROACH', '227': 'ROI', '228': '입구', '229': '출구' }
+const demoCameraNames: Record<string, string> = { '226': 'APPROACH', '227': 'ROI', '228': '입구', '229': '출구', '230': '노면·싱크홀' }
 function label(camera: Record<string, any>) {
   return `${camera.name || demoCameraNames[String(camera.id)] || valueLabels[camera.cameraRole] || camera.cameraRole || 'CCTV'} · ${camera.id}`
 }
@@ -95,7 +128,7 @@ const app = computed(() => route.path.startsWith('/admin-app/'))
       <div class="facility-recognition-controls">
         <div class="recognition-buttons">
           <button type="button" class="recognition-start" :disabled="starting || stopping" @click="controlRecognition('start')">
-            {{ starting ? '인식 시작 중…' : '번호판 인식 실행' }}
+            {{ starting ? '분석 시작 중…' : '영상 분석 실행' }}
           </button>
           <button type="button" class="recognition-start recognition-stop" :disabled="starting || stopping" @click="controlRecognition('stop')">
             {{ stopping ? '정지 중…' : '정지' }}
@@ -113,7 +146,7 @@ const app = computed(() => route.path.startsWith('/admin-app/'))
             :alt="label(current) + ' 실시간 영상'"
             @error="streamFailed = true"
           />
-          <p v-else>영상이 꺼져 있습니다. '번호판 인식 실행'을 누르면 영상이 나옵니다.</p>
+          <p v-else>영상이 꺼져 있습니다. '영상 분석 실행'을 누르면 영상이 나옵니다.</p>
         </template>
         <TrafficVideo
           v-else-if="current.streamUrl"
@@ -123,9 +156,18 @@ const app = computed(() => route.path.startsWith('/admin-app/'))
         />
         <p v-else>영상 주소가 등록되지 않았습니다.</p>
       </div>
-      <div v-if="!compact" class="facility-ocr-column"><FacilityOcrLog :key="underpassId" :underpass-id="underpassId" :app="app" /></div>
+      <div v-if="!compact && isRoadCamera" class="facility-ocr-column">
+        <h3>노면 · 싱크홀 분석</h3>
+        <p role="status">{{roadStateLabel}}<template v-if="roadStatus?.frameSeconds != null"> · 영상 {{Number(roadStatus.frameSeconds).toFixed(1)}}초</template></p>
+        <p v-if="roadStatus?.error" role="alert">{{roadStatus.error}}</p>
+        <p v-if="roadStatus?.springDelivery==='SENT'">Spring 저장 완료 · 장비 현황에서 분석 결과를 확인하세요.</p>
+        <p v-else-if="roadStatus?.springDelivery==='PENDING'">분석 결과를 저장했으며 Spring 전송을 시도 중입니다.</p>
+        <p v-else>등록된 시연 영상을 한 번 재생하며 분석합니다. 226~229번 OCR과 독립적으로 실행됩니다.</p>
+        <RouterLink :to="roadEquipmentId?{path:'/pm-equipment-detail',query:{id:String(roadEquipmentId)}}:{path:'/pm-equipment',query:{type:'ROAD'}}">장비 현황 · 노면 결과 보기 →</RouterLink>
       </div>
-      <nav class="facility-camera-links" aria-label="CCTV 관련 기록">
+      <div v-else-if="!compact" class="facility-ocr-column"><FacilityOcrLog :key="underpassId" :underpass-id="underpassId" :app="app" /></div>
+      </div>
+      <nav v-if="!isRoadCamera" class="facility-camera-links" aria-label="CCTV 관련 기록">
         <RouterLink
           v-if="current.cameraRole!=='CCTV'"
           :to="{path:app?'/admin-app/ocr':'/admin-data/ocr',query:{underpassId}}"

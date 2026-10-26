@@ -85,6 +85,9 @@ public class PmEventServiceImpl implements PmEventService {
     @Transactional
     public PmEventItem changeStatus(LoginUser loginUser, Long eventId, PmEventStatusRequest request) {
         PmEvent event = findOwnedEvent(loginUser, eventId);
+        if (event.getTriggerType() == com.mbc.puf.common.enums.PmTriggerType.SINKHOLE) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "노면 탐지는 장비 현황의 사진 확인 영역에서 처리해 주세요.");
+        }
         PmEventStatus from = event.getStatus();
         PmEventStatus to = request.getStatus();
         String content = request.getContent() == null ? "" : request.getContent().trim();

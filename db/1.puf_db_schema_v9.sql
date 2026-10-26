@@ -40,10 +40,10 @@ CREATE TYPE transit_status AS ENUM ('IN_TRANSIT', 'EXITED', 'REMAINING'); -- 지
 CREATE TYPE transit_direction AS ENUM ('UP', 'DOWN'); -- 통행 방향(상행/하행)
 CREATE TYPE transfer_agency AS ENUM ('POLICE', 'FIRE'); -- 통제정보 이관 대상(경찰/소방서)
 CREATE TYPE display_category AS ENUM ('SAFE', 'WATCH', 'CAUTION', 'BLOCK', 'RELEASE'); -- 전광판 프리셋 문구 분류(안전/관심/주의/차단/해제. 경계·심각은 차단 문구 사용)
-CREATE TYPE pm_equipment_type AS ENUM ('CCTV', 'DISPLAY', 'PUMP', 'WATER_LEVEL'); -- 예지보전 설비 종류(CCTV/전광판/배수펌프/수위센서)
+CREATE TYPE pm_equipment_type AS ENUM ('CCTV', 'DISPLAY', 'PUMP', 'WATER_LEVEL', 'ROAD'); -- 예지보전 설비 종류(CCTV/전광판/배수펌프/수위센서)
 CREATE TYPE pm_event_status AS ENUM ('CHECK_NEEDED', 'IN_PROGRESS', 'RESOLVED', 'ETC'); -- 예지보전 처리 상태(확인필요/점검중/조치완료/기타)
 CREATE TYPE pm_action_kind AS ENUM ('START', 'RECORD', 'RESOLVED', 'ETC'); -- 예지보전 조치 기록 종류(점검 시작/기록 추가/조치 완료/기타 종료)
-CREATE TYPE pm_trigger_type AS ENUM ('위험진입', '급상승', '미수신'); -- 예지보전 이벤트 발생 이유(점수가 위험 임계치 넘음/짧은 시간에 점수 급상승/센서 데이터 끊김)
+CREATE TYPE pm_trigger_type AS ENUM ('위험진입', '급상승', '미수신', '싱크홀탐지'); -- 예지보전 이벤트 발생 이유(점수가 위험 임계치 넘음/짧은 시간에 점수 급상승/센서 데이터 끊김, '싱크홀탐지')
 CREATE TYPE inquiry_status AS ENUM ('PENDING', 'ANSWERED'); -- 접수의견 답변 여부(대기/답변완료)
 CREATE TYPE customer_notification_category AS ENUM ('RISK', 'NOTICE', 'INQUIRY'); -- 고객 알림 분류(위험/공지/문의)
 CREATE TYPE manager_notification_category AS ENUM ('RISK', 'EQUIPMENT', 'TASK', 'SYSTEM'); -- 관리자 알림 분류(위험/설비/업무/시스템)
@@ -496,7 +496,7 @@ CREATE TABLE pm_equipment ( -- 예지보전 설비 테이블(지하차도별 CCT
     cam_id BIGINT, -- 카메라 아이디(type=CCTV일 때만 값 있음)
     its_vms_id BIGINT, -- ITS 전광판 아이디(type=DISPLAY일 때만 값 있음, 더미 전광판 포함. 삭제되지 않은 설비끼리는 한 전광판을 한 설비에만 연결)
     installed_at DATE, -- 설치일(모르면 NULL)
-    sensor_interval_sec INTEGER NOT NULL, -- 센서 측정 주기(초). 비워서 넣으면 종류별 기본값: CCTV 3600 / 전광판 3600 / 수위센서 300 / 배수펌프 10
+    sensor_interval_sec INTEGER, -- 센서 측정 주기(초). 비워서 넣으면 종류별 기본값: CCTV 3600 / 전광판 3600 / 수위센서 300 / 배수펌프 10
     data_started_at TIMESTAMP, -- 센서 데이터가 시작된 시각(Spring 이 stub/백필을 시작할 때 기록. 모델의 이력 부족 판단용)
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE, -- 삭제 여부(TRUE 면 FastAPI 조회·화면에서 제외, 행은 보존)
     created_at TIMESTAMP NOT NULL DEFAULT NOW() -- 등록일
@@ -734,12 +734,12 @@ CHECK (type = 'DISPLAY' OR its_vms_id IS NULL);
 -- 센서 주기는 0보다 커야 함
 ALTER TABLE pm_equipment
 ADD CONSTRAINT chk_pm_equipment_interval
-CHECK (sensor_interval_sec > 0);
+CHECK ((type = 'ROAD' AND sensor_interval_sec IS NULL) OR (type <> 'ROAD' AND sensor_interval_sec > 0 AND sensor_interval_sec IS NOT NULL));
 
 -- 미수신 이벤트만 점수·단계가 없을 수 있음
 ALTER TABLE pm_event
 ADD CONSTRAINT chk_pm_event_trigger
-CHECK (trigger_type = '미수신' OR (score IS NOT NULL AND level IS NOT NULL));
+CHECK (trigger_type IN ('미수신', '싱크홀탐지') OR (score IS NOT NULL AND level IS NOT NULL));
 
 ALTER TABLE inquiry
 ADD CONSTRAINT chk_inquiry_author
@@ -927,7 +927,7 @@ BEGIN
     END IF;
     IF NEW.name IS NULL THEN
         v_letter := CASE NEW.type::text
-            WHEN 'CCTV' THEN 'C' WHEN 'DISPLAY' THEN 'D' WHEN 'WATER_LEVEL' THEN 'W' WHEN 'PUMP' THEN 'P' END;
+            WHEN 'CCTV' THEN 'C' WHEN 'DISPLAY' THEN 'D' WHEN 'WATER_LEVEL' THEN 'W' WHEN 'PUMP' THEN 'P' WHEN 'ROAD' THEN 'R' END;
         PERFORM pg_advisory_xact_lock(7001, NEW.underpass_id::int);  -- 같은 지하차도 설비를 동시에 만들어도 번호가 겹치지 않게
         SELECT COALESCE(MAX(split_part(e.name, '-', 3)::int), 0) + 1 INTO v_seq
         FROM pm_equipment e
@@ -945,3 +945,31 @@ CREATE TRIGGER trg_pm_equipment_before_insert
 -- 6. 필수 기준행 (시드 데이터가 아니라 서비스 로직이 참조하는 고정 행)
 -- 지역 삭제 시 소속 underpass/manager_region을 옮겨두는 특수 지역. 서비스 로직에서 삭제 금지 처리 필요.
 INSERT INTO region (name) VALUES ('미배정');
+
+
+-- 노면 분석 결과. 사진 원본은 Spring의 별도 파일 저장소에 보관한다.
+CREATE TABLE IF NOT EXISTS pm_road_result (
+    id BIGSERIAL PRIMARY KEY,
+    job_id VARCHAR(64) NOT NULL UNIQUE,
+    equip_id BIGINT NOT NULL REFERENCES pm_equipment(id),
+    camera_id BIGINT REFERENCES camera(id),
+    event_id BIGINT REFERENCES pm_event(id),
+    analyzed_at TIMESTAMP NOT NULL,
+    detected BOOLEAN NOT NULL,
+    confidence DECIMAL(6,5) CHECK (confidence BETWEEN 0 AND 1),
+    detection_count INTEGER NOT NULL CHECK (detection_count >= 0),
+    frame_seconds DOUBLE PRECISION CHECK (frame_seconds >= 0),
+    model_version VARCHAR(80) NOT NULL,
+    image_name VARCHAR(80),
+    review_status VARCHAR(24) NOT NULL DEFAULT 'PENDING'
+        CHECK (review_status IN ('PENDING', 'CONFIRMED', 'FALSE_POSITIVE', 'RESOLVED')),
+    reviewed_by BIGINT REFERENCES manager(id),
+    reviewed_at TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    CHECK (NOT detected OR (image_name IS NOT NULL AND confidence IS NOT NULL)),
+    CHECK (NOT detected OR event_id IS NOT NULL)
+);
+CREATE INDEX IF NOT EXISTS idx_pm_road_result_latest ON pm_road_result(equip_id, analyzed_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS idx_pm_road_result_event ON pm_road_result(event_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_pm_event_open_sinkhole ON pm_event(equip_id)
+    WHERE trigger_type = '싱크홀탐지' AND status IN ('CHECK_NEEDED', 'IN_PROGRESS');

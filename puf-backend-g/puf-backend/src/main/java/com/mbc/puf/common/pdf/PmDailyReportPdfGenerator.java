@@ -258,6 +258,7 @@ public class PmDailyReportPdfGenerator {
             return "-";
         }
         return switch (t) {
+            case ROAD -> "노면";
             case CCTV -> "CCTV";
             case DISPLAY -> "전광판";
             case PUMP -> "배수펌프";
