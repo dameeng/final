@@ -90,16 +90,17 @@ export function useBackendStream() {
 
   // 로그인 계정 및 권한 정보 변경 감시
   const stop = watch(
-    () => [
-      app.account?.id,
-      app.account?.role,
-      app.authVersion,
+  [
+    () => app.account?.id,
+    () => app.account?.role,
+    () => app.authVersion,
+    () =>
       (app.account?.regions || [])
         .map((region) => String(region.id))
         .sort()
         .join(','),
-    ],
-    (identity) => {
+  ],
+  (identity) => {
       const changedFields = previousIdentity
         ? [
             'account.id',

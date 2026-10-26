@@ -1,5 +1,11 @@
+-- 통합본 실행 순서: 1.puf_db_schema.sql → 2.seed_general.sql → 3.seed_its.sql → 4.seed_pm.sql
+-- 개발 DB 초기 구축용. 1번은 public 스키마와 기존 데이터를 삭제한다. 기존 운영 DB에 적용하지 말 것.
+-- 네 파일을 순서대로 1회 실행하면 원본 시드의 ID/생성 순서를 유지한다. 시드는 반복 실행용이 아니다.
+
+BEGIN;
+
 -- =====================================================================
--- PUF DB 리셋 + 스키마 생성 v8 (ENUM / TABLE / CHECK / FK / INDEX) — 시드는 필수 기준행만
+-- PUF DB 리셋 + 스키마 생성 (싱크홀 통합) (ENUM / TABLE / CHECK / FK / INDEX) — 시드는 필수 기준행만
 -- v3 변경 요약: 최고관리자 폐지(manager_region N:M), 근무조/인수인계, 전화번호 인증, 알림 구조 분리(alert/delivery/device_token),
 --              전광판 페이지/프리셋, 통제정보 이관, 예지보전(pm_*), 챗봇(chat_*), 날씨 실데이터 테이블, 컬럼/테이블명 축약
 -- v6 변경 요약: ITS CCTV/전광판 원본(its_cctv, its_vms) 및 지하차도-전광판 표출 매핑(vms_underpass) 추가,
@@ -736,7 +742,7 @@ ALTER TABLE pm_equipment
 ADD CONSTRAINT chk_pm_equipment_interval
 CHECK ((type = 'ROAD' AND sensor_interval_sec IS NULL) OR (type <> 'ROAD' AND sensor_interval_sec > 0 AND sensor_interval_sec IS NOT NULL));
 
--- 미수신 이벤트만 점수·단계가 없을 수 있음
+-- 미수신·싱크홀탐지 이벤트는 점수·단계가 없을 수 있음
 ALTER TABLE pm_event
 ADD CONSTRAINT chk_pm_event_trigger
 CHECK (trigger_type IN ('미수신', '싱크홀탐지') OR (score IS NOT NULL AND level IS NOT NULL));
@@ -917,21 +923,19 @@ CREATE INDEX idx_display_history_underpass ON display_history (underpass_id, cha
 
 -- 설비 이름·센서 주기 자동 부여: name 을 비워서 INSERT 하면 종류글자-지하차도id-번호 로 채움(삭제된 설비 번호도 세어서 이름 재사용 방지)
 CREATE FUNCTION pm_equipment_before_insert() RETURNS trigger AS $$
-DECLARE
-    v_letter CHAR(1);
-    v_seq    INTEGER;
+DECLARE v_letter CHAR(1); v_seq INTEGER;
 BEGIN
-    IF NEW.sensor_interval_sec IS NULL THEN
+    IF NEW.type::text = 'ROAD' THEN NEW.sensor_interval_sec := NULL;
+    ELSIF NEW.sensor_interval_sec IS NULL THEN
         NEW.sensor_interval_sec := CASE NEW.type::text
             WHEN 'CCTV' THEN 3600 WHEN 'DISPLAY' THEN 3600 WHEN 'WATER_LEVEL' THEN 300 WHEN 'PUMP' THEN 10 END;
     END IF;
     IF NEW.name IS NULL THEN
-        v_letter := CASE NEW.type::text
-            WHEN 'CCTV' THEN 'C' WHEN 'DISPLAY' THEN 'D' WHEN 'WATER_LEVEL' THEN 'W' WHEN 'PUMP' THEN 'P' WHEN 'ROAD' THEN 'R' END;
-        PERFORM pg_advisory_xact_lock(7001, NEW.underpass_id::int);  -- 같은 지하차도 설비를 동시에 만들어도 번호가 겹치지 않게
+        v_letter := CASE NEW.type::text WHEN 'CCTV' THEN 'C' WHEN 'DISPLAY' THEN 'D'
+            WHEN 'WATER_LEVEL' THEN 'W' WHEN 'PUMP' THEN 'P' WHEN 'ROAD' THEN 'R' END;
+        PERFORM pg_advisory_xact_lock(7001, NEW.underpass_id::int);
         SELECT COALESCE(MAX(split_part(e.name, '-', 3)::int), 0) + 1 INTO v_seq
-        FROM pm_equipment e
-        WHERE e.underpass_id = NEW.underpass_id AND e.type = NEW.type;
+        FROM pm_equipment e WHERE e.underpass_id = NEW.underpass_id AND e.type = NEW.type;
         NEW.name := v_letter || '-' || NEW.underpass_id || '-' || v_seq;
     END IF;
     RETURN NEW;
@@ -944,7 +948,7 @@ CREATE TRIGGER trg_pm_equipment_before_insert
 
 -- 6. 필수 기준행 (시드 데이터가 아니라 서비스 로직이 참조하는 고정 행)
 -- 지역 삭제 시 소속 underpass/manager_region을 옮겨두는 특수 지역. 서비스 로직에서 삭제 금지 처리 필요.
-INSERT INTO region (name) VALUES ('미배정');
+-- 미배정 지역(id=1)은 2.seed_general.sql 에서 생성한다.
 
 
 -- 노면 분석 결과. 사진 원본은 Spring의 별도 파일 저장소에 보관한다.
@@ -973,3 +977,5 @@ CREATE INDEX IF NOT EXISTS idx_pm_road_result_latest ON pm_road_result(equip_id,
 CREATE INDEX IF NOT EXISTS idx_pm_road_result_event ON pm_road_result(event_id);
 CREATE UNIQUE INDEX IF NOT EXISTS uq_pm_event_open_sinkhole ON pm_event(equip_id)
     WHERE trigger_type = '싱크홀탐지' AND status IN ('CHECK_NEEDED', 'IN_PROGRESS');
+
+COMMIT;
