@@ -86,6 +86,12 @@ public class StreamHub {
     public void dispatch(StreamEvent event) {
         sender.execute(() -> {
             for (Connection c : connections) {
+                // 담당 지역 배정 변경은 커밋 후 대상 연결의 필터부터 갱신한다. 다른 탭의 재연결 전에도 새 범위를 적용한다.
+                if ("manager-assignment-change".equals(event.name()) && c.isAdmin()
+                        && java.util.Objects.equals(c.managerId, event.targetId())) {
+                    c.regionIds.clear();
+                    c.regionIds.addAll(managerRegionRepository.findRegionIds(c.managerId));
+                }
                 if (matches(c, event)) {
                     send(c, SseEmitter.event().name(event.name()).data(event.data(), MediaType.APPLICATION_JSON));
                 }

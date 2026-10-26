@@ -156,6 +156,9 @@ public class NotificationServiceImpl implements NotificationService {
         CustomerNotification n = customerRepository.findByIdAndCustomerId(id, customerId)
                 .orElseThrow(() -> notFound(id));
         n.setRead(true);
+        customerRepository.flush();
+        streamPublisher.publishToCustomer(customerId, "notification-read-change",
+                new com.mbc.puf.stream.RealtimePayloads.NotificationReadChange(id, false, null, getMyUnread(customerId)));
     }
 
     @Override
@@ -166,6 +169,8 @@ public class NotificationServiceImpl implements NotificationService {
         } else {
             customerRepository.markAllReadByCategory(customerId, category);
         }
+        streamPublisher.publishToCustomer(customerId, "notification-read-change",
+                new com.mbc.puf.stream.RealtimePayloads.NotificationReadChange(null, true, category == null ? null : category.name(), getMyUnread(customerId)));
     }
 
     // ================= 관리자 알림 =================
@@ -288,6 +293,8 @@ public class NotificationServiceImpl implements NotificationService {
         em.createNativeQuery("INSERT INTO manager_notification_read (notification_id, manager_id)"
                         + " VALUES (:id, :me) ON CONFLICT DO NOTHING")
                 .setParameter("id", id).setParameter("me", loginUser.id()).executeUpdate();
+        streamPublisher.publishToManager(loginUser.id(), "notification-read-change",
+                new com.mbc.puf.stream.RealtimePayloads.NotificationReadChange(id, false, null, getManagerUnread(loginUser)));
     }
 
     @Override
@@ -305,6 +312,8 @@ public class NotificationServiceImpl implements NotificationService {
             q.setParameter("cat", category.name());
         }
         q.executeUpdate();
+        streamPublisher.publishToManager(loginUser.id(), "notification-read-change",
+                new com.mbc.puf.stream.RealtimePayloads.NotificationReadChange(null, true, category == null ? null : category.name(), getManagerUnread(loginUser)));
     }
 
     // ================= 내부 =================
