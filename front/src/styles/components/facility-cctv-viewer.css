@@ -16,6 +16,8 @@
 .facility-camera-row { display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:24px; align-items:stretch; min-width:0; }
 .facility-ocr-column { position:relative; min-width:0; min-height:0; }
 .facility-ocr-column :deep(.facility-ocr-log) { position:absolute; inset:0; height:100%; max-height:none; }
+.app-cctv-records .facility-camera-row { display:block; }
+.app-cctv-records .facility-ocr-column :deep(.facility-ocr-log) { position:static; height:480px; max-height:65dvh; }
 @media(max-width:1100px) { .facility-camera-row { grid-template-columns:minmax(0,1fr) 300px; gap:16px; } }
 @media(max-width:900px) {
   .facility-camera-row { grid-template-columns:minmax(0,1fr); }

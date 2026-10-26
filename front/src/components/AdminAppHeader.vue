@@ -24,9 +24,12 @@ const titles: Record<string, string> = {
   document: '통제 전달 문서',
   contacts: '관할 담당자 연락처',
   notifications: '내 관리자 알림',
+  notices: '공지사항',
+  inquiries: '고객 문의',
   ocr: 'OCR 인식 기록',
   reviews: '수동 판별',
   transits: '차량 통과 기록',
+  transfers: '경찰·소방 이관 문서',
 }
 const section = computed(() => route.path.split('/').at(-1)!.replace('screen-', '')),
   title = computed(() => titles[section.value] || '관리자 앱'),

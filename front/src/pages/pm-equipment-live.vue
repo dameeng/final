@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { managerAppPath } from '../utils/manager-app-path'
+const appPath = (path: string) => managerAppPath(path, route.path)
 // 예지보전 설비 목록 (/pm-equipment). 예전 목업(pm-equipment.vue + data/pm-equipment.json)을 대신한다.
 //  GET /api/pm/equipments        설비 목록 (점수 높은 순, 담당 지역만)
 //  GET /api/pm/engine-status     예지보전 서버가 점수를 잘 보내는지
@@ -51,7 +53,7 @@ let controller: AbortController | undefined
 watch(() => route.query.road, (value) => {
   const id = Number(value)
   if (Number.isSafeInteger(id) && id > 0)
-    void router.replace({ path: '/pm-equipment-detail', query: { id: String(id) } })
+    void router.replace({ path: appPath('/pm-equipment-detail'), query: { id: String(id) } })
 }, { immediate: true })
 
 const engineLabel = computed(() => PM_ENGINE[engine.value?.status || ''] || ['확인 중', 'idle'])
@@ -122,7 +124,7 @@ function change(v: number | null) {
   return (n > 0 ? '+' : '') + n.toFixed(1)
 }
 function openDetail(row: Equipment) {
-  void router.push({ path: '/pm-equipment-detail', query: { id: String(row.equipId) } })
+  void router.push({ path: appPath('/pm-equipment-detail'), query: { id: String(row.equipId) } })
 }
 function act(row: Equipment) {
   if (row.type==='ROAD') { openDetail(row); return }
@@ -144,7 +146,7 @@ function act(row: Equipment) {
             예지보전 엔진 {{engineLabel[0]}}
             <template v-if="engine?.lastReceivedAt"> · 마지막 수신 {{displayDate(engine.lastReceivedAt)}}</template>
           </span>
-          <RouterLink class="btn" to="/pm-queue">점검 대기 →</RouterLink>
+          <RouterLink class="btn" :to="appPath('/pm-queue')">점검 대기 →</RouterLink>
           <button class="btn" type="button" :disabled="loading" @click="load">새로고침</button>
         </div>
       </div>
@@ -160,7 +162,7 @@ function act(row: Equipment) {
         >
           <span>{{label}}</span><strong>{{counts[value]??'—'}}</strong>
         </button>
-        <RouterLink class="card pm-kpi" to="/pm-queue">
+        <RouterLink class="card pm-kpi" :to="appPath('/pm-queue')">
           <span>점검 대기</span><strong>{{openEvents??'—'}}</strong>
         </RouterLink>
       </div>

@@ -14,6 +14,7 @@ export const resourceShortcuts: Record<string, { id: string; label: string }[]> 
   transits: [
     { id: 'ocr', label: 'OCR 인식 기록' },
     { id: 'events', label: '시설 제어 이력' },
+    { id: 'transfers', label: '경찰·소방 이관 문서' },
   ],
   events: [
     { id: 'transits', label: '차량 통과 기록' },

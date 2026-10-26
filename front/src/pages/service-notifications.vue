@@ -2,7 +2,8 @@
 import { useNotificationGlow } from '../stores/notificationGlow'
 const notificationGlow = useNotificationGlow()
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import { notificationTarget } from '../utils/notification-target'
 import {
   useCustomerNotifications,
   notificationCategories,
@@ -13,6 +14,7 @@ import { displayDate } from '../utils/display-date'
 import { useBackendEvents } from '../composables/useBackendEvents'
 import NotificationSettings from '../components/NotificationSettings.vue'
 const route = useRoute(),
+  router = useRouter(),
   notifications = useCustomerNotifications(),
   rows = ref<CustomerNotification[]>([]),
   page = ref(1),
@@ -86,8 +88,12 @@ async function open(item: CustomerNotification) {
       if (alive) item.read = true
     } catch (e) {
       if (alive) error.value = (e as Error).message
+      return
     }
   }
+  const destination=notificationTarget(item,false,route.path,route.path)
+  if(alive&&typeof destination==='object'&&'path' in destination&&destination.path!==route.path)
+    await router.push(destination)
 }
 async function selectFromLink() {
   const id = Number(route.query.notification)

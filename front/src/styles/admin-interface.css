@@ -167,6 +167,9 @@
   outline:2px solid var(--r-accent);
   outline-offset:-2px;
 }
+#app .admin-interface .manager-notification-content { display:block; color:var(--r-ink); text-decoration:none; }
+#app .admin-interface .manager-notification-content:hover h2 { color:var(--r-accent); }
+#app .admin-interface .manager-notification-content:focus-visible { outline:2px solid var(--r-accent); outline-offset:4px; border-radius:4px; }
 #app .admin-interface .service-message { background:var(--r-selected); color:var(--r-brand); border-radius:10px; }
 #app .admin-interface .service-error { color:var(--admin-alert-ink); background:var(--admin-alert-surface); border-color:color-mix(in srgb,var(--admin-alert-ink) 35%,var(--admin-alert-surface)); }
 

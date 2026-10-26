@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { managerAppPath } from '../utils/manager-app-path'
+const appPath = (path: string) => managerAppPath(path, route.path)
 // 예지보전 설비 상세 (/pm-equipment-detail?id=). 예전 목업(pm-equipment-detail.vue + data/pm-equipment-detail.json)을 대신한다.
 //  GET /api/pm/equipments/{id}                 기본 정보 + 판단 근거(detail.features, extra) + 기준 + 상위 원인 + 최근 점검 5건
 //  GET /api/pm/equipments/{id}/scores?days=7   7일 위험 점수 (1시간 구간 평균·최고)
@@ -171,7 +173,7 @@ onBeforeUnmount(() => {
 
 function go(step: number) {
   const next = order.value[position.value + step]
-  if (next != null) void router.push({ path: '/pm-equipment-detail', query: { id: String(next) } })
+  if (next != null) void router.push({ path: appPath('/pm-equipment-detail'), query: { id: String(next) } })
 }
 function act() {
   if (eq.value.openEventId)
@@ -278,7 +280,7 @@ const tabLabel = computed(() => tabs.value.find(([c]) => c === column.value)?.[1
   <BackendLayout class="page-pm-equipment-detail">
     <section class="service-workspace pm-detail">
       <div class="crumb">
-        <span><RouterLink to="/pm-equipment">예지보전 &gt; 설비</RouterLink> &gt; {{eq.name||'설비 상세'}}</span>
+        <span><RouterLink :to="appPath('/pm-equipment')">예지보전 &gt; 설비</RouterLink> &gt; {{eq.name||'설비 상세'}}</span>
       </div>
       <div class="page-head service-heading">
         <div>
@@ -290,7 +292,7 @@ const tabLabel = computed(() => tabs.value.find(([c]) => c === column.value)?.[1
           <button class="btn" type="button" :disabled="position<0||position>=order.length-1" @click="go(1)">다음 설비 ›</button>
           <button v-if="eq.type==='ROAD' && eq.openEventId" class="btn primary" type="button" @click="roadPanel?.focusReview()">탐지 확인·조치</button>
           <button v-else-if="eq.openEventId" class="btn primary" type="button" @click="act">점검 처리</button>
-          <RouterLink class="btn" to="/pm-equipment">← 목록으로</RouterLink>
+          <RouterLink class="btn" :to="appPath('/pm-equipment')">← 목록으로</RouterLink>
         </div>
       </div>
       <p v-if="!id">설비 목록에서 설비를 선택해 주세요.</p>
@@ -308,7 +310,7 @@ const tabLabel = computed(() => tabs.value.find(([c]) => c === column.value)?.[1
                 <small>{{displayDate(a.createdAt)}} · {{a.managerName||'—'}}</small><span>{{a.content}}</span>
               </li>
             </ul>
-            <RouterLink v-if="data.recentActions?.length" :to="{path:'/pm-history',query:{equipId:String(eq.equipId)}}">점검 이력 전체 →</RouterLink>
+            <RouterLink v-if="data.recentActions?.length" :to="{path:appPath('/pm-history'),query:{equipId:String(eq.equipId)}}">점검 이력 전체 →</RouterLink>
           </section>
         </template>
         <template v-else>
@@ -477,7 +479,7 @@ const tabLabel = computed(() => tabs.value.find(([c]) => c === column.value)?.[1
                 <span>{{a.content}}</span>
               </li>
             </ul>
-            <RouterLink v-if="data.recentActions?.length" :to="{path:'/pm-history',query:{equipId:String(eq.equipId)}}">점검 이력 전체 →</RouterLink>
+            <RouterLink v-if="data.recentActions?.length" :to="{path:appPath('/pm-history'),query:{equipId:String(eq.equipId)}}">점검 이력 전체 →</RouterLink>
           </section>
           <section class="card">
             <h2>단계 기준 변경 이력</h2>

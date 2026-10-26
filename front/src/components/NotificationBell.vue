@@ -2,19 +2,24 @@
 import { useNotificationGlow } from '../stores/notificationGlow'
 const notificationGlow = useNotificationGlow()
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useApp } from '../stores/app'
 import { useCustomerNotifications, notificationCategory } from '../stores/customerNotifications'
 import { useManagerNotifications } from '../stores/managerNotifications'
 import { valueLabels } from '../data/backendResources'
 import { useBackendEvents } from '../composables/useBackendEvents'
 import { displayDate } from '../utils/display-date'
+import { notificationTarget } from '../utils/notification-target'
+import type { CustomerNotification } from '../stores/customerNotifications'
 const emit = defineEmits<{ opened: [] }>()
 const app = useApp(),
   route = useRoute(),
+  router = useRouter(),
   customerNotifications = useCustomerNotifications(),
   managerNotifications = useManagerNotifications(),
   opened = ref(false),
+  openingId = ref<number|null>(null),
+  actionError = ref(''),
   button = ref<HTMLButtonElement>(),
   popup = ref<HTMLElement>(),
   position = ref({ top: '0px', left: '0px', width: '340px', maxHeight: '400px' })
@@ -28,6 +33,7 @@ const notifications = computed(() =>
         refresh: managerNotifications.refreshPreview,
         reset: managerNotifications.reset,
         ingest: managerNotifications.ingest,
+        read: managerNotifications.read,
       }
     : customerNotifications,
 )
@@ -69,6 +75,7 @@ function locate() {
   }
 }
 async function toggle() {
+  actionError.value=''
   opened.value = !opened.value
   if (opened.value) {
     emit('opened')
@@ -77,6 +84,24 @@ async function toggle() {
     await nextTick()
     popup.value?.focus({ preventScroll: true })
   }
+}
+function target(item:CustomerNotification) {
+  return notificationTarget(item,manager.value,route.path,historyPath.value)
+}
+async function openNotification(event:MouseEvent,item:CustomerNotification) {
+  const modified=event.ctrlKey||event.metaKey||event.shiftKey||event.altKey||event.button!==0
+  if(!modified)event.preventDefault()
+  if(openingId.value!==null)return
+  const user=app.account?.id, role=app.account?.role, destination=target(item)
+  openingId.value=item.id
+  actionError.value=''
+  try {
+    if(!item.read)await notifications.value.read(item.id)
+    if(app.account?.id!==user||app.account?.role!==role)return
+    if(!modified) { close();await router.push(destination) }
+  } catch(e) {
+    actionError.value='알림을 읽음 처리하지 못했습니다. 다시 눌러주세요.'
+  } finally { openingId.value=null }
 }
 function close(focus = false) {
   opened.value = false
@@ -165,6 +190,7 @@ onBeforeUnmount(() => {
         </button>
         </header>
         <div class="notification-popup-body">
+          <p v-if="actionError" role="alert">{{actionError}}</p>
           <p v-if="notifications.loading" role="status">알림을 불러오는 중입니다.</p>
           <div v-else-if="notifications.error" role="alert">
             <p>{{notifications.error}}</p>
@@ -172,13 +198,15 @@ onBeforeUnmount(() => {
           </div>
           <ul v-else-if="notifications.recent.length">
             <li v-for="item in notifications.recent" :key="item.id" :class="{unread:!item.read,'notification-arrival-glow':notificationGlow.has('notification',item.id)}">
-              <RouterLink :to="{path:historyPath,query:{notification:item.id}}" @click="close()">
+              <RouterLink :to="target(item)" custom v-slot="{href}">
+                <a :href="href" :aria-busy="openingId===item.id" @click="openNotification($event,item)">
                 <span class="notification-popup-category">
                   {{categoryLabel(item.category)}}
                 </span>
                 <strong>{{item.title}}</strong>
                 <span class="notification-popup-copy">{{item.body}}</span>
                 <time>{{displayDate(item.createdAt)}}</time>
+                </a>
               </RouterLink>
             </li>
           </ul>
