@@ -5,7 +5,7 @@
 //  GET /api/pm/events            점검 대기 건수
 // SSE pm-update / data-changed(pm-equipment·pm-event·pm-action·pm-threshold) 가 오면 다시 조회한다.
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import BackendLayout from '../components/BackendLayout.vue'
 import RiskLevelBadge from '../components/RiskLevelBadge.vue'
 import PmSparkline from '../components/PmSparkline.vue'
@@ -16,6 +16,8 @@ import { displayDate } from '../utils/display-date'
 import { PM_TYPES, PM_LEVELS, PM_EVENT_STATUS, PM_ENGINE, pmLabel, isPmChange } from '../utils/pm-labels'
 
 type Equipment = {
+  roadStatus?: string | null
+  detectionConfidence?: number | null
   equipId: number
   name: string
   type: string
@@ -31,10 +33,11 @@ type Equipment = {
 }
 type Engine = { status: string; lastReceivedAt: string | null; equipmentTotal: number; sensorStale: number }
 
+const route = useRoute()
 const PAGE_SIZE = 10
 const router = useRouter(),
   level = ref(''),
-  type = ref(''),
+  type = ref(route.query.type === 'ROAD' ? 'ROAD' : ''),
   page = ref(1),
   list = ref<PageData<Equipment>>(),
   counts = ref<Record<string, number>>({}),
@@ -44,6 +47,12 @@ const router = useRouter(),
   error = ref(''),
   modal = ref<InstanceType<typeof PmActionModal>>()
 let controller: AbortController | undefined
+// Keep saved links from the previous inline view working.
+watch(() => route.query.road, (value) => {
+  const id = Number(value)
+  if (Number.isSafeInteger(id) && id > 0)
+    void router.replace({ path: '/pm-equipment-detail', query: { id: String(id) } })
+}, { immediate: true })
 
 const engineLabel = computed(() => PM_ENGINE[engine.value?.status || ''] || ['확인 중', 'idle'])
 const levelTabs = [['', '전체'], ['DANGER', '위험'], ['CAUTION', '주의'], ['SAFE', '안전']] as const
@@ -116,6 +125,7 @@ function openDetail(row: Equipment) {
   void router.push({ path: '/pm-equipment-detail', query: { id: String(row.equipId) } })
 }
 function act(row: Equipment) {
+  if (row.type==='ROAD') { openDetail(row); return }
   if (row.openEventId)
     modal.value?.open({ eventId: row.openEventId, name: row.name, status: row.openEventStatus || undefined, underpassName: row.underpassName })
 }
@@ -126,8 +136,8 @@ function act(row: Equipment) {
       <div class="crumb">예지보전 &gt; 설비</div>
       <div class="page-head service-heading">
         <div>
-          <h1>예지보전 설비</h1>
-          <div class="sub">담당 지역 설비의 고장 위험 점수 (0~100, 높을수록 점검 필요)</div>
+          <h1>장비 현황</h1>
+          <div class="sub">담당 지역 설비 상태와 노면 탐지 결과 · 노면은 위험 점수를 산정하지 않습니다.</div>
         </div>
         <div class="pm-head-actions">
           <span class="pm-engine" :class="'pm-engine--'+engineLabel[1]" role="status">
@@ -183,7 +193,7 @@ function act(row: Equipment) {
         <table class="service-table pm-table">
           <thead>
             <tr>
-              <th>설비</th><th>종류</th><th>지하차도</th><th>위험 점수</th><th>7일 변화</th>
+              <th>설비</th><th>종류</th><th>지하차도</th><th>위험 점수 / 상태</th><th>7일 변화</th>
               <th>최근 24시간</th><th>주요 사유</th><th>마지막 수신</th><th>점검 상태</th>
             </tr>
           </thead>
@@ -193,16 +203,17 @@ function act(row: Equipment) {
               <td>{{pmLabel(PM_TYPES,row.type)}}</td>
               <td>{{row.underpassName}}</td>
               <td>
-                <RiskLevelBadge v-if="row.level" :value="row.level" />
-                <b class="pm-score">{{row.score==null?'—':Number(row.score).toFixed(1)}}</b>
+                <span v-if="row.type==='ROAD'" class="road-state">{{row.roadStatus||'미분석'}}</span>
+                <RiskLevelBadge v-else-if="row.level" :value="row.level" />
+                <b v-if="row.type!=='ROAD'" class="pm-score">{{row.score==null?'—':Number(row.score).toFixed(1)}}</b>
               </td>
               <td :class="{'pm-up':Number(row.scoreChange7d)>0}">{{change(row.scoreChange7d)}}</td>
               <td><PmSparkline :values="row.sparkline" :level="row.level||''" /></td>
               <td class="pm-reason" :title="row.reasons?.join('\n')">
-                {{row.reasons?.[0]||'이상 없음'}}
+                {{row.type==='ROAD'?(row.roadStatus||'미분석'):(row.reasons?.[0]||'이상 없음')}}
                 <small v-if="row.reasons?.length>1">외 {{row.reasons.length-1}}건</small>
               </td>
-              <td>{{row.lastReceivedAt?displayDate(row.lastReceivedAt):'미수신'}}</td>
+              <td>{{row.lastReceivedAt?displayDate(row.lastReceivedAt):(row.type==='ROAD'?'미분석':'미수신')}}</td>
               <td @click.stop>
                 <button
                   v-if="row.openEventId"
@@ -213,6 +224,7 @@ function act(row: Equipment) {
                 >
                   {{pmLabel(PM_EVENT_STATUS,row.openEventStatus)}}
                 </button>
+                <button v-else-if="row.type==='ROAD'" class="btn sm" type="button" @click="openDetail(row)">결과 보기</button>
                 <span v-else class="pm-none">—</span>
               </td>
             </tr>
@@ -222,11 +234,11 @@ function act(row: Equipment) {
 
       <div v-if="list&&list.totalPages>1" class="pm-pager">
         <button class="btn sm" type="button" :disabled="page<=1" @click="page--">이전</button>
-        <span>{{page}} / {{list.totalPages}} · 전체 {{list.totalItems}}대</span>
+        <span>{{page}} / {{list.totalPages}} · 전체 {{list.totalItems}}개</span>
         <button class="btn sm" type="button" :disabled="page>=list.totalPages" @click="page++">다음</button>
       </div>
       <p v-else-if="list" class="pm-note">
-        전체 {{list.totalItems}}대 · 점수 높은 순<template v-if="engine?.sensorStale"> · 센서 수신 끊김 {{engine.sensorStale}}대</template>
+        전체 {{list.totalItems}}개 · 확인 대상 노면 우선 / 설비 점수 높은 순<template v-if="engine?.sensorStale"> · 센서 수신 끊김 {{engine.sensorStale}}대</template>
       </p>
     </section>
     <PmActionModal ref="modal" @done="load" />

@@ -100,6 +100,7 @@ public class PmIngestServiceImpl implements PmIngestService {
     @Transactional(readOnly = true)
     public List<PmInternalEquipmentItem> getEquipments() {
         return equipmentRepository.findAllRows().stream()
+                .filter(r -> !"ROAD".equals(r.getType()))
                 .map(r -> new PmInternalEquipmentItem(r.getEquipId(), r.getName(), r.getType(), r.getUnderpassId(), r.getUnderpassName(),
                         r.getSensorIntervalSec(), r.getDataStartedAt(), r.getLastSensorAt(), r.getLastScoreAt()))
                 .toList();
@@ -143,7 +144,7 @@ public class PmIngestServiceImpl implements PmIngestService {
 
         for (PmScoreIngestItem it : items) {
             EquipmentRow eq = equipments.get(it.getEquipId());
-            if (eq == null) {
+            if (eq == null || "ROAD".equals(eq.getType())) {
                 unknown++;
                 continue;
             }

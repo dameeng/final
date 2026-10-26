@@ -10,6 +10,7 @@ import { useRoute, useRouter } from 'vue-router'
 import BackendLayout from '../components/BackendLayout.vue'
 import RiskLevelBadge from '../components/RiskLevelBadge.vue'
 import PmActionModal from '../components/PmActionModal.vue'
+import RoadEquipmentPanel from '../components/RoadEquipmentPanel.vue'
 import { backend, type PageData } from '../services/backend'
 import { useBackendEvents } from '../composables/useBackendEvents'
 import { displayDate } from '../utils/display-date'
@@ -35,6 +36,8 @@ type Detail = {
 type Point = { at: string; value: number }
 type Trend = { column: string; points: Point[]; band: { low: number; high: number; mean: number } | null }
 
+const roadPanel = ref<InstanceType<typeof RoadEquipmentPanel>>()
+const roadRefresh = ref(0)
 const route = useRoute(),
   router = useRouter(),
   id = computed(() => String(route.query.id || '')),
@@ -80,6 +83,14 @@ async function load(withTrend = false) {
     if (current.signal.aborted) return
     const firstLoad = String(data.value?.equipment?.equipId ?? '') !== id.value
     data.value = detail
+    if (detail.equipment.type === 'ROAD') {
+      scores.value = []; threshold.value = undefined; openEvent.value = undefined
+      trends.value = []; column.value = ''
+      if (withTrend) roadRefresh.value++
+      const rows = await get<PageData<{ equipId: number }>>('/api/pm/equipments?size=100').catch(() => null)
+      if (!current.signal.aborted && rows) order.value = rows.items.map((row) => row.equipId)
+      return
+    }
     if (firstLoad) {
       const cols = PM_SENSOR_COLUMNS[detail.equipment.type] || []
       const fromCause = PM_FEATURE_COLUMN[detail.topCauses?.[0]?.key || ''] || causeColumn(detail)
@@ -145,6 +156,7 @@ useBackendEvents(({ name, data: payload }) => {
   }
 })
 watch(id, () => {
+  data.value = undefined
   trends.value = []
   void load()
 }, { immediate: true })
@@ -276,7 +288,8 @@ const tabLabel = computed(() => tabs.value.find(([c]) => c === column.value)?.[1
         <div class="pm-detail-actions">
           <button class="btn" type="button" :disabled="position<=0" @click="go(-1)">‹ 이전 설비</button>
           <button class="btn" type="button" :disabled="position<0||position>=order.length-1" @click="go(1)">다음 설비 ›</button>
-          <button v-if="eq.openEventId" class="btn primary" type="button" @click="act">점검 처리</button>
+          <button v-if="eq.type==='ROAD' && eq.openEventId" class="btn primary" type="button" @click="roadPanel?.focusReview()">탐지 확인·조치</button>
+          <button v-else-if="eq.openEventId" class="btn primary" type="button" @click="act">점검 처리</button>
           <RouterLink class="btn" to="/pm-equipment">← 목록으로</RouterLink>
         </div>
       </div>
@@ -285,6 +298,20 @@ const tabLabel = computed(() => tabs.value.find(([c]) => c === column.value)?.[1
       <p v-if="loading&&!data" role="status">설비 정보를 불러오는 중입니다.</p>
 
       <template v-if="data">
+        <template v-if="eq.type==='ROAD'">
+          <RoadEquipmentPanel ref="roadPanel" :equip-id="Number(eq.equipId)" :refresh-key="roadRefresh" @updated="load()" />
+          <section class="card">
+            <h2>최근 점검 이력</h2>
+            <p v-if="!data.recentActions?.length" class="pm-muted">아직 점검 기록이 없어요. 탐지 확인·조치에서 등록한 내용이 여기에 표시됩니다.</p>
+            <ul v-else class="pm-list">
+              <li v-for="a in data.recentActions" :key="a.actionId">
+                <small>{{displayDate(a.createdAt)}} · {{a.managerName||'—'}}</small><span>{{a.content}}</span>
+              </li>
+            </ul>
+            <RouterLink v-if="data.recentActions?.length" :to="{path:'/pm-history',query:{equipId:String(eq.equipId)}}">점검 이력 전체 →</RouterLink>
+          </section>
+        </template>
+        <template v-else>
         <div class="pm-grid">
           <section class="card">
             <h2>위험 점수</h2>
@@ -463,6 +490,7 @@ const tabLabel = computed(() => tabs.value.find(([c]) => c === column.value)?.[1
             </ul>
           </section>
         </div>
+        </template>
       </template>
     </section>
     <PmActionModal ref="modal" @done="load" />

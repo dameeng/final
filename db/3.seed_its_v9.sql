@@ -719,3 +719,7 @@ INSERT INTO vms_underpass (its_vms_id, underpass_id, dist) VALUES
   (170, 45, 950);
 
 -- 끝
+
+-- 초량 CCTV230은 로컬 노면·싱크홀 시연 영상으로 제공한다.
+UPDATE camera SET stream_url='http://localhost:8003/stream/230'
+WHERE id=230 AND underpass_id=(SELECT id FROM underpass WHERE name='초량지하차도' AND NOT is_deleted);

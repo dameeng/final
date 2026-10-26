@@ -212,7 +212,8 @@ public class PmReportServiceImpl implements PmReportService {
     }
 
     private List<PmReportEquipment> snapshot(List<Long> regionIds, Long underpassId, LocalDateTime asOf) {
-        return new NativeSql(SNAPSHOT_SQL)
+        // 노면은 센서 위험도 통계 대상이 아니다. 탐지 이벤트와 조치 이력은 보고서에 포함된다.
+        return new NativeSql(SNAPSHOT_SQL + " AND e.type::text <> 'ROAD'")
                 .andIf(regionIds != null, " AND u.region_id IN (:regionIds)", "regionIds", regionIds)
                 .andIf(underpassId != null, " AND u.id = :underpassId", "underpassId", underpassId)
                 .append(" ORDER BY e.id").param("asOf", asOf).list(em, PmReportEquipment.class);

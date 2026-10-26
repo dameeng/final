@@ -1,5 +1,6 @@
 // 예지보전(pm) API 의 영문 값 -> 화면에 보일 한글. 백엔드 enum 이름 그대로 키로 쓴다
 export const PM_TYPES: Record<string, string> = {
+  ROAD: '노면',
   CCTV: 'CCTV',
   DISPLAY: '전광판',
   PUMP: '배수펌프',
@@ -16,6 +17,7 @@ export const PM_TRIGGERS: Record<string, string> = {
   DANGER_ENTRY: '위험진입',
   SURGE: '급상승',
   NO_DATA: '미수신',
+  SINKHOLE: '싱크홀 의심 탐지',
 }
 // GET /api/pm/engine-status 의 status
 export const PM_ENGINE: Record<string, [string, 'ok' | 'warn' | 'bad' | 'idle']> = {
