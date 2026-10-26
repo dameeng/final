@@ -251,6 +251,10 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 
 		Underpass underpass = underpassRepository.findByIdAndDeletedFalse(camera.getUnderpassId()).orElse(null);
 		if (underpass != null) {
+			// 모든 신규 OCR 기록을 담당 관리자에게 알린다. 중복 인식은 위에서 반환하므로 발행하지 않는다.
+			// StreamPublisher가 커밋 이후 전송하여 롤백된 기록의 재조회를 막는다.
+			streamPublisher.dataChangedToAdmins(underpass.getRegionId(), "plate-log", "CREATE", plateLog.getId());
+
 			// 입출구 매칭: 이 카메라가 소속 지하차도의 상행/하행 입·출구 카메라로 지정돼 있을 때만 처리
 			// (아직 지정 안 된 지하차도라면 조용히 건너뛴다 — 이건 "실제 게이트가 어디냐"의 문제라 camera_role과는 무관)
 			processTransit(underpass, camera, plateLog, storedDetectedNum);
