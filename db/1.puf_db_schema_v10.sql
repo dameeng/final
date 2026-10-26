@@ -978,4 +978,12 @@ CREATE INDEX IF NOT EXISTS idx_pm_road_result_event ON pm_road_result(event_id);
 CREATE UNIQUE INDEX IF NOT EXISTS uq_pm_event_open_sinkhole ON pm_event(equip_id)
     WHERE trigger_type = '싱크홀탐지' AND status IN ('CHECK_NEEDED', 'IN_PROGRESS');
 
+-- v11: 예지보전 센서 stub 설비별 정상/이상 모드
+-- 기존 v10 DB에 한 번 적용. 재실행 가능. 과거 센서/점수/점검 기록은 보존한다.
+CREATE TABLE IF NOT EXISTS pm_stub_mode (
+    equip_id BIGINT PRIMARY KEY REFERENCES pm_equipment(id),
+    mode VARCHAR(8) NOT NULL CHECK (mode IN ('NORMAL','DANGER')),
+    changed_at TIMESTAMP NOT NULL DEFAULT LOCALTIMESTAMP
+);
+
 COMMIT;
