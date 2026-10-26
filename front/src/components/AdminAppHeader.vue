@@ -29,6 +29,7 @@ const titles: Record<string, string> = {
   ocr: 'OCR 인식 기록',
   reviews: '수동 판별',
   transits: '차량 통과 기록',
+  transfers: '경찰·소방 이관 문서',
 }
 const section = computed(() => route.path.split('/').at(-1)!.replace('screen-', '')),
   title = computed(() => titles[section.value] || '관리자 앱'),

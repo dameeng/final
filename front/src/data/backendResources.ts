@@ -768,6 +768,7 @@ backendResources['manager-notifications'] = {
   ],
 }
 resourceRoutes['/admin-app/notifications'] = 'manager-notifications'
+resourceRoutes['/admin-app/transfers'] = 'transfers'
 resourceRoutes['/admin-app/notices'] = 'notices'
 resourceRoutes['/admin-app/inquiries'] = 'inquiries'
 Object.assign(valueLabels, { RISK: '위험', EQUIPMENT: '설비', TASK: '업무', SYSTEM: '시스템' })

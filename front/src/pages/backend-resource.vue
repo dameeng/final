@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import TunnelCctvDialog from '../components/TunnelCctvDialog.vue'
+import RemainingVehicleTransfer from '../components/RemainingVehicleTransfer.vue'
+const remainingTransfer=ref<InstanceType<typeof RemainingVehicleTransfer>>()
 import { useNotificationGlow } from '../stores/notificationGlow'
 import { notificationTarget } from '../utils/notification-target'
 const notificationGlow = useNotificationGlow()
@@ -274,6 +276,7 @@ function resourceLink(id: string) {
     ocr: '/admin-app/ocr',
     reviews: '/admin-app/reviews',
     transits: '/admin-app/transits',
+    transfers: '/admin-app/transfers',
     facilities: '/admin-app/screen-4',
     alerts: '/admin-app/screen-13',
     'manager-notifications': '/admin-app/notifications',
@@ -1172,6 +1175,7 @@ defineExpose({ open, load })
                 </td>
                 <td v-if="hasRowActions">
                   <div class="service-actions">
+                    <button v-if="resourceId==='transits'&&row.status==='REMAINING'&&canWrite" type="button" @click="remainingTransfer?.open(row)">소방 이관 PDF</button>
                     <button
                       v-if="resourceId==='cameras'&amp;&amp;row.streamUrl"
                       @click="open('video',row)"
@@ -1331,6 +1335,7 @@ defineExpose({ open, load })
       </dialog>
     </section>
     <p v-else role="alert">페이지를 찾을 수 없습니다.</p>
+    <RemainingVehicleTransfer v-if="resourceId==='transits'" ref="remainingTransfer" />
   </component>
 </template>
 
