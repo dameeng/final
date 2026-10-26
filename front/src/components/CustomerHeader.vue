@@ -98,18 +98,7 @@ const menus = [
           </div>
         </nav>
    <nav class="customer-member-nav" aria-label="회원 메뉴">
-          <RouterLink to="/info/app-guide#install" class="header-download">
-            <svg
-              viewBox="0 0 24 24"
-              width="16"
-              height="16"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              aria-hidden="true"
-            >
-              <path d="M12 3v12m-4-4 4 4 4-4M5 16v4h14v-4" />
-            </svg>앱 다운로드</RouterLink>
+
     <NotificationBell
             v-if="customerSignedIn&&!['/login','/signup','/c-auth','/password-reset','/find-id'].includes(route.path)"
             @opened="opened=false"

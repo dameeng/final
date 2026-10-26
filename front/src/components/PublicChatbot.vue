@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, nextTick, watch, onMounted, onBeforeUnmount } from 'vue'
+import { computed, ref, nextTick, watch, onMounted, onBeforeUnmount } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
-import { backend, asPage, queryString } from '../services/backend'
+import { backend } from '../services/backend'
 import { useApp } from '../stores/app'
+import ChatAnswer from './ChatAnswer.vue'
 import '../styles/public-chatbot.css'
 const app = useApp(),
   dialog = ref<HTMLDialogElement>(),
@@ -13,7 +14,50 @@ const route = useRoute(),
   panelWidth = ref(560),
   messageList = ref<HTMLOListElement>()
 const popular = ref<{ id: number; question: string }[]>([]),
-  answerBusy = ref(false)
+  answerBusy = ref(false),
+  chatOpen = ref(false)
+const historyKey = 'routel-public-chat-session-v1'
+const conversationId = ref(crypto.randomUUID())
+const owner = () => `${app.account?.role || 'guest'}:${app.account?.id || ''}`
+const isPrivateQuestion = (text: string) => /(내\s*(차량|문의|계정|정보|연락처)|개인정보|전화번호)/.test(text)
+const suggestions = computed(() => {
+  const asked = new Set(messages.value.filter(m => m.role === '이용자').map(m => m.text))
+  return [...new Set([
+    ...popular.value.map(item => item.question).filter(q => typeof q === 'string' && q.length <= 100),
+    '지금 통제 중인 지하차도를 알려줘',
+    '위험 단계는 어떤 의미인가요?',
+    '안전 알림은 어디에서 확인하나요?',
+    'ROUTEL은 어떻게 이용하나요?',
+  ])].filter(q => !asked.has(q)).slice(0, 3)
+})
+function saveHistory() {
+  try {
+    sessionStorage.setItem(historyKey, JSON.stringify({ owner: owner(), sessionId: conversationId.value, messages: messages.value
+      .filter(m => !isPrivateQuestion(m.text)).slice(-40).map(m => ({ role: m.role, text: m.text.slice(0, 6000) })) }))
+  } catch { /* Storage may be unavailable; the current conversation still stays in memory. */ }
+}
+onMounted(() => {
+  try {
+    const stored = JSON.parse(sessionStorage.getItem(historyKey) || 'null')
+    if (stored?.owner === owner() && Array.isArray(stored.messages)) {
+      if (/^[0-9a-f-]{36}$/i.test(stored.sessionId || '')) conversationId.value = stored.sessionId
+      messages.value = stored.messages.filter((m: { role?: unknown; text?: unknown }) =>
+        ['이용자', 'ROUTEL AI', '안내'].includes(String(m?.role)) && typeof m?.text === 'string' && m.text.length <= 6000,
+      ).slice(-40)
+    }
+  } catch { /* Ignore an invalid or unavailable session history. */ }
+})
+watch(messages, saveHistory, { deep: true })
+function askSuggestion(question: string) {
+  entry.value = question
+  void send()
+}
+let answerController: AbortController | undefined
+function cancelAnswer() {
+  answerController?.abort()
+  answerController = undefined
+  answerBusy.value = false
+}
 const position = ref<{ x: number; y: number }>(),
   dragging = ref(false)
 let drag: { id: number; x: number; y: number; left: number; top: number } | undefined,
@@ -106,6 +150,7 @@ async function open() {
     })
   fitPanel()
   dialog.value?.showModal()
+  chatOpen.value = true
   window.addEventListener('resize', fitPanel)
   await nextTick()
   fitPanel()
@@ -113,6 +158,8 @@ async function open() {
   dialog.value?.querySelector('input')?.focus({ preventScroll: true })
 }
 function close() {
+  chatOpen.value = false
+  saveHistory()
   dialog.value?.close()
   window.removeEventListener('resize', fitPanel)
   launcher.value?.focus({ preventScroll: true })
@@ -128,15 +175,23 @@ function outside(event: MouseEvent) {
   )
     close()
 }
-watch(() => route.fullPath, close)
+watch(() => route.fullPath, () => { close(); cancelAnswer() })
+watch(() => `${app.account?.role}:${app.account?.id}`, () => {
+  cancelAnswer()
+  messages.value = []
+  conversationId.value = crypto.randomUUID()
+  entry.value = ''
+  try { sessionStorage.removeItem(historyKey) } catch { /* Storage is optional. */ }
+})
 watch(
-  () => messages.value.length,
+  () => [messages.value.length, answerBusy.value],
   async () => {
     await nextTick()
     messageList.value?.scrollTo({ top: messageList.value.scrollHeight })
   },
 )
 onBeforeUnmount(() => {
+  cancelAnswer()
   window.removeEventListener('resize', fitPanel)
   window.removeEventListener('resize', fitLauncher)
 })
@@ -146,8 +201,10 @@ async function send() {
   messages.value.push({ role: '이용자', text: question })
   entry.value = ''
   answerBusy.value = true
+  const controller = new AbortController()
+  answerController = controller
   try {
-    const privateQuestion = /(내\s*(차량|문의|계정|정보|연락처)|개인정보|전화번호)/.test(question)
+    const privateQuestion = isPrivateQuestion(question)
     if (privateQuestion) {
       messages.value.push({
         role: '안내',
@@ -158,26 +215,27 @@ async function send() {
       })
       return
     }
-    const result = asPage<any>(
-      await backend('/api/faqs' + queryString({ keyword: question, page: 1, size: 5 })),
-    )
-    const row = result.items.find((item) => item.question === question) || result.items[0]
-    if (!row) {
-      messages.value.push({
-        role: '안내',
-        text: '등록된 FAQ에서 답변을 찾지 못했습니다. 공지·FAQ 또는 문의하기를 확인해 주세요.',
-      })
-      return
-    }
-    const detail = await backend('/api/faqs/' + encodeURIComponent(row.id))
-    messages.value.push({ role: '안내', text: String(detail.answer || '등록된 답변이 없습니다.') })
+    const history = messages.value
+      .filter(message => message.role === 'ROUTEL AI' ||
+        (message.role === '이용자' && !isPrivateQuestion(message.text)))
+      .slice(-9)
+      .map(message => ({ role: message.role === '이용자' ? 'user' : 'assistant', content: message.text.slice(0, 2000) }))
+    const result = await backend<{ answer: string }>('/api/assistant/chat', {
+      method: 'POST', body: { messages: history, sessionId: conversationId.value }, signal: controller.signal,
+    })
+    if (answerController === controller)
+      messages.value.push({ role: 'ROUTEL AI', text: result.answer })
   } catch (e) {
+    if (controller.signal.aborted || answerController !== controller) return
     messages.value.push({
       role: '안내',
-      text: e instanceof Error ? e.message : 'FAQ를 불러오지 못했습니다.',
+      text: e instanceof Error ? e.message : 'AI 답변을 불러오지 못했습니다.',
     })
   } finally {
-    answerBusy.value = false
+    if (answerController === controller) {
+      answerBusy.value = false
+      answerController = undefined
+    }
   }
 }
 </script>
@@ -209,33 +267,44 @@ async function send() {
     <header class="public-chat-header">
       <div>
         <small>ROUTEL HELP</small>
-        <h2 id="public-chat-title">ROUTEL 이용 안내</h2>
+        <h2 id="public-chat-title">ROUTEL AI 도우미</h2>
       </div>
       <button class="ui-icon-button" type="button" aria-label="챗봇 닫기" @click="close">
           <UiIcon name="close" />
         </button>
     </header>
-    <p class="public-chat-description">등록된 FAQ를 안내합니다. 자유 질문 자동 답변은 서비스 연결 후 제공됩니다.</p>
+    <p class="public-chat-description">ROUTEL 이용 방법과 지하차도 정보를 AI에게 물어보세요. 중요한 통제 정보는 현황 화면에서 다시 확인해주세요.</p>
     <ol ref="messageList" class="chat-messages" aria-live="polite">
       <li v-if="!messages.length" class="public-chat-welcome">
-        <b>무엇을 도와드릴까요?</b>
-        <p>궁금한 내용을 아래에 입력해 주세요.</p>
-        <RouterLink to="/info/faq">자주 묻는 질문 확인 →</RouterLink>
-        <div v-if="popular.length" class="service-actions" aria-label="인기 질문">
+        <div class="chat-welcome-intro">
+          <img src="/brand/routel-ru-welcome-clean-v2-poster.png" width="56" height="56" alt="" />
+          <div><b>무엇을 도와드릴까요?</b><p>궁금한 내용을 편하게 물어보세요.</p></div>
+        </div>
+        <RouterLink class="chat-welcome-faq" to="/info/faq">자주 묻는 질문 확인 <span aria-hidden="true">↗</span></RouterLink>
+        <div v-if="popular.length" class="chat-welcome-questions" aria-label="인기 질문">
           <button
             v-for="item in popular"
             :key="item.id"
             type="button"
             :disabled="answerBusy"
-            @click="entry=item.question;send()"
+            @click="askSuggestion(item.question)"
           >
-            {{item.question}}
+            <span>{{item.question}}</span><span class="chat-question-arrow" aria-hidden="true">↗</span>
           </button>
         </div>
       </li>
       <li v-for="(m,i) in messages" :key="i" :class="{'is-user':m.role==='이용자'}">
         <b>{{m.role}}</b>
-        <p>{{m.text}}</p>
+        <ChatAnswer v-if="m.role==='ROUTEL AI'" :text="m.text" />
+        <p v-else>{{m.text}}</p>
+      </li>
+      <li v-if="answerBusy" class="public-chat-thinking" role="status">
+        <video v-if="chatOpen" src="/brand/routel-chat-mascot-transparent.webm" poster="/brand/routel-chat-mascot-transparent-poster.png" autoplay muted loop playsinline preload="metadata" aria-hidden="true"></video>
+        <div><b>잠시만 기다려 주세요</b><p>루가 필요한 정보를 확인하고 있어요<span class="chat-thinking-dots" aria-hidden="true"><i></i><i></i><i></i></span></p></div>
+      </li>
+      <li v-else-if="messages.at(-1)?.role==='ROUTEL AI'&&suggestions.length" class="public-chat-suggestions">
+        <b>이런 내용도 물어보세요</b>
+        <div><button v-for="question in suggestions" :key="question" type="button" @click="askSuggestion(question)">{{question}} <span aria-hidden="true">↗</span></button></div>
       </li>
     </ol>
     <form class="public-chat-form" @submit.prevent="send">
@@ -247,14 +316,16 @@ async function send() {
           placeholder="궁금한 내용을 입력하세요"
           autocomplete="off"
           required
+          maxlength="2000"
         />
-        <button type="submit" :disabled="answerBusy">{{answerBusy?'조회 중…':'보내기'}}</button>
+        <button type="submit" :disabled="answerBusy">{{answerBusy?'답변 중…':'보내기'}}</button>
       </div>
       <nav aria-label="챗봇 이용 안내">
         <RouterLink to="/c-notice">공지사항</RouterLink>
         <RouterLink to="/info/faq">FAQ</RouterLink>
         <RouterLink to="/my-inquiries">문의하기</RouterLink>
       </nav>
+      <small class="public-chat-privacy">외부 AI 전송 · 대화 저장 · 개인정보 입력 주의</small>
     </form>
   </dialog>
 </template>

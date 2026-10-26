@@ -90,9 +90,8 @@ const current = computed(() =>
       <span aria-hidden="true">›</span>
       <span aria-current="page">{{current}}</span>
     </nav>
-  <!-- 하위 메뉴가 하나뿐인 묶음(지하차도 현황)은 왼쪽 메뉴를 두지 않는다 -->
   <aside
-      v-if="!myPage&&route.path!=='/'&&group.items.length>1"
+      v-if="!myPage&&route.path!=='/'&&(mapPage||group.items.length>1)"
       class="customer-section-sidebar"
       aria-label="페이지 메뉴"
     >

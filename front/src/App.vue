@@ -64,7 +64,7 @@ watch(
     const manifest = document.querySelector<HTMLLinkElement>('#app-manifest'),
       icon = document.querySelector<HTMLLinkElement>('#app-touch-icon')
     if (manifest) manifest.href = `/${kind}.webmanifest`
-    if (icon) icon.href = `/icons/${kind}-180.png`
+    if (icon) icon.href = `/icons/${kind}-ru-180-v1.png`
   },
   { immediate: true },
 )
@@ -182,6 +182,6 @@ function unmounted(vnode: VNode) {
     </RouterView>
     <AdminAppNav v-if="managerApp&&route.path!=='/admin-app/menu'" />
     <CustomerFooter v-if="customer" />
-    <PublicChatbot v-if="customer" />
+    <PublicChatbot v-if="customer||route.path.startsWith('/customer-app/')" />
   </div>
 </template>

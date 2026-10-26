@@ -1,5 +1,33 @@
 # 팀 API 설정 및 연결 안내
 
+## ROUTEL AI 도우미 설정
+
+기존 고객 웹·앱 챗봇은 `/api/assistant/chat`을 통해 기본적으로 **Gemini**에 연결합니다. `.env.local`에 다음 서버 전용 항목을 넣고 Vite를 재시작하세요. 키는 채팅에 보내거나 Git에 올리지 않습니다.
+
+```dotenv
+CHAT_AI_PROVIDER=gemini
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-3.5-flash-lite
+```
+
+### Gemini 키 넣는 순서
+
+1. [Google AI Studio API 키 페이지](https://aistudio.google.com/apikey)에 Google 계정으로 로그인하고 안내된 약관에 동의합니다.
+2. **API 키 만들기 / Create API key**를 누르고 새 프로젝트를 만들거나 사용할 프로젝트를 선택합니다. **무료로 사용할 때는 해당 프로젝트의 요금제가 Free Tier인지 확인하고 결제 설정을 연결하지 않습니다.** 계정·지역·프로젝트에 따라 무료 티어 이용 자격이 제한될 수 있습니다.
+3. 발급된 키 전체를 복사하여 `.env.local`의 `GEMINI_API_KEY=` 뒤에 붙여넣고 저장합니다. `.env.example`에는 실제 키를 넣지 않습니다. 기존 OpenAI 키는 Gemini 키로 사용할 수 없습니다.
+4. 프론트 터미널에서 `Ctrl+C` 후 `npm.cmd run dev`로 다시 실행합니다.
+5. 챗봇에 짧은 질문을 보내 확인합니다. 429 오류가 나면 AI Studio에서 모델별 할당량을 확인합니다. 무료 사용량은 고정된 질문 횟수가 아니며 계정별 실제 할당량이 기준입니다.
+
+`gemini-3.5-flash-lite`는 확인일(2026-10-26) 공식 요금표에 입력·출력 무료 티어가 안내된 모델입니다. **동일 모델도 유료 프로젝트의 키를 사용하면 과금될 수 있습니다.** 무료 티어 입력 내용이 Google 제품 개선에 사용될 수 있으므로 개인정보를 입력하지 않습니다. Gemini 오류·키 누락·사용량 초과 시 OpenAI나 다른 유료 서비스로 자동 전환하지 않습니다. 앱 코드는 Google 계정의 요금제 자체를 변경하거나 무료 자격을 보장할 수 없습니다.
+
+OpenAI를 다시 사용하려면 `CHAT_AI_PROVIDER=openai`를 직접 설정하고 기존 `OPENAI_API_KEY`, `OPENAI_MODEL`을 사용합니다. 기존 키는 로컬 파일에 보존하며, Gemini 선택 시 OpenAI로 보내지 않습니다. 실제 키가 없으면 챗봇에는 연결 준비 안내가 표시됩니다. 두 제공사 모두 서버 전용 키에 `VITE_`를 붙이면 안 됩니다.
+
+`server/chat-api.mjs`는 공개 FAQ 목록·상세와 시설의 이름·지역·통제·위험 단계만 참고자료로 전달합니다. 서버가 공개 정보를 조회하지 못하면 해당 최신 상태를 아는 것으로 답하지 않도록 지시합니다. 로그인 쿠키, 계정·차량·문의 기록, 비밀 설정은 모델에 전달하지 않습니다. 질문과 최근 최대 9개 대화 항목은 답변 생성 목적으로 전송됩니다. OpenAI 경로에만 `store:false`를 사용하며 Gemini의 데이터 처리는 Google의 요금제·약관에 따릅니다. 입력은 항목당 2,000자, 출력은 최대 600토큰(제공사별 사고 토큰 포함 여부가 다름)으로 제한하고 IP별 분당 15회 제한을 적용합니다. AI 답변은 현장 통제 판단의 근거로 사용하지 말고 현황 화면·공식 안내를 확인하세요.
+
+개발 서버와 `vite preview`에 모두 중계가 등록됩니다. **`dist` 파일만 정적 호스팅하면 AI 중계가 실행되지 않습니다.** 배포 시에도 Node/Vite 미들웨어를 실행하거나 같은 `/api/assistant/chat` 경로를 별도 서버로 옮겨 연결해야 합니다. API 키는 그 서버에만 설정합니다.
+
+구현 기준: [Gemini API 키 안내](https://ai.google.dev/gemini-api/docs/api-key), [Gemini 생성 API](https://ai.google.dev/api/generate-content), [Gemini 요금표](https://ai.google.dev/gemini-api/docs/pricing), [모델 안내](https://ai.google.dev/gemini-api/docs/models/gemini-3.5-flash-lite). OpenAI 경로는 [공식 Responses API 안내](https://developers.openai.com/api/docs/guides/migrate-to-responses)를 따릅니다. 실제 AI 응답은 API 키와 해당 계정의 모델 접근·사용 한도가 준비된 뒤 확인할 수 있습니다.
+
 기준일: 2026-10-23.
 
 ## 키와 주소 설정
@@ -73,3 +101,14 @@
 - `src/components/FacilityCctvViewer.vue`: 시설 CCTV 스트림 및 번호판 인식 실행·정지
 
 API 문서: [카카오모빌리티](https://developers.kakaomobility.com/guide/navi-api/directions), [기상청](https://www.data.go.kr/data/15084084/openapi.do), [ITS](https://www.its.go.kr/opendata/opendataList?service=cctv). 위 연결 현황은 외부 문서가 아닌 저장소 코드 기준입니다.
+# 챗봇 대화 로그와 통계
+
+기존 Spring 백엔드와 DB는 변경하지 않습니다. Vite의 서버 전용 AI 연결 모듈이 질문·답변과 성공/실패 결과를 `front/.routel-data/chat-turns.jsonl`에 저장합니다. 서버를 재시작해도 기록은 유지됩니다. 이 폴더는 Git 업로드와 Vite 파일 제공에서 제외하며, 운영 시 별도로 백업해야 합니다.
+
+- 관리자 대화 로그: `/bot-logs` — 질문·답변 검색, 결과 필터, 10개씩 페이지 이동, 세션별 대화 상세.
+- 관리자 통계: `/bot-stats` — 한국 시간 기준 오늘/최근 7일/최근 30일의 질문 수, 답변 성공률, 실패 질문 수, 세션 수, 일별 집계와 질문 순위.
+- 조회 API: `GET /api/assistant/admin/logs`, `GET /api/assistant/admin/logs/{id}`, `GET /api/assistant/admin/stats?days=7`.
+- 기존 `/api/managers/me`로 관리자 세션을 검증합니다. 고객·비회원은 로그를 조회할 수 없습니다. 사용자 이름·이메일·쿠키·API 키·IP 주소는 별도 수집하지 않고 대화 세션 식별자로 구분합니다. 본문에 포함된 이메일·한국 휴대전화 번호·일반적인 API 키 패턴은 저장 전에 가립니다. 모든 개인정보를 자동 식별하는 것은 아니므로 개인정보 입력 금지 안내도 유지합니다.
+- 로그 저장은 이 기능을 적용한 이후 서버에 전달된 질문부터 시작합니다. 기존 브라우저 대화와 예시 데이터는 자동으로 가져오지 않습니다. 프론트에서 개인정보 질문으로 분류해 AI 요청 없이 안내한 메시지는 서버 로그에 포함되지 않습니다.
+
+저장은 현재 Node/Vite 서버 인스턴스의 파일을 기준으로 합니다. 정적 `dist` 파일만 호스팅하면 AI 연결과 로그 API는 실행되지 않습니다. 다중 서버 운영 시에는 이 모듈에 공용 DB 저장소를 연결해야 합니다. 응답 성공률은 AI 서버에서 답변이 돌아왔는지의 비율이며, 답변의 정확도를 평가한 수치는 아닙니다. FAQ 등록 수는 연결 근거가 없어 예시 숫자를 제거하고 실제 대화 세션 수로 표시합니다.

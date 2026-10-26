@@ -20,6 +20,18 @@ const links = [
           </RouterLink>
           <p>이동 전 작은 확인, 더 안전한 일상.</p>
         </div>
+          <RouterLink to="/info/app-guide#install" class="customer-footer-app">
+            <svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              aria-hidden="true"
+            >
+              <path d="M12 3v12m-4-4 4 4 4-4M5 16v4h14v-4" />
+            </svg>앱 다운로드</RouterLink>
       </div>
       <nav class="customer-footer-links" aria-label="하단 메뉴">
         <RouterLink v-for="link in links" :key="link.to" :to="link.to">{{link.label}}</RouterLink>

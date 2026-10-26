@@ -21,11 +21,11 @@
   align-items: center;
   gap: 32px;
   padding: clamp(28px,4vw,56px);
-  background: radial-gradient(ellipse at 82% 40%,color-mix(in srgb,var(--r-selected,#e8f0ff) 85%,transparent),transparent 62%),var(--ag-surface);
-  border: 1px solid var(--ag-line);
+  background: transparent;
+  border: 1px solid transparent;
   border-radius: 24px;
   overflow: hidden;
-  box-shadow: 0 8px 32px #18345207;
+  box-shadow: none;
 }
 #app .app-guide-page .app-guide-hero-copy { min-width: 0; position: relative; z-index: 1; }
 #app .app-guide-page .app-guide-eyebrow {
@@ -47,12 +47,16 @@
   background: currentColor;
 }
 #app .app-guide-page .app-guide-kicker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin: 0 0 16px;
-  color: var(--ag-muted);
+  color: var(--ag-accent);
   font-size: 13px;
   font-weight: 600;
   line-height: 1.6;
 }
+#app .app-guide-page .app-guide-kicker::before { content:''; width:24px; height:2px; background:currentColor; }
 #app .app-guide-page .app-guide-hero h1 {
   margin: 0 0 24px;
   font-size: clamp(34px,3.3vw,52px);
@@ -60,6 +64,7 @@
   letter-spacing: -.045em;
   line-height: 1.27;
 }
+#app .app-guide-page .app-guide-hero h1>span { color: var(--ag-accent); }
 #app .app-guide-page .app-guide-lead {
   margin: 0 0 28px;
   color: var(--ag-muted);
@@ -98,6 +103,8 @@
   flex-wrap: wrap;
   gap: 10px 16px;
   margin-top: 26px;
+  padding-top: 20px;
+  border-top: 1px solid var(--ag-line);
   color: var(--ag-muted);
   font-size: 12px;
   line-height: 1.6;
@@ -113,6 +120,16 @@
   min-height: 488px;
   isolation: isolate;
 }
+#app .app-guide-page .app-guide-brand-scene {
+  position: absolute; z-index: -1; left: 50%; top: 100px;
+  width: min(100%,390px); height: 285px; transform: translateX(-50%) rotate(-6deg);
+  overflow: hidden; border-radius: 26px;
+  box-shadow: 0 16px 36px #16355b14;
+}
+#app .app-guide-page .app-guide-brand-scene>img { display: block; width:100%; height:100%; object-fit:cover; object-position:65% center; }
+#app .app-guide-page .app-guide-brand-scene>span { position:absolute; inset:0; background:linear-gradient(150deg,#174f7b08,#0d2f5359); }
+#app .app-guide-page .app-guide-brand-route { position:absolute; inset:0; width:100%; height:100%; z-index:-1; color:var(--ag-accent); opacity:.24; pointer-events:none; }
+:root[data-theme=dark] #app .app-guide-page .app-guide-brand-scene>img { filter:brightness(.82) saturate(.85); }
 #app .app-guide-page .app-guide-orbit { position: absolute; z-index: -1; border-radius: 50%; left: 50%; transform: translateX(-50%); }
 #app .app-guide-page .app-guide-orbit.orbit-one {
   width: min(100%,370px);
@@ -137,7 +154,7 @@
   border-radius: 36px;
   box-shadow: 0 2px 0 #ffffff80 inset,12px 22px 40px #16355b21;
   position: relative;
-  transform: rotate(5deg);
+  transform: rotate(3deg);
   overflow: hidden;
 }
 #app .app-guide-page .app-guide-phone-notch {
@@ -198,36 +215,63 @@
 #app .app-guide-page .app-guide-phone-nav .active { color: #225bb5; font-weight: 700; }
 #app .app-guide-page .app-guide-floating-note {
   position: absolute;
-  top: 18px;
+  top: 10px;
   left: 0;
   z-index: 2;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 15px;
-  border: 1px solid var(--ag-line);
-  border-radius: 12px;
-  background: var(--ag-surface);
-  box-shadow: 0 6px 20px #1834520c;
+  padding: 6px 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--ag-muted);
   font-size: 11px;
   line-height: 1.6;
-  transform: rotate(-3deg);
+  transform: none;
 }
 #app .app-guide-page .app-guide-status-dot { width: 7px; height: 7px; flex-shrink: 0; background: var(--ag-accent); border-radius: 50%; }
+#app .app-guide-page .app-guide-visual>.app-guide-floating-note {
+  position: relative;
+  left: auto;
+  top: auto;
+  align-self: center;
+  margin: 0 0 18px;
+  padding: 0;
+}
+/* Animate decorative layers independently of the existing phone tilt and layout. */
+#app .app-guide-page .app-guide-phone { animation: app-guide-phone-hover 6s ease-in-out infinite; }
+#app .app-guide-page .app-guide-floating-note { animation: app-guide-note-hover 5s ease-in-out infinite; }
+#app .app-guide-page .app-guide-orbit { animation: app-guide-orbit-breathe 7s ease-in-out infinite; }
+#app .app-guide-page .app-guide-orbit.orbit-two { animation-delay: -3.5s; }
+#app .app-guide-page .app-guide-status-dot { animation: app-guide-status-glow 3s ease-in-out infinite; }
+#app .app-guide-page .app-guide-map-beacon { transform-box: fill-box; transform-origin: center; animation: app-guide-map-pulse 3.6s ease-out infinite; }
+#app .app-guide-page .app-guide-map-beacon-next { animation-delay: -1.8s; }
+#app .app-guide-page .app-guide-route-glow { animation: app-guide-route-travel 5s linear infinite; }
+@keyframes app-guide-phone-hover { 0%,100% { translate: 0 0; } 50% { translate: 0 -7px; } }
+@keyframes app-guide-note-hover { 0%,100% { translate: 0 0; } 50% { translate: 0 -4px; } }
+@keyframes app-guide-orbit-breathe { 0%,100% { scale: 1; opacity: .7; } 50% { scale: 1.04; opacity: 1; } }
+@keyframes app-guide-status-glow { 0%,100% { box-shadow: 0 0 0 0 color-mix(in srgb,var(--ag-accent) 16%,transparent); } 65% { box-shadow: 0 0 0 6px transparent; } }
+@keyframes app-guide-map-pulse { 0%,100% { transform: scale(.75); opacity: .1; } 55% { transform: scale(1.3); opacity: .23; } }
+@keyframes app-guide-route-travel { from { stroke-dashoffset: 70; } to { stroke-dashoffset: -930; } }
+@media (prefers-reduced-motion: reduce) {
+  #app .app-guide-page :is(.app-guide-phone,.app-guide-floating-note,.app-guide-orbit,.app-guide-status-dot,.app-guide-map-beacon,.app-guide-route-glow) { animation: none; }
+  #app .app-guide-page .app-guide-route-glow { display: none; }
+}
 #app .app-guide-page .app-guide-preview-caption { margin: 24px 0 0; color: var(--ag-muted); font-size: 11px; line-height: 1.5; }
-#app .app-guide-page .app-guide-feature-section { padding: 58px 0; }
+#app .app-guide-page .app-guide-feature-section { padding: 48px 0 32px; }
 #app .app-guide-page .app-guide-section-heading { text-align: center; }
 #app .app-guide-page .app-guide-section-heading .app-guide-eyebrow { justify-content: center; margin-bottom: 12px; }
 #app .app-guide-page .app-guide-section-heading h2 { margin: 0 0 14px; font-size: 32px; line-height: 1.4; letter-spacing: -.035em; }
 #app .app-guide-page .app-guide-section-heading>p:last-child { margin: 0; font-size: 15px; line-height: 1.8; color: var(--ag-muted); }
-#app .app-guide-page .app-guide-feature-tabs { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; margin: 30px 0 16px; }
+#app .app-guide-page .app-guide-feature-tabs { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; margin: 32px 0 16px; }
 #app .app-guide-page .app-guide-feature-tabs button {
   display: flex;
   align-items: center;
   gap: 12px;
   min-width: 0;
   min-height: 88px;
-  padding: 18px;
+  padding: 20px 24px;
   border: 1px solid var(--ag-line);
   border-radius: 14px;
   background: var(--ag-surface);
@@ -245,7 +289,7 @@
 #app .app-guide-page .app-guide-feature-tabs button[aria-pressed=true] { background: var(--r-selected,#e8f0ff) !important; border-color: var(--ag-accent); color: var(--ag-ink) !important; box-shadow: 0 3px 12px #225bb50b; }
 #app .app-guide-page .app-guide-feature-tabs button[aria-pressed=true] .app-guide-feature-icon { background: var(--r-primary); color: #fff; }
 #app .app-guide-page .app-guide-feature-tabs button[aria-pressed=true] .app-guide-feature-arrow { color: var(--ag-accent); }
-#app .app-guide-page .app-guide-feature-detail { display: flex; align-items: center; gap: 24px; padding: 28px; border: 1px solid var(--ag-line); border-radius: 14px; background: var(--ag-surface); }
+#app .app-guide-page .app-guide-feature-detail { display: flex; align-items: center; gap: 24px; padding: 24px; border: 1px solid var(--ag-line); border-radius: 14px; background: var(--ag-surface); }
 #app .app-guide-page .app-guide-feature-number { font-size: 44px; font-weight: 700; letter-spacing: -.045em; color: var(--ag-accent); opacity: .35; }
 #app .app-guide-page .app-guide-feature-detail>div { flex: 1; min-width: 0; }
 #app .app-guide-page .app-guide-feature-detail h3 { margin: 0 0 8px; font-size: 20px; line-height: 1.5; }
@@ -254,12 +298,12 @@
 #app .app-guide-page .app-guide-install {
   display: grid;
   grid-template-columns: minmax(0,1fr) minmax(0,1fr);
-  align-items: center;
-  gap: 40px;
-  padding: 40px;
+  align-items: start;
+  gap: 32px;
+  padding: 32px;
   background: var(--r-banner,linear-gradient(115deg,#132b47,#204c77));
   border: 1px solid #29496d;
-  border-radius: 22px;
+  border-radius: 16px;
   scroll-margin-top: 160px;
 }
 #app .app-guide-page .app-guide-install .app-guide-eyebrow { margin-bottom: 14px; color: #aacffc; }
@@ -270,7 +314,7 @@
 #app .app-guide-page .app-guide-platforms { display: flex; gap: 4px; padding: 4px; background: var(--ag-soft); border-radius: 9px; }
 #app .app-guide-page .app-guide-platforms button { flex: 1; min-height: 40px; padding: 8px 16px; border: 0; border-radius: 7px; background: transparent; color: var(--ag-muted); font-size: 13px; line-height: 1.5; }
 #app .app-guide-page .app-guide-platforms button[aria-pressed=true] { background: var(--ag-surface) !important; color: var(--ag-accent) !important; box-shadow: 0 1px 6px #18345210; font-weight: 700; }
-#app .app-guide-page .app-guide-install-panel ol { display: grid; gap: 18px; margin: 24px 0; padding: 0; list-style: none; }
+#app .app-guide-page .app-guide-install-panel ol { display: grid; gap: 16px; margin: 24px 0; padding: 0; list-style: none; }
 #app .app-guide-page .app-guide-install-panel li { display: flex; align-items: start; gap: 12px; }
 #app .app-guide-page .app-guide-install-panel li>span { display: grid; place-items: center; flex-shrink: 0; width: 26px; height: 26px; border-radius: 8px; background: var(--ag-soft); color: var(--ag-accent); font-size: 11px; font-weight: 650; }
 #app .app-guide-page .app-guide-install-panel li p { margin: 0; font-size: 13px; line-height: 1.8; }
@@ -278,28 +322,29 @@
 @container (max-width: 850px) {
   #app .app-guide-page .app-guide-hero { padding: 30px; gap: 16px; }
   #app .app-guide-page .app-guide-hero h1 { font-size: 36px; }
-  #app .app-guide-page .app-guide-feature-tabs button { padding: 14px 12px; gap: 9px; }
+  #app .app-guide-page .app-guide-feature-tabs button { padding: 20px; gap: 12px; }
   #app .app-guide-page .app-guide-feature-icon { width: 36px; height: 36px; }
   #app .app-guide-page .app-guide-feature-arrow { display: none; }
   #app .app-guide-page .app-guide-feature-detail { flex-wrap: wrap; }
   #app .app-guide-page .app-guide-feature-detail>a { margin-left: auto; }
-  #app .app-guide-page .app-guide-install { padding: 30px; gap: 24px; }
+  #app .app-guide-page .app-guide-install { padding: 24px; gap: 24px; }
 }
 @container (max-width: 680px) {
   #app .app-guide-page .app-guide-hero { grid-template-columns: minmax(0,1fr); padding: 32px 24px 24px; gap: 28px; }
   #app .app-guide-page .app-guide-hero-copy { text-align: center; }
+  #app .app-guide-page .app-guide-kicker { justify-content: center; }
   #app .app-guide-page .app-guide-hero-copy .app-guide-eyebrow,
   #app .app-guide-page .app-guide-actions,
   #app .app-guide-page .app-guide-hero-tags { justify-content: center; }
   #app .app-guide-page .app-guide-visual { min-height: 475px; }
   #app .app-guide-page .app-guide-floating-note { left: calc(50% - 145px); top: 8px; }
-  #app .app-guide-page .app-guide-feature-section { padding: 42px 0; }
+  #app .app-guide-page .app-guide-feature-section { padding: 32px 0; }
   #app .app-guide-page .app-guide-section-heading h2 { font-size: 28px; }
-  #app .app-guide-page .app-guide-feature-tabs { grid-template-columns: minmax(0,1fr); gap: 10px; margin-top: 24px; }
+  #app .app-guide-page .app-guide-feature-tabs { grid-template-columns: minmax(0,1fr); gap: 16px; margin-top: 24px; }
   #app .app-guide-page .app-guide-feature-tabs button { min-height: 70px; padding: 14px 18px; }
   #app .app-guide-page .app-guide-feature-label { grid-template-columns: auto 1fr; align-items: center; gap: 10px; }
   #app .app-guide-page .app-guide-feature-arrow { display: block; }
-  #app .app-guide-page .app-guide-install { grid-template-columns: minmax(0,1fr); padding: 28px; }
+  #app .app-guide-page .app-guide-install { grid-template-columns: minmax(0,1fr); padding: 24px; }
 }
 @container (max-width: 420px) {
   #app .app-guide-page .app-guide-hero { padding: 28px 18px 22px; border-radius: 18px; gap: 24px; }
@@ -322,10 +367,10 @@
   #app .app-guide-page .app-guide-feature-detail h3 { font-size: 17px; }
   #app .app-guide-page .app-guide-feature-detail p { font-size: 13px; }
   #app .app-guide-page .app-guide-feature-detail>a { margin-left: 0; }
-  #app .app-guide-page .app-guide-install { padding: 26px 18px 18px; border-radius: 18px; }
+  #app .app-guide-page .app-guide-install { padding: 20px; border-radius: 16px; }
   #app .app-guide-page .app-guide-install h2 { font-size: 26px; }
   #app .app-guide-page .app-guide-install>div:first-child>p:not(.app-guide-eyebrow) { font-size: 13px; }
-  #app .app-guide-page .app-guide-install-panel { padding: 18px 16px; }
+  #app .app-guide-page .app-guide-install-panel { padding: 20px; }
 }
 @media (hover:hover) {
   #app .app-guide-page .app-guide-button:hover { box-shadow: 0 5px 16px #225bb52b; }

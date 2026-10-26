@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import UiIcon from '../components/UiIcon.vue'
+import MascotVideo from '../components/MascotVideo.vue'
 import '../styles/customer-information.css'
 const principles = [
   {
@@ -37,17 +38,27 @@ const principles = [
           <path d="M34 277 138 215l61-101 185-39M34 124l124 75 122 113" class="company-map-road-edge" />
           <path d="M34 277 138 215l61-101 185-39M34 124l124 75 122 113" class="company-map-road" />
           <path d="m90 244 48-29 61-101 115-24" class="company-map-route" />
-          <circle cx="138" cy="215" r="27" class="company-map-halo" />
+          <path d="m90 244 48-29 61-101 115-24" class="company-map-route-light" />
+          <circle cx="138" cy="215" r="27" class="company-map-halo company-route-halo" />
+          <circle cx="199" cy="114" r="19" class="company-map-halo company-route-halo company-route-halo-next" />
+          <circle cx="314" cy="90" r="19" class="company-map-halo company-route-halo company-route-halo-last" />
           <circle cx="138" cy="215" r="10" class="company-map-point" />
           <circle cx="199" cy="114" r="8" class="company-map-point" />
           <circle cx="314" cy="90" r="8" class="company-map-point" />
+          <circle r="5" class="company-map-traveller">
+            <animateMotion dur="6s" repeatCount="indefinite" path="m90 244 48-29 61-101 115-24" />
+          </circle>
+          <g class="company-map-floating-panel">
           <rect x="230" y="209" width="174" height="91" rx="18" class="company-map-panel" />
           <circle cx="260" cy="239" r="10" class="company-map-halo" />
           <path d="m255 239 4 4 7-8" class="company-map-check" />
           <path d="M283 239h94M253 268h47m12 0h49" class="company-map-copy" />
+          </g>
+          <g class="company-map-floating-panel company-map-floating-panel-small">
           <rect x="50" y="69" width="97" height="37" rx="12" class="company-map-panel" />
           <circle cx="68" cy="87" r="4" class="company-map-point" />
           <path d="M82 87h46" class="company-map-copy" />
+          </g>
         </svg>
         <span>안전한 이동을 위한 연결</span>
       </div>
@@ -96,11 +107,7 @@ const principles = [
     </section>
     <section class="routel-company-mascot" aria-labelledby="company-mascot-title">
       <div class="routel-company-mascot-mark" aria-hidden="true">
-        <svg viewBox="0 0 120 120" fill="none">
-          <path d="M60 15 25 28v31c0 22 16 36 35 47 19-11 35-25 35-47V28L60 15Z" fill="currentColor" opacity=".1" />
-          <path d="M60 25 35 35v24c0 16 11 27 25 36 14-9 25-20 25-36V35L60 25Z" stroke="currentColor" stroke-width="3" />
-          <path d="m47 59 9 9 19-21" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
+        <MascotVideo src="/brand/routel-ru-welcome-clean-v2.webm" poster="/brand/routel-ru-welcome-clean-v2-poster.png" />
         <span>ROU</span>
       </div>
       <div class="routel-company-mascot-copy">

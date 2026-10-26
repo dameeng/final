@@ -93,6 +93,72 @@
   background: var(--accent-soft,#edf3f9);
 }
 /* SDK-created cluster elements need an unscoped rule. Only the ring moves. */
+/* Remove only the SDK frame around ROUTEL content; map tiles and other overlays are untouched. */
+.customer-map-canvas div:has(> div > :is(.routel-map-popup,.routel-cluster-popup)) {
+  background: transparent !important;
+  border: 0 !important;
+}
+.customer-map-canvas div:has(> div > :is(.routel-map-popup,.routel-cluster-popup)) > div:not(:has(> :is(.routel-map-popup,.routel-cluster-popup))) {
+  display: none !important;
+}
+#app :is(.routel-map-popup,.routel-cluster-popup) {
+  box-sizing: border-box;
+  width: 280px;
+  min-width: 0;
+  max-width: calc(100vw - 48px);
+  padding: 0;
+  border: 1px solid var(--r-line,var(--line));
+  border-radius: 16px;
+  background: var(--r-surface,var(--surface));
+  color: var(--r-ink,#19344e);
+  box-shadow: 0 12px 36px #102c4930,0 2px 8px #102c4912;
+  font-family: var(--r-font,inherit);
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: normal;
+  animation: routel-popup-enter .2s ease-out;
+}
+#app :is(.routel-map-popup__header,.routel-cluster-popup>header) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--r-line,var(--line));
+  background: var(--r-soft,var(--surface));
+  border-radius: 15px 15px 0 0;
+}
+#app .routel-map-popup__title { min-width: 0; margin: 0; font-size: 15px; line-height: 1.5; overflow-wrap: anywhere; }
+#app :is(.routel-map-popup__close,.routel-cluster-popup>header>button) {
+  display: grid; place-items: center;
+  flex: 0 0 28px; width: 28px; min-width: 28px; height: 28px; min-height: 28px;
+  padding: 0; border: 1px solid var(--r-line,var(--line)); border-radius: 8px;
+  background: var(--r-surface,var(--surface)); color: var(--r-muted,#64748b);
+  font: inherit; font-size: 20px; line-height: 1; cursor: pointer;
+}
+#app .routel-map-popup__row { justify-content: space-between; gap: 12px; padding: 0 16px; margin: 14px 0; }
+#app .routel-map-popup__label { font-size: 12px; color: var(--r-muted,#64748b); }
+#app .routel-map-popup__time { text-align: right; font-size: 12px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+#app :is(.routel-map-popup__status,.routel-cluster-popup__item>small) {
+  padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600;
+  color: var(--r-muted,#64748b); background: var(--r-soft,#edf2f7);
+}
+#app :is(.routel-map-popup__status,.routel-cluster-popup__item>small)[data-state=안전] { color: #267766; background: #e9f6f0; }
+#app :is(.routel-map-popup__status,.routel-cluster-popup__item>small)[data-state=주의] { color: #926017; background: #fff4de; }
+#app :is(.routel-map-popup__status,.routel-cluster-popup__item>small):is([data-state=위험],[data-state=통제]) { color: #b84455; background: #fff0f2; }
+#app .routel-cluster-popup>ul { padding: 6px 8px 8px; max-height: 242px; scrollbar-width: thin; scrollbar-color: var(--r-line,#c9d5e1) transparent; }
+#app .routel-cluster-popup__item { min-height: 46px; padding: 10px 8px; gap: 9px; border: 0; border-radius: 8px; background: transparent; }
+#app .routel-cluster-popup__item:hover { background: var(--r-selected,#edf4ff); }
+#app .routel-cluster-popup__item:focus-visible,
+#app :is(.routel-map-popup__close,.routel-cluster-popup>header>button):focus-visible { outline: 2px solid var(--r-accent,#2866bb); outline-offset: -2px; }
+#app .routel-map-popup__error { margin: 12px 16px; font-size: 12px; }
+:root[data-theme=dark] #app :is(.routel-map-popup__status,.routel-cluster-popup__item>small)[data-state=안전] { color: #91dfbf; background: #23453e; }
+:root[data-theme=dark] #app :is(.routel-map-popup__status,.routel-cluster-popup__item>small)[data-state=주의] { color: #f2ce89; background: #493d28; }
+:root[data-theme=dark] #app :is(.routel-map-popup__status,.routel-cluster-popup__item>small):is([data-state=위험],[data-state=통제]) { color: #ffb4c0; background: #4c2e3c; }
+@keyframes routel-popup-enter { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) {
+  #app :is(.routel-map-popup,.routel-cluster-popup) { animation: none; }
+}
 .routel-marker-ripple {
   position: relative;
 }

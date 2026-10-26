@@ -662,6 +662,11 @@
   gap: 10px;
   align-items: center;
 }
+.page-bot-stats .bars .r>span:last-child {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
 .page-bot-stats .bars .t {
   height: 16px;
   background: var(--surface,#fff);
@@ -685,24 +690,31 @@
   font-size: 28px;
 }
 .page-bot-stats .days {
-  display: flex;
-  align-items: flex-end;
+  display: grid;
+  grid-template-columns: repeat(7,minmax(0,1fr));
   gap: 10px;
   height: 140px;
 }
 .page-bot-stats .days div {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 4px;
+  display: grid;
+  grid-template-rows: 18px minmax(0,1fr) 18px;
+  justify-items: center;
+  align-items: end;
+  gap: 6px;
   height: 100%;
+  min-width: 0;
+}
+.page-bot-stats .days small {
+  line-height: 18px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 .page-bot-stats .days i {
   display: block;
-  width: 100%;
-  background: var(--surface,#fff);
+  width: min(40%,32px);
+  max-height: 100%;
+  border-radius: 4px 4px 0 0;
+  background: var(--r-accent,#225f9b);
 }
 .page-bot-stats .fail {
   border: 2px solid var(--strong);

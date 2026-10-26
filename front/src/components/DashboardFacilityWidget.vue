@@ -1,22 +1,27 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, useId, watch } from 'vue'
 import { asPage, backend, queryString } from '../services/backend'
 import { displayDate } from '../utils/display-date'
 import { riskChartSeries, riskTimestamp } from '../utils/risk-chart'
 import RiskLevelBadge from './RiskLevelBadge.vue'
 import '../styles/dashboard-chart.css'
+import { useApp } from '../stores/app'
+const app=useApp()
 const props=defineProps<{ mode:'detail'|'risk' }>()
 const facilities=ref<any[]>([]), selected=ref(''), detail=ref<any>(), scores=ref<any[]>([]), page=ref(1), more=ref(false), error=ref(''), loading=ref(false)
-const controller=new AbortController()
 let request:AbortController|undefined
+let facilityRequest:AbortController|undefined
 async function loadFacilities() {
   if(loading.value)return
   loading.value=true;error.value=''
+  const current=new AbortController();facilityRequest=current
   try {
-    const result=asPage<any>(await backend('/api/underpasses'+queryString({page:page.value,size:10}),{signal:controller.signal}),page.value,10)
+    const result=asPage<any>(await backend('/api/underpasses'+queryString({scope:'MINE',page:page.value,size:10}),{signal:current.signal}),page.value,10)
+    if(current.signal.aborted)return
     facilities.value.push(...result.items);more.value=page.value<result.totalPages;page.value++
-  } catch(cause) {if(!controller.signal.aborted)error.value=(cause as Error).message}
-  finally {loading.value=false}
+    if(!selected.value&&facilities.value.length)selected.value=String(facilities.value[0].id)
+  } catch(cause) {if(!current.signal.aborted)error.value=(cause as Error).message}
+  finally {if(facilityRequest===current)loading.value=false}
 }
 watch(selected,async id=>{
   request?.abort();detail.value=undefined;scores.value=[];error.value=''
@@ -87,8 +92,12 @@ const latestScore=computed(()=>{
   const value=Number(scores.value.at(-1)?.riskScore)
   return Number.isFinite(value)?new Intl.NumberFormat('ko-KR',{maximumFractionDigits:2}).format(value):'—'
 })
-onMounted(loadFacilities)
-onBeforeUnmount(()=>{controller.abort();request?.abort();chartResize?.disconnect()})
+watch(()=>`${app.account?.id}:${app.account?.role}:${app.account?.regions?.map(r=>r.id).join(',')}`,()=>{
+  facilityRequest?.abort();request?.abort()
+  facilities.value=[];selected.value='';detail.value=undefined;scores.value=[];page.value=1;more.value=false;loading.value=false
+  void loadFacilities()
+},{immediate:true})
+onBeforeUnmount(()=>{facilityRequest?.abort();request?.abort();chartResize?.disconnect()})
 </script>
 <template>
   <div class="water-facility-widget" :class="{'water-facility-widget-risk':mode==='risk'}">

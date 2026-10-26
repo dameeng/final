@@ -158,7 +158,35 @@
   background: #173d62;
   color: white;
 }
+#app .auth-service.admin-login-card {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 480px;
+  margin: 32px auto;
+  padding: 28px;
+  border-radius: 16px;
+}
+#app .admin-login-card>h1 { margin: 0 0 24px; line-height: 1.4; }
+#app .admin-login-card .login-form .service-form-fields {
+  width: 100%;
+  max-width: none;
+  gap: 20px;
+}
+#app .admin-login-card .auth-buttons { margin-top: 24px; }
+#app .admin-login-card .auth-buttons button[type=submit] {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  border-radius: 9px;
+}
+#app .admin-login-card .auth-links {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--r-line,var(--line));
+  gap: 16px;
+}
 @media (max-width:600px) {
+  #app .auth-service.admin-login-card { margin: 16px auto; padding: 24px 20px; }
   .auth-service {
     margin: 12px 0;
     padding: 20px 16px;

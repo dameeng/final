@@ -1,10 +1,23 @@
-/* 이름(왼쪽)과 전화번호(오른쪽)가 너무 멀지 않게 폭을 좁혀 가운데에 둔다 */
+/* 관리자 공통 본문과 같은 너비·제목 크기를 사용합니다. */
 .contacts-page {
-  max-width: 680px;
-  margin: auto;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  margin: 0;
+  box-sizing: border-box;
 }
 .contacts-page h1 {
-  font-size: 24px;
+  margin: 0 0 20px;
+  font-size: 22px;
+  line-height: 1.5;
+}
+.contacts-page :deep(.jurisdiction-phone-list) {
+  width: 100%;
+  margin: 0;
+  box-sizing: border-box;
+}
+.contacts-page :deep(.jurisdiction-phone-list li) {
+  padding: 18px 20px;
 }
 .contacts-note {
   font-size: 13px;
