@@ -18,6 +18,7 @@ function target(section: string) {
   const next = `/customer-app/account/${section}`
   return member.value ? next : { path: '/customer-app/screen-1', query: { next } }
 }
+function openChat(){window.dispatchEvent(new Event('routel-public-chat-open'))}
 async function signout() {
   try {
     if (app.account) await logoutCustomer()
@@ -42,6 +43,9 @@ async function signout() {
       </RouterLink>
       <RouterLink to="/customer-app/faq">FAQ <span>›</span>
       </RouterLink>
+      <button type="button" class="app-account-chat" aria-haspopup="dialog" @click="openChat">
+        AI 도우미 <span>›</span>
+      </button>
         <RouterLink :to="target('profile')">
           내 정보 관리 <small v-if="!member">로그인 필요</small>
           <span>›</span>

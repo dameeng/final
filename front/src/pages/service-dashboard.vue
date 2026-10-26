@@ -7,6 +7,8 @@ import { useApp } from '../stores/app'
 import BackendLayout from '../components/BackendLayout.vue'
 import LiveMap from './c-live-map.vue'
 import DashboardEditor from '../components/DashboardEditor.vue'
+import DashboardShortcuts from '../components/DashboardShortcuts.vue'
+import { PM_TYPES, PM_LEVELS, isPmChange } from '../utils/pm-labels'
 import { backend } from '../services/backend'
 import { valueLabels } from '../data/backendResources'
 import { displayDate } from '../utils/display-date'
@@ -36,6 +38,8 @@ const summary = ref<Record<string, number> | null>(null),
   error = ref(''),
   loading = ref(false),
   controller = new AbortController()
+type MaintenanceRow = { equipId:number; name:string; underpassName:string; type:string; score:number|null; level:string|null; roadStatus?:string|null }
+const maintenanceTop = ref<MaintenanceRow[]>([])
 const eventKey = (event: Record<string, any>) => String(event.id ?? JSON.stringify([event.createdAt, event.underpassId, event.underpassName, event.eventType, event.reason]))
 const isNewEvent = useNewItemGlow(() => events.value, eventKey)
 const eventPage = ref(1)
@@ -71,7 +75,7 @@ function scrollEvents(event: WheelEvent) {
   event.preventDefault()
 }
 async function load(requested?: unknown) {
-  const parts = Array.isArray(requested) ? requested : [0, 1, 2]
+  const parts = Array.isArray(requested) ? requested : [0, 1, 2, 3]
   if (loading.value) {
     parts.forEach((key) => pendingLoads.add(key))
     return
@@ -80,7 +84,7 @@ async function load(requested?: unknown) {
   error.value = ''
   const results = await Promise.allSettled(
     parts.map((key) =>
-      backend('/api/dashboard/' + dashboardPaths[key], { signal: controller.signal }),
+      backend(key === 3 ? '/api/pm/equipments?page=1&size=5' : '/api/dashboard/' + dashboardPaths[key], { signal: controller.signal }),
     ),
   )
   if (controller.signal.aborted) return
@@ -89,7 +93,8 @@ async function load(requested?: unknown) {
     if (result.status === 'fulfilled') {
       if (key === 0) summary.value = result.value
       else if (key === 1) events.value = Array.isArray(result.value) ? result.value : []
-      else margins.value = Array.isArray(result.value) ? result.value : []
+      else if (key === 2) margins.value = Array.isArray(result.value) ? result.value : []
+      else maintenanceTop.value = (result.value?.items || []).slice(0,5)
     } else error.value = result.reason.message
   })
   loading.value = false
@@ -109,6 +114,7 @@ function queueDashboard(parts: number[]) {
   }, 200)
 }
 useBackendEvents(({ name, data }) => {
+  if (isPmChange(name, data, ['pm-equipment','pm-event','pm-action','pm-threshold'])) queueDashboard([3])
   if (name === 'risk-update') {
     margins.value = margins.value.map((row) => {
       if (
@@ -125,7 +131,7 @@ useBackendEvents(({ name, data }) => {
     })
     return
   }
-  if (name === 'connected' || name === 'control-change') queueDashboard([0, 1, 2])
+  if (name === 'connected' || name === 'control-change') queueDashboard([0, 1, 2, 3])
   else if (name === 'risk-level-change') queueDashboard([0, 2])
   else if (name === 'transit-update' || name.startsWith('plate-queue-')) queueDashboard([0])
   else if (name === 'data-changed' && ['underpass', 'threshold'].includes(data.resource))
@@ -143,10 +149,11 @@ onBeforeUnmount(() => {
       ><div class="page-head service-heading"
         ><h1>종합 현황</h1
         ><div class="dashboard-head-actions"
-          ><DashboardEditor :grid="dashboardGrid"
+          ><DashboardEditor :grid="dashboardGrid" :margins="margins"
           /><button class="btn sm" :disabled="loading" @click="load">새로고침</button></div
         ></div
-      ><p v-if="error" class="service-error" role="alert">{{error}}</p
+      ><DashboardShortcuts />
+      <p v-if="error" class="service-error" role="alert">{{error}}</p
       ><div id="grid" ref="dashboardGrid" class="dashboard-fixed-layout">
         <div class="dashboard-fixed-item fixed-summary"
           ><div class="dashboard-fixed-content"
@@ -208,18 +215,18 @@ onBeforeUnmount(() => {
 <div class="dashboard-bottom"
           ><div class="dashboard-fixed-item fixed-top5"
             ><div class="dashboard-fixed-content"
-              ><section class="card wg widget-original-content" aria-label="위험 임박 Top5"
+              ><section class="card wg widget-original-content" aria-label="예지보전 Top5"
                 ><div class="wg-head"
-                  ><h2>위험 임박 Top5</h2
-                  ><RouterLink to="/admin-reports?report=margin">전체 보기</RouterLink></div
-                ><p v-if="!margins.length">위험 임박 시설이 없습니다.</p
+                  ><h2>예지보전 Top5</h2
+                  ><RouterLink to="/pm-equipment">전체 보기</RouterLink></div
+                ><p v-if="!maintenanceTop.length">표시할 예지보전 설비가 없습니다.</p
                 ><ol class="rank"
-                  ><li v-for="(facility,index) in margins" :key="facility.underpassId" :style="{'--risk-fill':riskFill(facility.riskScore)}"
+                  ><li v-for="(equipment,index) in maintenanceTop" :key="equipment.equipId" :style="{'--risk-fill':riskFill(equipment.score)}"
                     ><span class="n">{{index+1}}</span
-                    ><RouterLink class="t" :to="'/fac-detail?id='+facility.underpassId"
-                      >{{facility.underpassName
-                      }}<small>위험 임계치까지 {{facility.margin}}점</small></RouterLink
-                    ><span class="sc">{{facility.riskScore}}</span><span v-if="!route.path.startsWith('/admin-app/')" class="dashboard-score-track" aria-hidden="true"><i></i></span></li
+                    ><RouterLink class="t" :to="{path:'/pm-equipment-detail',query:{id:equipment.equipId}}"
+                      >{{equipment.name
+                      }}<small>{{equipment.underpassName}} · {{PM_TYPES[equipment.type] || equipment.type}} · {{equipment.type==='ROAD'?(equipment.roadStatus || '미분석'):(PM_LEVELS[equipment.level || ''] || '수신 대기')}}</small></RouterLink
+                    ><span class="sc">{{equipment.score==null?'—':Number(equipment.score).toFixed(1)}}</span><span v-if="equipment.score!=null&&!route.path.startsWith('/admin-app/')" class="dashboard-score-track" aria-hidden="true"><i></i></span></li
                   ></ol
                 ></section
               ></div

@@ -1,11 +1,13 @@
 <script setup lang="ts">
+import { managerAppPath } from '../utils/manager-app-path'
+const appPath = (path: string) => managerAppPath(path, route.path)
 // 예지보전 점검 대기 (/pm-queue). 예전 목업(pm-queue.vue + data/pm-queue.json)을 대신한다.
 //  GET /api/pm/events?status=&type=   점검 대상 (status 를 빼면 확인 필요·점검 중만)
 //  GET /api/pm/actions?startDate=오늘  오늘 점검 기록 수
 // 처리(점검 시작·기록 추가·점검 종료)는 PmActionModal 이 한다.
 // SSE pm-update(지금 점수) / data-changed(pm-event·pm-action) 가 오면 다시 조회한다.
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import BackendLayout from '../components/BackendLayout.vue'
 import RiskLevelBadge from '../components/RiskLevelBadge.vue'
 import PmActionModal from '../components/PmActionModal.vue'
@@ -30,6 +32,7 @@ type PmEvent = {
 }
 
 const PAGE_SIZE = 20
+const route = useRoute()
 const router = useRouter(),
   status = ref(''),
   type = ref(''),
@@ -120,7 +123,7 @@ function scoreTrend(row: PmEvent) {
   return Math.abs(d) < 0.05 ? 'same' : d < 0 ? 'down' : 'up'
 }
 function openDetail(row: PmEvent) {
-  void router.push({ path: '/pm-equipment-detail', query: { id: String(row.equipId) } })
+  void router.push({ path: appPath('/pm-equipment-detail'), query: { id: String(row.equipId) } })
 }
 function act(row: PmEvent, mode: 'start' | 'note' | 'resolve') {
   if(row.type==='ROAD'){openDetail(row);return}
@@ -137,8 +140,8 @@ function act(row: PmEvent, mode: 'start' | 'note' | 'resolve') {
           <div class="sub">위험진입 · 급상승 · 미수신으로 생긴 점검 대상</div>
         </div>
         <div class="pm-head-actions">
-          <RouterLink class="btn" to="/pm-equipment">설비 목록 →</RouterLink>
-          <RouterLink class="btn" to="/pm-history">점검 이력 →</RouterLink>
+          <RouterLink class="btn" :to="appPath('/pm-equipment')">설비 목록 →</RouterLink>
+          <RouterLink class="btn" :to="appPath('/pm-history')">점검 이력 →</RouterLink>
           <button class="btn" type="button" :disabled="loading" @click="load">새로고침</button>
         </div>
       </div>
@@ -150,7 +153,7 @@ function act(row: PmEvent, mode: 'start' | 'note' | 'resolve') {
         <button type="button" class="card pm-kpi" :class="{'is-current':status==='IN_PROGRESS'}" @click="status='IN_PROGRESS'">
           <span>점검 중</span><strong>{{counts.IN_PROGRESS??'—'}}</strong>
         </button>
-        <RouterLink class="card pm-kpi" :to="{path:'/pm-history'}">
+        <RouterLink class="card pm-kpi" :to="{path:appPath('/pm-history')}">
           <span>오늘 점검 기록</span><strong>{{counts.todayActions??'—'}}</strong>
         </RouterLink>
         <div class="card pm-kpi pm-kpi--static">
@@ -205,7 +208,7 @@ function act(row: PmEvent, mode: 'start' | 'note' | 'resolve') {
                   <button class="btn sm" type="button" @click="act(row,'note')">기록 추가</button>
                   <button v-if="row.status==='IN_PROGRESS'" class="btn sm" type="button" @click="act(row,'resolve')">점검 종료</button>
                 </span>
-                <RouterLink v-else class="btn sm" :to="{path:'/pm-history',query:{equipId:String(row.equipId)}}" @click.stop>이력 보기</RouterLink>
+                <RouterLink v-else class="btn sm" :to="{path:appPath('/pm-history'),query:{equipId:String(row.equipId)}}" @click.stop>이력 보기</RouterLink>
               </td>
             </tr>
           </tbody>

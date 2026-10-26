@@ -156,21 +156,21 @@ export const backendResources: Record<string, Resource> = {
     remove: true,
     actions: [
       {
-        label: '통제 및 경찰 이관',
+        label: '통제·경찰/소방 이관',
         path: '/api/control/underpasses/{id}/block',
         method: 'POST',
         fields: [source('presetId', '통제 사유 선택', 'reasons'), area('reason', '통제 사유')],
         pdf: true,
       },
       {
-        label: '통제 해제 및 경찰 이관',
+        label: '해제·경찰/소방 이관',
         path: '/api/control/underpasses/{id}/release',
         method: 'POST',
         fields: [source('presetId', '해제 사유 선택', 'reasons'), area('reason', '해제 사유')],
         pdf: true,
       },
       {
-        label: '소방 이관',
+        label: '잔류차량 소방 이관',
         path: '/api/control/underpasses/{id}/fire-transfer',
         method: 'POST',
         fields: [
@@ -262,6 +262,7 @@ export const backendResources: Record<string, Resource> = {
     path: '/api/plate-logs',
     columns: [
       ['underpassName', '시설'],
+      ['cameraId', '카메라 번호'],
       ['detectedNum', '인식 번호'],
       ['imagePath', '인식 이미지'],
       ['correctedNum', '정정 번호'],
@@ -339,6 +340,7 @@ export const backendResources: Record<string, Resource> = {
     parents: [{ ...facility, required: true }],
     columns: [
       ['agency', '이관 기관'],
+      ['documentType', '문서 종류'],
       ['managerName', '처리자'],
       ['carNums', '차량 번호'],
       ['memo', '전달 내용'],
@@ -679,6 +681,8 @@ export const valueLabels: Record<string, string> = {
   REGIONAL_ADMIN: '지역 관리자',
   POLICE: '경찰',
   FIRE: '소방',
+  CONTROL_NOTICE: '통제·해제 안내',
+  REMAINING_VEHICLES: '잔류차량 전달서',
   ANSWERED: '답변 완료',
 }
 valueLabels.NORMAL = '정상'
@@ -764,6 +768,9 @@ backendResources['manager-notifications'] = {
   ],
 }
 resourceRoutes['/admin-app/notifications'] = 'manager-notifications'
+resourceRoutes['/admin-app/transfers'] = 'transfers'
+resourceRoutes['/admin-app/notices'] = 'notices'
+resourceRoutes['/admin-app/inquiries'] = 'inquiries'
 Object.assign(valueLabels, { RISK: '위험', EQUIPMENT: '설비', TASK: '업무', SYSTEM: '시스템' })
 // 시설 제어 이력의 유형(kind) 값: 영문 그대로 나오지 않게
 Object.assign(valueLabels, { EVENT: '시설 제어', DISPLAY: '전광판' })

@@ -1,9 +1,22 @@
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import TrafficVideo from './TrafficVideo.vue'
 import { getTunnelCameras, getTunnelCameraStream, seoulTunnelSource, type TunnelCamera, type TunnelCameraStream } from '../services/seoulTunnelCctv'
 
 defineProps<{ facilityName?: string }>()
+const route = useRoute()
+const appMode = computed(() => /^\/(admin|customer)-app\//.test(route.path))
+const trigger = ref<HTMLButtonElement>(), appBounds = ref<{left:string;width:string}>()
+let shellObserver: ResizeObserver | undefined
+function fitAppDialog() {
+  if (!appMode.value) { appBounds.value = undefined; return }
+  const shell = trigger.value?.closest<HTMLElement>('.manager-app-shell,.service-app-layout,.mobile-page')
+  const rect = shell?.getBoundingClientRect()
+  const left = Math.max(0, rect?.left ?? 0) + 12
+  const right = Math.min(innerWidth, rect?.right ?? innerWidth) - 12
+  appBounds.value = { left: `${left}px`, width: `${Math.max(0, right-left)}px` }
+}
 const dialog = ref<HTMLDialogElement>(), opened = ref(false), loading = ref(false), videoLoading = ref(false)
 const cameras = ref<TunnelCamera[]>([]), selected = ref(''), stream = ref<TunnelCameraStream>(), error = ref('')
 const names = ref<Record<string, string>>({}), playbackVersion = ref(0)
@@ -54,12 +67,23 @@ async function loadStream() {
 }
 watch(selected, loadStream)
 async function open() {
+  if (opened.value) return
   opened.value = true
+  fitAppDialog()
+  window.addEventListener('resize', fitAppDialog)
+  const shell = trigger.value?.closest<HTMLElement>('.manager-app-shell,.service-app-layout,.mobile-page')
+  if (appMode.value && shell) {
+    shellObserver = new ResizeObserver(fitAppDialog)
+    shellObserver.observe(shell)
+  }
   await nextTick()
   dialog.value?.showModal()
   void loadList()
 }
 function release() {
+  window.removeEventListener('resize', fitAppDialog)
+  shellObserver?.disconnect()
+  shellObserver = undefined
   opened.value = false
   listRequest?.abort()
   videoRequest?.abort()
@@ -74,9 +98,9 @@ function close() { dialog.value?.close(); release() }
 onBeforeUnmount(release)
 </script>
 <template>
-  <button class="btn tunnel-cctv-trigger" type="button" @click="open">내부 CCTV 보기</button>
+  <button ref="trigger" class="btn tunnel-cctv-trigger" :class="{'tunnel-cctv-trigger--app':appMode}" type="button" @click="open">내부 CCTV 보기</button>
   <Teleport to="body">
-    <dialog ref="dialog" class="tunnel-cctv-modal" aria-label="신월여의지하도로 내부 CCTV" @close="release" @cancel="release">
+    <dialog ref="dialog" class="tunnel-cctv-modal" :class="{'tunnel-cctv-modal--app':appMode}" :style="appBounds" aria-label="신월여의지하도로 내부 CCTV" @close="release" @cancel="release">
       <header>
         <div><p class="tunnel-cctv-eyebrow">서울터널 · 공개 교통 영상</p><h2>신월여의지하도로 CCTV</h2></div>
         <button class="tunnel-cctv-close" type="button" aria-label="내부 CCTV 창 닫기" @click="close">닫기</button>

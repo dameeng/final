@@ -78,7 +78,7 @@ const steps = computed(() =>
         ></div
       >
    <div class="app-guide-visual"
-        ><div class="app-guide-brand-scene" aria-hidden="true"><img src="/brand/routel-coastal-underpass.png" width="1774" height="887" alt="" loading="lazy" /><span></span></div>
+        >
         <svg class="app-guide-brand-route" viewBox="0 0 420 470" fill="none" aria-hidden="true"><path d="M12 364H66C102 364 112 328 112 287V151C112 102 143 78 185 78H408" stroke="currentColor" stroke-width="2" stroke-dasharray="4 8" /><circle cx="66" cy="364" r="6" fill="currentColor" /><circle cx="365" cy="78" r="6" fill="currentColor" /></svg
         ><div class="app-guide-floating-note"
           ><span class="app-guide-status-dot"></span> 이동 전 확인하는 작은 습관</div

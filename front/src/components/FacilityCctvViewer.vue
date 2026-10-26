@@ -115,7 +115,7 @@ function label(camera: Record<string, any>) {
 const app = computed(() => route.path.startsWith('/admin-app/'))
 </script>
 <template>
-  <div class="facility-cctv-layout" :class="{'compact-cctv':compact}">
+  <div class="facility-cctv-layout" :class="{'compact-cctv':compact,'app-cctv-records':app}">
   <section class="facility-cctv-viewer" aria-label="시설 CCTV">
     <template v-if="current">
       <label class="facility-camera-select">CCTV 선택<select v-model="selected">
@@ -137,7 +137,7 @@ const app = computed(() => route.path.startsWith('/admin-app/'))
         <p v-if="recognitionMessage" role="status" :class="{ 'recognition-error': recognitionError }">{{ recognitionMessage }}</p>
       </div>
       <div class="facility-camera-row">
-      <div class="facility-camera-stage">
+      <div v-if="!app" class="facility-camera-stage">
         <template v-if="isAiStream">
           <img
             v-if="!streamFailed"

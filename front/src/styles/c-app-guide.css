@@ -120,16 +120,7 @@
   min-height: 488px;
   isolation: isolate;
 }
-#app .app-guide-page .app-guide-brand-scene {
-  position: absolute; z-index: -1; left: 50%; top: 100px;
-  width: min(100%,390px); height: 285px; transform: translateX(-50%) rotate(-6deg);
-  overflow: hidden; border-radius: 26px;
-  box-shadow: 0 16px 36px #16355b14;
-}
-#app .app-guide-page .app-guide-brand-scene>img { display: block; width:100%; height:100%; object-fit:cover; object-position:65% center; }
-#app .app-guide-page .app-guide-brand-scene>span { position:absolute; inset:0; background:linear-gradient(150deg,#174f7b08,#0d2f5359); }
 #app .app-guide-page .app-guide-brand-route { position:absolute; inset:0; width:100%; height:100%; z-index:-1; color:var(--ag-accent); opacity:.24; pointer-events:none; }
-:root[data-theme=dark] #app .app-guide-page .app-guide-brand-scene>img { filter:brightness(.82) saturate(.85); }
 #app .app-guide-page .app-guide-orbit { position: absolute; z-index: -1; border-radius: 50%; left: 50%; transform: translateX(-50%); }
 #app .app-guide-page .app-guide-orbit.orbit-one {
   width: min(100%,370px);

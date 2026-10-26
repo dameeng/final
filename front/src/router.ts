@@ -6,7 +6,7 @@ import { requiresCustomer, requiresManager } from './services/access'
 const routes = [
   { path: '/admin-app/menu', component: pages['./pages/admin-app-menu.vue'] },
   {
-    path: '/admin-app/:resource(ocr|reviews|transits)',
+    path: '/admin-app/:resource(ocr|reviews|transits|transfers|notices|inquiries)',
     component: pages['./pages/backend-resource.vue'],
   },
   { path: '/admin-app/notifications', component: pages['./pages/backend-resource.vue'] },

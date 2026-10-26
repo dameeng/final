@@ -35,7 +35,7 @@
   display: flex;
   flex-direction: column;
 }
-.app-account-menu a {
+.app-account-menu :is(a,button) {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -45,7 +45,9 @@
   color: inherit;
   font-size: 15px;
 }
-.app-account-menu a span {
+.app-account-menu button { width:100%; border:0; border-bottom:1px solid var(--line,#c9ced6); background:transparent; font-family:inherit; text-align:left; cursor:pointer; }
+.app-account-menu button:focus-visible { outline:2px solid var(--r-accent); outline-offset:2px; border-radius:4px; }
+.app-account-menu :is(a,button) span {
   margin-left: auto;
 }
 .app-account-menu a small {

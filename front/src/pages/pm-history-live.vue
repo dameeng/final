@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { managerAppPath } from '../utils/manager-app-path'
+const appPath = (path: string) => managerAppPath(path, route.path)
 // 예지보전 점검 이력 (/pm-history). 예전 목업(pm-history.vue + data/pm-history.json)을 대신한다.
 //  GET /api/pm/actions?startDate=&endDate=&type=&equipId=   조치 기록 최근 순 (기간은 조치 기록일 기준, endDate 당일 포함)
 //  GET /api/pm/equipments?size=100                          설비 고르기 목록
@@ -165,8 +167,8 @@ function resetFilters() {
           <div class="sub">점검 대기에서 남긴 조치 기록 · 점검 전 점수와 점검 뒤 첫 점수를 비교해요</div>
         </div>
         <div class="pm-head-actions">
-          <RouterLink class="btn" to="/pm-queue">점검 대기 →</RouterLink>
-          <RouterLink class="btn" to="/pm-equipment">설비 목록 →</RouterLink>
+          <RouterLink class="btn" :to="appPath('/pm-queue')">점검 대기 →</RouterLink>
+          <RouterLink class="btn" :to="appPath('/pm-equipment')">설비 목록 →</RouterLink>
           <button class="btn" type="button" :disabled="loading" @click="load">새로고침</button>
         </div>
       </div>
@@ -223,7 +225,7 @@ function resetFilters() {
       <div v-if="list&&!list.items.length" class="card pm-empty">
         <b>이 조건에 맞는 점검 기록이 없어요.</b>
         <span>점검 대기에서 점검을 시작하거나 기록을 추가하면 여기에 쌓여요.</span>
-        <RouterLink class="btn sm" to="/pm-queue">점검 대기로 가기</RouterLink>
+        <RouterLink class="btn sm" :to="appPath('/pm-queue')">점검 대기로 가기</RouterLink>
       </div>
 
       <div v-if="list?.items.length" class="service-table-wrap">
@@ -235,7 +237,7 @@ function resetFilters() {
             <tr v-for="row in list.items" :key="row.actionId">
               <td class="pm-nowrap">{{displayDate(row.createdAt)}}</td>
               <td class="pm-nowrap">
-                <RouterLink class="pm-name" :to="{path:'/pm-equipment-detail',query:{id:String(row.equipId)}}">{{row.name}}</RouterLink>
+                <RouterLink class="pm-name" :to="{path:appPath('/pm-equipment-detail'),query:{id:String(row.equipId)}}">{{row.name}}</RouterLink>
                 <small class="pm-type-tag">{{pmLabel(PM_TYPES,row.type)}}</small>
               </td>
               <td class="pm-nowrap">{{row.underpassName}}</td>

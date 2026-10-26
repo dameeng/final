@@ -143,6 +143,8 @@
   text-align:center; text-decoration:none; white-space:normal; overflow-wrap:anywhere;
 }
 #app .restored-summary-drawer .service-actions>button:disabled { color:var(--r-muted); background:var(--r-soft); opacity:.55; }
+#app dialog.restored-summary-drawer .service-actions+.service-actions { margin-top:10px; }
+#app .restored-summary-drawer .service-actions>:last-child:nth-child(odd) { grid-column:1/-1; }
 
 /* Recent events: a continuous neutral rail with gently glowing status nodes.
    Keep the existing widget size, internal scrolling and ten-item pagination. */

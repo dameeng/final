@@ -68,5 +68,20 @@ export const useManagerNotifications = defineStore('manager-notifications', () =
       ...recent.value.filter((item) => item.id !== data.id),
     ].slice(0, 5)
   }
-  return { unread, recent, loading, error, refresh, refreshPreview, ingest, reset }
+  async function read(id:number) {
+    if(app.account?.role!=='REGIONAL_ADMIN')return
+    const user=app.account.id
+    await backend(`/api/managers/me/notifications/${encodeURIComponent(id)}/read`,{method:'PUT'})
+    if(app.account?.id!==user||app.account.role!=='REGIONAL_ADMIN')return
+    eventRevision++
+    sequence++
+    const row=recent.value.find(item=>item.id===id)
+    if(row&&!row.read) {
+      row.read=true
+      unread.value=Math.max(0,unread.value-1)
+      app.unread=unread.value
+    }
+    await refresh()
+  }
+  return { unread, recent, loading, error, refresh, refreshPreview, ingest, reset, read }
 })

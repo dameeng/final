@@ -6,6 +6,7 @@ import { useRoute } from 'vue-router'
 import BackendLayout from '../components/BackendLayout.vue'
 import BackendResource from './backend-resource.vue'
 import FacilityCctvViewer from '../components/FacilityCctvViewer.vue'
+import FacilityMaintenancePanel from '../components/FacilityMaintenancePanel.vue'
 import UnderpassVmsPanel from '../components/UnderpassVmsPanel.vue'
 import TunnelCctvDialog from '../components/TunnelCctvDialog.vue'
 import { riskGroup } from '../services/backendCatalog'
@@ -27,6 +28,11 @@ const facility = ref<Record<string, any>>(),
   error = ref(''),
   loading = ref(false),
   operations = ref<InstanceType<typeof BackendResource>>()
+const controlNotice=ref('')
+function onOperationSaved(result?:{id:string;status:'NORMAL'|'BLOCKED'}) {
+  if(result?.id===id.value)controlNotice.value='경찰·소방 통제 안내 기록이 함께 생성되었습니다. 소방 PDF는 이관 문서에서 확인하세요.'
+  void load()
+}
 // 상세 응답에는 regionId 만 있어서 지역 목록으로 이름을 찾는다 (한 번만 조회)
 const regionNames = ref<Record<string, string>>({}),
   regionName = computed(
@@ -129,7 +135,7 @@ useBackendEvents((event) => {
     streamRefresh = setTimeout(() => void load(), 200)
   }
 })
-watch(id, load, { immediate: true })
+watch(id, ()=>{controlNotice.value='';void load()}, { immediate: true })
 onBeforeUnmount(() => {
   clearTimeout(streamRefresh)
   controller?.abort()
@@ -170,6 +176,7 @@ function control() {
         {{error}} <button @click="load">다시 시도</button>
       </p>
       <p v-if="loading" role="status">시설 정보를 불러오는 중입니다.</p>
+      <p v-if="controlNotice" class="service-message" role="status">{{controlNotice}} <RouterLink :to="{path:'/admin-data/transfers',query:{underpassId:id}}">경찰·소방 문서 보기 →</RouterLink></p>
       <nav class="tabs" aria-label="지하차도 상세 탭">
         <!-- 다섯 탭이 같은 경로(?tab= 만 다름)라 라우터 기본 활성 표시는 전부 켜진다. 현재 탭 하나에만 직접 표시 -->
         <RouterLink
@@ -284,7 +291,8 @@ function control() {
               <p v-if="series.carryPath" class="sub">엷은 점선: 최근 관측값을 현재까지 유지 (추가 관측 아님)</p>
               <p v-if="forecastError">{{forecastError}}</p>
             </section>
-            <section class="card">
+            <section class="card facility-information-card">
+              <div class="facility-information-columns"><div class="facility-information-facts">
               <h2>시설 정보</h2>
               <dl class="service-detail">
                 <dt>지역</dt>
@@ -297,6 +305,7 @@ function control() {
                 <dd>{{facility.lengthM??'—'}} m</dd>
               </dl>
               <RouterLink :to="{path:'/logs',query:{underpassId:id}}">최근 이벤트 · 통합 로그 →</RouterLink>
+              </div><FacilityMaintenancePanel :underpass-id="id" /></div>
             </section>
           </div>
         </section>
@@ -329,7 +338,7 @@ function control() {
             operations-only
             embedded
             resource-key="facilities"
-            @saved="load"
+            @saved="onOperationSaved"
           />
         </div>
       </template>
@@ -338,4 +347,13 @@ function control() {
 </template>
 <style scoped>
 .facility-detail-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.facility-information-card { container-type:inline-size; }
+.facility-information-columns { display:grid; grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr); gap:24px; }
+.facility-information-facts { min-width:0; padding-right:24px; border-right:1px solid var(--r-line); }
+.facility-information-facts .service-detail { grid-template-columns:88px minmax(0,1fr); margin:24px 0; }
+.facility-information-facts>a { display:inline-block; font-size:12px; line-height:1.6; color:var(--r-accent); text-decoration:none; }
+@container (max-width:620px) {
+  .facility-information-columns { grid-template-columns:minmax(0,1fr); gap:24px; }
+  .facility-information-facts { padding-right:0; padding-bottom:24px; border-right:0; border-bottom:1px solid var(--r-line); }
+}
 </style>
