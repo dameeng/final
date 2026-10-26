@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useNotificationGlow } from '../stores/notificationGlow'
 const notificationGlow = useNotificationGlow()
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { notificationTarget } from '../utils/notification-target'
 import {
@@ -26,7 +26,7 @@ const route = useRoute(),
   busy = ref(false),
   error = ref(''),
   expanded = ref<number | null>(null)
-const pageSize = computed(() => route.path.startsWith('/customer-app/') ? 20 : 10)
+const pageSize = 10
 useBackendEvents(({ name, data }) => {
   if (name === 'connected') {
     void refresh()
@@ -42,12 +42,12 @@ useBackendEvents(({ name, data }) => {
   const previous = rows.value.find((item) => item.id === data.id)
   if (!previous) {
     total.value++
-    pages.value = Math.max(1, Math.ceil(total.value / pageSize.value))
+    pages.value = Math.max(1, Math.ceil(total.value / pageSize))
   }
   rows.value = [
     { ...data, read: previous?.read ?? false } as CustomerNotification,
     ...rows.value.filter((item) => item.id !== data.id),
-  ].slice(0, pageSize.value)
+  ].slice(0, pageSize)
 })
 let alive = true,
   sequence = 0
@@ -58,7 +58,7 @@ async function load() {
   try {
     const result = await notifications.list({
       page: page.value,
-      size: pageSize.value,
+      size: pageSize,
       category: category.value,
       unreadOnly: unreadOnly.value,
     })
@@ -144,7 +144,7 @@ onBeforeUnmount(() => {
 })
 </script>
 <template>
-  <main class="service-workspace customer-notification-center"
+  <main class="service-workspace customer-notification-center" :class="{'app-notification-center':route.path.startsWith('/customer-app/')}"
     ><div class="service-heading"
       ><h1>알림 내역</h1
       ><button type="button" :disabled="loading" @click="refresh">새로고침</button></div
