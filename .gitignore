@@ -97,3 +97,6 @@ spring_url.txt
 # FCM 서비스 계정 키
 /keys/*
 !/keys/.gitkeep
+
+# Local AI server credential launcher
+/pm_server/secret.bat

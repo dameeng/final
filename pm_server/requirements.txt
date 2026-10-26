@@ -1,0 +1,10 @@
+# 예지보전 서버 (계산 전용). joblib 모델은 만든 환경과 같은 버전에서 불러야 해요
+# scikit-learn · pandas · numpy · joblib 은 팀원 모델(pm_final/requirements.txt)과 같은 버전
+fastapi==0.159.1
+uvicorn==0.53.0
+pydantic==2.13.5
+scikit-learn==1.9.1
+pandas==3.0.5
+numpy==2.5.3
+scipy==1.18.1
+joblib==1.6.0

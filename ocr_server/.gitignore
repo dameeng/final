@@ -1,0 +1,10 @@
+# PC마다 새로 만드는 것 (공유 X)
+venv/
+__pycache__/
+*.pyc
+
+# YOLO predict.py 결과 사진
+yolo8!/yolo_plate_far/result/
+
+# PC마다 다른 Spring 주소 (공유 X)
+spring_url.txt

@@ -1,0 +1,36 @@
+# AI 서버 (FastAPI + YOLO + PaddleOCR v7) - CPU용, Python 3.11
+# 설치: pip install -r requirements.txt
+# ※ 설치가 끝나면 OpenCV 정리 명령 2줄을 꼭 실행할 것 (사용법은 아래 맨 끝)
+
+# ===== 공통 =====
+numpy==2.4.6
+pillow
+requests
+
+# ===== 서버 =====
+fastapi
+uvicorn
+python-multipart
+
+# ===== 번호판 위치 찾기 (YOLO) =====
+torch==2.7.1
+ultralytics==8.4.153
+openvino==2026.4.1      # CPU 에서 YOLO 를 약 3배 빠르게 (best.pt -> best_openvino_model 로 바꿔서 사용)
+
+# ===== 번호판 글자 읽기 (PaddleOCR v7) =====
+paddlepaddle==3.3.1
+opencv-contrib-python==5.0.0.93
+albumentations==2.0.8     # v7 의 글자 줄 찾기(det)에 필요
+stringzilla==5.1.1        # albumentations 가 쓰는 것. 5.1.2 는 윈도우에서 설치(빌드)가 실패해서 고정
+Cython
+lmdb
+pyclipper
+PyYAML
+RapidFuzz
+scikit-image
+shapely
+tqdm
+
+# ===== 설치 후 OpenCV 정리 (ultralytics가 opencv-python을 같이 깔아서 cv2가 겹침) =====
+# pip uninstall -y opencv-python opencv-python-headless
+# pip install --force-reinstall --no-deps opencv-contrib-python==5.0.0.93
