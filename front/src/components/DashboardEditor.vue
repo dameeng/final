@@ -6,8 +6,10 @@ import DashboardWidgets from './DashboardWidgets.vue'
 import DashboardOcr from './DashboardOcr.vue'
 import DashboardFacilityWidget from './DashboardFacilityWidget.vue'
 import JurisdictionContactList from './JurisdictionContactList.vue'
-const props = defineProps<{ grid?: HTMLElement }>()
+import { shortcutGroups, useDashboardShortcuts } from '../stores/dashboardShortcuts'
+const props = defineProps<{ grid?: HTMLElement; margins?: {underpassId:number;underpassName:string;riskScore:number;margin:number}[] }>()
 const app = useApp()
+const shortcuts=useDashboardShortcuts(), libraryTab=ref<'widgets'|'shortcuts'>('widgets')
 const catalog = [
   { id:'ocr', name:'OCR', path:'/admin-data/ocr' },
   { id:'weather', name:'날씨' },
@@ -17,6 +19,8 @@ const catalog = [
   { id:'events', name:'이벤트 타임라인', existing:true },
   { id:'detail', name:'상세페이지', path:'/fac-detail' },
   { id:'todo', name:'예지보전', existing:true },
+  { id:'top5', name:'예지보전 Top5', existing:true },
+  { id:'risk-top5', name:'위험 임박 Top5' },
   { id:'calendar', name:'캘린더' },
   { id:'contacts', name:'비상연락망', path:'/jurisdiction-contacts' },
 ]
@@ -24,6 +28,7 @@ const descriptions:Record<string,string> = {
   ocr:'번호판 인식 현황과 기록', weather:'현재 기온과 날씨 정보', risk:'시설 위험도 변화 추이',
   summary:'주요 운영 수치 요약', map:'시설 위치와 실시간 상태', events:'최근 발생 이벤트',
   detail:'선택 시설의 상세 정보', todo:'설비 점검과 유지보수', calendar:'일정과 작업 관리', contacts:'관할 담당자 연락처',
+  top5:'예지보전 점검 우선순위 상위 설비', 'risk-top5':'위험 임계치에 가까운 지하차도 5곳',
 }
 function enabled(id:string) {
   return !layout.value.hidden.includes(id) && (existingIds.includes(id) || layout.value.order.includes(id))
@@ -83,10 +88,11 @@ function drop(event:DragEvent) {
   }
   layout.value.hidden=layout.value.hidden.filter(value=>value!==id);dragId=''
 }
-function begin() {snapshot=JSON.stringify({layout:layout.value,customized:customized.value});editing.value=true;opened.value=true;apply()}
-function finish() {activeCleanup?.();editing.value=false;opened.value=false;save();apply()}
-function cancel() {const old=JSON.parse(snapshot);layout.value=old.layout;customized.value=old.customized;finish()}
-function reset() {layout.value=blank();customized.value=false}
+function begin() {snapshot=JSON.stringify({layout:layout.value,customized:customized.value});shortcuts.begin();editing.value=true;opened.value=true;apply()}
+function finish() {if(!shortcuts.save())return;activeCleanup?.();editing.value=false;opened.value=false;save();apply()}
+function cancel() {const old=JSON.parse(snapshot);layout.value=old.layout;customized.value=old.customized;shortcuts.cancel();finish()}
+function reset() {layout.value=blank();customized.value=false;shortcuts.reset()}
+watch(()=>shortcuts.requestEdit,()=>{if(!editing.value)begin();libraryTab.value='shortcuts';opened.value=true})
 let activeCleanup:(()=>void)|undefined
 function resize(event:PointerEvent,node:HTMLElement,side:string) {
   if(event.button!==0||!props.grid)return
@@ -139,6 +145,7 @@ function wire() {
 }
 watch(storageKey,()=>{
   activeCleanup?.();editing.value=false;opened.value=false;layout.value=blank();customized.value=false
+  shortcuts.editing=false
   try {const saved=JSON.parse(localStorage.getItem(storageKey.value)||'null');if(saved&&Array.isArray(saved.order)&&Array.isArray(saved.hidden)&&saved.sizes&&typeof saved.sizes==='object') {
     if(saved.version!==2) {
       for(const size of Object.values(saved.sizes) as {width:number;height:number}[]) size.width=Math.min(1000,size.width*250)
@@ -157,7 +164,7 @@ watch(()=>props.grid,(grid,old)=>{
 function over(event:DragEvent) {if(editing.value)event.preventDefault()}
 watch([layout,editing],()=>void nextTick(wire),{deep:true})
 onMounted(()=>window.addEventListener('resize',apply))
-onBeforeUnmount(()=>{window.removeEventListener('resize',apply);activeCleanup?.();cleanup.forEach(dispose=>dispose())})
+onBeforeUnmount(()=>{if(shortcuts.editing)shortcuts.cancel();window.removeEventListener('resize',apply);activeCleanup?.();cleanup.forEach(dispose=>dispose())})
 </script>
 <template>
   <div class="board-toolbar" :class="{'is-editing':editing}">
@@ -165,7 +172,36 @@ onBeforeUnmount(()=>{window.removeEventListener('resize',apply);activeCleanup?.(
     <template v-if="editing"><span>제목을 끌어 이동 · 위·아래·왼쪽·오른쪽 테두리로 크기 조절</span><button @click="reset">기본 구성</button><button @click="cancel">취소</button><button @click="finish">저장</button></template>
     <p v-if="error" role="alert">{{error}}</p>
   </div>
-  <Teleport to="body"><aside v-if="opened" class="board-library" aria-label="위젯 리스트"><header><div><strong>위젯 구성</strong><small>필요한 위젯을 선택하세요</small></div><button aria-label="위젯 리스트 닫기" @click="opened=false">×</button></header><p class="board-library-description">선택한 위젯은 대시보드에 표시됩니다. 끌어서 배치할 수도 있어요.</p><div v-for="item in catalog" :key="item.id" class="board-library-row" draggable="true" @dragstart="drag($event,item.id)"><button :aria-pressed="enabled(item.id)" @click="toggle(item.id)"><span class="board-library-symbol" aria-hidden="true">▦</span><span class="board-library-copy"><strong>{{item.name}}</strong><small>{{descriptions[item.id]}}</small></span><span class="board-library-check" aria-hidden="true">{{enabled(item.id)?'✓':''}}</span></button></div><footer>{{catalog.filter(item=>enabled(item.id)).length}}개 선택됨 · 저장하면 적용됩니다</footer></aside></Teleport>
+  <Teleport to="body">
+    <aside v-if="opened" class="board-library" aria-label="위젯 리스트">
+      <header><div><strong>화면 구성</strong><small>필요한 위젯과 바로가기를 선택하세요</small></div><button aria-label="위젯 리스트 닫기" @click="opened=false">×</button></header>
+      <nav class="board-library-tabs" aria-label="편집 종류">
+        <button type="button" :aria-pressed="libraryTab==='widgets'" @click="libraryTab='widgets'">위젯</button>
+        <button type="button" :aria-pressed="libraryTab==='shortcuts'" @click="libraryTab='shortcuts'">바로가기</button>
+      </nav>
+      <template v-if="libraryTab==='widgets'">
+        <p class="board-library-description">선택한 위젯은 대시보드에 표시됩니다. 끌어서 배치할 수도 있어요.</p>
+        <div v-for="item in catalog" :key="item.id" class="board-library-row" draggable="true" @dragstart="drag($event,item.id)">
+          <button :aria-pressed="enabled(item.id)" @click="toggle(item.id)"><span class="board-library-symbol" aria-hidden="true">▦</span><span class="board-library-copy"><strong>{{item.name}}</strong><small>{{descriptions[item.id]}}</small></span><span class="board-library-check" aria-hidden="true">{{enabled(item.id)?'✓':''}}</span></button>
+        </div>
+      </template>
+      <template v-else>
+        <p class="board-library-description">상단에 표시할 메뉴를 선택하세요. 바로가기 카드의 화살표나 끌기로 순서를 바꿀 수 있어요.</p>
+        <section v-for="group in shortcutGroups" :key="group.title" class="board-shortcut-group">
+          <h3>{{group.title}}</h3>
+          <div v-for="item in group.items" :key="item.to" class="board-library-row">
+            <button type="button" :aria-pressed="shortcuts.order.includes(item.to)" @click="shortcuts.toggle(item.to)">
+              <span class="board-library-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path :d="item.icon" /></svg></span>
+              <span class="board-library-copy"><strong>{{item.label}}</strong></span>
+              <span class="board-library-check" aria-hidden="true">{{shortcuts.order.includes(item.to)?'✓':''}}</span>
+            </button>
+          </div>
+        </section>
+      </template>
+      <p v-if="shortcuts.error" role="alert">{{shortcuts.error}}</p>
+      <footer>{{libraryTab==='widgets'?catalog.filter(item=>enabled(item.id)).length:shortcuts.items.length}}개 선택됨 · 상단의 저장을 누르면 적용됩니다</footer>
+    </aside>
+  </Teleport>
   <Teleport v-if="grid" :to="grid">
     <article v-for="item in extras" :key="item.id" class="dashboard-fixed-item board-extra" :data-widget-id="item.id">
       <header class="extra-widget-title"><h2><RouterLink v-if="item.id==='ocr'" to="/admin-data/ocr">{{item.name}}</RouterLink><template v-else>{{item.name}}</template></h2></header>
@@ -174,6 +210,15 @@ onBeforeUnmount(()=>{window.removeEventListener('resize',apply);activeCleanup?.(
       <DashboardOcr v-else-if="item.id==='ocr'" />
       <DashboardFacilityWidget v-else-if="item.id==='risk'||item.id==='detail'" :mode="item.id==='risk'?'risk':'detail'" />
       <JurisdictionContactList v-else-if="item.id==='contacts'" />
+      <div v-else-if="item.id==='risk-top5'" class="board-risk-top5">
+        <RouterLink to="/admin-reports?report=margin">전체 보기 →</RouterLink>
+        <p v-if="!margins?.length">위험 임박 시설이 없습니다.</p>
+        <ol v-else><li v-for="(facility,index) in margins.slice(0,5)" :key="facility.underpassId">
+          <span class="board-risk-rank">{{index+1}}</span>
+          <RouterLink :to="{path:'/fac-detail',query:{id:facility.underpassId}}">{{facility.underpassName}}<small>위험 임계치까지 {{facility.margin}}점</small></RouterLink>
+          <strong>{{facility.riskScore}}</strong>
+        </li></ol>
+      </div>
       <RouterLink v-else :to="item.path!">{{item.name}} 열기 →</RouterLink>
     </article>
   </Teleport>

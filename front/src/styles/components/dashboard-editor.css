@@ -71,3 +71,17 @@
 /* 편집 중에는 오른쪽 위젯 서랍에 가리지 않도록 버튼 줄(기본 구성·취소·저장)을 제목 아래 왼쪽으로 내린다 */
 .page-head:has(.board-toolbar.is-editing) { flex-wrap:wrap; }
 .dashboard-head-actions:has(.board-toolbar.is-editing) { order:3; flex-basis:100%; justify-content:flex-start; }
+.board-risk-top5 { padding:16px; color:var(--r-ink); }
+.board-risk-top5>a { color:var(--r-accent); font-size:12px; text-decoration:none; }
+.board-risk-top5 ol { list-style:none; padding:0; margin:12px 0 0; }
+.board-risk-top5 li { display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--r-line); }
+.board-risk-top5 li:last-child { border-bottom:0; }
+.board-risk-top5 li>a { flex:1; min-width:0; font-size:13px; text-decoration:none; color:var(--r-ink); }
+.board-risk-top5 small { display:block; margin-top:4px; color:var(--r-muted); font-size:11px; }
+.board-risk-rank { width:20px; flex:none; color:var(--r-muted); text-align:center; }
+.board-risk-top5 strong { color:var(--r-accent); font-size:14px; }
+.board-library-tabs { display:flex; gap:8px; margin:18px 0 12px; }
+.board-library .board-library-tabs button { flex:1; background:var(--r-surface); color:var(--r-muted); border-color:var(--r-line); }
+.board-library .board-library-tabs button[aria-pressed=true] { background:var(--r-selected); color:var(--r-accent); border-color:var(--r-accent); font-weight:700; }
+.board-shortcut-group { margin:20px 0 0; }
+.board-shortcut-group h3 { margin:0 0 8px; color:var(--r-muted); font-size:12px; font-weight:600; }

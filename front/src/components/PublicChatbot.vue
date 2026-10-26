@@ -13,6 +13,9 @@ const app = useApp(),
 const route = useRoute(),
   panelWidth = ref(560),
   messageList = ref<HTMLOListElement>()
+const appMode=computed(()=>route.path.startsWith('/customer-app/'))
+const appPanelLeft=ref(0)
+let returnFocus:HTMLElement|undefined
 const popular = ref<{ id: number; question: string }[]>([]),
   answerBusy = ref(false),
   chatOpen = ref(false)
@@ -116,6 +119,13 @@ function moveWithKey(event: KeyboardEvent) {
 }
 onMounted(() => window.addEventListener('resize', fitLauncher))
 function fitPanel() {
+  if(appMode.value) {
+    const shell=document.querySelector<HTMLElement>('.page-customer-app-account .ph,.service-app-layout')
+    const rect=shell?.getBoundingClientRect()
+    panelWidth.value=Math.min(rect?.width || window.innerWidth,window.innerWidth)
+    appPanelLeft.value=Math.max(0,Math.min(rect?.left || 0,window.innerWidth-panelWidth.value))
+    return
+  }
   const pane = document.querySelector<HTMLElement>(
     '.page-c-map .app>aside:not([hidden]),.page-c-live-map .map-sidebar',
   )
@@ -141,6 +151,8 @@ function fitPanel() {
         : Math.min(600, window.innerWidth)
 }
 async function open() {
+  if(dialog.value?.open)return
+  returnFocus=document.activeElement instanceof HTMLElement?document.activeElement:undefined
   void backend('/api/faqs/popular?limit=5')
     .then((rows) => {
       popular.value = Array.isArray(rows) ? rows : []
@@ -158,12 +170,18 @@ async function open() {
   dialog.value?.querySelector('input')?.focus({ preventScroll: true })
 }
 function close() {
+  const wasOpen=chatOpen.value
   chatOpen.value = false
   saveHistory()
   dialog.value?.close()
   window.removeEventListener('resize', fitPanel)
-  launcher.value?.focus({ preventScroll: true })
+  if(wasOpen) {
+    if(returnFocus?.isConnected)returnFocus.focus({preventScroll:true})
+    else launcher.value?.focus({ preventScroll: true })
+  }
 }
+function openFromAccount() {if(appMode.value)void open()}
+onMounted(()=>window.addEventListener('routel-public-chat-open',openFromAccount))
 function outside(event: MouseEvent) {
   if (event.target !== dialog.value) return
   const rect = dialog.value.getBoundingClientRect()
@@ -191,6 +209,7 @@ watch(
   },
 )
 onBeforeUnmount(() => {
+  window.removeEventListener('routel-public-chat-open',openFromAccount)
   cancelAnswer()
   window.removeEventListener('resize', fitPanel)
   window.removeEventListener('resize', fitLauncher)
@@ -241,6 +260,7 @@ async function send() {
 </script>
 <template>
   <button
+    v-if="!appMode"
     ref="launcher"
     class="public-chat-launcher"
     type="button"
@@ -259,7 +279,7 @@ async function send() {
   <dialog
     ref="dialog"
     class="drawer-dialog public-chat-dialog"
-    :style="{width:panelWidth+'px'}"
+    :style="{width:panelWidth+'px',...(appMode?{left:appPanelLeft+'px',right:'auto',top:'0px',margin:'0',height:'100dvh'}:{})}"
     aria-labelledby="public-chat-title"
     @cancel.prevent="close"
     @click="outside"

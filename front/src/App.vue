@@ -95,10 +95,10 @@ const serviceComponent = computed(() => {
     return ServiceResource
   if (['/c-map', '/customer-app/screen-5', '/customer-app/screen-6'].includes(path)) return LiveMap
   if (path === '/fac-detail') return AdminFacilityRestored
-  if (path === '/pm-equipment') return PmEquipmentLive
-  if (path === '/pm-equipment-detail') return PmEquipmentDetailLive
-  if (path === '/pm-queue') return PmQueueLive
-  if (path === '/pm-history') return PmHistoryLive
+  if (['/pm-equipment', '/admin-app/screen-9'].includes(path)) return PmEquipmentLive
+  if (['/pm-equipment-detail', '/admin-app/screen-10'].includes(path)) return PmEquipmentDetailLive
+  if (['/pm-queue', '/admin-app/screen-11'].includes(path)) return PmQueueLive
+  if (['/pm-history', '/admin-app/history'].includes(path)) return PmHistoryLive
   // screen-6(통제)·7(통제 중)·8(해제)은 시설 0번 고정 목업이었다. 실제 통제·해제 API를 쓰는 시설 화면으로 보낸다
   if (['/admin-app/screen-5', '/admin-app/screen-6', '/admin-app/screen-7', '/admin-app/screen-8'].includes(path))
     return AdminAppFacilityLive

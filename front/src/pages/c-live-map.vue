@@ -2210,13 +2210,6 @@ onBeforeUnmount(() => {
         @control="managerControl"
       />
 <div class="kakao-map-controls manager-map-controls" aria-label="지도 조작"
-        ><button
-          type="button"
-          class="map-fit-all"
-          aria-label="지도 전체 보기"
-          title="부산 전체 지하차도 보기"
-          @click="showAllFacilities"
-          >전체<br />보기</button
         ><button class="ui-icon-button" type="button" aria-label="카카오 지도 확대" @click="zoomMap(-1)">
           <UiIcon name="plus" />
         </button

@@ -52,6 +52,7 @@ import com.mbc.puf.internal.dto.WaterLevelResponse;
 import com.mbc.puf.risk.RiskLevelService;
 import com.mbc.puf.plate.entity.PlateLog;
 import com.mbc.puf.plate.repository.PlateLogRepository;
+import com.mbc.puf.plate.service.PlateReviewPolicy;
 import com.mbc.puf.threshold.entity.Threshold;
 import com.mbc.puf.threshold.repository.ThresholdRepository;
 import com.mbc.puf.underpass.entity.Camera;
@@ -105,6 +106,9 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 	// 첨부파일 저장 위치. application.properties의 file.upload-dir (board 도메인 첨부와 같은 설정을 공유)
 	@Value("${file.upload-dir}")
 	private String uploadDir;
+
+	@Value("${puf.ocr.review-relative-to-average:true}")
+	private boolean reviewRelativeToAverage = true;
 
 	public InternalIngestServiceImpl(RiskScoreRepository riskScoreRepository, PlateLogRepository plateLogRepository,
 			UnderpassRepository underpassRepository, UnderpassEventRepository eventRepository,
@@ -232,7 +236,10 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 
 		// 신뢰도가 기준 미만이면 판별대기로 건다. 등록 차량 매칭 여부(LOW_CONFIDENCE/UNMATCHED)와는 무관하고,
 		// 신뢰도가 충분한 UNMATCHED나 OCR 실패(FAIL)는 걸지 않는다. recognition_status 값 자체는 그대로 둔다
-		if (isLowConfidence(request.getDetectedNum(), request.getConfidence())) {
+		BigDecimal recentAverage = reviewRelativeToAverage && request.getDetectedNum() != null
+				&& request.getConfidence() != null
+				? plateLogRepository.recentConfidenceAverage(request.getCameraId(), request.getDetectedAt()) : null;
+		if (PlateReviewPolicy.requiresReview(request.getDetectedNum(), request.getConfidence(), recentAverage)) {
 			plateLog.setReviewStatus(ReviewStatus.PENDING);
 			plateLog.setReviewDeadline(request.getDetectedAt().plusMinutes(1)); // 만료되면 스케줄러가 AUTO_PROCESSED로 바꿈
 		} else {
@@ -387,10 +394,7 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 		}
 	}
 
-	// OCR이 번호를 읽었고(detectedNum != null) 신뢰도가 기준 미만이면 true. 차량 매칭 여부는 보지 않는다
-	private boolean isLowConfidence(String detectedNum, BigDecimal confidence) {
-		return detectedNum != null && confidence != null && confidence.compareTo(LOW_CONFIDENCE_THRESHOLD) < 0;
-	}
+	// Recognition status retains the fixed threshold; manual-review selection is independent.
 
 	private RecognitionStatus determineRecognitionStatus(String detectedNum, BigDecimal confidence, Long carId) {
 		if (detectedNum == null) {

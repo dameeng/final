@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import TunnelCctvDialog from '../components/TunnelCctvDialog.vue'
 import { useNotificationGlow } from '../stores/notificationGlow'
+import { notificationTarget } from '../utils/notification-target'
 const notificationGlow = useNotificationGlow()
 import RiskLevelBadge from '../components/RiskLevelBadge.vue'
 import { formatPhone } from '../utils/phone'
@@ -155,12 +156,21 @@ async function markManagerNotificationRead(row: Record<string, any>) {
   saving.value = true
   error.value = ''
   try {
-    await backend(`/api/managers/me/notifications/${encodeURIComponent(row.id)}/read`, { method: 'PUT' })
+    await managerNotifications.read(Number(row.id))
     row.read = true
-    await managerNotifications.refresh()
     if (filters.unreadOnly) await load()
   } catch (e) { error.value = (e as Error).message }
   finally { saving.value = false }
+}
+function managerNotificationTarget(row:Record<string,any>) {
+  return notificationTarget({id:Number(row.id),refType:row.refType,refId:row.refId},true,route.path,route.path)
+}
+async function openManagerNotification(event:MouseEvent,row:Record<string,any>) {
+  if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey||event.button!==0)return
+  event.preventDefault()
+  if(saving.value)return
+  if(!row.read)await markManagerNotificationRead(row)
+  if(row.read)await router.push(managerNotificationTarget(row))
 }
 const readNotices = ref<Record<string, string>>({})
 const noticeReadKey = computed(
@@ -663,7 +673,9 @@ async function submit() {
     if (resourceId.value === 'my-inquiries' && mode.value === 'create')
       sessionStorage.removeItem('routel-inquiry-draft')
     modal.value?.close()
-    message.value = '요청이 처리되었습니다.'
+    message.value = controlStatus
+      ? '경찰·소방 통제 안내 기록이 함께 생성되었습니다. 경찰 PDF가 내려받아지며, 소방 PDF는 이관 문서에서 확인할 수 있습니다.'
+      : '요청이 처리되었습니다.'
     await load()
     if (resourceId.value === 'manager-notifications') await managerNotifications.refresh()
     if (
@@ -1056,7 +1068,7 @@ defineExpose({ open, load })
       <p v-if="error" class="service-error" role="alert">
         {{error}} <RouterLink v-if="!app.account" :to="customer?'/login':'/admin-login'">로그인</RouterLink>
       </p>
-      <p v-if="message" class="service-message" role="status">{{message}}</p>
+      <p v-if="message" class="service-message" role="status">{{message}} <RouterLink v-if="resourceId==='facilities'&&selected?.id&&mode==='action'&&/\/(block|release)$/.test(action?.path||'')" :to="{path:'/admin-data/transfers',query:{underpassId:String(selected.id)}}">경찰·소방 문서 보기 →</RouterLink></p>
       <p v-if="underpassSplit&&!parents.underpassId">왼쪽 목록에서 지하차도를 누르면 {{splitTargets[resourceId]}} 화면이 나옵니다.</p>
       <UnderpassVmsPanel
         v-else-if="vmsSplit"
@@ -1073,7 +1085,7 @@ defineExpose({ open, load })
         <ul v-else-if="managerNotificationList" class="manager-notification-cards" aria-label="관리자 알림 목록">
           <li v-for="row in data.items" :key="row.id" :class="{'is-unread':!row.read}">
             <div class="manager-notification-meta"><span class="manager-notification-category">{{valueLabels[row.category]||'알림'}}</span><span v-if="!row.read" class="manager-notification-unread">● 안 읽음</span><time>{{display(row.createdAt)}}</time></div>
-            <h2>{{row.title}}</h2><p>{{row.body}}</p>
+            <RouterLink :to="managerNotificationTarget(row)" custom v-slot="{href}"><a :href="href" class="manager-notification-content" @click="openManagerNotification($event,row)"><h2>{{row.title}}</h2><p>{{row.body}}</p></a></RouterLink>
             <button v-if="!row.read" type="button" :disabled="saving" @click="markManagerNotificationRead(row)">읽음 처리</button><small v-else class="manager-notification-read">✓ 읽음</small>
           </li>
           <li v-if="!data.items.length" class="manager-notification-empty">표시할 알림이 없습니다.</li>
@@ -1292,6 +1304,7 @@ defineExpose({ open, load })
             </button>
           </div>
           <template v-if="mode!=='detail'&amp;&amp;mode!=='video'">
+            <p v-if="resourceId==='facilities'&&mode==='action'&&/\/(block|release)$/.test(action?.path||'')" class="service-message">경찰과 소방의 통제 안내 기록을 함께 만듭니다. 잔류차량 전달서는 차량 확인 후 ‘잔류차량 소방 이관’에서 별도로 작성하세요.</p>
             <p v-if="mode==='remove'">선택한 항목을 삭제하시겠습니까?</p>
             <p v-else-if="mode==='action'&&!formFields.length">선택한 항목에 대해 {{action?.label}} 작업을 진행하시겠습니까?</p>
             <div v-if="resourceId==='customers'&amp;&amp;mode==='edit'" class="service-message">

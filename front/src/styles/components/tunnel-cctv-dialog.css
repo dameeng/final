@@ -1,4 +1,14 @@
 .tunnel-cctv-trigger { white-space: nowrap; }
+:global(#app .service-app-layout button.tunnel-cctv-trigger.tunnel-cctv-trigger--app) {
+  display: flex; align-items: center; justify-content: center;
+  box-sizing: border-box; width: 100%; min-height: 48px; margin: 12px 0 20px; padding: 12px 16px;
+  appearance: none; border: 1px solid var(--r-line,#dbe3ed); border-radius: 10px;
+  background: var(--r-surface,#fff); color: var(--r-brand,#2167bb);
+  font: inherit; font-size: 14px; font-weight: 600; line-height: 1.5; cursor: pointer;
+}
+:global(#app .service-app-layout button.tunnel-cctv-trigger.tunnel-cctv-trigger--app:hover) { background: var(--r-soft,#f1f5fb); border-color: var(--r-brand,#2167bb); }
+:global(#app .service-app-layout button.tunnel-cctv-trigger.tunnel-cctv-trigger--app:focus-visible) { outline: 2px solid var(--r-brand,#2167bb); outline-offset: 3px; }
+:global(#app .service-app-layout button.tunnel-cctv-trigger.tunnel-cctv-trigger--app:active) { background: var(--r-soft,#f1f5fb); }
 .tunnel-cctv-modal { width: min(720px, calc(100vw - 32px)); padding: 28px; overflow: auto; }
 .tunnel-cctv-modal>header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--r-line,#dbe3ed); }
 .tunnel-cctv-eyebrow { margin: 0 0 6px; color: var(--r-brand,#2167bb); font-size: 12px; font-weight: 700; }
@@ -17,6 +27,14 @@
 .tunnel-cctv-modal>footer { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--r-line,#dbe3ed); }
 .tunnel-cctv-modal>footer p { margin: 0 0 14px; font-size: 12px; color: var(--r-muted,#5e738e); }
 .tunnel-cctv-modal>footer>div { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; }
+.tunnel-cctv-modal--app { box-sizing: border-box; right: auto; margin-left: 0; margin-right: 0; max-width: calc(100vw - 24px); max-height: calc(100dvh - 24px); padding: 20px; overscroll-behavior: contain; }
+.tunnel-cctv-modal--app h2 { font-size: 19px; line-height: 1.4; }
+.tunnel-cctv-modal--app>header { gap: 12px; padding-bottom: 16px; }
+.tunnel-cctv-modal--app .tunnel-cctv-close { flex-shrink: 0; }
+.tunnel-cctv-modal--app .tunnel-cctv-source-note { margin: 16px 0; padding: 12px; line-height: 1.65; }
+.tunnel-cctv-modal--app .tunnel-cctv-select select { min-width: 0; max-width: 100%; }
+.tunnel-cctv-modal--app>footer { margin-top: 16px; padding-top: 14px; }
+.tunnel-cctv-modal--app>footer>div { display: grid; grid-template-columns: 1fr; gap: 8px; }
 @media (max-width:600px) {
   .tunnel-cctv-modal { padding: 20px; }
   .tunnel-cctv-modal h2 { font-size: 19px; }
