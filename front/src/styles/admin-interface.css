@@ -155,6 +155,18 @@
 #app .admin-interface .bell-pop .time { color:var(--r-muted); }
 #app .admin-interface :is(.side,.backend-menu,.admin-app-menu,.manager-app-drawer) { background-color:var(--r-surface); color:var(--r-ink); border-color:var(--r-line); }
 #app .admin-interface :is(.side,.backend-menu,.admin-app-menu,.manager-app-drawer) a[aria-current=page] { background:var(--r-selected) !important; color:var(--r-accent) !important; border-color:var(--r-line); box-shadow:inset 3px 0 var(--r-accent); border-radius:8px; }
+#app .admin-interface .sidebar-group>summary.sidebar-group-label {
+  color:var(--r-muted);
+}
+#app .admin-interface .sidebar-group[open]>summary.sidebar-group-label { color:var(--r-ink); }
+#app .admin-interface .sidebar-group>summary.sidebar-group-label:is(:hover,:focus-visible) {
+  background:color-mix(in srgb,var(--r-selected) 70%,var(--r-surface));
+  color:var(--r-ink);
+}
+#app .admin-interface .sidebar-group>summary.sidebar-group-label:focus-visible {
+  outline:2px solid var(--r-accent);
+  outline-offset:-2px;
+}
 #app .admin-interface .service-message { background:var(--r-selected); color:var(--r-brand); border-radius:10px; }
 #app .admin-interface .service-error { color:var(--admin-alert-ink); background:var(--admin-alert-surface); border-color:color-mix(in srgb,var(--admin-alert-ink) 35%,var(--admin-alert-surface)); }
 

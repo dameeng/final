@@ -47,6 +47,16 @@
   border-color: #225f9b;
   color: #225f9b;
 }
+#app .customer-shell .customer-footer-app {
+  flex-shrink: 0;
+  min-height: 44px;
+  background: var(--r-primary);
+  color: var(--r-on-brand,#fff);
+  border-color: transparent;
+  box-shadow: 0 3px 8px #1e56a321;
+  white-space: nowrap;
+}
+#app .customer-shell .customer-footer-app:hover { filter:brightness(1.08); }
 .customer-footer-app>span:last-child {
   margin-left: 12px;
 }
@@ -105,6 +115,7 @@
     flex-direction: column;
     gap: 14px;
   }
+  .customer-footer-app { align-self:flex-end; }
   .customer-footer-brand>a {
     font-size: 22px;
   }

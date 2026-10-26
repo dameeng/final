@@ -64,7 +64,7 @@ const steps = computed(() =>
     <section class="app-guide-hero" aria-labelledby="app-guide-title">
       <div class="app-guide-hero-copy"
         ><p class="app-guide-kicker">ROUTEL APP · 앱 소개</p
-        ><h1 id="app-guide-title">비 오는 날에도,<br />안전한 길을 먼저.</h1
+        ><h1 id="app-guide-title">비 오는 날에도,<br /><span>안전한 길을 먼저.</span></h1
         ><p class="app-guide-lead"
           >매일 지나가는 지하차도,<br />이제 출발 전에 ROUTEL로 확인하세요.</p
         ><div class="app-guide-actions"
@@ -78,7 +78,8 @@ const steps = computed(() =>
         ></div
       >
    <div class="app-guide-visual"
-        ><div class="app-guide-orbit orbit-one"></div><div class="app-guide-orbit orbit-two"></div
+        ><div class="app-guide-brand-scene" aria-hidden="true"><img src="/brand/routel-coastal-underpass.png" width="1774" height="887" alt="" loading="lazy" /><span></span></div>
+        <svg class="app-guide-brand-route" viewBox="0 0 420 470" fill="none" aria-hidden="true"><path d="M12 364H66C102 364 112 328 112 287V151C112 102 143 78 185 78H408" stroke="currentColor" stroke-width="2" stroke-dasharray="4 8" /><circle cx="66" cy="364" r="6" fill="currentColor" /><circle cx="365" cy="78" r="6" fill="currentColor" /></svg
         ><div class="app-guide-floating-note"
           ><span class="app-guide-status-dot"></span> 이동 전 확인하는 작은 습관</div
         ><div class="app-guide-phone" aria-label="ROUTEL 앱 화면 예시"
@@ -121,7 +122,9 @@ const steps = computed(() =>
                 <rect x="150" y="20" width="25" height="40" rx="7" />
                 <rect x="65" y="210" width="25" height="32" rx="7" />
               </g>
-              <circle cx="110" cy="160" r="22" fill="#16805d" opacity=".12" />
+              <path class="app-guide-route-glow" d="m-20 200 320-120" fill="none" stroke="#72b8ed" stroke-width="3" pathLength="1000" stroke-dasharray="70 930" stroke-linecap="round" />
+              <circle class="app-guide-map-beacon" cx="110" cy="160" r="22" fill="#16805d" opacity=".12" />
+              <circle class="app-guide-map-beacon app-guide-map-beacon-next" cx="70" cy="67" r="18" fill="#16805d" opacity=".12" />
               <circle cx="110" cy="160" r="11" fill="#16805d" stroke="white" stroke-width="4" />
               <circle cx="195" cy="105" r="11" fill="#ef9a32" stroke="white" stroke-width="4" />
               <circle cx="70" cy="67" r="10" fill="#16805d" stroke="white" stroke-width="4" />

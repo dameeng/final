@@ -234,6 +234,17 @@
   bottom: 72px;
   font-size: 13px;
 }
+.legacy-live-map .mapw .map-left-tools>.alertbar {
+  position: static;
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 3px 12px #1b34451c;
+  line-height: 1.6;
+  align-items: flex-start;
+}
+.legacy-live-map .map-left-tools>.alertbar strong { flex-shrink: 0; }
+.legacy-live-map .map-left-tools>.alertbar span { min-width: 0; overflow-wrap: anywhere; }
 .legacy-live-map .lst .it>span:last-child {
   min-width: 0;
 }

@@ -24,25 +24,38 @@
   max-width: calc(100% - 28px);
 }
 .map-weather-marker {
-  display: flex;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 32px minmax(0,1fr) 12px;
+  width: 136px;
+  height: 68px;
+  flex-shrink: 0;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   padding: 9px 12px;
   background: #fff;
   border: 1px solid #d5dce3;
   border-radius: 12px;
   box-shadow: 0 3px 12px #1b34451c;
   color: #243447;
-  min-height: 60px;
+  min-height: 68px;
+  font: inherit;
 }
+.map-weather-chevron { display: grid; place-items: center; width: 12px; height: 12px; transition: transform .18s ease; }
+.map-weather-chevron.is-open { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) { .map-weather-chevron { transition: none; } }
 .map-weather-marker>span:nth-child(2) {
   display: flex;
   flex-direction: column;
   gap: 3px;
   text-align: left;
+  min-width: 0;
 }
 .map-weather-marker strong {
   font-size: 19px;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 .map-weather-marker small {
   font-size: 11px;
@@ -222,8 +235,10 @@
     padding: 0 12px;
   }
   .map-weather-marker {
+    width: 128px;
+    height: 60px;
     padding: 6px 8px;
-    min-height: 48px;
+    min-height: 60px;
     gap: 6px;
   }
   .map-weather-marker strong {

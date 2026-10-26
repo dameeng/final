@@ -3,6 +3,7 @@ dist/
 .env
 .env.local
 test-results/
+.routel-data/
 
 .backend-reference/
 .backend-audit/
@@ -21,3 +22,7 @@ ROUTEL-PWA/
 # Local reference inspection tools and generated design previews
 .codex/pdf-tools/
 tests/design-preview/
+
+# Runtime mascot videos are required by the frontend.
+!public/brand/routel-chat-mascot-transparent.webm
+!public/brand/routel-ru-welcome-clean-v2.webm

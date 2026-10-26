@@ -148,7 +148,7 @@ onBeforeUnmount(() => {
         <strong>{{show(weather?.temperature,'°')}}</strong>
         <small>{{loading?'조회 중':weather?.condition||'날씨'}}</small>
       </span>
-      <span aria-hidden="true">{{opened?'⌄':'⌃'}}</span>
+      <span class="map-weather-chevron" :class="{'is-open':opened}" aria-hidden="true"><svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m4 10 4-4 4 4" /></svg></span>
     </button>
   </div>
 </template>

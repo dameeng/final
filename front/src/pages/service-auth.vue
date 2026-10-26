@@ -368,6 +368,11 @@ async function submit() {
           }
         : Object.fromEntries(signupFields.map((field) => [field.key, values[field.key] || null]))
       await backend(base.value + '/signup', { method: 'POST', body })
+      if (!manager.value) {
+        clearTimers()
+        await router.replace(authLink('login'))
+        return
+      }
       if (manager.value) approvalEstimate.value = Date.now() + 60_000
       message.value = manager.value
         ? '가입 신청이 접수되었습니다. 약 1분 후 자동 승인되며 서버 처리에 따라 더 걸릴 수 있습니다.'
@@ -429,7 +434,7 @@ async function resend() {
 </script>
 <template>
   <component :is="manager?BackendLayout:'div'"
-    ><section class="service-workspace auth-service"
+    ><section class="service-workspace auth-service" :class="{'admin-login-card':manager&&kind==='login'}"
       ><h1
         >{{manager?'관리자':'고객'}} {{kind==='login'?'로그인':kind==='signup'?'회원가입':'비밀번호 재설정'}}</h1
       ><p v-if="kind==='signup'" class="required-guide"

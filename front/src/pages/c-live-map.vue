@@ -1099,7 +1099,15 @@ function openSelectedPopup() {
   const heading = document.createElement('strong')
   heading.className = 'routel-map-popup__title'
   heading.textContent = row.name
-  content.append(heading)
+  const header = document.createElement('header'), close = document.createElement('button')
+  header.className = 'routel-map-popup__header'
+  close.type = 'button'
+  close.className = 'routel-map-popup__close'
+  close.textContent = '×'
+  close.setAttribute('aria-label', '시설 정보 닫기')
+  close.onclick = dismissFacilityPopup
+  header.append(heading, close)
+  content.append(header)
   const status = document.createElement('p')
   status.className = 'routel-map-popup__row'
   const label = document.createElement('span')
@@ -1341,6 +1349,7 @@ async function selectCluster(cluster: any) {
     dot.setAttribute('aria-hidden', 'true')
     name.textContent = row.name
     state.textContent = displayState(row)
+    state.dataset.state = stateLabel(row)
     button.append(dot, name, state)
     button.onclick = () => {
       closeClusterPopup()
@@ -1552,7 +1561,7 @@ async function initializeMap() {
           })
           maps.event.addListener(clusterer, 'clusterclick', selectCluster)
           maps.event.addListener(clusterer, 'clustered', styleClusters)
-          infoWindow = new maps.InfoWindow({ removable: true, disableAutoPan: true, zIndex: 10 })
+          infoWindow = new maps.InfoWindow({ removable: false, disableAutoPan: true, zIndex: 10 })
           clusterInfoWindow = new maps.InfoWindow({
             removable: false,
             disableAutoPan: false,
@@ -1859,12 +1868,14 @@ onBeforeUnmount(() => {
             @click="locateUser"
             ><UiIcon name="location" /></button
         ></div></div>
-    <div class="map-left-tools"><MapWeatherWidget /></div>
+    <div class="map-left-tools">
+      <div v-if="selected&&selected.status==='통제'" class="alertbar" role="status">
+        <strong>■ 통제</strong><span>{{selected.name}} 통제 중입니다.</span>
+      </div>
+      <MapWeatherWidget />
+    </div>
 
     <div v-if="mapError" class="map-error-note" role="status">{{mapError}}</div>
-    <div v-if="selected&&selected.status==='통제'" class="alertbar" role="status"
-          ><strong>■ 통제</strong><span>{{selected.name}} 통제 중입니다.</span></div
-        >
       </section>
    <aside
         v-if="selected"
