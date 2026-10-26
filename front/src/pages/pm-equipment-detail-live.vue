@@ -7,10 +7,11 @@ const appPath = (path: string) => managerAppPath(path, route.path)
 //  GET /api/pm/equipments/{id}/sensor-trend    원인 센서 1시간 평균 + 평소 범위(처음 28일 평균 ± 2σ)
 //  GET /api/pm/equipments/{id}/thresholds      기준 수정자 + 변경 이력
 //  GET /api/pm/events, /api/pm/equipments      열린 점검의 발생 이유, 이전/다음 설비 순서
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import BackendLayout from '../components/BackendLayout.vue'
 import RiskLevelBadge from '../components/RiskLevelBadge.vue'
+import PmRiskGauge from '../components/PmRiskGauge.vue'
 import PmActionModal from '../components/PmActionModal.vue'
 import RoadEquipmentPanel from '../components/RoadEquipmentPanel.vue'
 import { backend, type PageData } from '../services/backend'
@@ -40,6 +41,15 @@ type Trend = { column: string; points: Point[]; band: { low: number; high: numbe
 
 const roadPanel = ref<InstanceType<typeof RoadEquipmentPanel>>()
 const roadRefresh = ref(0)
+const detailRoot=ref<HTMLElement>()
+let cardObserver:IntersectionObserver|undefined
+watch(detailRoot,root=>{
+  cardObserver?.disconnect()
+  if(!root||matchMedia('(prefers-reduced-motion: reduce)').matches)return
+  cardObserver=new IntersectionObserver(entries=>{
+    for(const entry of entries)if(entry.isIntersecting){entry.target.classList.add('pm-card-visible');cardObserver?.unobserve(entry.target)}
+  },{threshold:.08})
+})
 const route = useRoute(),
   router = useRouter(),
   id = computed(() => String(route.query.id || '')),
@@ -51,6 +61,7 @@ const route = useRoute(),
   column = ref(''),
   trends = ref<Trend[]>([]),
   trendError = ref(''),
+  trendLoading = ref(false),
   loading = ref(false),
   error = ref(''),
   modal = ref<InstanceType<typeof PmActionModal>>()
@@ -130,6 +141,8 @@ async function loadTrend() {
   const current = new AbortController()
   trendController = current
   trendError.value = ''
+  trendLoading.value = true
+  trends.value = []
   const cols = eq.value.type === 'DISPLAY' && column.value === 'temperature_c' ? ['temperature_c', 'ambient_c'] : [column.value]
   try {
     const got = await Promise.all(
@@ -146,7 +159,7 @@ async function loadTrend() {
       trends.value = []
       trendError.value = (e as Error).message
     }
-  }
+  } finally { if(!current.signal.aborted)trendLoading.value=false }
 }
 
 let refreshTimer: ReturnType<typeof setTimeout> | undefined
@@ -166,6 +179,7 @@ watch(column, (next, prev) => {
   if (prev) void loadTrend()
 })
 onBeforeUnmount(() => {
+  cardObserver?.disconnect()
   clearTimeout(refreshTimer)
   controller?.abort()
   trendController?.abort()
@@ -220,7 +234,9 @@ const trendChart = computed(() => {
   const t0 = Math.min(...all.map((p) => p.t)), t1 = Math.max(...all.map((p) => p.t))
   const x = (t: number) => PL + ((t - t0) / (t1 - t0 || 1)) * TPW
   const y = (v: number) => PT + TPH - ((v - axis.min) / (axis.max - axis.min)) * TPH
-  const main = series[0]!, last = main[main.length - 1]!
+  const main = series[0]!
+  if(!main?.length)return null
+  const last = main[main.length - 1]!
   return {
     paths: series.map((s) => s.map((p, i) => `${i ? 'L' : 'M'}${x(p.t).toFixed(1)},${y(p.v).toFixed(1)}`).join(' ')),
     band: band
@@ -232,7 +248,9 @@ const trendChart = computed(() => {
       : null,
     yTicks: axis.ticks.map((v) => ({ y: y(v), label: axis.format(v) })),
     xTicks: timeTicks(t0, t1).map((t) => ({ x: x(t.at), label: t.label })),
-    last: { x: x(last.t), y: y(last.v), label: axis.format(last.v, 1) + unit.value },
+    last: { x: x(last.t), y: y(last.v), label: axis.format(last.v, 1) + unit.value, at:new Date(last.t).toISOString() },
+    count:main.length,
+    outside:band?last.v<band.low||last.v>band.high:null,
   }
 })
 const unit = computed(() => PM_SENSOR_UNITS[column.value] || '')
@@ -275,15 +293,22 @@ function timeTicks(t0: number, t1: number) {
   return out
 }
 const tabLabel = computed(() => tabs.value.find(([c]) => c === column.value)?.[1] || column.value)
+watch([data,trends],async()=>{
+  await nextTick()
+  detailRoot.value?.querySelectorAll('.card:not([data-pm-observed])').forEach(card=>{
+    card.setAttribute('data-pm-observed','true');cardObserver?.observe(card)
+  })
+},{flush:'post'})
 </script>
 <template>
   <BackendLayout class="page-pm-equipment-detail">
-    <section class="service-workspace pm-detail">
+    <section ref="detailRoot" class="service-workspace pm-detail">
       <div class="crumb">
         <span><RouterLink :to="appPath('/pm-equipment')">예지보전 &gt; 설비</RouterLink> &gt; {{eq.name||'설비 상세'}}</span>
       </div>
       <div class="page-head service-heading">
         <div>
+          <p class="pm-eyebrow">PREDICTIVE MAINTENANCE</p>
           <h1>{{eq.name||'설비 상세'}} <RiskLevelBadge v-if="eq.level" :value="eq.level" /></h1>
           <div class="sub">{{pmLabel(PM_TYPES,eq.type,'')}}<template v-if="eq.underpassName"> · {{eq.underpassName}}</template></div>
         </div>
@@ -314,18 +339,14 @@ const tabLabel = computed(() => tabs.value.find(([c]) => c === column.value)?.[1
           </section>
         </template>
         <template v-else>
-        <div class="pm-grid">
-          <section class="card">
-            <h2>위험 점수</h2>
-            <strong class="pm-big" :class="'pm-big--'+String(eq.level||'').toLowerCase()">
-              {{scoreValue==null?'—':scoreValue.toFixed(1)}}<small> / 100</small>
-            </strong>
-            <div class="pm-gauge" :aria-label="'주의 '+data.cautionMin+', 위험 '+data.dangerMin">
-              <b :style="{width:Math.max(0,Math.min(100,scoreValue||0))+'%'}" :class="'pm-gauge--'+String(eq.level||'').toLowerCase()"></b>
-              <i :style="{left:data.cautionMin+'%'}"></i><i class="danger" :style="{left:data.dangerMin+'%'}"></i>
-            </div>
-            <div class="pm-gauge-labels"><span :style="{left:data.cautionMin+'%'}">주의 {{data.cautionMin}}</span><span :style="{left:data.dangerMin+'%'}">위험 {{data.dangerMin}}</span></div>
-            <dl class="service-detail">
+        <div class="pm-grid pm-overview-grid">
+          <section class="card pm-risk-card">
+            <div class="pm-section-heading"><h2>설비 위험도</h2><RiskLevelBadge v-if="eq.level" :value="eq.level" /></div>
+            <PmRiskGauge :value="scoreValue" :level="eq.level" :caution="data.cautionMin" :danger="data.dangerMin" />
+          </section>
+          <section class="card pm-facts-card">
+            <div class="pm-section-heading"><h2>설비 상태</h2><span class="pm-period">최근 관측</span></div>
+            <dl class="service-detail pm-facts">
               <dt>이상 시작</dt><dd>{{data.anomalyStartedAt?displayDate(data.anomalyStartedAt):'이상 없음'}}</dd>
               <dt>최근 점수</dt><dd>{{data.scoredAt?displayDate(data.scoredAt):'아직 없음'}}</dd>
               <template v-if="extra.suspectedCause"><dt>의심 원인</dt><dd>{{pmLabel(PM_CAUSES,extra.suspectedCause)}}</dd></template>
@@ -333,14 +354,14 @@ const tabLabel = computed(() => tabs.value.find(([c]) => c === column.value)?.[1
               <dt>모델</dt><dd class="pm-mono">{{data.modelVersion||'—'}}</dd>
             </dl>
           </section>
-          <section class="card">
-            <h2>점검</h2>
+          <section class="card pm-inspection-card">
+            <div class="pm-section-heading"><h2>점검 현황</h2><span class="pm-period">점검 관리</span></div>
             <p v-if="eq.openEventId" class="pm-open-event">
               <span class="pm-chip pm-chip--open">{{pmLabel(PM_EVENT_STATUS,eq.openEventStatus)}}</span>
               <template v-if="openEvent">{{pmLabel(PM_TRIGGERS,openEvent.triggerType)}} · {{displayDate(openEvent.createdAt)}}</template>
             </p>
-            <p v-else class="pm-muted">처리 중인 점검이 없어요.</p>
-            <dl class="service-detail">
+            <p v-else class="pm-inspection-empty">진행 중인 점검 없음</p>
+            <dl class="service-detail pm-facts">
               <dt>최근 점검일</dt><dd>{{data.lastCheckedAt?displayDate(data.lastCheckedAt):'점검 기록 없음'}}</dd>
               <dt>단계 기준</dt><dd>주의 {{data.cautionMin}} · 위험 {{data.dangerMin}}</dd>
               <template v-if="threshold?.threshold?.updatedAt">
@@ -356,14 +377,15 @@ const tabLabel = computed(() => tabs.value.find(([c]) => c === column.value)?.[1
           </section>
         </div>
 
-        <div class="pm-grid">
-          <section class="card">
-            <h2>상위 원인 3개</h2>
+        <div class="pm-grid pm-analysis-grid">
+          <section class="card pm-causes-card">
+            <div class="pm-section-heading"><h2>주요 위험 원인</h2><span class="pm-period">상위 {{Math.min(data.topCauses?.length||0,3)}}개</span></div>
             <p v-if="!data.topCauses?.length" class="pm-muted">눈에 띄는 원인이 없어요.</p>
             <ol class="pm-causes">
               <li v-for="(c,i) in data.topCauses" :key="c.key">
+                <span class="pm-cause-rank">{{String(i+1).padStart(2,'0')}}</span>
                 <div>
-                  {{c.label}} <b>{{num(c.value)}}{{c.unit}}</b> <small>평소 {{num(c.median)}}{{c.unit}}</small>
+                  <div class="pm-cause-title"><span>{{c.label}}</span><b>{{num(c.value)}}{{c.unit}}</b></div><small>평소 {{num(c.median)}}{{c.unit}}</small>
                   <span class="pm-meter"><b :style="{width:c.contribution+'%'}" :class="{first:i===0}"></b></span>
                 </div>
                 <strong :class="{first:i===0}">+{{num(c.points,1)}}점</strong>
@@ -371,8 +393,8 @@ const tabLabel = computed(() => tabs.value.find(([c]) => c === column.value)?.[1
             </ol>
             <p v-if="data.topCauses?.length" class="pm-muted small">점수 {{scoreValue?.toFixed(1)}} 중 각 원인이 끌어올린 몫</p>
           </section>
-          <section class="card">
-            <h2>7일 위험 점수</h2>
+          <section class="card pm-score-history">
+            <div class="pm-section-heading"><h2>위험 점수 추이</h2><span class="pm-period">최근 7일</span></div>
             <svg v-if="scoreChart.path" class="pm-chart" :viewBox="`0 0 ${CW} ${CH}`" role="img" aria-label="최근 7일 위험 점수 추이">
               <rect :x="PL" :y="PT" :width="PW" :height="scoreChart.y(data.dangerMin)-PT" class="zone-danger" />
               <rect :x="PL" :y="scoreChart.y(data.dangerMin)" :width="PW" :height="scoreChart.y(data.cautionMin)-scoreChart.y(data.dangerMin)" class="zone-caution" />
@@ -419,8 +441,8 @@ const tabLabel = computed(() => tabs.value.find(([c]) => c === column.value)?.[1
           </div>
         </section>
 
-        <section v-if="extra.sensors?.length" class="card">
-          <h2>센서 현재값</h2>
+        <section v-if="extra.sensors?.length" class="card pm-sensor-table-card">
+          <div class="pm-section-heading"><h2>센서 현재값</h2><span class="pm-period">{{extra.sensors.length}}개 센서</span></div>
           <div class="service-table-wrap">
             <table class="service-table">
               <thead><tr><th>센서</th><th>지금</th><th>평소</th><th>벗어난 정도</th><th>상태</th></tr></thead>
@@ -435,19 +457,22 @@ const tabLabel = computed(() => tabs.value.find(([c]) => c === column.value)?.[1
           </div>
         </section>
 
-        <section class="card">
-          <h2>원인 센서 · 최근 7일</h2>
-          <nav class="tabs" aria-label="센서">
-            <button v-for="[value,label] in tabs" :key="value" type="button" :class="{'is-current':column===value}" @click="column=value">{{label}}</button>
+        <section class="card pm-sensor-card" :aria-busy="trendLoading">
+          <div class="pm-section-heading"><div><p class="pm-eyebrow">SENSOR TREND</p><h2>원인 센서 추이</h2><p class="pm-muted small">최근 7일 · 1시간 평균값과 평소 범위 비교</p></div><span class="pm-period">최근 7일</span></div>
+          <nav class="tabs pm-sensor-tabs" aria-label="센서">
+            <button v-for="[value,label] in tabs" :key="value" type="button" :class="{'is-current':column===value}" :aria-pressed="column===value" @click="column=value">{{label}}</button>
           </nav>
           <p v-if="trendError" role="alert" class="service-error">{{trendError}}</p>
+          <div v-if="trendLoading" class="pm-trend-loading" role="status">센서 추이를 불러오고 있습니다.</div>
+          <div v-if="trendChart" class="pm-sensor-layout">
+          <div class="pm-sensor-plot">
           <div v-if="trendChart" class="pm-legend">
             <span><i class="sw sw-sensor"></i>{{trends.length>1?'본체 온도':tabLabel}}</span>
             <span v-if="trends.length>1"><i class="sw sw-second"></i>외기 온도</span>
             <span v-if="trendChart.band"><i class="sw sw-band"></i>평소 범위 {{trendChart.band.label}}</span>
-            <span class="pm-legend-now">지금 <b>{{trendChart.last.label}}</b></span>
           </div>
-          <svg v-if="trendChart" class="pm-chart pm-chart--wide" :viewBox="`0 0 ${TCW} ${TCH}`" role="img" :aria-label="tabLabel+' 최근 7일 추이'">
+          <div class="pm-chart-scroll" tabindex="0" role="region" aria-label="센서 추이 그래프. 좁은 화면에서는 가로로 스크롤할 수 있습니다.">
+          <svg v-if="trendChart" :key="column" class="pm-chart pm-chart--wide" :viewBox="`0 0 ${TCW} ${TCH}`" role="img" :aria-label="tabLabel+' 최근 7일 추이'">
             <rect v-if="trendChart.band" :x="PL" :y="trendChart.band.y" :width="TPW" :height="trendChart.band.h" class="zone-normal" />
             <g v-for="t in trendChart.yTicks" :key="'y'+t.y">
               <line :x1="PL" :x2="PL+TPW" :y1="t.y" :y2="t.y" class="grid-h" />
@@ -458,10 +483,18 @@ const tabLabel = computed(() => tabs.value.find(([c]) => c === column.value)?.[1
               <text :x="t.x" :y="TCH-8" text-anchor="middle" class="tick">{{t.label}}</text>
             </g>
             <text v-if="unit" :x="PL-8" y="12" text-anchor="end" class="tick unit">({{unit}})</text>
-            <path v-for="(d,i) in trendChart.paths" :key="i" :d="d" :class="i?'line-second':'line-sensor'" />
-            <circle :cx="trendChart.last.x" :cy="trendChart.last.y" r="4" class="dot-sensor" />
+            <path v-for="(d,i) in trendChart.paths" :key="i" :d="d" pathLength="1" :class="i?'line-second':'line-sensor'" />
+            <circle :cx="trendChart.last.x" :cy="trendChart.last.y" r="5" class="dot-sensor"><title>{{displayDate(trendChart.last.at)}} · {{trendChart.last.label}}</title></circle>
           </svg>
-          <p v-else-if="!trendError" class="pm-muted">센서 기록을 불러오는 중이거나 아직 없어요.</p>
+          </div>
+          </div>
+          <aside class="pm-sensor-summary" aria-label="선택한 센서 요약">
+            <span class="pm-muted small">{{tabLabel}} · 최근 관측값</span><strong class="pm-reading">{{trendChart.last.label}}</strong>
+            <span class="pm-sensor-state" :class="{'is-outside':trendChart.outside,'is-unknown':trendChart.outside===null}">{{trendChart.outside===null?'기준 데이터 없음':trendChart.outside?'평소 범위 벗어남':'평소 범위 이내'}}</span>
+            <dl><template v-if="trendChart.band"><dt>평소 범위</dt><dd>{{trendChart.band.label}}</dd></template><dt>관측 시각</dt><dd>{{displayDate(trendChart.last.at)}}</dd><dt>관측 구간</dt><dd>{{trendChart.count}}개</dd></dl>
+          </aside>
+          </div>
+          <p v-if="!trendChart&&!trendLoading&&!trendError" class="pm-muted">아직 센서 기록이 없어요.</p>
           <p v-if="trendChart" class="pm-muted small">
             <template v-if="trends.length>1">1시간 평균 · 두 선 사이가 벌어질수록 본체가 평소보다 뜨거워요</template>
             <template v-else-if="trendChart.band">1시간 평균 · 평소 범위는 이 설비의 처음 28일 평균 ± 2σ</template>
@@ -469,11 +502,11 @@ const tabLabel = computed(() => tabs.value.find(([c]) => c === column.value)?.[1
           </p>
         </section>
 
-        <div class="pm-grid">
-          <section class="card">
-            <h2>최근 점검 이력</h2>
+        <div class="pm-grid pm-history-grid">
+          <section class="card pm-history-card">
+            <div class="pm-section-heading"><h2>최근 점검 이력</h2><span class="pm-period">{{data.recentActions?.length||0}}건</span></div>
             <p v-if="!data.recentActions?.length" class="pm-muted">아직 점검 기록이 없어요. 점검 처리에서 등록하면 최근 5건이 여기에 보여요.</p>
-            <ul v-else class="pm-list">
+            <ul v-else class="pm-list pm-timeline">
               <li v-for="a in data.recentActions" :key="a.actionId">
                 <small>{{displayDate(a.createdAt)}} · {{a.managerName||'—'}}</small>
                 <span>{{a.content}}</span>
@@ -481,10 +514,11 @@ const tabLabel = computed(() => tabs.value.find(([c]) => c === column.value)?.[1
             </ul>
             <RouterLink v-if="data.recentActions?.length" :to="{path:appPath('/pm-history'),query:{equipId:String(eq.equipId)}}">점검 이력 전체 →</RouterLink>
           </section>
-          <section class="card">
-            <h2>단계 기준 변경 이력</h2>
-            <p v-if="!threshold?.history?.length" class="pm-muted">변경 기록 없음 · 지금 기준 주의 {{data.cautionMin}} / 위험 {{data.dangerMin}}</p>
-            <ul v-else class="pm-list">
+          <section class="card pm-history-card">
+            <div class="pm-section-heading"><h2>단계 기준 변경 이력</h2><span class="pm-period">{{threshold?.history?.length||0}}건</span></div>
+            <div class="pm-current-thresholds"><span>현재 적용 기준</span><b>주의 <strong>{{data.cautionMin}}</strong></b><b>위험 <strong>{{data.dangerMin}}</strong></b></div>
+            <p v-if="!threshold?.history?.length" class="pm-muted pm-history-empty">기준 변경 기록이 없습니다.</p>
+            <ul v-else class="pm-list pm-timeline">
               <li v-for="(h,i) in threshold.history" :key="i">
                 <small>{{displayDate(h.changedAt)}} · {{h.changedByName||'—'}}</small>
                 <span>{{h.level}} {{h.oldMin??'—'}} → {{h.newMin}}</span>
@@ -572,3 +606,4 @@ const tabLabel = computed(() => tabs.value.find(([c]) => c === column.value)?.[1
   .pm-feature { grid-template-columns: 1fr; gap: 4px; }
 }
 </style>
+<style scoped src="../styles/pm-detail-polish.css"></style>
