@@ -234,6 +234,8 @@ public class ControlServiceImpl implements ControlService {
         ControlNoticeData notice = buildNotice(underpass, event, null, operatorId, null);
         CtrlTransfer transfer = saveTransfer(event.getId(), TransferAgency.POLICE, null, operatorId,
                 snapshotOf(notice, waterCm, auto));
+        saveTransfer(event.getId(), TransferAgency.FIRE, "통제정보 전달 (잔류차량은 별도 수동 이관)", operatorId,
+                snapshotOf(notice, waterCm, auto));
         return new BlockOutcome(event, transfer, notice);
     }
 
@@ -285,6 +287,8 @@ public class ControlServiceImpl implements ControlService {
         ControlNoticeData notice = buildNotice(underpass, event, blockEvent, loginUser.id(), null);
         CtrlTransfer transfer = saveTransfer(event.getId(), TransferAgency.POLICE, null, loginUser.id(),
                 snapshotOf(notice, null, false));
+        saveTransfer(event.getId(), TransferAgency.FIRE, "통제 해제정보 전달", loginUser.id(),
+                snapshotOf(notice, null, false));
         LocalDateTime now = transfer.getCreatedAt() != null ? transfer.getCreatedAt() : LocalDateTime.now();
         byte[] pdf = pdfGenerator.generatePolicePdf(notice);
 
@@ -309,15 +313,22 @@ public class ControlServiceImpl implements ControlService {
             throw new BusinessException(HttpStatus.BAD_REQUEST, "이 지하차도의 이벤트가 아닙니다. eventId=" + request.getEventId());
         }
 
+        if (sourceEvent.getEventType() != UnderpassEventType.BLOCK) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "차단 이벤트만 잔류차량 이관에 사용할 수 있습니다.");
+        }
+        List<String> cars = request.getCarNums().stream().map(String::trim).distinct().toList();
+        if (cars.stream().anyMatch(String::isBlank)) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "빈 차량번호는 이관할 수 없습니다.");
+        }
         // 이관 기록 저장
         Map<String, Object> fireSnap = new LinkedHashMap<>();
-        fireSnap.put("carNums", request.getCarNums().stream().map(String::trim).collect(Collectors.toList()));
+        fireSnap.put("carNums", cars);
         fireSnap.put("memo", request.getMemo());
         CtrlTransfer transfer = saveTransfer(request.getEventId(), TransferAgency.FIRE, request.getMemo(), loginUser.id(),
                 toJson(fireSnap));
 
         // 차량번호 저장
-        for (String carNum : request.getCarNums()) {
+        for (String carNum : cars) {
             CtrlTransferCar car = new CtrlTransferCar();
             car.setCtrlTransferId(transfer.getId());
             car.setCarNum(carNum.trim());
@@ -328,7 +339,7 @@ public class ControlServiceImpl implements ControlService {
         ManagerInfo mgr = managerInfo(loginUser.id());
         LocalDateTime now = transfer.getCreatedAt() != null ? transfer.getCreatedAt() : LocalDateTime.now();
         byte[] pdf = pdfGenerator.generateFirePdf(
-                underpass.getName(), request.getCarNums(),
+                underpass.getName(), cars,
                 mgr.name(), mgr.regionName(),
                 now, request.getMemo());
 
@@ -375,7 +386,7 @@ public class ControlServiceImpl implements ControlService {
         byte[] pdf;
         String filename;
 
-        if (transfer.getAgency() == TransferAgency.POLICE) {
+        if (transfer.getAgency() == TransferAgency.POLICE || isControlNotice(transfer)) {
             String eventTypeLabel = event.getEventType() == UnderpassEventType.BLOCK ? "차단" : "해제";
 
             // 해제 이벤트라면 그 해제 직전의 차단 이벤트를 찾는다 (해제 후에는 current_block_event_id 가 비어 있다)
@@ -388,7 +399,7 @@ public class ControlServiceImpl implements ControlService {
             pdf = pdfGenerator.generatePolicePdf(applySnapshot(
                     buildNotice(underpass, event, blockEvent, transfer.getManagerId(), transfer.getMemo()),
                     transfer.getSnapshot()));
-            filename = String.format("경찰이관_%s_%s_%s.pdf", eventTypeLabel, underpass.getName(), FILE_DT.format(transferAt));
+            filename = String.format("%s이관_%s_%s_%s.pdf", transfer.getAgency() == TransferAgency.FIRE ? "소방" : "경찰", eventTypeLabel, underpass.getName(), FILE_DT.format(transferAt));
         } else {
             List<String> carNums = ctrlTransferCarRepository.findByCtrlTransferId(transferId)
                     .stream().map(CtrlTransferCar::getCarNum).collect(Collectors.toList());
@@ -530,6 +541,7 @@ public class ControlServiceImpl implements ControlService {
         item.setId(t.getId());
         item.setEventId(t.getEventId());
         item.setAgency(t.getAgency());
+        item.setDocumentType(t.getAgency() == TransferAgency.POLICE || isControlNotice(t) ? "CONTROL_NOTICE" : "REMAINING_VEHICLES");
         item.setMemo(t.getMemo());
         item.setManagerId(t.getManagerId());
         item.setCreatedAt(t.getCreatedAt());
@@ -599,6 +611,12 @@ public class ControlServiceImpl implements ControlService {
                 m.get("managerRegion") instanceof String t ? t : base.managerRegion(),
                 m.get("shiftLabel") instanceof String t ? t : base.shiftLabel(),
                 base.blockAt(), base.blockReason(), base.blockReasonNote(), base.memo());
+    }
+
+    private boolean isControlNotice(CtrlTransfer transfer) {
+        if (transfer.getSnapshot() == null) return false;
+        try { return JSON.readValue(transfer.getSnapshot(), Map.class).containsKey("auto"); }
+        catch (RuntimeException ex) { return false; }
     }
 
     private record ManagerInfo(String name, String regionName) {}
