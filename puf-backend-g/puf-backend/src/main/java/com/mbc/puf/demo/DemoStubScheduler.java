@@ -45,6 +45,7 @@ public class DemoStubScheduler {
     private static final int TICK_SECONDS = 10;         // @Scheduled 주기와 같아야 한다
     private static final int FORECAST_HOURS = 6;        // 위험도 미래 예측: 앞으로 6시간
 
+    private final DemoWaterProfile waterProfile;
     private final DemoScenarioState state;
     private final DemoScenarioService scenarioService;
     private final DemoInternalApi api;
@@ -75,7 +76,8 @@ public class DemoStubScheduler {
                              @Value("${puf.demo.calm-forecast-minutes:10}") int calmForecastMinutes,
                              @Value("${puf.demo.calm-max-score:75}") double calmMaxScore,
                              @Value("${puf.demo.calm-step:10}") double calmStep,
-                             @Value("${puf.demo.model-stub-enabled:true}") boolean modelStubEnabled) {
+                             @Value("${puf.demo.model-stub-enabled:true}") boolean modelStubEnabled, DemoWaterProfile waterProfile) {
+        this.waterProfile=waterProfile;
         this.state = state;
         this.scenarioService = scenarioService;
         this.api = api;
@@ -152,16 +154,11 @@ public class DemoStubScheduler {
         double t = state.scenarioSec();
         for (Long uid : allUnderpasses) {
             boolean active = r != null && state.isUnderpassActive(uid);
-            if (!active && !calmScore) {
-                continue;
-            }
             try {
-                if (modelStubEnabled) {
+                if (modelStubEnabled && (active || calmScore)) {
                     modelStub(uid, active);
                 }
-                if (active || calmWater) {
-                    waterStub(uid, active, t);
-                }
+                waterStub(uid, active, t, active || calmWater);
                 if (modelStubEnabled && (active || calmForecast)) {
                     forecastStub(uid, active);
                 }
@@ -254,8 +251,10 @@ public class DemoStubScheduler {
     }
 
     // 수위계 흉내: 시나리오 중에는 곡선대로, 평소에는 0 근처
-    private void waterStub(Long uid, boolean active, double t) {
-        double level = active ? state.waterAt(t) : (uid % 4) * 0.1;
+    private void waterStub(Long uid, boolean active, double t, boolean due) {
+        var sample=waterProfile.sample(uid,due,active?state.waterAt(t):0);
+        if(sample.isEmpty())return;
+        double level=sample.getAsDouble();
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("underpassId", uid);
         body.put("levelCm", dec(level, 1));
