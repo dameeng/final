@@ -1,8 +1,19 @@
+-- 통합본 실행 순서: 1.puf_db_schema.sql → 2.seed_general.sql → 3.seed_its.sql → 4.seed_pm.sql
+-- v11: manager06(강현우)을 manager01과 같은 지역의 직전 야간조 근무자로 추가. 기존 ID 유지.
+-- 개발 DB 초기 구축용. 1번은 public 스키마와 기존 데이터를 삭제한다. 기존 운영 DB에 적용하지 말 것.
+-- 네 파일을 순서대로 1회 실행하면 원본 시드의 ID/생성 순서를 유지한다. 시드는 반복 실행용이 아니다.
+
+BEGIN;
+
+-- 고정 기준행: 반드시 부산 16개 지역보다 먼저 삽입한다.
+INSERT INTO region (id, name) VALUES (1, '미배정');
+SELECT setval('region_id_seq', 1, true);
+
 -- =====================================================================
--- PUF 일반 더미 데이터 시드 (2.seed_general_v9.sql)
--- 실행 순서: 1.puf_db_schema_v9 → 2.seed_general_v9(이 파일) → 3.seed_its_v9 → 4.seed_pm_v9
--- 예지보전 설비·임계치는 4.seed_pm_v9 에서 넣음(이 파일에는 없음)
--- 실행 전제: puf_db_schema_v9.sql 실행 완료 (region id=1 '미배정' 존재, delivery_status 의 PENDING 도 스키마에 포함됨)
+-- PUF 일반 더미 데이터 시드 (2.seed_general.sql)
+-- 실행 순서: 1.puf_db_schema → 2.seed_general(이 파일) → 3.seed_its → 4.seed_pm
+-- 예지보전 설비·임계치는 4.seed_pm 에서 넣음(이 파일에는 없음)
+-- 실행 전제: puf_db_schema_v10.sql 실행 완료 (이 파일 시작 시 region id=1 '미배정' 생성, delivery_status 의 PENDING 도 스키마에 포함됨)
 -- 실행 순서: FK 의존성 순서대로 정렬됨, 위에서 아래로 순서대로 실행
 -- 비밀번호: 모든 계정의 비밀번호 = 로그인 아이디 (BCrypt 해시)
 -- 지역: 부산광역시 16개 구/군
@@ -10,7 +21,7 @@
 -- =====================================================================
 
 -- =====================================================================
--- 1. region — 부산 16개 구/군 (id=1 '미배정'은 schema에서 이미 삽입)
+-- 1. region — 부산 16개 구/군 (id=1 '미배정'은 이 파일 시작 시 삽입)
 -- =====================================================================
 INSERT INTO region (name) VALUES
 ('중구'), ('서구'), ('동구'), ('영도구'),
@@ -48,23 +59,24 @@ INSERT INTO employee (name, birth, phone, email) VALUES
 ('배준혁', '1986-01-12', '01010010016', 'junhyuk.bae@puf.go.kr');
 
 -- =====================================================================
--- 4. manager — 관리자 5명 (login_id = manager01~05, pw = login_id)
---    shift_id 라운드로빈 배정: 주간(1)/오후(2)/야간(3)
+-- 4. manager — 관리자 6명 (login_id = manager01~06, pw = login_id)
+--    기존 manager01~05 근무조 유지. manager06은 manager01 직전 타임인 야간조(3), 직원 6=강현우 사용.
 -- =====================================================================
 INSERT INTO manager (employee_id, login_id, password, role, status, shift_id, created_at, approved_at) VALUES
 ( 1, 'manager01', '$2b$10$YVcnMpDqdBOciu1Q/Tu88uG61UCj2FYl0m9borTia/JvI2Fjs/2lO', 'REGIONAL_ADMIN', 'ACTIVE', 1, NOW() - INTERVAL '90 days', NOW() - INTERVAL '89 days'),
 ( 2, 'manager02', '$2b$10$rszJYERxjKPglGms0NV3UefUNjkBpvweZwOkmhQX1/DHoyaEG.c/u', 'REGIONAL_ADMIN', 'ACTIVE', 2, NOW() - INTERVAL '88 days', NOW() - INTERVAL '87 days'),
 ( 3, 'manager03', '$2b$10$iFVuXNTQTBY1BM6YAX8FaeVEDI2r8gUGhradt3OfsoCzdY3aNjEFK', 'REGIONAL_ADMIN', 'ACTIVE', 3, NOW() - INTERVAL '86 days', NOW() - INTERVAL '85 days'),
 ( 4, 'manager04', '$2b$10$OAiR2nu0JnXdFA/K/DCfT.FzHaK7HtURtvmrXd5gYmMTvtMVd0O.a', 'REGIONAL_ADMIN', 'ACTIVE', 1, NOW() - INTERVAL '84 days', NOW() - INTERVAL '83 days'),
-( 5, 'manager05', '$2b$10$jiSe.7MXDwv0dDoSXLbJPOVkEOJe/DCsDMwABRwkMTptrnnskJ222', 'REGIONAL_ADMIN', 'ACTIVE', 2, NOW() - INTERVAL '82 days', NOW() - INTERVAL '81 days');
+( 5, 'manager05', '$2b$10$jiSe.7MXDwv0dDoSXLbJPOVkEOJe/DCsDMwABRwkMTptrnnskJ222', 'REGIONAL_ADMIN', 'ACTIVE', 2, NOW() - INTERVAL '82 days', NOW() - INTERVAL '81 days'),
+( 6, 'manager06', '$2a$10$Pw49TwTzzudIIl3iHXoM.uE93uOCUnMXWnBBScD2WtgdQLdDXZpvm', 'REGIONAL_ADMIN', 'ACTIVE', 3, NOW() - INTERVAL '80 days', NOW() - INTERVAL '79 days');
 
 -- =====================================================================
--- 5. manager_region — 관리자 ↔ 지역 매핑 (지역 하나는 관리자 한 명만, 한 관리자가 여러 구를 맡아 지하차도 9개씩으로 맞춤)
+-- 5. manager_region — 관리자 ↔ 지역 매핑 (교대 근무자는 같은 지역을 함께 담당 가능)
 --    region id: 미배정=1, 중구=2, 서구=3, 동구=4, 영도구=5, 부산진구=6,
 --    동래구=7, 남구=8, 북구=9, 해운대구=10, 사하구=11, 금정구=12,
 --    강서구=13, 연제구=14, 수영구=15, 사상구=16, 기장군=17
 --    지하차도 개수: 사상 9, 해운대 7, 강서 5, 동구·부산진·동래·북 각 4, 남 3, 사하·금정 각 2, 기장 1, 나머지 0 (합 45)
---    가장 많은 사상구(9개)에 맞춰 관리자 5명이 구를 묶어 맡는다 (각 9개). 일 없는 관리자 계정은 두지 않는다.
+--    기존 관리자 5명이 구를 묶어 각각 지하차도 9개를 맡고, manager06은 manager01과 같은 지역의 야간 근무를 맡는다.
 --      manager01: 동구+사하+서구+중구+영도+남(초량 시연. 초량지하차도 id=1 이 있는 동구 담당 = 관리자 id 1) / manager02: 해운대+금정+연제+수영 / manager03: 사상
 --      manager04: 강서+북 / manager05: 부산진+동래+기장
 -- =====================================================================
@@ -85,6 +97,15 @@ INSERT INTO manager_region (manager_id, region_id) VALUES
 ( 5,  6),   -- manager05: 부산진구
 ( 5,  7),   -- manager05: 동래구
 ( 5, 17);   -- manager05: 기장군
+
+-- manager06(강현우, 야간 23:00~07:00): manager01(주간 07:00~15:00)의 직전 근무자.
+-- 지역을 복사하므로 manager01과 중구·서구·동구·영도구·남구·사하구 6개 지역이 정확히 같다.
+INSERT INTO manager_region (manager_id, region_id)
+SELECT previous.id, mr.region_id
+FROM manager_region mr
+JOIN manager current_manager ON current_manager.id = mr.manager_id AND current_manager.login_id = 'manager01'
+CROSS JOIN manager previous
+WHERE previous.login_id = 'manager06';
 
 -- =====================================================================
 -- 6. customer — 고객 13명 (login_id = customer01~13, pw = login_id). 차량을 고객당 3대씩 맞추느라 11~13 추가
@@ -205,7 +226,7 @@ ORDER BY s.slot;
 UPDATE underpass SET up_entry_cam_id = 228, up_exit_cam_id = 229 WHERE id = 1;
 
 -- =====================================================================
--- 11. (예지보전 설비는 4.seed_pm_v9 로 이동)
+-- 11. (예지보전 설비는 4.seed_pm 로 이동)
 -- 11-1. 선제 차단 대상 (수위 5cm 에서 차단) — 시연/테스트용 1곳 지정. 실제 운영에서는 관리자가 지정
 UPDATE underpass SET early_block = TRUE WHERE name = '초량지하차도';
 
@@ -219,7 +240,7 @@ FROM underpass u
 CROSS JOIN (VALUES ('안전', 0), ('관심', 40), ('주의', 70)) AS s(level, min_score)
 ORDER BY u.id, s.min_score;
 
--- 13. (예지보전 임계치는 4.seed_pm_v9 로 이동)
+-- 13. (예지보전 임계치는 4.seed_pm 로 이동)
 
 -- =====================================================================
 -- 14. weather_area — 부산 16개 구/군 중심 좌표
@@ -354,11 +375,11 @@ INSERT INTO device_token (customer_id, token, platform) VALUES
 -- region:       1=미배정, 2=중구, ..., 17=기장군
 -- employee:     1~16
 -- shift:        1=주간, 2=오후, 3=야간
--- manager:      1~5 (login: manager01~05. manager01 = 초량지하차도가 속한 동구 담당)
+-- manager:      1~6 (login/pw: manager01~06. 6=강현우, 야간조, manager01과 동일 지역)
 -- customer:     1~13 (login: customer01~13)
 -- car:          1~39 (고객당 3대. 시연용 번호 23대 + 일반 더미 16대)
 -- underpass:    1~45 (1=초량지하차도, 이후 엑셀 순서: 금호(강서구)=2 → … → 해운대구)
--- camera:       226 접근 APPROACH_LPR(roi), 227 roi FINAL_LPR, 228 입구 FINAL_LPR, 229 출구 FINAL_LPR (초량지하차도, id 1) — 나머지 카메라(CCTV)는 3.seed_its_v9 가 230번부터 추가
+-- camera:       226 접근 APPROACH_LPR(roi), 227 roi FINAL_LPR, 228 입구 FINAL_LPR, 229 출구 FINAL_LPR (초량지하차도, id 1) — 나머지 카메라(CCTV)는 3.seed_its 가 230번부터 추가
 -- threshold:    1~135 (지하차도당 3단계)
 -- weather_area: 1~16 (부산 16구군)
 -- reason_preset:  1~12
@@ -382,3 +403,5 @@ INSERT INTO manager_notification (category, region_id, title, body, ref_type, re
 ('EQUIPMENT', NULL, '설비 점검 필요',      '점검이 필요한 설비가 있습니다. (예지보전)',     'EQUIPMENT', NULL),
 ('TASK',      NULL, '번호판 수동 판별 필요', '수동 판별이 필요한 번호판이 있습니다.',        'PLATE_LOG', NULL),
 ('SYSTEM',    NULL, '데이터 수신 지연',    '위험도 데이터 수신이 지연되고 있습니다.',       NULL,        NULL);
+
+COMMIT;

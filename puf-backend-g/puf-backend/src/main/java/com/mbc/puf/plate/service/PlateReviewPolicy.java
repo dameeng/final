@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 
 /** Select manual-review candidates without changing OCR output or recognition status. */
 public final class PlateReviewPolicy {
-    private static final BigDecimal FLOOR = new BigDecimal("0.600");
+    private static final BigDecimal FLOOR = new BigDecimal("0.970");
     private PlateReviewPolicy() {}
 
     public static boolean requiresReview(String number, BigDecimal confidence, BigDecimal recentAverage) {

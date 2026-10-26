@@ -1,7 +1,13 @@
+-- 통합본 실행 순서: 1.puf_db_schema.sql → 2.seed_general.sql → 3.seed_its.sql → 4.seed_pm.sql
+-- 개발 DB 초기 구축용. 1번은 public 스키마와 기존 데이터를 삭제한다. 기존 운영 DB에 적용하지 말 것.
+-- 네 파일을 순서대로 1회 실행하면 원본 시드의 ID/생성 순서를 유지한다. 시드는 반복 실행용이 아니다.
+
+BEGIN;
+
 -- =====================================================================
--- PUF 예지보전 설비 시드 (4.seed_pm_v9.sql)
--- 실행 순서: 1.puf_db_schema_v9 → 2.seed_general_v9 → 3.seed_its_v9 → 4.seed_pm_v9(이 파일)
--- 실행 전제: 3.seed_its_v9 까지 실행 완료 (카메라 · 전광판 · 표출 매핑이 있어야 설비에 연결됨)
+-- PUF 예지보전 설비 시드 (4.seed_pm.sql)
+-- 실행 순서: 1.puf_db_schema → 2.seed_general → 3.seed_its → 4.seed_pm(이 파일)
+-- 실행 전제: 3.seed_its 까지 실행 완료 (카메라 · 전광판 · 표출 매핑이 있어야 설비에 연결됨)
 --
 -- 설비 구성
 --   · 초량지하차도(id 1)         : CCTV 1 · 전광판 2(3부두, 영주교차로) · 배수펌프 2 · 수위센서 7
@@ -91,7 +97,7 @@ CROSS JOIN (VALUES ('안전', 0), ('주의', 40), ('위험', 70)) AS s(level, mi
 ORDER BY e.id, s.min_score;
 
 -- =====================================================================
--- 5. 확인용 — 지하차도별 설비 종류 수 (기대값: 초량 CCTV 1 · DISPLAY 2 · PUMP 2 · WATER_LEVEL 7, 동구 나머지는 종류별 1, 다른 구는 없음)
+-- 5. 확인용 (ROAD 추가 전 집계) — 지하차도별 설비 종류 수 (기대값: 초량 CCTV 1 · DISPLAY 2 · PUMP 2 · WATER_LEVEL 7, 동구 나머지는 종류별 1, 다른 구는 없음)
 -- =====================================================================
 SELECT u.id AS 지하차도, u.name, r.name AS 구,
        COUNT(*) FILTER (WHERE e.type = 'CCTV') AS cctv,
@@ -111,3 +117,17 @@ INSERT INTO pm_equipment (underpass_id, type)
 SELECT u.id, 'ROAD'::pm_equipment_type FROM underpass u
 WHERE u.name = '초량지하차도' AND u.is_deleted = FALSE
 AND NOT EXISTS (SELECT 1 FROM pm_equipment e WHERE e.underpass_id = u.id AND e.type = 'ROAD' AND e.is_deleted = FALSE);
+
+-- 6. 초량 CCTV230 로컬 싱크홀 스트림 연결 (원본 6번 패치 통합)
+-- 초량지하차도 CCTV230의 시연 영상을 싱크홀 서버로 연결. 기존 226~229는 변경하지 않는다.
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM camera c JOIN underpass u ON u.id=c.underpass_id
+                   WHERE c.id=230 AND u.name='초량지하차도' AND NOT c.is_deleted AND NOT u.is_deleted) THEN
+        RAISE EXCEPTION '활성 초량지하차도 CCTV230이 필요합니다. 다른 카메라의 소속을 자동 변경하지 않습니다.';
+    END IF;
+END $$;
+UPDATE camera SET stream_url='http://localhost:8003/stream/230'
+WHERE id=230 AND underpass_id=(SELECT id FROM underpass WHERE name='초량지하차도' AND NOT is_deleted);
+
+COMMIT;

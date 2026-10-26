@@ -86,6 +86,7 @@ public class InquiryServiceImpl implements InquiryService {
         inquiry.setTitle(request.getTitle().trim());
         inquiry.setContent(request.getContent());
         inquiryRepository.flush();
+        publishInquiryChanged(inquiry, "UPDATE");
         return toDetail(inquiry);
     }
 
@@ -96,6 +97,7 @@ public class InquiryServiceImpl implements InquiryService {
         inquiry.setDeleted(true);
         // 답변도 같이 지운다 (관리자 화면에서도 함께 사라짐)
         inquiryRepository.findByParentIdAndDeletedFalse(id).ifPresent(reply -> reply.setDeleted(true));
+        publishInquiryChanged(inquiry, "DELETE");
     }
 
     // ---- 관리자용 ----

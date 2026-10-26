@@ -40,6 +40,9 @@ import jakarta.persistence.PersistenceContext;
 @Service
 public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
 
+    // 시간에 따라 연속적으로 조금씩 움직이는 정상 범위 잡음.
+    private static final String LIVE_NOISE = "(0.55*sin(EXTRACT(EPOCH FROM x.t)/97.0+x.id)+0.25*sin(EXTRACT(EPOCH FROM x.t)/31.0+x.id))";
+
     private static final String NOISE = "((random() + random() + random() - 1.5) * 2)";   // 평균 0, 표준편차 약 1
 
     /** 설비 종류별 만드는 방법 */
@@ -138,7 +141,7 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
     public PmSensorBackfillResponse backfill(Integer weeksArg, Integer normalWeeksArg, LocalDateTime endAtArg, boolean reset,
             List<Long> equipIds) {
         int weeks = weeksArg == null ? defaultWeeks : weeksArg;
-        int normalWeeks = normalWeeksArg == null ? defaultNormalWeeks : normalWeeksArg;
+        int normalWeeks = normalWeeksArg == null ? (weeksArg == null ? weeks : Math.min(defaultNormalWeeks,weeks)) : normalWeeksArg;
         if (weeks < 1 || weeks > 52) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, "weeks는 1~52 사이여야 합니다.");
         }
@@ -193,7 +196,7 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
                     .setParameter("startAt", start).setParameter("endAt", end).setParameter("stepSec", step)
                     .setParameter("onset", onset).setParameter("rampSec", rampSec)
                     .setParameter("spike0", spike0).setParameter("spikeLen", spec.spikeLenSec())
-                    .setParameter("ampD", spec.ampDanger()).setParameter("ampC", spec.ampCaution()).setParameter("ampS", spec.ampSpike())
+                    .setParameter("ampD", spec.ampDanger()).setParameter("ampS", spec.ampSpike())
                     .executeUpdate();
 
             em.createNativeQuery("UPDATE pm_equipment e SET data_started_at = (SELECT MIN(s.recorded_at) FROM " + spec.table()
@@ -239,8 +242,9 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
                           FROM ranked r
                     )
                     SELECT e.id, e.rk, g.t,
-                           CASE MOD(e.rk, 4) WHEN 1 THEN CAST(:ampD AS double precision)
-                                            WHEN 2 THEN CAST(:ampC AS double precision) ELSE 0.0 END AS s
+                           CASE WHEN EXISTS (SELECT 1 FROM pm_stub_mode m WHERE m.equip_id=e.id
+                               AND m.mode='DANGER' AND g.t>=m.changed_at)
+                               THEN CAST(:ampD AS double precision) ELSE 0.0 END AS s
                       FROM eq e
                      CROSS JOIN LATERAL generate_series(
                          GREATEST(COALESCE(
@@ -249,10 +253,10 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
                              e.until_at - make_interval(secs => e.step * (:maxSamples - 1))),
                          e.until_at, make_interval(secs => e.step)) AS g(t)
                     """.replace("{TABLE}", spec.table());
-            String sql = spec.insertSql().replace("{SEV}", times).replace("{N}", NOISE);
+            String sql = spec.insertSql().replace("+ 1.0 * {N} AS a", "+ 1.0 * "+LIVE_NOISE+" AS a").replace("{SEV}", times).replace("{N}", spec.type()==PmEquipmentType.DISPLAY?LIVE_NOISE.replace("x.","y."):LIVE_NOISE);
             int added = em.createNativeQuery(sql)
                     .setParameter("type", spec.type().name()).setParameter("now", now)
-                    .setParameter("ampD", spec.ampDanger()).setParameter("ampC", spec.ampCaution())
+                    .setParameter("ampD", spec.ampDanger())
                     .setParameter("maxSamples", maxSamples).executeUpdate();
             total += added;
             // 새 설비 또는 기존 메타데이터가 비어 있는 설비의 시작 시각을 기록한다.
@@ -308,6 +312,21 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
             q.setParameter("ids", equipIds);
         }
         return ((Number) q.getSingleResult()).intValue() - targets.size();
+    }
+
+    /** 모드 전환 시 주기를 기다리지 않고 대상 한 대의 새 센서값을 추가한다. */
+    @Transactional
+    public int emitNow(long equipId, String type, boolean danger) {
+        em.createNativeQuery("SELECT TRUE FROM pg_advisory_xact_lock(731905210)").getSingleResult();
+        Spec spec = List.of(PUMP,CCTV,DISPLAY,WATER).stream().filter(v->v.type().name().equals(type))
+                .findFirst().orElseThrow(()->new IllegalArgumentException("Unsupported sensor type"));
+        String times = "SELECT e.id, (SELECT COUNT(*) FROM pm_equipment p WHERE p.type=e.type AND NOT p.is_deleted AND p.id<=e.id) AS rk, "
+                + "GREATEST(CAST(:now AS timestamp), COALESCE((SELECT MAX(recorded_at)+interval '1 microsecond' FROM "
+                +spec.table()+" WHERE equip_id=e.id),CAST(:now AS timestamp))) AS t, CAST(:severity AS double precision) AS s "
+                +"FROM pm_equipment e WHERE e.id=:equipId AND NOT e.is_deleted";
+        return em.createNativeQuery(spec.insertSql().replace("+ 1.0 * {N} AS a", "+ 1.0 * "+LIVE_NOISE+" AS a").replace("{SEV}",times).replace("{N}",spec.type()==PmEquipmentType.DISPLAY?LIVE_NOISE.replace("x.","y."):LIVE_NOISE))
+                .setParameter("now",dbClock.now()).setParameter("severity",danger?spec.ampDanger():0.0)
+                .setParameter("equipId",equipId).executeUpdate();
     }
 
     private static int intervalOf(Spec spec) {

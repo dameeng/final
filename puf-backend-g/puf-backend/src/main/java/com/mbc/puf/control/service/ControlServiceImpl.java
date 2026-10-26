@@ -233,9 +233,9 @@ public class ControlServiceImpl implements ControlService {
         // 5) 경찰 이관 기록 저장 (전달서에 들어갈 내용은 스냅샷으로 같이 저장)
         ControlNoticeData notice = buildNotice(underpass, event, null, operatorId, null);
         CtrlTransfer transfer = saveTransfer(event.getId(), TransferAgency.POLICE, null, operatorId,
-                snapshotOf(notice, waterCm, auto));
+                snapshotOf(notice, waterCm, auto), underpass);
         saveTransfer(event.getId(), TransferAgency.FIRE, "통제정보 전달 (잔류차량은 별도 수동 이관)", operatorId,
-                snapshotOf(notice, waterCm, auto));
+                snapshotOf(notice, waterCm, auto), underpass);
         return new BlockOutcome(event, transfer, notice);
     }
 
@@ -286,9 +286,9 @@ public class ControlServiceImpl implements ControlService {
         // 4) 경찰 이관 기록 저장 + PDF 생성
         ControlNoticeData notice = buildNotice(underpass, event, blockEvent, loginUser.id(), null);
         CtrlTransfer transfer = saveTransfer(event.getId(), TransferAgency.POLICE, null, loginUser.id(),
-                snapshotOf(notice, null, false));
+                snapshotOf(notice, null, false), underpass);
         saveTransfer(event.getId(), TransferAgency.FIRE, "통제 해제정보 전달", loginUser.id(),
-                snapshotOf(notice, null, false));
+                snapshotOf(notice, null, false), underpass);
         LocalDateTime now = transfer.getCreatedAt() != null ? transfer.getCreatedAt() : LocalDateTime.now();
         byte[] pdf = pdfGenerator.generatePolicePdf(notice);
 
@@ -325,7 +325,7 @@ public class ControlServiceImpl implements ControlService {
         fireSnap.put("carNums", cars);
         fireSnap.put("memo", request.getMemo());
         CtrlTransfer transfer = saveTransfer(request.getEventId(), TransferAgency.FIRE, request.getMemo(), loginUser.id(),
-                toJson(fireSnap));
+                toJson(fireSnap), underpass);
 
         // 차량번호 저장
         for (String carNum : cars) {
@@ -455,14 +455,16 @@ public class ControlServiceImpl implements ControlService {
         return request.getReason();
     }
 
-    private CtrlTransfer saveTransfer(Long eventId, TransferAgency agency, String memo, Long managerId, String snapshot) {
+    private CtrlTransfer saveTransfer(Long eventId, TransferAgency agency, String memo, Long managerId, String snapshot, Underpass underpass) {
         CtrlTransfer transfer = new CtrlTransfer();
         transfer.setSnapshot(snapshot);
         transfer.setEventId(eventId);
         transfer.setAgency(agency);
         transfer.setMemo(memo);
         transfer.setManagerId(managerId);
-        return ctrlTransferRepository.saveAndFlush(transfer);
+        CtrlTransfer saved = ctrlTransferRepository.saveAndFlush(transfer);
+        streamPublisher.dataChangedToAdmins(underpass.getRegionId(), "control-transfer", "CREATE", saved.getId());
+        return saved;
     }
 
     /** 관리자 이름 + 첫 번째 담당 지역명 */
