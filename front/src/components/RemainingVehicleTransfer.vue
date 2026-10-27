@@ -72,7 +72,7 @@ onBeforeUnmount(()=>request?.abort())
 defineExpose({open})
 </script>
 <template>
-  <dialog ref="dialog" class="remaining-transfer-dialog" :class="{'remaining-transfer-app':route.path.startsWith('/admin-app/')}" aria-label="잔류차량 소방 이관 PDF" @close="request?.abort()" @cancel="saving?$event.preventDefault():request?.abort()">
+  <WorkflowPage ref="dialog" class="remaining-transfer-dialog" :class="{'remaining-transfer-app':route.path.startsWith('/admin-app/')}" aria-label="잔류차량 소방 이관 PDF" @close="request?.abort()" @cancel="saving?$event.preventDefault():request?.abort()">
     <header><div><small>잔류차량 전달 문서</small><h2>소방 이관 PDF</h2></div><button type="button" :disabled="saving" @click="close">닫기</button></header>
     <p v-if="loading" role="status">시설과 잔류차량을 확인하고 있습니다.</p>
     <p v-if="error" class="transfer-error" role="alert">{{error}}</p>
@@ -92,7 +92,7 @@ defineExpose({open})
       <p v-if="!history.length">저장된 잔류차량 소방 이관 문서가 없습니다.</p>
       <article v-for="item in history" :key="item.id"><div><strong>{{displayDate(item.createdAt)}}</strong><p>{{item.carNums?.join(', ')||'차량 번호 없음'}}</p></div><button type="button" :disabled="downloading!=null||saving" @click="download(item)">{{downloading===item.id?'받는 중…':'PDF 받기'}}</button></article>
     </section>
-  </dialog>
+  </WorkflowPage>
 </template>
 <style scoped>
 .remaining-transfer-dialog{box-sizing:border-box;width:min(600px,calc(100vw - 32px));max-height:calc(100dvh - 32px);padding:24px;overflow:auto;color:var(--r-ink);background:var(--r-surface);border:1px solid var(--r-line);border-radius:16px}

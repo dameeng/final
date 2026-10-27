@@ -1,3 +1,4 @@
+import { adminResourceTitles } from './adminTitles'
 import { noticeCategories, faqCategories } from '../services/backendCatalog'
 export type Field = {
   key: string
@@ -104,7 +105,7 @@ const facilityFields: Field[] = [
     ['C', 'C'],
     ['D', 'D'],
     ['E', 'E'],
-    ['UNKNOWN', '미실시·불명'],
+    ['UNKNOWN', '미확인'],
   ]),
   num('riverDistM', '하천 거리(m)'),
   num('seaDistM', '바다 거리(m)'),
@@ -124,7 +125,7 @@ const cameraFields: Field[] = [
 ]
 export const backendResources: Record<string, Resource> = {
   facilities: {
-    title: '지하차도 관리',
+    title: adminResourceTitles.facilities!,
     path: '/api/underpasses',
     public: true,
     columns: [
@@ -183,7 +184,7 @@ export const backendResources: Record<string, Resource> = {
     ],
   },
   cameras: {
-    title: '카메라 관리',
+    title: adminResourceTitles.cameras!,
     path: '/api/underpasses/{underpassId}/cameras',
     parents: [{ ...facility, required: true }],
     columns: [
@@ -199,7 +200,7 @@ export const backendResources: Record<string, Resource> = {
     detail: true,
   },
   thresholds: {
-    title: '위험도 임계치 설정',
+    title: adminResourceTitles.thresholds!,
     path: '/api/underpasses/{underpassId}/thresholds',
     parents: [{ ...facility, required: true }],
     columns: [
@@ -212,7 +213,7 @@ export const backendResources: Record<string, Resource> = {
     rowKey: 'level',
   },
   transits: {
-    title: '차량 통과·잔류 기록',
+    title: adminResourceTitles.transits!,
     path: '/api/underpasses/transits',
     columns: [
       ['underpassName', '지하차도'],
@@ -238,7 +239,7 @@ export const backendResources: Record<string, Resource> = {
     ],
   },
   events: {
-    title: '시설 제어 이력',
+    title: adminResourceTitles.events!,
     path: '/api/underpasses/{underpassId}/events',
     parents: [{ ...facility, required: true }],
     columns: [
@@ -258,7 +259,7 @@ export const backendResources: Record<string, Resource> = {
     ],
   },
   ocr: {
-    title: 'OCR 인식 기록',
+    title: adminResourceTitles.ocr!,
     path: '/api/plate-logs',
     columns: [
       ['underpassName', '시설'],
@@ -294,7 +295,7 @@ export const backendResources: Record<string, Resource> = {
     detailFromRow: true,
   },
   reviews: {
-    title: '번호판 판별',
+    title: adminResourceTitles.reviews!,
     path: '/api/plate-logs',
     columns: [
       ['underpassName', '시설'],
@@ -335,7 +336,7 @@ export const backendResources: Record<string, Resource> = {
     ],
   },
   transfers: {
-    title: '경찰·소방 이관 문서',
+    title: adminResourceTitles.transfers!,
     path: '/api/control/underpasses/{underpassId}/transfers',
     parents: [{ ...facility, required: true }],
     columns: [
@@ -353,7 +354,7 @@ export const backendResources: Record<string, Resource> = {
   // 전광판(its_vms) 한 대의 수동 페이지. 자동 표출 페이지(차단·위험 문구)는 서버가 만들고 수정·삭제를 막는다.
   // 새 페이지는 원인 지하차도(underpassId)가 필수 (수정할 때는 서버가 무시)
   display: {
-    title: '전광판 페이지 관리',
+    title: adminResourceTitles.display!,
     path: '/api/display/vms/{vmsId}/pages',
     parents: [source('vmsId', '전광판', 'vms', true)],
     columns: [
@@ -406,7 +407,7 @@ export const backendResources: Record<string, Resource> = {
     ],
   },
   regions: {
-    title: '지역 관리',
+    title: adminResourceTitles.regions!,
     path: '/api/regions',
     public: true,
     columns: [
@@ -419,7 +420,7 @@ export const backendResources: Record<string, Resource> = {
     remove: true,
   },
   managers: {
-    title: '관리자·담당 지역·근무조',
+    title: adminResourceTitles.managers!,
     path: '/api/managers',
     columns: [
       ['name', '이름'],
@@ -475,7 +476,7 @@ export const backendResources: Record<string, Resource> = {
     ],
   },
   customers: {
-    title: '고객 관리',
+    title: adminResourceTitles.customers!,
     path: '/api/customers',
     columns: [
       ['name', '이름'],
@@ -493,7 +494,7 @@ export const backendResources: Record<string, Resource> = {
     fields: profileFields,
   },
   alerts: {
-    title: '알림 발송 기록',
+    title: adminResourceTitles.alerts!,
     path: '/api/alert-logs',
     columns: [
       ['underpassId', '시설 번호'],
@@ -514,7 +515,7 @@ export const backendResources: Record<string, Resource> = {
     ],
   },
   notices: {
-    title: '공지사항 관리',
+    title: adminResourceTitles.notices!,
     path: '/api/notices',
     public: true,
     columns: [
@@ -540,7 +541,7 @@ export const backendResources: Record<string, Resource> = {
     remove: true,
   },
   faqs: {
-    title: 'FAQ 관리',
+    title: adminResourceTitles.faqs!,
     path: '/api/faqs',
     public: true,
     columns: [
@@ -562,7 +563,7 @@ export const backendResources: Record<string, Resource> = {
     remove: true,
   },
   inquiries: {
-    title: '고객 문의 처리',
+    title: adminResourceTitles.inquiries!,
     path: '/api/inquiries',
     columns: [
       ['title', '제목'],
@@ -653,6 +654,7 @@ export const resourceRoutes: Record<string, string> = {
   '/my-alerts': 'my-alerts',
 }
 export const valueLabels: Record<string, string> = {
+  UNKNOWN: '미확인',
   RISK_LEVEL_UP: '위험도 상승',
   RISK_LEVEL_DOWN: '위험도 하락',
   NORMAL: '정상',

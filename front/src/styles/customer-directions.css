@@ -276,9 +276,8 @@
   text-align: left;
   cursor: pointer;
 }
-.navigation-search-toggle>span {
-  font-size: 22px;
-}
+.navigation-search-chevron { width:20px; height:20px; flex-shrink:0; }
+.navigation-search-chevron.is-expanded { transform:rotate(180deg); }
 #navigation-search-fields {
   padding-top: 10px;
 }

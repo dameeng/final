@@ -139,11 +139,7 @@ onBeforeUnmount(() => dispose?.())
     </aside>
 
 <main class="page">
-      <div class="crumb">
-        <span>지하차도 관리 &gt; <strong class="inl-7891572d91">초량1지하차도</strong>
-        </span>
-        <span class="note"></span>
-      </div>
+      
 <div class="page-head">
         <div>
           <h1 class="inl-3b9f772359">초량1지하차도 <span class="badge danger" id="h-badge">위험</span> <span class="stat ack" id="h-ctl">통제 중</span> <span class="stat work" id="h-manual" hidden>수동 표출 중</span>

@@ -4,7 +4,7 @@ import { getBusanCameras } from '../services/busanCctv'
 import TrafficVideo from './TrafficVideo.vue'
 import VmsLedDisplay from './VmsLedDisplay.vue'
 type Point = { id: string; name: string; address: string; lat: number; lng: number; kind: 'cctv' | 'vms'; type?: string; url?: string; content?: string; messages?: string[]; example?: boolean; updatedAt?: string }
-const props = defineProps<{ map: any; maps: any; toggleControls?: boolean }>()
+const props = defineProps<{ map: any; maps: any; toggleControls?: boolean; app?: boolean }>()
 const showCctv = ref(false), showVms = ref(false), loading = ref(false), error = ref('')
 const controlsExpanded = ref(true)
 const points = ref<Point[]>([]), active = ref<Point>(), dialog = ref<HTMLDialogElement>()
@@ -131,7 +131,7 @@ onBeforeUnmount(() => { disposed = true; generation++; clear(); if (props.map &&
     <button v-if="toggleControls&&controlsExpanded" type="button" class="traffic-controls-heading traffic-controls-collapse" aria-label="교통 시설 접기" @click="controlsExpanded=false"><span aria-hidden="true">‹</span></button>
   </div>
   <Teleport to="body">
-  <dialog ref="dialog" class="traffic-device-dialog" aria-label="교통 시설 정보" @cancel.prevent="closeInfo" @close="closeInfo" @pointerdown.stop="backdropPress=outsideDialog($event)" @pointercancel="backdropPress=false" @click.stop="backdropClick">
+  <WorkflowPage ref="dialog" :page-mode="app" class="traffic-device-dialog" :class="{'traffic-device-app-dialog':app}" aria-label="교통 시설 정보" @cancel.prevent="closeInfo" @close="closeInfo" @pointerdown.stop="backdropPress=outsideDialog($event)" @pointercancel="backdropPress=false" @click.stop="backdropClick">
     <template v-if="!active && groupItems.length">
       <header><span class="traffic-device-type">이 위치의 CCTV·전광판 {{groupItems.length}}개</span><button type="button" aria-label="닫기" @click="closeInfo">✕</button></header>
       <h2>확인할 시설을 선택하세요</h2>
@@ -148,7 +148,7 @@ onBeforeUnmount(() => { disposed = true; generation++; clear(); if (props.map &&
       <template v-else-if="active.kind==='vms'"><p v-if="active.example" class="vms-example-note">예시 문구 · 실제 전광판 표출 내용과 다를 수 있습니다.</p><VmsLedDisplay v-if="active.content || active.messages?.length" :key="active.id" :content="active.content" :messages="active.messages" :example="active.example" /><p v-else>현재 표출 문구는 제공되지 않습니다.</p><p v-if="active.updatedAt">갱신 시각: {{active.updatedAt}}</p></template>
       <small v-if="active.kind==='cctv'">부산광역시 교통정보 제공 · 제공처 사정에 따라 영상이 지연되거나 중단될 수 있습니다.</small>
     </template>
-  </dialog>
+  </WorkflowPage>
   </Teleport>
 </template>
 <style src="../styles/components/traffic-map-layers.css"></style>

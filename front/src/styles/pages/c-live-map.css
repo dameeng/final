@@ -147,6 +147,11 @@
 #app :is(.routel-map-popup__status,.routel-cluster-popup__item>small)[data-state=주의] { color: #926017; background: #fff4de; }
 #app :is(.routel-map-popup__status,.routel-cluster-popup__item>small):is([data-state=위험],[data-state=통제]) { color: #b84455; background: #fff0f2; }
 #app .routel-cluster-popup>ul { padding: 6px 8px 8px; max-height: 242px; scrollbar-width: thin; scrollbar-color: var(--r-line,#c9d5e1) transparent; }
+#app .admin-app-map .admin-map-floating-popup { position:absolute; z-index:18; display:flex; flex-direction:column; overflow:hidden; max-width:none; margin:0; animation:none; }
+#app .admin-app-map .admin-map-floating-popup>header { flex-shrink:0; }
+#app .admin-app-map .admin-map-floating-popup>ul { flex:1 1 auto; min-height:0; overflow:auto; overscroll-behavior:contain; }
+#app .admin-app-map.admin-map-popup-active :is(.admin-map-control-dock,.map-only-selection) { display:none; }
+#app .admin-app-map.admin-map-popup-compact .map-overlay-toolbar { display:none; }
 #app .routel-cluster-popup__item { min-height: 46px; padding: 10px 8px; gap: 9px; border: 0; border-radius: 8px; background: transparent; }
 #app .routel-cluster-popup__item:hover { background: var(--r-selected,#edf4ff); }
 #app .routel-cluster-popup__item:focus-visible,

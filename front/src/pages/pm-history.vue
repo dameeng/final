@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { adminPageTitle } from '../data/adminTitles'
 import AdminSidebarLinks from '../components/AdminSidebarLinks.vue'
 import MenuIcon from '../components/MenuIcon.vue'
 import AdminIdentity from '../components/AdminIdentity.vue'
@@ -139,13 +140,9 @@ onBeforeUnmount(() => dispose?.())
     </aside>
 
 <main class="page">
-      <div class="crumb">
-        <span>예지보전 &gt; <strong class="inl-7891572d91">점검 이력</strong>
-        </span>
-        <span class="note"></span>
-      </div>
+      
 <div class="page-head">
-        <h1>예지보전</h1>
+        <h1>{{adminPageTitle('/pm-history')}}</h1>
         <div class="row"><button type="button" class="btn" id="h-reg">점검 직접 등록</button></div>
       </div>
       <nav class="tabs" aria-label="예지보전 탭">

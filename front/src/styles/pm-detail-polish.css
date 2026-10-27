@@ -5,6 +5,10 @@
 .pm-detail .pm-overview-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
 .pm-detail .pm-analysis-grid { grid-template-columns:minmax(0,1fr) minmax(0,2fr); }
 .pm-detail .pm-overview-grid>.card { padding:22px; }
+.pm-detail .pm-overview-grid .pm-section-heading { min-height:40px; align-items:center; }
+.pm-detail .pm-inspection-link-slot { flex:0 0 88px; width:88px; height:40px; }
+.pm-detail .pm-inspection-link-slot>:is(a,span) { display:flex; align-items:center; justify-content:center; box-sizing:border-box; width:100%; height:40px; min-height:40px; padding:8px; font-size:12px; white-space:nowrap; text-decoration:none; }
+.pm-detail .pm-road-inspection-entry { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
 .pm-detail .pm-risk-card .pm-section-heading { align-items:center; margin-bottom:0; }
 .pm-detail .pm-risk-card { display:flex; flex-direction:column; }
 .pm-detail .pm-risk-card :deep(.pm-risk-gauge) { margin-block:auto; padding-top:12px; }
@@ -50,7 +54,8 @@
 .pm-detail .pm-chart-scroll { min-width:0; overflow-x:auto; overscroll-behavior-x:contain; border-radius:8px; scrollbar-width:thin; }
 .pm-detail .pm-chart--wide { min-width:560px; width:100%; max-height:none; margin:0; }
 .pm-detail .pm-chart--wide .tick { font-size:12px; }
-.pm-detail .pm-chart .zone-normal { fill:color-mix(in srgb,#2ba98e 12%,var(--r-surface)); }
+.pm-detail { --pm-band-fill:color-mix(in srgb,var(--r-accent) 10%,var(--r-surface)); }
+.pm-detail .pm-chart .zone-normal { fill:var(--pm-band-fill); }
 .pm-detail .pm-chart .zone-danger { fill:color-mix(in srgb,#d55858 10%,var(--r-surface)); }
 .pm-detail .pm-chart .zone-caution { fill:color-mix(in srgb,#e3ac4d 12%,var(--r-surface)); }
 .pm-detail .pm-chart :is(.line-sensor,.line-second) { stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:1; animation:pm-line-draw .7s cubic-bezier(.22,.6,.3,1) both; }

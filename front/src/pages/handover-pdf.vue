@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { adminPageTitle } from '../data/adminTitles'
 import AdminSidebarLinks from '../components/AdminSidebarLinks.vue'
 import MenuIcon from '../components/MenuIcon.vue'
 import AdminIdentity from '../components/AdminIdentity.vue'
@@ -139,13 +140,9 @@ onBeforeUnmount(() => dispose?.())
     </aside>
 
 <main class="page">
-      <div class="crumb">
-        <span>지하차도 관리 &gt; 초량1지하차도 &gt; <strong class="inl-7891572d91">전달 문서</strong>
-        </span>
-        <span class="note"></span>
-      </div>
+      
 <div class="page-head">
-        <h1>통제 정보 전달 문서</h1>
+        <h1>{{adminPageTitle('/handover-pdf')}}</h1>
         <div class="row">
           <button class="btn">PDF로 저장</button>
           <button class="btn primary">경찰·소방 전달 (PDF 저장)</button>

@@ -66,10 +66,11 @@ onBeforeUnmount(() => {
     <button type="button" class="postcode-search-button" :disabled="disabled" @click="open">우편번호 찾기</button>
   </span>
   <Teleport to="body">
-    <dialog
+    <WorkflowPage
       ref="dialog"
       class="postcode-search-dialog"
       aria-label="우편번호·주소 검색"
+      @close="close"
       @cancel.prevent="close"
       @click="($event.target===dialog)&&close()"
     >
@@ -80,7 +81,7 @@ onBeforeUnmount(() => {
       <p v-if="loading" role="status">주소 검색을 불러오는 중입니다.</p>
       <p v-if="error" role="alert">{{error}}</p>
       <div ref="host" class="postcode-search-host"></div>
-    </dialog>
+    </WorkflowPage>
   </Teleport>
 </template>
 <style scoped src="../styles/components/postcode-search.css"></style>

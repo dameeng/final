@@ -204,6 +204,7 @@ dialog.customer-arrival-alert:is([data-tone="caution"],[data-tone="danger"])::ba
 .customer-arrival-alert:is([data-tone="caution"],[data-tone="danger"]) .arrival-content { padding: 10px 24px 24px; }
 .customer-arrival-alert:is([data-tone="caution"],[data-tone="danger"]) .arrival-meta { margin-bottom: 12px; color: #d4d5de; font-size: 11px; }
 .customer-arrival-alert:is([data-tone="caution"],[data-tone="danger"]) .arrival-category { border: 0; padding: 0; color: var(--arrival-accent); }
+.customer-arrival-alert .arrival-warning-icon { color: #ff5b5b; }
 .customer-arrival-alert:is([data-tone="caution"],[data-tone="danger"]) h2 { margin-bottom: 10px; color: #fff; font-size: 16px; line-height: 1.5; }
 .customer-arrival-alert:is([data-tone="caution"],[data-tone="danger"]) .arrival-body { color: #f7f7fb; font-size: 18px; line-height: 1.6; font-weight: 650; letter-spacing: -.015em; }
 .customer-arrival-alert:is([data-tone="caution"],[data-tone="danger"]) .arrival-error { color: #ffbcb6; }

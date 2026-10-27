@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { adminPageTitle } from '../data/adminTitles'
+import { workflowPageState } from '../utils/workflow-page-state'
 import NotificationBell from './NotificationBell.vue'
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
@@ -9,14 +11,14 @@ const route = useRoute(),
 const titles: Record<string, string> = {
   '2': '근무 시작',
   '3': '종합 현황',
-  '4': '지하차도·통제',
-  '5': '시설 상세',
+  '4': '지하차도',
+  '5': '지하차도 상세',
   '6': '통제 시작',
   '7': '통제 현황',
   '8': '통제 해제',
-  '9': '설비 목록',
-  '10': '설비 상세',
-  '11': '점검 대상·알림',
+  '9': '장비 현황',
+  '10': '장비 상세',
+  '11': '점검 대기',
   '12': '점검 등록',
   '13': '알림',
   '14': '더보기·내 정보',
@@ -27,14 +29,16 @@ const titles: Record<string, string> = {
   notices: '공지사항',
   inquiries: '고객 문의',
   ocr: 'OCR 인식 기록',
-  reviews: '수동 판별',
-  transits: '차량 통과 기록',
+  reviews: '번호판 판별 대기',
+  transits: '입출구 로그',
   transfers: '경찰·소방 이관 문서',
 }
 const section = computed(() => route.path.split('/').at(-1)!.replace('screen-', '')),
-  title = computed(() => titles[section.value] || '관리자 앱'),
+  title = computed(() => workflowPageState.title || adminPageTitle(route.path, titles[section.value] || '관리자 앱')),
   fallback = computed(() =>
-    ['10', '11', 'history'].includes(section.value)
+    section.value === 'inspection'
+      ? '/admin-app/screen-10?id='+encodeURIComponent(String(route.query.id||''))
+      : ['10', '11', 'history'].includes(section.value)
       ? '/admin-app/screen-9'
       : section.value === '12'
         ? '/admin-app/screen-11'

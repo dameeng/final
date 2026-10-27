@@ -55,7 +55,7 @@ onBeforeUnmount(() => {
 })
 </script>
 <template>
-  <dialog
+  <WorkflowPage
     ref="dialog"
     class="pass-signup-dialog"
     aria-label="PASS 회원가입 본인인증"
@@ -138,6 +138,6 @@ onBeforeUnmount(() => {
       <button class="pass-primary" type="button" @click="finish">회원가입 계속하기</button>
     </section>
     <footer>PASS 연동 전 화면입니다. 실제 인증 요청·본인확인·회원가입은 진행되지 않습니다.</footer>
-  </dialog>
+  </WorkflowPage>
 </template>
 <style scoped src="../styles/components/pass-signup-verification.css"></style>

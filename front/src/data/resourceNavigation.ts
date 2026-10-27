@@ -1,5 +1,5 @@
+import { adminResourceTitles } from './adminTitles'
 const groups = [
-  ['ocr', 'reviews'],
   ['customers', 'inquiries'],
   ['notices', 'faqs'],
   ['managers', 'shifts'],
@@ -21,9 +21,7 @@ export const resourceShortcuts: Record<string, { id: string; label: string }[]> 
     { id: 'transfers', label: '경찰·소방 이관 문서' },
   ],
   transfers: [{ id: 'events', label: '시설 제어 이력' }],
-  cameras: [{ id: 'facilities', label: '지하차도 목록' }],
-  thresholds: [{ id: 'facilities', label: '지하차도 목록' }],
-  'risk-history': [{ id: 'thresholds', label: '위험도 임계치 설정' }],
+  'risk-history': [{ id: 'thresholds', label: adminResourceTitles.thresholds! }],
   regions: [{ id: 'managers', label: '관리자·근무조' }],
   alerts: [
     { id: 'manager-notifications', label: '내 관리자 알림' },

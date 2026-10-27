@@ -1,0 +1,30 @@
+﻿/* 앱 프레임의 크기는 내용 길이와 무관하다. 스크롤은 본문 안에서만 한다. */
+:root:has(#app :is(.service-mobile,.manager-app-shell,.customer-app-editorial)) { overflow:hidden; scrollbar-gutter:auto; }
+:root:has(#app :is(.service-mobile,.manager-app-shell,.customer-app-editorial)) body { margin:0; overflow:hidden; }
+#app :is(.service-mobile,.manager-app-shell,.customer-app-editorial) {
+  display:flex; flex-direction:column; box-sizing:border-box;
+  width:min(430px,100%); min-width:0; max-width:430px;
+  height:100dvh; min-height:0; max-height:100dvh;
+  margin:0 auto; overflow:hidden;
+}
+#app :is(.service-mobile,.manager-app-shell,.customer-app-editorial) > :is(.service-app-layout,.mobile-page) {
+  flex:1 1 0; width:100%; min-width:0; max-width:100%; height:auto; min-height:0; margin:0; box-sizing:border-box; overflow:hidden;
+}
+#app :is(.service-mobile,.manager-app-shell,.customer-app-editorial) .mobile-page>.ph {
+  display:flex; flex-direction:column; width:100%; height:100%; min-height:0; max-height:100%; box-sizing:border-box;
+}
+#app :is(.service-mobile,.manager-app-shell,.customer-app-editorial) :is(.app-restored-body,:where(.mobile-page>.ph>.bd)) {
+  flex:1 1 0; min-width:0; min-height:0; box-sizing:border-box;
+  overflow-x:hidden; overflow-y:scroll; overflow-anchor:none;
+  scrollbar-width:thin; scrollbar-gutter:stable both-edges;
+}
+#app :is(.service-mobile,.manager-app-shell,.customer-app-editorial) :is(.app-restored-body,:where(.mobile-page>.ph>.bd))::-webkit-scrollbar { width:6px; }
+#app :is(.service-mobile,.manager-app-shell,.customer-app-editorial) :is(.app-restored-body,:where(.mobile-page>.ph>.bd))::-webkit-scrollbar-thumb { background:#91a3b6; border-radius:6px; }
+#app :is(.service-mobile,.manager-app-shell,.customer-app-editorial) :is(.app-restored-body,:where(.mobile-page>.ph>.bd))::-webkit-scrollbar-track { background:transparent; }
+/* 지도는 본문 스크롤을 사용하지 않고 확보된 영역 전체를 채운다. */
+#app :is(.service-mobile,.manager-app-shell,.customer-app-editorial) :is(.app-manager-overview,.app-map-screen)>.app-restored-body {
+  overflow:hidden; scrollbar-gutter:auto;
+}
+#app :is(.service-mobile,.manager-app-shell,.customer-app-editorial) :is(.app-service-content,.service-workspace) { min-width:0; max-width:100%; box-sizing:border-box; }
+.service-app-layout .service-heading.app-resource-heading:not(:has(button,a)) { display:none; }
+

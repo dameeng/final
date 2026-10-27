@@ -1,0 +1,165 @@
+﻿/* 관리자 업무 화면 공통 치수. 페이지별 데이터 표·지도 내부는 자체 배치를 유지한다. */
+:root { scrollbar-gutter: stable; }
+.facility-autocomplete { position:relative; flex:1; min-width:0; }
+.facility-autocomplete>input { width:100%; box-sizing:border-box; }
+#app .facility-search-suggestions { position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:30; margin:0; padding:4px; list-style:none; border:1px solid var(--r-line); border-radius:10px; background:var(--r-surface); box-shadow:var(--r-overlay-shadow); }
+#app .restored-facility-filters .facility-search-suggestions button { display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%; height:auto; min-height:44px; padding:10px; border:0; background:transparent; color:var(--r-ink); text-align:left; }
+#app .facility-search-suggestions strong { font-size:13px; font-weight:600; overflow-wrap:anywhere; }
+#app .facility-search-suggestions small { flex-shrink:0; font-size:11px; color:var(--r-muted); }
+#app .facility-search-suggestions button[aria-selected=true] { background:var(--r-selected); color:var(--r-accent); }
+#app .admin-interface {
+  --admin-header-height:64px;
+  --admin-page-padding:24px;
+  --admin-title-top-gap:24px;
+  --admin-title-bottom-gap:12px;
+  --admin-control-height:44px;
+  --admin-control-radius:8px;
+  --admin-layout-gap:12px;
+  --admin-title-size:22px;
+}
+#app .admin-interface.admin-shell .wire-page[class] > .hdr {
+  height:var(--admin-header-height); min-height:var(--admin-header-height); max-height:var(--admin-header-height);
+  padding:0 16px; box-sizing:border-box;
+}
+#app .admin-interface.admin-shell .wire-page[class] > :is(main.page,.backend-main) {
+  padding:var(--admin-title-top-gap) var(--admin-page-padding) 48px;
+  margin:0; width:100%; max-width:none; min-width:0; box-sizing:border-box;
+}
+/* 같은 단계의 제목은 같은 위치에서 시작한다. */
+#app .admin-interface.admin-shell .backend-main:has(.underpass-workspace) { padding:24px 24px 48px; }
+#app .admin-interface.admin-shell .underpass-workspace>.service-heading { align-items:center; min-height:44px; margin-bottom:16px; }
+#app .admin-interface.admin-shell .underpass-workspace>.service-heading>h1 { flex:1; }
+#app .admin-interface.admin-shell .underpass-workspace .split-heading-tabs { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin:0; padding:0; min-height:44px; border:0; }
+#app .admin-interface.admin-shell .underpass-workspace>.service-heading>.service-actions:empty { display:none; }
+#app .admin-interface :is(.crumb,.profile-crumb,.chat-monitor-crumb,.breadcrumb) { display:none; }
+#app .admin-interface.admin-shell :is(main.page,.service-workspace) > .crumb { display:none; }
+#app .admin-interface.admin-shell .chat-monitor-crumb { display:none; }
+#app .admin-interface.admin-shell .page-head .pm-eyebrow { display:none; }
+#app .admin-interface.admin-shell :is(.page-head,.service-heading) {
+  display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap;
+  gap:var(--admin-layout-gap); min-height:var(--admin-control-height); margin:0 0 var(--admin-title-bottom-gap); padding:0; box-sizing:border-box;
+}
+#app .admin-interface.admin-shell :is(.service-workspace,main.page) > h1 {
+  display:flex; align-items:flex-start; min-height:var(--admin-control-height);
+  margin:0 0 var(--admin-title-bottom-gap); padding:0;
+  font-size:var(--admin-title-size); line-height:32px; font-weight:750; box-sizing:border-box;
+}
+#app .admin-interface.admin-shell :is(.page-head,.service-heading) h1 {
+  margin:0; padding:0; font-size:var(--admin-title-size); line-height:32px; font-weight:750;
+}
+#app .admin-interface.admin-shell :is(.page-head,.service-heading) .sub {
+  margin:4px 0 0; font-size:13px; line-height:20px;
+}
+#app .admin-interface.admin-shell :is(.service-actions,.pm-head-actions,.pm-detail-actions,.page-head > .actions) {
+  display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:8px; margin:0;
+}
+#app .admin-interface.admin-shell :is(.page-head,.service-heading,.service-filters,.pm-filter-row,.pm-filters) :is(button:not(.ui-icon-button),a.btn,input:not([type=checkbox]):not([type=radio]),select),
+#app .admin-interface.admin-shell :is(.tabs,.service-tabs) > :is(button,a) {
+  box-sizing:border-box; min-height:var(--admin-control-height); height:var(--admin-control-height);
+  padding:0 14px; border-radius:var(--admin-control-radius); font-size:13px; line-height:20px;
+}
+#app .admin-interface.admin-shell :is(.page-head,.service-heading) :is(button:not(.ui-icon-button),a.btn) {
+  display:inline-flex; align-items:center; justify-content:center; min-width:88px; white-space:nowrap;
+}
+#app .admin-interface.admin-shell :is(.tabs,.service-tabs) > :is(button,a) {
+  display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;
+  font-weight:600; border-width:1px; border-style:solid; margin:0;
+}
+#app .admin-interface.admin-shell :is(.tabs,.service-tabs) > :is(button,a)[aria-pressed=true],
+#app .admin-interface.admin-shell :is(.tabs,.service-tabs) > a:is([aria-current=page],.router-link-exact-active) {
+  font-weight:600; border-width:1px; box-shadow:inset 0 -2px var(--r-accent);
+}
+#app .admin-interface.admin-shell .pm-engine { display:inline-block; width:280px; max-width:100%; box-sizing:border-box; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#app .admin-interface.admin-shell :is(.service-table,.tbl) { font-variant-numeric:tabular-nums; }
+/* 결과 개수나 조회 상태에 따라 페이지 전체 높이가 줄지 않게 한다. */
+#app .admin-interface :is(.pm-equipment-live,.pm-queue-live,.pm-history-live) { overflow-anchor:none; }
+#app .admin-interface :is(.pm-equipment-live,.pm-queue-live) .pm-kpi {
+  box-sizing:border-box; min-height:96px; margin:0; padding:16px 20px;
+}
+#app .admin-interface .pm-results-viewport {
+  height:clamp(280px,calc(100dvh - 440px),640px); min-width:0;
+  overflow:auto; overflow-anchor:none; scrollbar-gutter:stable; overscroll-behavior:contain;
+}
+#app .admin-interface .pm-history-live .pm-results-viewport { height:clamp(280px,calc(100dvh - 400px),640px); }
+#app .admin-interface .pm-queue-live .pm-results-viewport { height:auto; min-height:0; max-height:none; overflow:visible; scrollbar-gutter:auto; }
+#app .admin-interface .pm-results-viewport .service-table-wrap { overflow:visible; margin:0; }
+@media (max-width:900px) {
+  #app .admin-interface.admin-shell .pm-queue-live .pm-results-viewport .service-table-wrap { max-width:100%; overflow-x:auto; height:auto; max-height:none; }
+}
+#app .admin-interface .pm-results-viewport .service-table thead { position:sticky; top:0; z-index:1; }
+#app .admin-interface.admin-shell .pm-results-viewport .service-table tbody tr { height:60px; }
+#app .admin-interface.admin-shell .pm-results-viewport .service-table td { box-sizing:border-box; height:60px; padding:9px 12px; line-height:20px; }
+#app .admin-interface .pm-cell-summary { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; max-height:40px; line-height:20px; overflow:hidden; }
+#app .admin-interface :is(.pm-equipment-live,.pm-queue-live) .pm-filters .tabs button { min-width:88px; width:88px; flex:0 0 88px; padding-inline:8px; }
+#app .admin-interface .pm-queue-live .pm-filters .tabs button { min-width:112px; width:112px; flex-basis:112px; }
+#app .admin-interface .pm-results-viewport .pm-actions { display:inline-flex; flex-wrap:nowrap; gap:6px; }
+#app .admin-interface :is(.pm-equipment-live,.pm-queue-live,.pm-history-live) .pm-pager {
+  display:flex; align-items:center; justify-content:center; min-height:44px; margin:12px 0;
+}
+#app .admin-interface :is(.pm-equipment-live,.pm-queue-live,.pm-history-live) .pm-pager button {
+  min-width:64px; height:36px; box-sizing:border-box;
+}
+#app .admin-interface :is(.pm-equipment-live,.pm-queue-live,.pm-history-live) .pm-pager>span {
+  min-width:180px; text-align:center; font-variant-numeric:tabular-nums;
+}
+/* 관리자 앱 지하차도 목록: 작업 2열, 단계 4열, 선택 2열, 검색 3:1. */
+#app .manager-app-shell .app-restored-body:has(.restored-facility-filters) { padding:16px; }
+#app .manager-app-shell .app-service-content:has(.restored-facility-filters) { width:100%; min-width:0; box-sizing:border-box; }
+#app .manager-app-shell .service-workspace:has(.restored-facility-filters)>.service-heading { display:block; margin:0 0 12px; }
+#app .manager-app-shell .service-workspace:has(.restored-facility-filters)>.service-heading .service-actions { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:8px; width:100%; }
+#app .manager-app-shell .restored-facility-filters { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; width:100%; margin:0 0 12px; padding:0; box-sizing:border-box; }
+#app .manager-app-shell .restored-facility-filters>.chips { grid-column:1 / -1; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; width:100%; }
+#app .manager-app-shell .restored-facility-filters>select { grid-column:span 2; }
+#app .manager-app-shell .restored-facility-filters>:is(input,.facility-autocomplete) { grid-column:span 3; }
+#app .manager-app-shell .restored-facility-filters>button { grid-column:span 1; }
+#app .manager-app-shell .restored-facility-filters :is(button,input,select),
+#app .manager-app-shell .service-workspace:has(.restored-facility-filters)>.service-heading button { width:100%; min-width:0; height:44px; min-height:44px; margin:0; padding:0 8px; box-sizing:border-box; border-radius:8px; font-size:13px; line-height:20px; }
+#app .manager-app-shell .restored-facility-filters .chip { font-weight:600; border-width:1px; }
+@media (max-width:700px) {
+  #app .admin-interface { --admin-page-padding:16px; }
+  #app .admin-interface.admin-shell :is(.service-actions,.pm-head-actions,.pm-detail-actions,.page-head > .actions) { justify-content:flex-start; }
+  #app .admin-interface.admin-shell :is(.page-head,.service-heading) > :is(.service-actions,.pm-head-actions,.pm-detail-actions,.actions) { width:100%; }
+}
+
+/* 앱은 바깥 스크롤 여백 없이 중앙에 놓고, 본문 안에서만 스크롤한다. */
+:root:has(.manager-app-shell) { scrollbar-gutter:auto; overflow:hidden; }
+:root:has(.manager-app-shell) body { margin:0; overflow:hidden; }
+#app .manager-app-shell { box-sizing:border-box; word-break:keep-all; overflow-wrap:break-word; }
+#app .manager-app-shell :is(.app-restored-body,.app-service-content,.service-workspace,.service-actions,.pm-head-actions,.pm-detail-actions,.pm-filters,.pm-filter-row,.pm-filter-card) { box-sizing:border-box; min-width:0; max-width:100%; }
+#app .manager-app-shell .app-restored-body { padding:16px; scrollbar-width:thin; scrollbar-gutter:stable both-edges; }
+#app .manager-app-shell .app-manager-overview .app-restored-body { padding:0; scrollbar-gutter:auto; }
+#app .manager-app-shell :is(.service-actions,.pm-head-actions,.pm-detail-actions) { display:flex; align-items:center; flex-wrap:wrap; gap:8px; width:100%; }
+#app .manager-app-shell :is(.service-actions,.pm-head-actions,.pm-detail-actions)>:is(button,a) { flex:1 1 120px; min-width:0; max-width:100%; min-height:44px; height:auto; padding:10px 12px; box-sizing:border-box; white-space:normal; word-break:keep-all; overflow-wrap:break-word; line-height:20px; text-align:center; }
+#app .manager-app-shell .pm-engine { flex:0 1 100%; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; box-sizing:border-box; }
+#app .manager-app-shell .service-filters { width:100%; min-width:0; box-sizing:border-box; }
+#app .manager-app-shell .service-form-fields { grid-template-columns:minmax(0,1fr); width:100%; }
+#app .manager-app-shell .service-filters label { min-width:0; max-width:100%; }
+#app .manager-app-shell .service-filters :is(input,select),
+#app .manager-app-shell .pm-filter-row :is(input,select) { width:100%; min-width:0; max-width:100%; box-sizing:border-box; }
+#app .manager-app-shell select { padding-right:28px; }
+#app .manager-app-shell :is(.pm-filters,.pm-filter-row,.pm-range) { min-width:0; max-width:100%; }
+#app .manager-app-shell .pm-filters .tabs { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; width:100%; }
+#app .manager-app-shell .pm-queue-live .pm-filters .tabs { grid-template-columns:repeat(3,minmax(0,1fr)); }
+#app .manager-app-shell :is(.pm-equipment-live,.pm-queue-live) .pm-filters .tabs button { width:100%; min-width:0; height:auto; min-height:44px; margin:0; padding:8px 4px; white-space:normal; word-break:keep-all; line-height:20px; }
+#app .manager-app-shell .pm-type { width:100%; min-width:0; }
+#app .manager-app-shell .pm-results-viewport .service-table-wrap { border:0; background:transparent; }
+#app .manager-app-shell :is(.pm-equipment-live,.pm-queue-live,.pm-history-live) .pm-results-viewport { height:auto; min-height:0; max-height:none; overflow:visible; scrollbar-gutter:auto; }
+#app .manager-app-shell :is(.pm-equipment-live,.pm-queue-live,.pm-history-live)>.pm-note { display:none; }
+#app .manager-app-shell .pm-results-viewport .service-table { display:block; width:100%; min-width:0; }
+#app .manager-app-shell .pm-results-viewport .service-table tbody { display:flex; flex-direction:column; gap:12px; }
+#app .manager-app-shell .pm-results-viewport .service-table tbody tr { display:block; height:auto; min-height:0; flex:none; padding:12px; box-sizing:border-box; }
+#app .manager-app-shell .pm-results-viewport .service-table td[data-label] { display:grid; grid-template-columns:80px minmax(0,1fr); align-items:start; gap:10px; width:100%; height:auto; min-height:0; max-width:none; padding:6px 0; box-sizing:border-box; line-height:20px; white-space:normal; }
+#app .manager-app-shell .pm-results-viewport .service-table td[data-label]::before { min-width:0; line-height:20px; word-break:keep-all; }
+#app .manager-app-shell .pm-cell-content { min-width:0; max-width:100%; overflow-wrap:break-word; }
+#app .manager-app-shell .pm-results-viewport :is(.pm-actions,.pm-scores) { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+#app .manager-app-shell :is(.pm-equipment-live,.pm-queue-live) .pm-kpis { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; width:100%; min-width:0; }
+#app .manager-app-shell :is(.pm-equipment-live,.pm-queue-live) .pm-kpi { min-width:0; min-height:68px; padding:8px 6px; gap:4px; text-align:center; justify-items:center; align-content:center; }
+#app .manager-app-shell :is(.pm-equipment-live,.pm-queue-live) .pm-kpi span { font-size:11px; line-height:16px; white-space:nowrap; }
+#app .manager-app-shell :is(.pm-equipment-live,.pm-queue-live) .pm-kpi strong { font-size:22px; line-height:26px; font-variant-numeric:tabular-nums; }
+#app .manager-app-shell .pm-type select { flex:1; min-width:0; max-width:100%; }
+#app .manager-app-shell .pm-select { flex:1 1 100%; min-width:0; max-width:100%; flex-wrap:wrap; }
+#app .manager-app-shell .pm-filter-row input[type=date] { flex:1 1 120px; }
+#app .manager-app-shell :is(.pm-equipment-live,.pm-queue-live,.pm-history-live) .pm-pager { display:grid; grid-template-columns:56px minmax(0,1fr) 56px; gap:8px; width:100%; min-width:0; }
+#app .manager-app-shell :is(.pm-equipment-live,.pm-queue-live,.pm-history-live) .pm-pager>span { min-width:0; overflow-wrap:break-word; line-height:20px; }
+#app .manager-app-shell :is(.pm-equipment-live,.pm-queue-live,.pm-history-live) .pm-pager>button { width:56px; min-width:0; padding:0 6px; }
+

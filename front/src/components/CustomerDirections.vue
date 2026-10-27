@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { matchesKoreanSearch } from '../utils/korean-search'
 import NotificationBell from './NotificationBell.vue'
 import { pageFriendlyMapScroll } from '../runtime/mapScroll'
 let disposeMapScroll: (() => void) | undefined
@@ -328,7 +329,7 @@ const arrivalTime = computed(() =>
   }),
 )
 const filteredCameras = computed(() =>
-  cameras.value.filter((item) => item.name.includes(cameraQuery.value.trim())),
+  cameras.value.filter((item) => matchesKoreanSearch(item.name,cameraQuery.value)),
 )
 const turnIcon = computed(() =>
   /좌회전|왼쪽/.test(currentGuide.value?.guidance || '')
@@ -608,9 +609,9 @@ onBeforeUnmount(() => {
 <section v-if="editing" class="navigation-search" aria-label="경로 검색"
           ><div class="navigation-search-title"
               ><button type="button" class="navigation-search-toggle" :aria-expanded="searchExpanded" aria-controls="navigation-search-fields" @click="searchExpanded=!searchExpanded">
-                <strong>어디로 갈까요?</strong><span aria-hidden="true">{{searchExpanded?'⌃':'⌄'}}</span>
+                <strong>어디로 갈까요?</strong><svg class="navigation-search-chevron" :class="{'is-expanded':searchExpanded}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
               </button>
-              ><button class="ui-icon-button" v-if="active" type="button" aria-label="검색창 닫기" @click="editing=false"
+              <button class="ui-icon-button" v-if="active" type="button" aria-label="검색창 닫기" @click="editing=false"
                 >
           <UiIcon name="close" />
         </button
@@ -738,7 +739,7 @@ onBeforeUnmount(() => {
           ><p class="directions-source">카카오모빌리티 · 조회 시점 기준 예상 소요 시간</p></section
         > </main
       ><CustomerAppNav />
-<dialog ref="guideDialog" class="navigation-detail-dialog" aria-labelledby="route-guide-title"
+<WorkflowPage ref="guideDialog" class="navigation-detail-dialog" aria-labelledby="route-guide-title"
         ><header
           ><div
             ><small>{{origin?.name}} → {{destination?.name}}</small
@@ -766,9 +767,9 @@ onBeforeUnmount(() => {
               ></li
             ></ol
           ><p v-if="!guides.length">제공된 구간 안내가 없습니다.</p></div
-        ></dialog
+        ></WorkflowPage
       >
-<dialog
+<WorkflowPage
         ref="cameraDialog"
         class="navigation-detail-dialog"
         :class="{'navigation-video-dialog':camera!==null}"
@@ -817,9 +818,9 @@ onBeforeUnmount(() => {
               >영상 주소 열기 ↗</a
             ></section
           ></div
-        ></dialog
+        ></WorkflowPage
       >
-<dialog
+<WorkflowPage
         ref="infoDialog"
         class="navigation-detail-dialog navigation-weather-dialog"
         aria-labelledby="route-weather-title"
@@ -842,7 +843,7 @@ onBeforeUnmount(() => {
             ><span>습도 {{weather.humidity??'—'}}% · 강우량 {{weather.rainfall??'—'}} mm</span
             ><small>기상청 · {{new Date(weather.observedAt).toLocaleString('ko-KR')}}</small></div
           ></div
-        ></dialog
+        ></WorkflowPage
       >
     </div></div
   >

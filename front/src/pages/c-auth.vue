@@ -327,6 +327,18 @@ async function submit() {
   font-size: 14px;
   font-weight: 500;
 }
+.auth-service input:not([type=checkbox]):not([type=radio]) {
+  appearance:none;
+  box-sizing:border-box;
+  width:100%; min-width:0; min-height:44px;
+  padding:10px 12px;
+  border:1px solid var(--r-line,#dbe3ed);
+  border-radius:8px;
+  background:var(--r-surface,#fff);
+  color:var(--r-ink,#172d48);
+  font:inherit;
+  box-shadow:none !important;
+}
 .auth-service button[type=submit] {
   width: auto;
   min-width: 160px;
