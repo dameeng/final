@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Limit;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -88,6 +89,7 @@ public class UnderpassServiceImpl implements UnderpassService {
     private final com.mbc.puf.stream.StreamPublisher streamPublisher;   // SSE 실시간 이벤트
     private final EntityManager em;
     private final com.mbc.puf.internal.repository.RiskForecastRepository riskForecastRepository;
+    private final ApplicationEventPublisher eventPublisher;   // 내비 위험지점 즉시 갱신 요청
 
     public UnderpassServiceImpl(UnderpassRepository underpassRepository, UnderpassEventRepository eventRepository,
                                 TransitRepository transitRepository,
@@ -95,8 +97,10 @@ public class UnderpassServiceImpl implements UnderpassService {
                                 ThresholdService thresholdService, ScopeResolver scopeResolver,
                                 DbClock dbClock, EntityManager em,
                                 com.mbc.puf.stream.StreamPublisher streamPublisher,
-                                com.mbc.puf.internal.repository.RiskForecastRepository riskForecastRepository) {
+                                com.mbc.puf.internal.repository.RiskForecastRepository riskForecastRepository,
+                                ApplicationEventPublisher eventPublisher) {
         this.riskForecastRepository = riskForecastRepository;
+        this.eventPublisher = eventPublisher;
         this.streamPublisher = streamPublisher;
         this.underpassRepository = underpassRepository;
         this.eventRepository = eventRepository;
@@ -237,6 +241,7 @@ public class UnderpassServiceImpl implements UnderpassService {
             underpass.setFloodHistoryCount(request.getFloodHistoryCount());
         }
         streamPublisher.dataChangedPublic(underpass.getRegionId(), "underpass", "UPDATE", underpass.getId());
+        eventPublisher.publishEvent(new com.mbc.puf.navigation.service.HazardRefreshRequested());   // 좌표·길이 등이 바뀌었을 수 있다
         return toDetail(reload(underpass));
     }
 
@@ -247,6 +252,7 @@ public class UnderpassServiceImpl implements UnderpassService {
         requireOwnableRegion(loginUser, underpass.getRegionId());
         underpass.setDeleted(true);
         streamPublisher.dataChangedPublic(underpass.getRegionId(), "underpass", "DELETE", underpass.getId());
+        eventPublisher.publishEvent(new com.mbc.puf.navigation.service.HazardRefreshRequested());   // 삭제된 지하차도는 위험지점에서 빠진다
     }
 
     // ---- 상행/하행 입·출구 카메라 지정 (MP-10-1): 담당 지역만 ----
@@ -275,6 +281,7 @@ public class UnderpassServiceImpl implements UnderpassService {
         underpass.setDownEntryCameraId(request.getDownEntryCameraId());
         underpass.setDownExitCameraId(request.getDownExitCameraId());
         streamPublisher.dataChangedPublic(underpass.getRegionId(), "underpass", "UPDATE", underpass.getId());
+        eventPublisher.publishEvent(new com.mbc.puf.navigation.service.HazardRefreshRequested());   // 입·출구 카메라가 바뀌면 구간 좌표가 달라진다
         return toDetail(underpass);
     }
 
@@ -491,7 +498,8 @@ public class UnderpassServiceImpl implements UnderpassService {
         return item;
     }
 
-    static UnderpassDetailResponse toDetail(Underpass u) {
+    // 다른 도메인(control 의 차단/해제 응답)도 같은 모양으로 쓰려고 public 으로 연다
+    public static UnderpassDetailResponse toDetail(Underpass u) {
         UnderpassDetailResponse d = new UnderpassDetailResponse();
         d.setId(u.getId());
         d.setName(u.getName());

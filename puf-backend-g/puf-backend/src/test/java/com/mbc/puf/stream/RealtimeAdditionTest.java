@@ -43,7 +43,8 @@ class RealtimeAdditionTest {
         HttpResponse<byte[]> response=mock(HttpResponse.class);when(response.statusCode()).thenReturn(200);
         when(response.body()).thenReturn("{\"cameras\":[{\"cameraId\":226,\"running\":true}]}".getBytes(StandardCharsets.UTF_8));
         when(ocr.getBytes("/control/plate")).thenReturn(response);
-        var b=new AnalysisStateBroadcaster(db,ocr,sink,new ObjectMapper(),stream,230);
+        var hub=mock(StreamHub.class);when(hub.hasAdminConnections()).thenReturn(true);
+        var b=new AnalysisStateBroadcaster(db,ocr,sink,new ObjectMapper(),stream,hub,230);
         b.poll();b.poll();
         when(response.body()).thenReturn("{\"cameras\":[]}".getBytes(StandardCharsets.UTF_8));b.poll();
         when(ocr.getBytes("/control/plate")).thenThrow(new RuntimeException("down"));b.poll();b.poll();
@@ -56,7 +57,7 @@ class RealtimeAdditionTest {
     Fixture notifications() {
         var customers=mock(CustomerNotificationRepository.class);var em=mock(EntityManager.class);var stream=mock(StreamPublisher.class);
         var service=spy(new NotificationServiceImpl(customers,mock(ManagerNotificationRepository.class),
-            mock(ManagerRegionRepository.class),em,stream,mock(PushService.class),mock(DbClock.class),120));
+            mock(ManagerRegionRepository.class),em,stream,mock(PushService.class),mock(DbClock.class,invocation->java.time.LocalDateTime.now()),120));
         return new Fixture(service,customers,em,stream);
     }
     @Test void customerReadPublishesOnlyToThatCustomerWithFreshCount() {
