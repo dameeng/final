@@ -198,10 +198,11 @@ dialog.service-modal, dialog.overview-control-notice, dialog.account-withdraw,
   #app :is(.service-pagination,.event-pagination)>button:not(:disabled):hover,
   #app :is(.app-more-menu,.customer-section-sidebar)>a:hover,
   #app :is(.tbl,.service-table) tbody tr:hover { background-color:var(--r-selected) !important; }
-  #app :is(.customer-menu-link,.header-dropdown-column a):hover { color:var(--r-accent); }
+  #app :is(.customer-menu-link,.header-dropdown-column a,.customer-member-nav>a):hover { color:var(--r-accent); }
   #app .wire-page .btn:is(.p,.primary):not(:disabled):hover { box-shadow:0 4px 12px #1e56a340; }
   #app .admin-shell .wire-page>.hdr .btn:not(:disabled):hover { background:#ffffff24 !important; color:var(--r-on-brand) !important; }
 }
+#app .customer-member-nav>a:focus-visible { color:var(--r-accent); }
 @media (max-width:800px) {
   #app .customer-section-sidebar a.section-sidebar-title { background:transparent; color:var(--r-brand); box-shadow:none; }
 }
