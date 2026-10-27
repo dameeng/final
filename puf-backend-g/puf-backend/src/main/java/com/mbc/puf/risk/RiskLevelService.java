@@ -13,6 +13,7 @@ import com.mbc.puf.common.enums.UnderpassCurrentStatus;
 import com.mbc.puf.common.enums.UnderpassEventType;
 import com.mbc.puf.control.service.ControlService;
 import com.mbc.puf.display.service.VmsReconcileRequested;
+import com.mbc.puf.navigation.service.HazardRefreshRequested;
 import com.mbc.puf.notification.service.NotificationService;
 import com.mbc.puf.stream.StreamPayloads;
 import com.mbc.puf.stream.StreamPublisher;
@@ -78,6 +79,7 @@ public class RiskLevelService {
             event.setWaterCm(water);
             eventRepository.saveAndFlush(event);
             levelEventId = event.getId();
+            eventPublisher.publishEvent(new HazardRefreshRequested());   // 내비 위험지점도 커밋 뒤에 바로 다시 계산
 
             boolean up = after.ordinal() > before.ordinal();
             streamPublisher.publishPublic("risk-level-change", underpass.getRegionId(),
