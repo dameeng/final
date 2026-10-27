@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { adminPageTitle } from '../data/adminTitles'
 import AdminSidebarLinks from '../components/AdminSidebarLinks.vue'
 import MenuIcon from '../components/MenuIcon.vue'
 import AdminIdentity from '../components/AdminIdentity.vue'
@@ -139,12 +140,9 @@ onBeforeUnmount(() => dispose?.())
     </aside>
 
 <main class="page">
-      <div class="crumb">
-        <span>지하차도 관리</span>
-        <span class="note"></span>
-      </div>
+      
 <div class="page-head">
-        <h1>지하차도 관리</h1>
+        <h1>{{adminPageTitle('/fac-list')}}</h1>
         <div class="row"><a class="btn primary" href="/fac-new">+ 지하차도 등록</a></div>
       </div>
 <div class="filters" role="search">

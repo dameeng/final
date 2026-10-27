@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { adminPageTitle } from '../data/adminTitles'
 import AdminSidebarLinks from '../components/AdminSidebarLinks.vue'
 import MenuIcon from '../components/MenuIcon.vue'
 import AdminIdentity from '../components/AdminIdentity.vue'
@@ -139,12 +140,9 @@ onBeforeUnmount(() => dispose?.())
     </aside>
 
 <main class="page">
-      <div class="crumb">
-        <span>로그</span>
-        <span class="note"></span>
-      </div>
+      
 <div class="page-head">
-        <h1>로그</h1>
+        <h1>{{adminPageTitle('/logs')}}</h1>
         <div class="row">
           <button type="button" class="btn inl-70da9b2a07" disabled title="이번 범위에서는 보류">엑셀 내보내기</button>
         </div>

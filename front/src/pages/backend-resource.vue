@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { matchesKoreanSearch } from '../utils/korean-search'
 import TunnelCctvDialog from '../components/TunnelCctvDialog.vue'
 import RemainingVehicleTransfer from '../components/RemainingVehicleTransfer.vue'
 const remainingTransfer=ref<InstanceType<typeof RemainingVehicleTransfer>>()
@@ -7,11 +8,13 @@ import { notificationTarget } from '../utils/notification-target'
 const notificationGlow = useNotificationGlow()
 import RiskLevelBadge from '../components/RiskLevelBadge.vue'
 import { formatPhone } from '../utils/phone'
-import { dateParts } from '../utils/display-date'
+import { dateParts, displayDate } from '../utils/display-date'
 import { riskGroup, matchesRisk, boardCategoryLabel } from '../services/backendCatalog'
 import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 import MyUnderpassList from '../components/MyUnderpassList.vue'
+import { adminResourceTitles } from '../data/adminTitles'
+import { compareFacilityPriority } from '../utils/facility-priority'
 import UnderpassVmsPanel from '../components/UnderpassVmsPanel.vue'
 import AdminFacilityList from '../components/AdminFacilityList.vue'
 import AdminAppFacilityRows from '../components/AdminAppFacilityRows.vue'
@@ -56,9 +59,12 @@ const route = useRoute(),
       ['/c-notice', '/info/faq', '/customer-app/notices', '/customer-app/faq'].includes(route.path),
   )
 const restored = computed(() => !customer.value && !route.path.startsWith('/admin-app/'))
+const appPage = computed(() => /^\/(admin|customer)-app\//.test(route.path))
 const facilityList = computed(() => restored.value && resourceId.value === 'facilities')
 // 카메라·임계치·전광판 관리: 왼쪽 내 지하차도 목록 + 오른쪽 선택한 지하차도의 화면
-const splitTargets: Record<string, string> = { cameras: '카메라', thresholds: '위험도 임계치', display: '전광판' }
+const splitTargets: Record<string, string> = Object.fromEntries(
+  ['cameras', 'thresholds', 'display'].map(key => [key, adminResourceTitles[key]!]),
+)
 const underpassSplit = computed(
   () => restored.value && !props.embedded && Object.hasOwn(splitTargets, resourceId.value),
 )
@@ -68,28 +74,11 @@ const splitUnderpassFields: Field[] = [
   { key: 'underpassId', label: '지하차도', type: 'select', source: 'underpasses', required: true },
 ]
 const router = useRouter()
-const splitKeyword = ref(''),
-  splitMatches = ref<string[]>([])
-// 왼쪽 목록과 같은 검색 결과로 셀렉트 박스도 거른다 (선택된 항목은 남김)
-const splitChoices = computed(() => {
-  if (!splitKeyword.value.trim()) return choices
-  return {
-    ...choices,
-    underpassId: (choices.underpassId || []).filter(
-      (option) => splitMatches.value.includes(option.value) || option.value === String(parents.underpassId || ''),
-    ),
-  }
-})
 const splitUnderpassName = computed(
   () => choices.underpassId?.find((option) => option.value === String(parents.underpassId || ''))?.label,
 )
 function selectUnderpass(id: string) {
   void router.replace({ query: { ...route.query, underpassId: id, id: undefined } })
-}
-function submitFilters() {
-  if (underpassSplit.value && parents.underpassId && String(parents.underpassId) !== String(route.query.underpassId || ''))
-    selectUnderpass(String(parents.underpassId))
-  else if (!vmsSplit.value) search()
 }
 const appFacilityList = computed(
   () => route.path === '/admin-app/screen-4' && resourceId.value === 'facilities',
@@ -165,7 +154,7 @@ async function markManagerNotificationRead(row: Record<string, any>) {
   finally { saving.value = false }
 }
 function managerNotificationTarget(row:Record<string,any>) {
-  return notificationTarget({id:Number(row.id),refType:row.refType,refId:row.refId},true,route.path,route.path)
+  return notificationTarget({id:Number(row.id),refType:row.refType,refId:row.refId,regionId:row.regionId},true,route.path,route.path)
 }
 async function openManagerNotification(event:MouseEvent,row:Record<string,any>) {
   if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey||event.button!==0)return
@@ -209,10 +198,12 @@ async function loadCollection(signal: AbortSignal) {
   // 관리자 시설 목록은 담당 지역만 (서버 기본값은 전체 ALL)
   const scope =
     (facilityList.value || appFacilityList.value) && app.account?.role === 'REGIONAL_ADMIN' ? 'MINE' : ''
+  const collectionFilters = { ...filters }
+  if (facilityList.value || appFacilityList.value) delete collectionFilters.keyword
   const fetchPage = async (current: number) =>
     asPage<Record<string, any>>(
       await backend(
-        path(resource.value.path) + queryString({ ...filters, scope, page: current, size: 100 }),
+        path(resource.value.path) + queryString({ ...collectionFilters, scope, page: current, size: 100 }),
         { signal },
       ),
       current,
@@ -222,6 +213,11 @@ async function loadCollection(signal: AbortSignal) {
     items = [...first.items]
   for (let current = 2; current <= first.totalPages; current++)
     items.push(...(await fetchPage(current)).items)
+  if(!signal.aborted&&(facilityList.value||appFacilityList.value)) facilitySearchRows.value=[...items]
+  if ((facilityList.value || appFacilityList.value) && filters.keyword) {
+    const matched = items.filter(row => matchesKoreanSearch([row.name,row.regionName,row.roadAddress].filter(Boolean).join(' '),filters.keyword))
+    items.splice(0,items.length,...matched)
+  }
   if (['notices', 'faqs'].includes(resourceId.value)) {
     const views = (row: Record<string, any>) => {
       const count = Number(row.viewCount)
@@ -238,6 +234,7 @@ async function loadCollection(signal: AbortSignal) {
     const selected = items.filter((row) => matchesRisk(row.currentRiskLevel, riskFilter.value))
     items.splice(0, items.length, ...selected)
   }
+  if (appFacilityList.value) items.sort(compareFacilityPriority)
   const size = pageSize.value
   const totalPages = Math.ceil(items.length / size)
   page.value = Math.min(page.value, Math.max(1, totalPages))
@@ -262,6 +259,7 @@ const pageTitle = computed(() =>
       : resource.value.title,
 )
 function displayField(key: string, value: any) {
+  if (key === 'earlyBlock' && typeof value === 'boolean') return value ? '대상' : '대상 아님'
   if (['phone', 'emergency'].includes(key)) return formatPhone(value) || '—'
   return resourceId.value === 'notices' && key === 'important'
     ? value
@@ -298,6 +296,7 @@ function resourceLink(id: string) {
   )
   const query: Record<string, string> = {}
   for (const key of ['underpassId', 'regionId', 'carNum']) {
+    if (key === 'regionId' && (parents.underpassId || filters.underpassId)) continue
     const value = parents[key] || filters[key]
     if (supported.has(key) && value !== undefined && value !== null && value !== '')
       query[key] = String(value)
@@ -324,6 +323,31 @@ const filters = reactive<Record<string, any>>({}),
   parents = reactive<Record<string, any>>({}),
   choices = reactive<Record<string, { value: string; label: string }[]>>({}),
   values = reactive<Record<string, any>>({})
+const facilitySearchRows = ref<Record<string, any>[]>([])
+const facilitySearchOpen = ref(false), facilitySearchIndex = ref(-1)
+const facilitySuggestions = computed(() => !String(filters.keyword||'').trim() ? [] : facilitySearchRows.value.filter(row =>
+  (!riskFilter.value || matchesRisk(row.currentRiskLevel,riskFilter.value)) &&
+  matchesKoreanSearch([row.name,row.regionName,row.roadAddress].filter(Boolean).join(' '),filters.keyword)
+).slice(0,6))
+function chooseFacilitySuggestion(row: Record<string, any>) {
+  filters.keyword=row.name
+  facilitySearchOpen.value=false; facilitySearchIndex.value=-1
+  search()
+}
+function facilitySearchKey(event: KeyboardEvent) {
+  if(event.isComposing) return
+  if(event.key==='Escape') { event.preventDefault(); facilitySearchOpen.value=false; facilitySearchIndex.value=-1 }
+  else if((event.key==='ArrowDown'||event.key==='ArrowUp')&&facilitySuggestions.value.length) {
+    event.preventDefault(); facilitySearchOpen.value=true
+    const count=facilitySuggestions.value.length
+    facilitySearchIndex.value=facilitySearchIndex.value<0
+      ? event.key==='ArrowDown'?0:count-1
+      : (facilitySearchIndex.value+(event.key==='ArrowDown'?1:-1)+count)%count
+  } else if(event.key==='Enter'&&facilitySearchOpen.value&&facilitySearchIndex.value>=0) {
+    const row=facilitySuggestions.value[facilitySearchIndex.value]
+    if(row) { event.preventDefault(); chooseFacilitySuggestion(row) }
+  }
+}
 const acknowledge = ref(false)
 const data = ref<PageData<Record<string, any>>>({
     items: [],
@@ -360,11 +384,14 @@ const missingParent = computed(() =>
 )
 async function lookup(fields: Field[], row?: Record<string, any>) {
   const scope = resourceId.value
+  const lookupRoute = resourceRouteKey()
+  const myTransfers = scope === 'transfers' && app.account?.role === 'REGIONAL_ADMIN'
+  const myRecords = ['ocr', 'reviews', 'transits'].includes(scope) && app.account?.role === 'REGIONAL_ADMIN'
   for (const field of fields) {
     if (!field.source) continue
     let url =
       field.source === 'underpasses'
-        ? '/api/underpasses?size=500' + (underpassSplit.value ? '&scope=MINE&sort=NAME' : '')
+        ? '/api/underpasses?size=500' + (underpassSplit.value || myTransfers || myRecords ? '&scope=MINE&sort=NAME' : '')
         : field.source === 'regions'
           ? '/api/regions'
           : field.source === 'shifts'
@@ -392,7 +419,7 @@ async function lookup(fields: Field[], row?: Record<string, any>) {
         app.account?.role === 'REGIONAL_ADMIN'
           ? new Set((app.account.regions || []).map((region) => String(region.id)))
           : undefined
-      if (alive && scope === resourceId.value && (!row || selected.value?.id === row.id))
+      if (alive && scope === resourceId.value && lookupRoute === resourceRouteKey() && (!row || selected.value?.id === row.id)) {
         choices[field.key] = asPage<any>(result).items.filter((item) => !mine || mine.has(String(item.id))).map((item) => ({
           value: String(item.id),
           label:
@@ -400,6 +427,13 @@ async function lookup(fields: Field[], row?: Record<string, any>) {
               ? `${item.name}${item.dummy ? ' (시연용)' : ''} · ${item.id}`
               : item.name || item.content || `${item.cameraRole} · ${item.id}`,
         }))
+        // 이관 문서는 담당 지하차도로 바로 진입하되, 문서 링크의 시설 선택은 유지한다.
+        if (myTransfers && !row && field.key === 'underpassId' &&
+            resource.value.parents?.includes(field) && !parents.underpassId &&
+            !route.query.underpassId && choices[field.key]?.length) {
+          selectUnderpass(choices[field.key]![0]!.value)
+        }
+      }
     } catch {
       /* Main list retains its own request error. */
     }
@@ -408,6 +442,9 @@ async function lookup(fields: Field[], row?: Record<string, any>) {
 async function load() {
   if (props.operationsOnly) return
   if (!resource.value || missingParent.value) return
+  // 특정 시설 조회와 기본 담당 지역이 충돌하지 않도록 시설을 우선한다.
+  if (['ocr', 'reviews', 'transits'].includes(resourceId.value) && filters.underpassId)
+    filters.regionId = ''
   abort?.abort()
   abort = new AbortController()
   const seq = ++request
@@ -484,8 +521,14 @@ function closeSummaryBackdrop(event: MouseEvent) {
   summaryBackdropDown = false
 }
 async function open(kind: string, row?: Record<string, any>, itemAction?: Action) {
-  if (resource.value.detailFromRow && row)
-    row = data.value.items.find((item) => String(item.id) === String(row?.id)) || row
+  if (resource.value.detailFromRow && row) {
+    const record = data.value.items.find((item) => String(item.id) === String(row?.id))
+    if (!record && Object.keys(row).every(key => key === 'id')) {
+      error.value = '선택한 기록을 현재 조회 목록에서 찾을 수 없습니다. 담당 지역·지하차도·조회 기간을 확인한 뒤 목록에서 기록을 선택해 주세요.'
+      return
+    }
+    row = record || row
+  }
   if (!['detail', 'video'].includes(kind) && !canWrite.value) {
     error.value = '이 작업을 수행할 권한이 없습니다.'
     return
@@ -695,7 +738,54 @@ async function submit() {
     saving.value = false
   }
 }
+function recordFilterChanged(event: Event) {
+  if (['ocr', 'reviews', 'transits'].includes(resourceId.value)) {
+    const label = (event.target as HTMLElement).getAttribute('aria-label')
+    if (label === '담당 지역') filters.underpassId = ''
+    if (label === '지하차도') filters.regionId = ''
+  }
+  if (customer.value) search()
+}
+// OCR 상세 API는 별도로 없으므로 알림의 기록을 목록 페이지에서 찾는다.
+// 현재 화면 첫 페이지에 없다는 이유만으로 빈 상세를 열지 않는다.
+async function openLinkedOcrRecord(id: string) {
+  const seq = request, signal = abort?.signal
+  let record = data.value.items.find(item => String(item.id) === id)
+  loading.value = true
+  try {
+    if (!record) {
+      let current = 1, total = 1
+      do {
+        const result = asPage<any>(await backend('/api/plate-logs' + queryString({
+          ...filters, page: current, size: 100,
+        }), { signal }), current, 100)
+        if (!alive || seq !== request || signal?.aborted) return
+        record = result.items.find(item => String(item.id) === id)
+        total = result.totalPages
+        current++
+      } while (!record && current <= total)
+    }
+    if (!alive || seq !== request || signal?.aborted) return
+    if (!record) {
+      await open('detail', { id: Number(id) })
+      return
+    }
+    if (record.underpassId != null && String(filters.underpassId) !== String(record.underpassId)) {
+      filters.underpassId = String(record.underpassId)
+      filters.regionId = ''
+      page.value = 1
+      await load()
+      if (!alive || error.value || String(route.query.id) !== id) return
+    }
+    await open('detail', record)
+  } catch (e) {
+    if (seq === request && !signal?.aborted) error.value = (e as Error).message
+  } finally {
+    if (seq === request) loading.value = false
+  }
+}
 function search() {
+  facilitySearchOpen.value=false; facilitySearchIndex.value=-1
   page.value = 1
   void load()
 }
@@ -721,14 +811,48 @@ const labels = computed(() =>
     ['sortOrder', '표시 순서'],
   ]),
 )
+const facilitySummaryGroups = computed(() => {
+  const row = detail.value
+  const regionName = row.regionName || selected.value?.regionName ||
+    choices.regionId?.find(option => option.value === String(row.regionId))?.label
+  const groups: { title: string; fields: [string, string, unknown][] }[] = [
+    { title: '위치', fields: [
+      ['region', '지역', regionName], ['roadAddress', '주소', row.roadAddress],
+    ] },
+    { title: '시설 제원', fields: [
+      ['heightM', '높이', row.heightM], ['lengthM', '길이', row.lengthM],
+      ['widthM', '폭', row.widthM], ['lanes', '차로 수', row.lanes],
+      ['safetyGrade', '안전등급', row.safetyGrade],
+    ] },
+    { title: '안전 정보', fields: [
+      ['currentWaterCm', '현재 수위', row.currentWaterCm],
+      ['earlyBlock', '선제 차단 대상', row.earlyBlock],
+      ['riverDistM', '하천 거리', row.riverDistM], ['seaDistM', '바다 거리', row.seaDistM],
+      ['floodHistoryCount', '과거 침수 횟수', row.floodHistoryCount],
+    ] },
+    { title: '차량 현황', fields: [
+      ['remainingCount', '잔류 차량', row.remainingCount], ['pendingReviewCount', '판별 대기', row.pendingReviewCount],
+    ] },
+  ]
+  return groups.map(group => ({ ...group, fields: group.fields.filter(([, , value]) => value != null && value !== '') }))
+    .filter(group => group.fields.length)
+})
+const facilityFieldUnits: Record<string, string> = {
+  heightM: 'm', lengthM: 'm', widthM: 'm', lanes: '차로', currentWaterCm: 'cm',
+  riverDistM: 'm', seaDistM: 'm', floodHistoryCount: '회', remainingCount: '대', pendingReviewCount: '건',
+}
+function resourceRouteKey() {
+  return route.path+JSON.stringify(Object.entries(route.query).filter(([key])=>key!=='__view'))
+}
 watch(
-  () => route.fullPath,
+  resourceRouteKey,
   () => {
     abort?.abort()
     request++
     modal.value?.close()
     for (const obj of [filters, parents, choices])
       Object.keys(obj).forEach((key) => delete obj[key])
+    facilitySearchRows.value=[]; facilitySearchOpen.value=false; facilitySearchIndex.value=-1
     page.value = 1
     data.value = { items: [], page: 1, size: pageSize.value, totalItems: 0, totalPages: 0 }
     error.value = ''
@@ -745,9 +869,11 @@ watch(
     for (const field of resource.value.filters || [])
       filters[field.key] =
         field.type === 'checkbox' ? route.query[field.key] === 'true' : route.query[field.key] || ''
-    if (app.account?.role === 'REGIONAL_ADMIN' && app.account.regions?.length === 1 &&
+    // 차량 기록은 담당 지역이 여러 곳이어도 첫 담당 지역으로 바로 조회한다.
+    if (app.account?.role === 'REGIONAL_ADMIN' && app.account.regions?.length &&
+        (app.account.regions.length === 1 || ['ocr', 'reviews', 'transits'].includes(resourceId.value)) &&
         resource.value.filters?.some(field => field.key === 'regionId') &&
-        route.query.regionId == null && route.query.underpassId == null)
+        route.query.regionId == null && route.query.underpassId == null && !(resourceId.value === 'ocr' && route.query.id))
       filters.regionId = String(app.account.regions[0]!.id)
     if (resourceId.value === 'alerts' && alertLogReturn.path) {
       Object.assign(filters, alertLogReturn.filters)
@@ -757,7 +883,10 @@ watch(
     if (resourceId.value === 'reviews' && !filters.reviewStatus) filters.reviewStatus = 'PENDING'
     void lookup([...(vmsSplit.value ? splitUnderpassFields : resource.value.parents || []), ...(resource.value.filters || [])])
     void load().then(() => {
-      if (!props.embedded && route.query.id && resource.value.detail && resourceId.value !== 'faqs')
+      if (error.value) return
+      if (!props.embedded && route.query.id && resourceId.value === 'ocr')
+        void openLinkedOcrRecord(String(route.query.id))
+      else if (!props.embedded && route.query.id && resource.value.detail && resourceId.value !== 'faqs')
         void open('detail', { id: Number(route.query.id) })
       else if (route.path === '/my-inquiry-new')
         void open('create').then(() => {
@@ -834,10 +963,12 @@ useBackendEvents((event) => {
   }
   if (resourceId.value === 'facilities' && facilityEvents.includes(name)) {
     data.value.items = data.value.items.map((row) => patchFacility(row, event))
+    if (appFacilityList.value) data.value.items.sort(compareFacilityPriority)
     if (mode.value === 'detail') detail.value = patchFacility(detail.value, event)
     // 행만 고치면 필터에서 빠져야 할 행·새로 들어올 행·정렬·건수가 안 맞으니, 그 조건에 걸리는 값이 바뀌면 다시 조회
     const levelOrStatus = name === 'control-change' || name === 'risk-level-change'
-    if ((levelOrStatus && (filters.status || riskFilter.value)) || filters.sort === 'RISK_SCORE')
+    if ((levelOrStatus && (filters.status || riskFilter.value)) || filters.sort === 'RISK_SCORE' ||
+        (appFacilityList.value && name !== 'water-update'))
       queueLiveRefresh()
     return
   }
@@ -922,7 +1053,7 @@ defineExpose({ open, load })
     <section
       v-if="resource"
       class="service-workspace"
-      :class="{'restored-admin-workspace':restored,'resource-operations-only':props.operationsOnly}"
+      :class="{'restored-admin-workspace':restored,'resource-operations-only':props.operationsOnly,'underpass-workspace':underpassSplit}"
     >
       <RouterLink
         v-if="!customer&&resourceId==='faqs'&&alertLogReturn.path"
@@ -930,17 +1061,22 @@ defineExpose({ open, load })
         class="alert-log-return"
       >← 알림 발송 기록으로 돌아가기</RouterLink>
       <!-- 제목과 같은 글자를 위에 한 번 더 쓰지 않는다 (고객 서비스 묶음 이름만 표시) -->
-      <div v-if="restored&&customerService" class="crumb">고객 서비스</div>
-      <div class="service-heading page-head">
+      
+      <div class="service-heading page-head" :class="{'app-resource-heading':appPage&&!props.embedded}">
         <component :is="props.embedded?'h2':'h1'">{{pageTitle}}</component>
+        <nav v-if="underpassSplit&&!appPage&&!props.embedded&&relatedIds.length>1" class="service-tabs tabs split-heading-tabs" aria-label="업무 구분">
+          <RouterLink v-for="id in relatedIds" :key="id" :to="resourceLink(id)" :aria-current="resourceId===id?'page':undefined">{{backendResources[id]?.title}}</RouterLink>
+        </nav>
         <div class="service-actions">
+          <RouterLink v-if="resourceId==='ocr'&&!appPage" class="btn" :to="resourceLink('reviews')">번호판 판별 대기</RouterLink>
+          <span v-if="underpassSplit&&!vmsSplit&&parents.underpassId&&!loading" class="split-result-count" role="status">총 {{data.totalItems}}건</span>
           <button
             v-if="resourceId==='manager-notifications'"
             type="button"
             :disabled="saving"
             @click="readAllManagerNotifications"
           >모두 읽음</button>
-          <button v-if="!vmsSplit" type="button" :disabled="loading||missingParent" @click="load">새로고침</button>
+          <button v-if="!vmsSplit&&!appPage" type="button" :disabled="loading||missingParent" @click="load">새로고침</button>
           <button v-if="resource.create&&canWrite&&!vmsSplit" type="button" @click="open('create')">
             {{resourceId==='cars'?'차량 등록':resourceId==='my-inquiries'?'문의 등록':facilityList?'+ 지하차도 등록':'새로 등록'}}
           </button>
@@ -958,7 +1094,7 @@ defineExpose({ open, load })
         </button>
       </nav>
       <nav
-        v-if="!customer&&!props.embedded&&relatedIds.length>1"
+        v-if="!underpassSplit&&!customer&&!route.path.startsWith('/admin-app/')&&!props.embedded&&relatedIds.length>1"
         class="service-tabs tabs"
         aria-label="업무 구분"
       >
@@ -984,7 +1120,7 @@ defineExpose({ open, load })
         >처리 이력</button>
       </nav>
       <div :class="underpassSplit?'underpass-split':'resource-body'">
-      <MyUnderpassList v-if="underpassSplit" :selected-id="String(parents.underpassId||'')" :keyword="splitKeyword" @select="selectUnderpass" @matches="splitMatches=$event" :target="splitTargets[resourceId]" />
+      <MyUnderpassList v-if="underpassSplit" :selected-id="String(parents.underpassId||'')" @select="selectUnderpass" :target="splitTargets[resourceId]" />
       <div :class="underpassSplit?'underpass-split-main':'resource-body'">
       <form
         v-if="facilityList||appFacilityList"
@@ -1015,12 +1151,27 @@ defineExpose({ open, load })
           <option value="BLOCKED">통제 중</option>
           <option value="NORMAL">정상 운영</option>
         </select>
+        <div class="facility-autocomplete">
         <input
           v-model="filters.keyword"
           type="search"
           placeholder="지하차도 이름 검색"
           aria-label="지하차도 이름 검색"
+          role="combobox" autocomplete="off" aria-autocomplete="list"
+          :aria-expanded="facilitySearchOpen&&facilitySuggestions.length>0"
+          aria-controls="facility-search-suggestions"
+          :aria-activedescendant="facilitySearchOpen&&facilitySearchIndex>=0?'facility-suggestion-'+facilitySearchIndex:undefined"
+          @focus="facilitySearchOpen=true"
+          @input="facilitySearchOpen=true;facilitySearchIndex=-1"
+          @blur="facilitySearchOpen=false;facilitySearchIndex=-1"
+          @keydown="facilitySearchKey"
         />
+        <ul v-if="facilitySearchOpen&&facilitySuggestions.length" id="facility-search-suggestions" class="facility-search-suggestions" role="listbox" aria-label="지하차도 검색 추천">
+          <li v-for="(row,index) in facilitySuggestions" :key="row.id" role="presentation">
+            <button :id="'facility-suggestion-'+index" type="button" role="option" :aria-selected="facilitySearchIndex===index" @pointerdown.prevent @click="chooseFacilitySuggestion(row)"><strong>{{row.name}}</strong><small>{{row.regionName||row.roadAddress}}</small></button>
+          </li>
+        </ul>
+        </div>
         <button class="btn sm" type="submit">조회</button>
       </form>
       <form v-else-if="managerNotificationList" class="manager-notification-filters" @submit.prevent="search">
@@ -1028,26 +1179,17 @@ defineExpose({ open, load })
         <label class="manager-unread-filter"><input v-model="filters.unreadOnly" type="checkbox" @change="search" />안 읽은 알림만</label>
       </form>
       <form
-        v-else-if="resource.parents?.length||resource.filters?.length"
+        v-else-if="!underpassSplit&&(resource.parents?.length||resource.filters?.length)"
         class="service-filters filters"
-        @submit.prevent="submitFilters"
-        @change="customer&&search()"
+        @submit.prevent="search"
+        @change="recordFilterChanged"
       >
         <ServiceFields
           v-if="resource.parents?.length"
-          :fields="vmsSplit?splitUnderpassFields:resource.parents"
+          :fields="resource.parents"
           :values="parents"
-          :choices="underpassSplit?splitChoices:choices"
+          :choices="choices"
           hide-guide
-        />
-        <input
-          v-if="underpassSplit"
-          v-model="splitKeyword"
-          type="search"
-          class="split-search"
-          placeholder="지하차도·지역 검색"
-          aria-label="지하차도 검색"
-          @keydown.enter.prevent
         />
         <ServiceFields
           v-if="resource.filters?.length"
@@ -1061,12 +1203,12 @@ defineExpose({ open, load })
         </button>
       </form>
       <nav
-        v-if="!customer&&!props.embedded&&shortcuts.length"
+        v-if="!customer&&!route.path.startsWith('/admin-app/')&&!props.embedded&&shortcuts.length"
         class="resource-shortcuts"
         aria-label="관련 업무 바로가기"
       >
         <RouterLink v-for="link in shortcuts" :key="link.id" :to="resourceLink(link.id)">
-          {{link.label}} →</RouterLink>
+          {{adminResourceTitles[link.id]||link.label}} →</RouterLink>
       </nav>
       <p v-if="error" class="service-error" role="alert">
         {{error}} <RouterLink v-if="!app.account" :to="customer?'/login':'/admin-login'">로그인</RouterLink>
@@ -1083,7 +1225,7 @@ defineExpose({ open, load })
       <p v-else-if="missingParent">위에서 {{resource.parents?.map(field=>field.label).join(' · ')}}를 선택하고 조회하세요.</p>
       <p v-else-if="loading" role="status">불러오는 중입니다.</p>
       <template v-else>
-        <p class="service-result-count" role="status">총 {{data.totalItems}}건</p>
+        <p v-if="!underpassSplit" class="service-result-count" role="status">총 {{data.totalItems}}건</p>
         <AdminAppFacilityRows v-if="appFacilityList" :items="facilityRows" />
         <ul v-else-if="managerNotificationList" class="manager-notification-cards" aria-label="관리자 알림 목록">
           <li v-for="row in data.items" :key="row.id" :class="{'is-unread':!row.read}">
@@ -1117,6 +1259,15 @@ defineExpose({ open, load })
           @edit="row=>open('edit',row)"
           @remove="row=>open('remove',row)"
         />
+        <ul v-else-if="publicNotices&&appPage" class="compact-notice-list" aria-label="공지사항 목록">
+          <li v-for="row in data.items" :key="row.id">
+            <button type="button" class="compact-notice-card" :class="{'notice-unread':noticeUnread(row)}" @click="open('detail',row)">
+              <span class="compact-notice-title"><span v-if="row.important" class="notice-important-badge">중요</span><strong :title="row.title">{{row.title}}</strong><span aria-hidden="true">›</span></span>
+              <span class="compact-notice-meta"><span>{{row.categoryLabel||boardCategoryLabel(row.category)||'안내'}}</span><time :datetime="row.createdAt">{{displayDate(row.createdAt,false)}}</time></span>
+            </button>
+          </li>
+          <li v-if="!data.items.length" class="compact-notice-empty">등록된 공지사항이 없습니다.</li>
+        </ul>
         <div v-else class="service-table-wrap">
           <table class="service-table">
             <thead>
@@ -1194,7 +1345,7 @@ defineExpose({ open, load })
                     <RouterLink
                       v-if="resourceId==='facilities'"
                       :to="'/admin-data/cameras?underpassId='+row.id"
-                    >카메라·입출구</RouterLink>
+                    >{{adminResourceTitles.cameras}}</RouterLink>
                   </div>
                 </td>
               </tr>
@@ -1213,7 +1364,7 @@ defineExpose({ open, load })
       </template>
       </div>
       </div>
-      <dialog
+      <WorkflowPage
         ref="modal"
         class="service-modal"
         :class="{'service-app-modal':route.path.startsWith('/customer-app/')||route.path.startsWith('/admin-app/'),'restored-summary-drawer':restored&&mode==='detail'&&['facilities','customers'].includes(resourceId)}"
@@ -1226,7 +1377,7 @@ defineExpose({ open, load })
             <h2>
               {{mode==='video'?'카메라 영상':mode==='detail'?(restored&&detail.name?detail.name:'상세 보기'):mode==='create'?(resourceId==='my-inquiries'?'문의 등록':'새로 등록'):mode==='edit'?'정보 수정':mode==='remove'?'삭제 확인':action?.label}}
             </h2>
-            <button type="button" :disabled="saving" @click="modal?.close()">닫기</button>
+            <button type="button" :class="{'facility-drawer-close':facilityList&&mode==='detail'}" aria-label="닫기" :disabled="saving" @click="modal?.close()"><UiIcon v-if="facilityList&&mode==='detail'" name="close" /><span v-else>닫기</span></button>
           </header>
           <TrafficVideo v-if="mode==='video'" :src="selected?.streamUrl" :hls="true" />
           <img
@@ -1239,14 +1390,8 @@ defineExpose({ open, load })
             v-if="restored&&mode==='detail'&&resourceId==='facilities'"
             class="restored-summary-overview"
           >
-            <RiskLevelBadge :value="detail.currentRiskLevel" />
-            <strong>{{detail.riskScore??detail.currentRiskScore??'—'}}점</strong>
-            <span>{{detail.currentStatus==='BLOCKED'?'통제 중':'정상 운영'}}</span>
-            <div class="restored-risk-gauge">
-              <b
-                :style="{width:Math.max(0,Math.min(100,Number(detail.riskScore??detail.currentRiskScore)||0))+'%'}"
-              ></b>
-            </div>
+            <div class="facility-risk-score"><span>현재 위험 점수</span><strong>{{detail.riskScore??detail.currentRiskScore??'미수신'}}<small v-if="detail.riskScore!=null||detail.currentRiskScore!=null">점</small></strong></div>
+            <div class="facility-risk-state"><RiskLevelBadge :value="detail.currentRiskLevel" /><span>{{detail.currentStatus==='BLOCKED'?'통제 중':'정상 운영'}}</span></div>
           </div>
           <article v-if="mode==='detail'&&resourceId==='notices'" class="notice-detail">
             <div class="notice-detail-title">
@@ -1278,8 +1423,22 @@ defineExpose({ open, load })
             :record="detail"
             :image="imageUrl(detail.imagePath)"
           />
+          <div v-if="restored&&mode==='detail'&&resourceId==='facilities'" class="facility-summary-groups">
+            <section v-for="group in facilitySummaryGroups" :key="group.title" class="facility-summary-group" :data-section="group.title">
+              <h3>{{group.title}}</h3>
+              <dl>
+                <div v-for="[key,label,value] in group.fields" :key="key" :class="{'is-wide':key==='roadAddress'}">
+                  <dt>{{label}}</dt><dd>{{displayField(key,value)}}<small v-if="facilityFieldUnits[key]">{{facilityFieldUnits[key]}}</small></dd>
+                </div>
+              </dl>
+              <details v-if="group.title==='위치'&&(detail.latitude!=null||detail.longitude!=null)" class="facility-coordinates">
+                <summary class="text-button">좌표 정보</summary>
+                <dl><div v-if="detail.latitude!=null"><dt>위도</dt><dd>{{detail.latitude}}</dd></div><div v-if="detail.longitude!=null"><dt>경도</dt><dd>{{detail.longitude}}</dd></div></dl>
+              </details>
+            </section>
+          </div>
           <dl
-            v-if="mode==='detail'&&resourceId!=='notices'&&resourceId!=='ocr'"
+            v-else-if="mode==='detail'&&resourceId!=='notices'&&resourceId!=='ocr'"
             class="service-detail"
           >
             <template v-for="(label,key) in labels" :key="key">
@@ -1289,14 +1448,16 @@ defineExpose({ open, load })
               </template>
             </template>
           </dl>
-          <div v-if="mode==='detail'&&facilityList" class="service-actions">
+          <div v-if="mode==='detail'&&facilityList" class="facility-drawer-quick">
             <TunnelCctvDialog :facility-name="detail.name" />
             <RouterLink :to="{path:route.path.startsWith('/admin-app/')?'/admin-app/screen-5':'/fac-detail',query:{id:String(detail.id),underpassId:String(detail.id),tab:'cctv'}}">시설 CCTV 보기</RouterLink>
           </div>
-          <div v-if="mode==='detail'&&canWrite" class="service-actions">
+          <component :is="facilityList?'details':'div'" v-if="mode==='detail'&&canWrite" :class="facilityList?'facility-drawer-more':'resource-body'">
+            <summary v-if="facilityList"><strong>추가 작업</strong><span>시설 관리·통제·이관</span></summary>
+            <div :class="facilityList?'facility-action-grid':'service-actions'">
             <button v-if="canEditRow(detail)" type="button" @click="open('edit',detail)">수정</button>
-            <button v-if="resource.remove" type="button" @click="open('remove',detail)">삭제</button>
-            <RouterLink v-if="facilityList" :to="'/admin-data/cameras?underpassId='+detail.id">카메라·입출구</RouterLink>
+            <button v-if="resource.remove" class="danger" type="button" @click="open('remove',detail)">삭제</button>
+            <RouterLink v-if="facilityList" :to="'/admin-data/cameras?underpassId='+detail.id">{{adminResourceTitles.cameras}}</RouterLink>
             <button
               v-for="act in resource.actions||[]"
               :key="act.label"
@@ -1306,7 +1467,8 @@ defineExpose({ open, load })
             >
               {{act.label}}
             </button>
-          </div>
+            </div>
+          </component>
           <template v-if="mode!=='detail'&amp;&amp;mode!=='video'">
             <p v-if="resourceId==='facilities'&&mode==='action'&&/\/(block|release)$/.test(action?.path||'')" class="service-message">경찰과 소방의 통제 안내 기록을 함께 만듭니다. 잔류차량 전달서는 차량 확인 후 ‘잔류차량 소방 이관’에서 별도로 작성하세요.</p>
             <p v-if="mode==='remove'">선택한 항목을 삭제하시겠습니까?</p>
@@ -1332,7 +1494,7 @@ defineExpose({ open, load })
             <button type="submit" :disabled="saving">{{saving?'처리 중…':'확인'}}</button>
           </footer>
         </form>
-      </dialog>
+      </WorkflowPage>
     </section>
     <p v-else role="alert">페이지를 찾을 수 없습니다.</p>
     <RemainingVehicleTransfer v-if="resourceId==='transits'" ref="remainingTransfer" />

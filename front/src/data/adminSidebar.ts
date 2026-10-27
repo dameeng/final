@@ -1,11 +1,12 @@
+import { adminPageTitle } from './adminTitles'
 export const adminSidebarGroups = [
   {
     title: '지하차도 관리',
     links: [
-      ['지하차도 목록', '/fac-list', '/admin-data/facilities'],
-      ['카메라 설정', '', '/admin-data/cameras'],
-      ['위험도 임계치', '', '/admin-data/thresholds'],
-      ['전광판 문구', '', '/admin-data/display'],
+      ['지하차도', '/fac-list', '/admin-data/facilities'],
+      ['카메라', '', '/admin-data/cameras'],
+      ['임계치', '', '/admin-data/thresholds'],
+      ['전광판', '', '/admin-data/display'],
     ],
   },
   {
@@ -17,11 +18,11 @@ export const adminSidebarGroups = [
     ],
   },
   {
-    title: 'OCR·차량',
+    title: '차량 기록',
     links: [
       ['OCR 인식 기록', '', '/admin-data/ocr'],
-      ['수동 판별', '/verify', '/admin-data/reviews'],
-      ['차량 통과 기록', '', '/admin-data/transits'],
+      ['번호판 판별 대기', '/verify', '/admin-data/reviews'],
+      ['입출구 로그', '', '/admin-data/transits'],
     ],
   },
   {
@@ -51,7 +52,8 @@ export const adminSidebarGroups = [
       ['지역 관리', '', '/admin-data/regions'],
     ],
   },
-]
+].map(group => ({ ...group, links: group.links.map(([label, ...paths]) => [adminPageTitle(paths.find(Boolean) || '', label), ...paths]) }))
+
 export function sidebarLinkActive(link: string[], path: string) {
   return (
     link.slice(1).includes(path) ||

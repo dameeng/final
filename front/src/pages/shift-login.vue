@@ -139,10 +139,7 @@ onBeforeUnmount(() => dispose?.())
     </aside>
 
 <main class="page">
-      <div class="crumb">
-        <span>종합 현황</span>
-        <span class="note"></span>
-      </div>
+      
 <div class="page-head"><h1>종합 현황</h1></div>
       <div class="card inl-dc2c738454">(종합 현황 화면 · 로그인 직후)</div>
 <dialog id="sh" aria-labelledby="sh-t">

@@ -141,10 +141,7 @@ onBeforeUnmount(() => dispose?.())
   <AdminSidebarLinks />
     </aside>
 <main class="page">
-      <div class="crumb">
-        <span>종합 현황</span>
-        <span class="note">샘플 데이터 · 구조 확인용 저충실도 와이어프레임</span>
-      </div>
+      
 <div class="page-head">
         <h1>종합 현황</h1>
 <div></div>

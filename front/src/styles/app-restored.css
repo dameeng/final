@@ -574,10 +574,11 @@
   display: flex;
   gap: 8px;
 }
-.app-detail-badges>span {
+.app-detail-badges>.app-operation-badge {
   font-size: 12px;
   padding: 3px 8px;
-  background: #e8eef4;
+  background: var(--r-soft);
+  color: var(--r-ink);
   border-radius: 4px;
 }
 .app-facility-detail .kv {

@@ -73,7 +73,7 @@ function manualOpen() {
   void open(true)
 }
 const stop = watch(
-  () => [route.fullPath, app.roleKey, app.authVersion],
+  [() => route.path+JSON.stringify(Object.entries(route.query).filter(([key])=>key!=='__view')), () => app.roleKey, () => app.authVersion],
   () => {
     close()
     if (route.path === '/admin-dashboard') void open()
@@ -91,7 +91,7 @@ onBeforeUnmount(() => {
 })
 </script>
 <template>
-  <dialog ref="dialog" class="admin-handover" aria-labelledby="admin-handover-title">
+  <WorkflowPage ref="dialog" class="admin-handover" aria-labelledby="admin-handover-title">
     <header>
       <div>
         <p>{{region}} · 근무 인수인계</p>
@@ -136,6 +136,6 @@ onBeforeUnmount(() => {
       <button type="button" @click="hideToday">오늘 하루 안 보기</button>
       <button type="button" class="handover-primary" @click="close">확인하고 닫기</button>
     </footer>
-  </dialog>
+  </WorkflowPage>
 </template>
 <style scoped src="../styles/components/admin-handover.css"></style>

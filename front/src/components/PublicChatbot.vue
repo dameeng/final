@@ -4,6 +4,7 @@ import { RouterLink, useRoute } from 'vue-router'
 import { backend } from '../services/backend'
 import { useApp } from '../stores/app'
 import ChatAnswer from './ChatAnswer.vue'
+import mascotIcon from '../assets/mascot/routel-ru-transparent.png'
 import '../styles/public-chatbot.css'
 const app = useApp(),
   dialog = ref<HTMLDialogElement>(),
@@ -193,7 +194,7 @@ function outside(event: MouseEvent) {
   )
     close()
 }
-watch(() => route.fullPath, () => { close(); cancelAnswer() })
+watch(() => route.path+JSON.stringify(Object.entries(route.query).filter(([key])=>key!=='__view')), () => { close(); cancelAnswer() })
 watch(() => `${app.account?.role}:${app.account?.id}`, () => {
   cancelAnswer()
   messages.value = []
@@ -262,10 +263,12 @@ async function send() {
   <button
     v-if="!appMode"
     ref="launcher"
-    class="public-chat-launcher"
+    id="public-chat-launcher"
+    class="public-chat-launcher public-chat-mascot"
     type="button"
+    aria-label="챗봇 문의"
     aria-haspopup="dialog"
-    title="끌어서 위치 이동 · 방향키로 이동"
+    title="마스코트 루에게 문의하기 · 끌어서 위치 이동 · 방향키로 이동"
     :class="{'is-dragging':dragging}"
     :style="position?{position:'fixed',left:position.x+'px',top:position.y+'px',right:'auto',bottom:'auto',margin:'0'}:undefined"
     @pointerdown="startDrag"
@@ -275,12 +278,13 @@ async function send() {
     @lostpointercapture="endDrag"
     @keydown="moveWithKey"
     @click="launch"
-  >챗봇 문의</button>
-  <dialog
+  ><img class="chat-launcher-mascot" :src="mascotIcon" width="84" height="84" alt="" draggable="false" aria-hidden="true" /><span class="chat-launcher-caption">챗봇 문의</span></button>
+  <WorkflowPage
     ref="dialog"
     class="drawer-dialog public-chat-dialog"
     :style="{width:panelWidth+'px',...(appMode?{left:appPanelLeft+'px',right:'auto',top:'0px',margin:'0',height:'100dvh'}:{})}"
     aria-labelledby="public-chat-title"
+    @close="close"
     @cancel.prevent="close"
     @click="outside"
   >
@@ -347,5 +351,5 @@ async function send() {
       </nav>
       <small class="public-chat-privacy">외부 AI 전송 · 대화 저장 · 개인정보 입력 주의</small>
     </form>
-  </dialog>
+  </WorkflowPage>
 </template>

@@ -1,12 +1,14 @@
-.app-manager-overview .app-restored-body { display:flex; flex-direction:column; }
+.app-manager-overview .app-restored-body { display:flex; flex-direction:column; padding:0; overflow:hidden; }
 .overview-control-notice { width:min(340px,calc(100vw - 40px)); max-height:calc(100dvh - 48px); box-sizing:border-box; padding:24px; border:1px solid var(--line,#d7e0e8); border-radius:18px; background:var(--surface,#fff); color:var(--ink,#243447); box-shadow:0 16px 50px #10203333; }
 .overview-control-notice::backdrop { background:#10203366; }
 .overview-control-notice h2 { margin:0 0 12px; font-size:18px; }
 .overview-control-notice p { margin:0 0 24px; line-height:1.6; font-size:14px; }
 .overview-control-notice button { width:100%; min-height:42px; border:0; border-radius:10px; background:var(--ui-accent,#2563a7); color:#fff; font-weight:600; cursor:pointer; }
-.app-manager-overview .app-overview { display:flex; flex-direction:column; flex:1; min-height:490px; }
+.app-manager-overview .app-overview { display:flex; flex-direction:column; flex:1; min-height:0; }
 .app-manager-overview .app-overview>.kv,.app-manager-overview .app-overview>.ban,.app-manager-overview .app-overview>p { flex-shrink:0; }
-.app-manager-overview .app-overview .map-only-live { flex:1; height:auto; min-height:400px; }
+.app-manager-overview .app-overview .map-only-live { flex:1; width:100%; height:auto; min-height:0; margin:0; border:0; border-radius:0; }
+.app-manager-overview .admin-app-map .admin-map-control-dock { bottom:12px; }
+.app-manager-overview .app-overview .map-only-live .map-only-selection { top:auto; bottom:64px; right:12px; }
 .map-only-live .map-overlay-toolbar>.map-only-legend { position:static; inset:auto; order:2; width:auto; max-width:100%; box-sizing:border-box; gap:4px 6px; padding:6px 8px; }
 .map-only-live .map-overlay-toolbar>.traffic-map-layers { position:static; order:1; }
 .map-only-live .map-overlay-toolbar .traffic-layer-switches { flex-wrap:nowrap; }

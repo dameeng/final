@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { displayDate } from '../utils/display-date'
+import { dashboardEventTarget } from '../utils/dashboard-event-target'
 import { valueLabels } from '../data/backendResources'
 import { useNewItemGlow } from '../composables/useNewItemGlow'
 const props = defineProps<{ accountId?: string; summary: Record<string,number> | null; events: any[]; margins: any[]; calendarOnly?: boolean }>()
@@ -171,7 +172,7 @@ defineExpose({open,reset})
         <template v-else-if="widget.id==='maintenance'"><p class="widget-empty">시설 설비와 점검 대상을 확인하세요.</p><RouterLink to="/pm-equipment">설비·점검 대상 보기 →</RouterLink></template>
         <template v-else-if="widget.id==='review'"><p class="widget-count">{{summary?.pendingReviewCount??'—'}}<small> 건 대기 중</small></p><RouterLink to="/verify">판별하러 가기 →</RouterLink></template>
         <template v-else-if="widget.id==='alerts'"><p class="widget-count">{{summary?.alertsToday??'—'}}<small> 건 발송</small></p><RouterLink to="/notifications">알림 내역 →</RouterLink></template>
-        <template v-else-if="widget.id==='events'"><RouterLink to="/admin-reports?report=timeline">로그 전체 보기 →</RouterLink><p v-if="!events.length" class="widget-empty">표시할 이벤트가 없습니다.</p><ul class="widget-data-list"><li v-for="event in events" :key="eventKey(event)" :class="{'notification-arrival-glow':isNewEvent(event)}"><strong>{{event.underpassName||'시설'}}</strong><span>{{event.reason||valueLabels[event.eventType]||event.eventType||'시설 상태 변경'}}</span><small>{{displayDate(event.createdAt)}}</small></li></ul></template>
+        <template v-else-if="widget.id==='events'"><RouterLink to="/admin-reports?report=timeline">로그 전체 보기 →</RouterLink><p v-if="!events.length" class="widget-empty">표시할 이벤트가 없습니다.</p><ul class="widget-data-list"><li v-for="event in events" :key="eventKey(event)" :class="{'notification-arrival-glow':isNewEvent(event)}"><RouterLink :to="dashboardEventTarget(event)" data-button class="widget-event-link"><strong>{{event.underpassName||'시설'}}</strong><span>{{event.reason||valueLabels[event.eventType]||event.eventType||'시설 상태 변경'}}</span><small>{{displayDate(event.createdAt)}}</small></RouterLink></li></ul></template>
         <template v-else-if="widget.id==='risk'"><p v-if="!margins.length" class="widget-empty">위험 임박 시설이 없습니다.</p><ul class="widget-data-list"><li v-for="facility in margins" :key="facility.underpassId"><RouterLink :to="{path:'/fac-detail',query:{id:facility.underpassId}}">{{facility.underpassName}}</RouterLink><span>위험 임계치까지 {{facility.margin}}점</span></li></ul></template>
         </div>
       </article>

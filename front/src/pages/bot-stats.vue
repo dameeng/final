@@ -139,10 +139,7 @@ onBeforeUnmount(() => dispose?.())
     </aside>
 
 <main class="page">
-      <div class="crumb">
-        <span>챗봇 &gt; 통계</span>
-        <span class="note"></span>
-      </div>
+      
 <div class="page-head"><h1>챗봇</h1></div>
       <nav class="tabs" aria-label="챗봇 탭">
         <a href="/bot-logs">대화 로그</a>

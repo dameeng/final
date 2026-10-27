@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { adminPageTitle } from '../data/adminTitles'
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useApp } from '../stores/app'
@@ -15,11 +16,11 @@ const route = useRoute(),
   query = ref('')
 const section = computed(() => route.path.split('/').at(-1)),
   title = computed(() =>
-    section.value === 'history'
+    adminPageTitle(route.path, section.value === 'history'
       ? '점검 이력'
       : section.value === 'contacts'
         ? '관할 담당자 연락처'
-        : '통제 전달 문서',
+        : '통제 전달 문서'),
   )
 const rows = computed(() => history.H.filter((row) => row.join(' ').includes(query.value)))
 </script>

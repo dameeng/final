@@ -1,4 +1,4 @@
-import { chromium } from '@playwright/test'
+import { chromium, expect } from '@playwright/test'
 import { createServer } from 'vite'
 import assert from 'node:assert/strict'
 const server = await createServer({
@@ -36,7 +36,7 @@ try {
         return this.center
       }
       getBounds() { return { contain: () => true } }
-      getProjection() { return { containerPointFromCoords: () => ({x:0,y:0}) } }
+      getProjection() { return { containerPointFromCoords: () => window.popupAnchor || ({x:0,y:0}) } }
       setCenter(p) {
         this.center = p
       }
@@ -82,7 +82,7 @@ try {
       constructor(options) {
         this.map = options.map
         window.openManagerCluster = () =>
-          emit(this, 'clusterclick', { getMarkers: () => this.markers.slice(0, 2) })
+          emit(this, 'clusterclick', { getMarkers: () => this.markers.slice(0, window.popupCount || 2) })
       }
       clear() {
         this.markers = []
@@ -225,49 +225,58 @@ try {
   const base = `http://127.0.0.1:${server.httpServer.address().port}`
 
 
-  for(const [width,height] of [[390,844],[430,932],[320,640],[844,430]]) {
+
+  for (const [width,height] of [[390,844],[430,932],[320,640],[844,430]]) {
     await page.setViewportSize({width,height})
     await page.goto(base+'/admin-app/screen-3')
-    await page.locator('.admin-sheet-handle').waitFor()
-    await page.waitForFunction(()=>document.querySelector('.admin-sheet-handle').textContent.includes('30'))
-    const map=page.locator('.map-only-live'), toolbar=page.locator('.map-only-live .map-overlay-toolbar'), legend=page.locator('.map-only-legend'), switches=page.locator('.traffic-layer-switches'), sheet=page.locator('.admin-facility-sheet')
-    const labels=await legend.boundingBox(), buttons=await switches.boundingBox()
-    assert(buttons.y>=labels.y+labels.height,'Traffic switches sit below the legend without overlap')
-    assert.equal(await page.getByRole('button',{name:'내 위치 찾기',exact:true}).count(),0)
-    const controlToggle=page.locator('.admin-map-control-dock .map-control-toggle')
-    await controlToggle.click()
-    assert.equal(await page.locator('.admin-map-control-dock .kakao-map-controls').isVisible(),false)
-    await controlToggle.click()
-    for(const label of await legend.locator('li').all()) assert.equal(await label.evaluate(el=>getComputedStyle(el).whiteSpace),'nowrap')
-    if(height>=800) {
-      const mapBox=await map.boundingBox(),nav=await page.locator('.admin-app-bottom-nav').boundingBox()
-      assert(nav.y-mapBox.y-mapBox.height<35,'No unused white area below the map')
-    }
-    await page.locator('.admin-sheet-handle').click()
-    await page.waitForTimeout(280)
-    const panel=await sheet.boundingBox(),bar=await toolbar.boundingBox()
-    assert(panel.y>=bar.y+bar.height,'Sheet does not cover the map toolbar')
-    const content=page.locator('.admin-sheet-content')
-    assert(await content.evaluate(el=>el.scrollHeight>el.clientHeight),'Facility list scrolls within the sheet')
-    if(width===430)await page.screenshot({path:'tests/admin-overview-sheet-preview.png'})
-    await content.evaluate(el=>el.scrollTop=el.scrollHeight)
-    const last=content.locator('li').last()
-    await last.scrollIntoViewIfNeeded()
-    assert(await last.getByRole('link').evaluate(el=>{const r=el.getBoundingClientRect();return el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))}),'Last facility link is not covered')
-    await page.locator('.admin-sheet-handle').click()
-    await page.waitForTimeout(280)
+    const map=page.locator('.map-only-live')
+    await map.waitFor()
+    await page.waitForTimeout(300)
+    const notice=page.locator('.overview-control-notice[open]')
+    if(await notice.count()) await notice.getByRole('button').click()
+    assert.equal(await page.locator('.admin-facility-sheet,.admin-sheet-handle,.overview-stats').count(),0)
+    const mapBox=await map.boundingBox(), nav=await page.locator('.admin-app-bottom-nav').boundingBox(),title=await page.locator('.manager-app-titlebar').boundingBox(),shell=await page.locator('.manager-app-shell').boundingBox()
+    assert(Math.abs(mapBox.y-title.y-title.height)<2,'Map starts directly below titlebar')
+    assert(Math.abs(mapBox.y+mapBox.height-nav.y)<2,'Map extends to bottom navigation')
+    assert(Math.abs(mapBox.x-shell.x)<2 && Math.abs(mapBox.width-shell.width)<2,'Map fills app width')
+    const controls=await page.locator('.admin-map-control-dock').boundingBox()
+    assert(controls.y+controls.height<=nav.y,'Map controls remain above navigation')
     await page.getByRole('button',{name:'\uC9C0\uB3C4 \uD655\uB300',exact:true}).click()
-    const handle=page.locator('.admin-sheet-handle')
-    await handle.scrollIntoViewIfNeeded()
-    const grip=await handle.boundingBox()
-    await page.mouse.move(grip.x+grip.width/2,grip.y+grip.height/2)
-    await page.mouse.down();await page.mouse.move(grip.x+grip.width/2,grip.y-120,{steps:8});await page.mouse.up()
-    assert.equal(await handle.getAttribute('aria-expanded'),'true','Drag opens the sheet')
-    await handle.click()
-    assert.equal(await handle.getAttribute('aria-expanded'),'false','Tap collapses the sheet after dragging')
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false)
-    if(width===430)await page.screenshot({path:'tests/admin-overview-layout-preview.png'})
+    for (const anchorY of [10, mapBox.height / 2, mapBox.height - 10]) {
+      await page.evaluate(y => { window.popupAnchor = { x: 4, y }; window.popupCount = 30; window.openManagerCluster() }, anchorY)
+      const popup=page.locator('.admin-map-floating-popup.routel-cluster-popup')
+      await expect(popup).toBeVisible()
+      const box=await popup.boundingBox()
+      assert(box.x>=mapBox.x && box.x+box.width<=mapBox.x+mapBox.width+1,'Popup stays inside map horizontally')
+      assert(box.y>=mapBox.y && box.y+box.height<=nav.y,'Popup stays above navigation')
+      for (const obstacle of await page.locator('.admin-map-search,.map-overlay-toolbar').all()) {
+        if (await obstacle.isVisible()) {
+          const tool=await obstacle.boundingBox()
+          assert(box.y>=tool.y+tool.height,'Popup stays below search and traffic tools')
+        }
+      }
+      const last=popup.locator('li').last()
+      await last.scrollIntoViewIfNeeded()
+      assert(await last.locator('button').evaluate(element=>{const rect=element.getBoundingClientRect();return element.contains(document.elementFromPoint(rect.x+rect.width/2,rect.y+rect.height/2))}),'Last popup row is not covered')
+      await popup.getByRole('button',{name:'묶음 목록 닫기'}).click()
+      await expect(page.locator('.admin-map-control-dock')).toBeVisible()
+    }
+    const search=page.locator('.admin-map-search input'), submit=page.locator('.admin-map-search button')
+    await search.fill('long facility name')
+    await submit.click()
+    await expect.poll(()=>page.evaluate(()=>window.managerMap.level)).toBe(4)
+    assert.equal(await page.evaluate(()=>window.managerMap.center.lat),35.104)
+    const requestsBefore=calls.filter(call=>call.path==='/api/underpasses').length
+    await search.fill('서구')
+    await submit.click()
+    await expect.poll(()=>page.evaluate(()=>window.managerMap.bounds?.length)).toBe(10)
+    assert(await page.evaluate(()=>window.managerMap.bounds.every(point=>point.lng===129.02)))
+    await search.fill('ㅎㅇㄷㄱ')
+    await submit.click()
+    await expect.poll(()=>page.evaluate(()=>window.managerMap.bounds.every(point=>point.lng===129.16))).toBe(true)
+    assert.equal(calls.filter(call=>call.path==='/api/underpasses').length,requestsBefore,'Search uses loaded facilities immediately')
   }
   assert.deepEqual(errors,[])
-  console.log('PASS admin overview: no toolbar overlap or white gap, last facility clickable, sheet drag/collapse, portrait and landscape')
+  console.log('PASS administrator map fills app between titlebar and navigation; no slider; map controls work at four viewport sizes')
 } finally {await browser.close();await server.close()}

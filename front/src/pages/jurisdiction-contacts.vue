@@ -5,7 +5,7 @@ import JurisdictionContactList from '../components/JurisdictionContactList.vue'
 <template>
   <BackendLayout :standard-menu="true">
     <section class="contacts-page">
-      <h1>관할 담당자 연락처</h1>
+      <div class="service-heading"><h1>관할 담당자 연락처</h1></div>
       <JurisdictionContactList />
     </section>
   </BackendLayout>

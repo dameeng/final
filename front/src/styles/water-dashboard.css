@@ -128,9 +128,11 @@
 #app .water-dashboard .rank .t small { color:var(--dash-muted); font-weight:400; }
 #app .water-dashboard .rank .sc { color:var(--dash-accent); font-weight:750; font-variant-numeric:tabular-nums; }
 #app .water-dashboard .dashboard-score-track {
-  position:absolute; left:44px; right:52px; bottom:2px; height:4px;
-  background:var(--dash-soft); border-radius:4px; pointer-events:none; overflow:hidden;
+  position:static; grid-column:2 / -1; width:100%; height:6px;
+  background:var(--dash-line); border-radius:4px; pointer-events:none; overflow:hidden;
 }
+#app .water-dashboard .fixed-top5 .rank>li { row-gap:5px; padding-bottom:10px; }
+#app .water-dashboard .fixed-top5 .rank .sc small { font-size:11px; font-weight:400; color:var(--dash-muted); }
 #app .water-dashboard .dashboard-score-track>i {
   display:block; height:100%; width:var(--risk-fill,0%); border-radius:inherit;
   background:linear-gradient(90deg,var(--dash-teal),var(--dash-accent));

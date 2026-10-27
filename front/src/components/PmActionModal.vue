@@ -66,7 +66,7 @@ async function submit() {
 }
 </script>
 <template>
-  <dialog ref="dialog" class="service-modal pm-action-modal" aria-labelledby="pm-action-title">
+  <WorkflowPage ref="dialog" class="service-modal pm-action-modal" aria-labelledby="pm-action-title">
     <form method="dialog" @submit.prevent="submit">
       <h2 id="pm-action-title">점검 처리 · {{target?.name}}</h2>
       <p class="pm-action-sub">
@@ -103,7 +103,7 @@ async function submit() {
         </button>
       </div>
     </form>
-  </dialog>
+  </WorkflowPage>
 </template>
 <style scoped>
 .pm-action-modal form { display: grid; gap: 12px; min-width: min(420px, 86vw); }
