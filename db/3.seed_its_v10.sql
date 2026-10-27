@@ -1,17 +1,23 @@
+-- 통합본 실행 순서: 1.puf_db_schema.sql → 2.seed_general.sql → 3.seed_its.sql → 4.seed_pm.sql
+-- 개발 DB 초기 구축용. 1번은 public 스키마와 기존 데이터를 삭제한다. 기존 운영 DB에 적용하지 말 것.
+-- 네 파일을 순서대로 1회 실행하면 원본 시드의 ID/생성 순서를 유지한다. 시드는 반복 실행용이 아니다.
+
+BEGIN;
+
 -- =====================================================================
--- PUF ITS CCTV / 전광판(VMS) 시드 (3.seed_its_v9.sql)
--- 실행 순서: 1.puf_db_schema_v9 → 2.seed_general_v9 → 3.seed_its_v9(이 파일) → 4.seed_pm_v9
--- 실행 전제: 2.seed_general_v9 실행 완료 (이 파일은 그 바로 다음에 실행, 그 사이에 camera 를 추가하지 말 것)
--- 예지보전 설비(CCTV·전광판 연결)·임계치는 4.seed_pm_v9 에서 넣음(이 파일에는 없음)
+-- PUF ITS CCTV / 전광판(VMS) 시드 (3.seed_its.sql)
+-- 실행 순서: 1.puf_db_schema → 2.seed_general → 3.seed_its(이 파일) → 4.seed_pm
+-- 실행 전제: 2.seed_general 실행 완료 (이 파일은 그 바로 다음에 실행, 그 사이에 camera 를 추가하지 말 것)
+-- 예지보전 설비(CCTV·전광판 연결)·임계치는 4.seed_pm 에서 넣음(이 파일에는 없음)
 -- 원본: its_cctv_all.csv(258행), its_vms_all.csv(121행)
 --   · its_cctv 241개: 원본 258행 중 좌표 0,0 이거나 스트림(hls) 없는 17행 제외
 --   · its_vms  실제 120개(좌표 0,0 인 강풍전광판 제외) + 더미 50개(근접 35 + 원거리 15)
--- ※ 지하차도 id: 1=초량지하차도(시연), 금호=2 … (2.seed_general_v9 의 id 순서 기준. 이 파일의 지하차도 id 는 모두 그 기준)
+-- ※ 지하차도 id: 1=초량지하차도(시연), 금호=2 … (2.seed_general 의 id 순서 기준. 이 파일의 지하차도 id 는 모두 그 기준)
 -- 카메라(CCTV): seed_all 은 카메라를 일괄 생성하지 않는다(시연용 번호판 카메라 226~229 제외). 여기서 지하차도마다 필요한 만큼만 만든다.
 --   · 각 ITS CCTV 를 가장 가까운 지하차도 1곳에만 귀속(반경 1000m 이내) → 그 개수만큼 CCTV 카메라 (지하차도마다 개수 다름, 1대면 1대)
 --   · 귀속된 ITS CCTV 가 없는 지하차도는 더미 CCTV 카메라 1대(rtsp://cam-dummy-{지하차도id}.puf.local/stream)
 --   · 카메라 id 는 230번부터 지하차도 id 순서로 부여. 입구/출구(LPR) 카메라는 만들지 않음
--- 예지보전 VMS: 귀속 VMS 없는 지하차도는 근접 더미 VMS(100m 지점)를 둠 (vms_underpass 에 들어감). 어느 전광판을 예지보전 설비로 쓰는지는 4.seed_pm_v9 가 정함
+-- 예지보전 VMS: 귀속 VMS 없는 지하차도는 근접 더미 VMS(100m 지점)를 둠 (vms_underpass 에 들어감). 어느 전광판을 예지보전 설비로 쓰는지는 4.seed_pm 가 정함
 -- 표출 매핑(vms_underpass): 지하차도 반경 1000m 이내 실제 VMS 전부(여러 지하차도와 겹침 허용) + 각 지하차도의 더미. dist 는 지하차도~전광판 직선거리(m)
 --   · 근접(300m 이하)/원거리(300m 초과 1000m 이하) 구분 기준은 백엔드 설정값으로 둠. 지하차도마다 근접·원거리 전광판이 최소 1개씩 있도록 없으면 더미 생성(원거리 더미는 950m 지점)
 -- =====================================================================
@@ -578,7 +584,7 @@ FROM underpass u
 WHERE NOT EXISTS (SELECT 1 FROM camera c WHERE c.underpass_id = u.id AND c.its_cctv_id IS NOT NULL)
 ORDER BY u.id;
 
--- (5~7번: 예지보전 설비·전광판 연결·임계치는 4.seed_pm_v9 로 이동)
+-- (5~7번: 예지보전 설비·전광판 연결·임계치는 4.seed_pm 로 이동)
 
 -- =====================================================================
 -- 8. vms_underpass — 지하차도 ↔ 전광판 표출 매핑 132행 (반경 1000m 이내 실제 82쌍 + 더미 50쌍)
@@ -720,6 +726,4 @@ INSERT INTO vms_underpass (its_vms_id, underpass_id, dist) VALUES
 
 -- 끝
 
--- 초량 CCTV230은 로컬 노면·싱크홀 시연 영상으로 제공한다.
-UPDATE camera SET stream_url='http://localhost:8003/stream/230'
-WHERE id=230 AND underpass_id=(SELECT id FROM underpass WHERE name='초량지하차도' AND NOT is_deleted);
+COMMIT;

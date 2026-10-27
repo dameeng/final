@@ -68,13 +68,15 @@ public class PmEventServiceImpl implements PmEventService {
     @PersistenceContext
     private EntityManager em;
 
+    private final PmStubModeService stubModes;
     private final PmEventRepository eventRepository;
     private final PmActionRepository actionRepository;
     private final ScopeResolver scopeResolver;
     private final StreamPublisher streamPublisher;
 
     public PmEventServiceImpl(PmEventRepository eventRepository, PmActionRepository actionRepository,
-                              ScopeResolver scopeResolver, StreamPublisher streamPublisher) {
+                              ScopeResolver scopeResolver, StreamPublisher streamPublisher, PmStubModeService stubModes) {
+        this.stubModes=stubModes;
         this.eventRepository = eventRepository;
         this.actionRepository = actionRepository;
         this.scopeResolver = scopeResolver;
@@ -105,6 +107,7 @@ public class PmEventServiceImpl implements PmEventService {
 
         event.setStatus(to);
         eventRepository.save(event);
+        if(to==PmEventStatus.RESOLVED)stubModes.resolved(loginUser,event.getEquipId());
         if (!content.isEmpty()) {
             saveAction(loginUser, eventId, content, kindOf(to));
         }

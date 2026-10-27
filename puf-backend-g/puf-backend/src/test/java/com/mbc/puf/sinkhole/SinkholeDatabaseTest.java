@@ -35,7 +35,7 @@ class SinkholeDatabaseTest {
         var notificationCount=new java.util.concurrent.atomic.AtomicInteger();
         var notifications=(NotificationService)java.lang.reflect.Proxy.newProxyInstance(
                 NotificationService.class.getClassLoader(),new Class<?>[]{NotificationService.class},
-                (proxy,method,args)->{if(method.getName().equals("notifyManagers"))notificationCount.incrementAndGet();return null;});
+                (proxy,method,args)->{if(method.getName().equals("notifyManagersUrgent"))notificationCount.incrementAndGet();return null;});
         var service=new SinkholeService(db,scoped,new StreamPublisher(event->{}),notifications,images.toString(),"초량지하차도");
         var user=new LoginUser(db.queryForObject("SELECT MIN(id) FROM manager",Long.class),"MANAGER","REGIONAL_ADMIN");
         var output=new ByteArrayOutputStream();ImageIO.write(new BufferedImage(24,24,BufferedImage.TYPE_INT_RGB),"jpg",output);

@@ -94,14 +94,16 @@ public class PmReportServiceImpl implements PmReportService {
     @PersistenceContext
     private EntityManager em;
 
+    private final PmReportSupplementService supplements;
     private final ScopeResolver scopeResolver;
     private final DbClock dbClock;
     private final int multiplier;
     private final int minSeconds;
 
-    public PmReportServiceImpl(ScopeResolver scopeResolver, DbClock dbClock,
+    public PmReportServiceImpl(ScopeResolver scopeResolver, DbClock dbClock, PmReportSupplementService supplements,
                                @Value("${puf.pm.stale.multiplier:3}") int multiplier,
                                @Value("${puf.pm.stale.min-seconds:60}") int minSeconds) {
+        this.supplements = supplements;
         this.scopeResolver = scopeResolver;
         this.dbClock = dbClock;
         this.multiplier = Math.max(1, multiplier);
@@ -169,7 +171,8 @@ public class PmReportServiceImpl implements PmReportService {
 
         return new PmPeriodSummary(from, to, counts(atEnd, to), counts(atStart, from), byType(atEnd, to),
                 newCount, newEvents, actionCount, actions, open.size(), open,
-                stale.stream().limit(STALE_LIMIT).toList(), never, recommended);
+                stale.stream().limit(STALE_LIMIT).toList(), never, recommended,
+                supplements.sinkhole(regionIds, underpassId, from, to), supplements.control(regionIds, underpassId, from, to));
     }
 
     // ------------------------------------------------------------------
