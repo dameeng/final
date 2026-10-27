@@ -72,8 +72,9 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 	// confidence가 이 값 미만이면(매칭은 됐어도) LOW_CONFIDENCE로 본다. 정식 기준이 정해지면 조정
 	private static final BigDecimal LOW_CONFIDENCE_THRESHOLD = new BigDecimal("0.600");
 
-	// 출구 보조 매칭(숫자만 같은 번호)을 허용할 입구 인식 후 시간(초). 같은 숫자의 다른 차와 잘못 짝짓지 않게 짧게 둔다
-	private static final long SIMILAR_MATCH_WINDOW_SEC = 60;
+	// 출구 보조 매칭(숫자만 같은 번호)을 허용할 입구 인식 후 시간(초). 같은 숫자의 다른 차와 잘못 짝짓지 않게 너무 길게 두지는 않는다
+	// 60 -> 240: 0.5배속 시연 영상은 입구 -> 출구가 70~190초 걸려서 한글만 다르게 읽은 차(898러1929/898라1929)가 매칭되지 않았음
+	private static final long SIMILAR_MATCH_WINDOW_SEC = 240;
 
 	// 같은 카메라·같은 번호를 중복으로 보고 건너뛰는 시간(초)
 	private static final long DUPLICATE_WINDOW_SEC = 30;

@@ -196,7 +196,7 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
                     .setParameter("startAt", start).setParameter("endAt", end).setParameter("stepSec", step)
                     .setParameter("onset", onset).setParameter("rampSec", rampSec)
                     .setParameter("spike0", spike0).setParameter("spikeLen", spec.spikeLenSec())
-                    .setParameter("ampD", spec.ampDanger()).setParameter("ampS", spec.ampSpike())
+                    .setParameter("ampD", spec.ampDanger()).setParameter("ampC", spec.ampCaution()).setParameter("ampS", spec.ampSpike())
                     .executeUpdate();
 
             em.createNativeQuery("UPDATE pm_equipment e SET data_started_at = (SELECT MIN(s.recorded_at) FROM " + spec.table()

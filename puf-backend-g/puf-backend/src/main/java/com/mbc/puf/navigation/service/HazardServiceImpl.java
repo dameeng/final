@@ -14,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.mbc.puf.common.enums.RiskLevel;
 import com.mbc.puf.common.enums.UnderpassCurrentStatus;
 import com.mbc.puf.navigation.dto.HazardState;
-import com.mbc.puf.navigation.ws.NavigationWsHub;
 import com.mbc.puf.stream.StreamPublisher;
 import com.mbc.puf.underpass.entity.Camera;
 import com.mbc.puf.underpass.entity.Underpass;
@@ -35,7 +34,6 @@ import jakarta.persistence.EntityManager;
 public class HazardServiceImpl implements HazardService {
 
     private final EntityManager em;
-    private final NavigationWsHub wsHub;
     private final StreamPublisher streamPublisher;
     private final double defaultRadius;
     private final double surveyedRadius;
@@ -46,13 +44,12 @@ public class HazardServiceImpl implements HazardService {
     private volatile String snapshotKey = null;
     private volatile long version = System.currentTimeMillis();
 
-    public HazardServiceImpl(EntityManager em, NavigationWsHub wsHub, StreamPublisher streamPublisher,
+    public HazardServiceImpl(EntityManager em, StreamPublisher streamPublisher,
                          @Value("${puf.navigation.default-radius-m:70}") double defaultRadius,
                          @Value("${puf.navigation.surveyed-radius-m:40}") double surveyedRadius,
                          @Value("${puf.navigation.surveyed-underpass-ids:}") List<Long> surveyedIds,
                          @Value("${puf.navigation.radius-overrides:}") String radiusOverrides) {
         this.em = em;
-        this.wsHub = wsHub;
         this.streamPublisher = streamPublisher;
         this.defaultRadius = defaultRadius;
         this.surveyedRadius = surveyedRadius;
@@ -126,8 +123,6 @@ public class HazardServiceImpl implements HazardService {
         hazards = loaded;
         version = Math.max(version + 1, System.currentTimeMillis());
         if (!first || !loaded.isEmpty()) {
-            HazardState state = state();
-            wsHub.broadcast("state", state);
             streamPublisher.dataChangedPublic(null, "navigation-hazard", "UPDATE", null);
         }
     }
