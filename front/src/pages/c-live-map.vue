@@ -676,7 +676,7 @@ const filtered = computed(() =>
           : statusFilter.value === '위험'
             ? riskGroup(stateLabel(f)) === 'DANGER'
             : statusFilter.value === '경고'
-              ? riskGroup(stateLabel(f)) === 'WARNING'
+              ? riskGroup(stateLabel(f)) === 'WARNING' && stateLabel(f) !== '관심'
               : stateLabel(f) === statusFilter.value)),
   ),
 )
@@ -938,6 +938,16 @@ async function selectFacility(f: Facility) {
     clusterer?.redraw()
     map.setLevel(5, { anchor: new maps.LatLng(f.latitude, f.longitude) })
     map.setCenter(new maps.LatLng(f.latitude, f.longitude))
+    if (adminAppMap.value && map.panBy) {
+      // 검색·범례 아래에 팝업을 놓고, 아래 시설 목록 위에 마커를 유지한다.
+      const root = customerRoot.value
+      const toolbar = root?.querySelector('.map-overlay-toolbar')
+      if (root && toolbar) {
+        const top = toolbar.getBoundingClientRect().bottom - root.getBoundingClientRect().top
+        const markerY = Math.min(root.clientHeight - 150, top + 190)
+        map.panBy(0, root.clientHeight / 2 - markerY)
+      }
+    }
     drawMap()
   }
   void loadDetail(f.id)
@@ -2161,6 +2171,7 @@ onBeforeUnmount(() => {
         >상태<select v-model="statusFilter"
           ><option value="">전체 상태</option
           ><option>정상</option
+          ><option>관심</option
           ><option>경고</option
           ><option>위험</option
           ><option>통제</option></select
