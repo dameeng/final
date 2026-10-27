@@ -168,8 +168,7 @@ function act(row: PmEvent, mode: 'start' | 'note' | 'resolve') {
           </button>
         </nav>
         <label class="pm-type">
-          종류
-          <select v-model="type">
+          <select v-model="type" aria-label="종류">
             <option v-for="[value,label] in typeOptions" :key="value" :value="value">{{label}}</option>
           </select>
         </label>

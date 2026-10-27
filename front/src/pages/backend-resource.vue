@@ -1062,13 +1062,13 @@ defineExpose({ open, load })
       >← 알림 발송 기록으로 돌아가기</RouterLink>
       <!-- 제목과 같은 글자를 위에 한 번 더 쓰지 않는다 (고객 서비스 묶음 이름만 표시) -->
       
-      <div class="service-heading page-head" :class="{'app-resource-heading':appPage&&!props.embedded}">
+      <div class="service-heading page-head" :class="{'app-resource-heading':appPage&&!props.embedded,'record-page-heading':!appPage&&!props.embedded&&['ocr','reviews','transits'].includes(resourceId)}">
         <component :is="props.embedded?'h2':'h1'">{{pageTitle}}</component>
-        <nav v-if="underpassSplit&&!appPage&&!props.embedded&&relatedIds.length>1" class="service-tabs tabs split-heading-tabs" aria-label="업무 구분">
-          <RouterLink v-for="id in relatedIds" :key="id" :to="resourceLink(id)" :aria-current="resourceId===id?'page':undefined">{{backendResources[id]?.title}}</RouterLink>
-        </nav>
         <div class="service-actions">
           <RouterLink v-if="resourceId==='ocr'&&!appPage" class="btn" :to="resourceLink('reviews')">번호판 판별 대기</RouterLink>
+          <nav v-if="!customer&&!appPage&&!props.embedded&&shortcuts.length" class="heading-navigation" aria-label="관련 업무 바로가기">
+            <RouterLink v-for="link in shortcuts" :key="link.id" class="btn" :to="resourceLink(link.id)">{{adminResourceTitles[link.id]||link.label}}</RouterLink>
+          </nav>
           <span v-if="underpassSplit&&!vmsSplit&&parents.underpassId&&!loading" class="split-result-count" role="status">총 {{data.totalItems}}건</span>
           <button
             v-if="resourceId==='manager-notifications'"
@@ -1076,12 +1076,15 @@ defineExpose({ open, load })
             :disabled="saving"
             @click="readAllManagerNotifications"
           >모두 읽음</button>
-          <button v-if="!vmsSplit&&!appPage" type="button" :disabled="loading||missingParent" @click="load">새로고침</button>
+          <button v-if="!vmsSplit&&!appPage" class="resource-refresh" type="button" :disabled="loading||missingParent" @click="load">새로고침</button>
           <button v-if="resource.create&&canWrite&&!vmsSplit" type="button" @click="open('create')">
             {{resourceId==='cars'?'차량 등록':resourceId==='my-inquiries'?'문의 등록':facilityList?'+ 지하차도 등록':'새로 등록'}}
           </button>
         </div>
       </div>
+      <nav v-if="!customer&&!appPage&&!props.embedded&&relatedIds.length>1" class="service-tabs tabs page-selection-tabs" aria-label="업무 구분">
+        <RouterLink v-for="id in relatedIds" :key="id" class="btn" :to="resourceLink(id)" :aria-current="resourceId===id?'page':undefined">{{backendResources[id]?.title}}</RouterLink>
+      </nav>
       <nav v-if="publicNotices" class="notice-category-tabs" aria-label="공지사항 분류">
         <button
           v-for="[label,value] in [['전체',''],['중요','true'],['일반','false']]"
@@ -1092,20 +1095,6 @@ defineExpose({ open, load })
         >
           {{label}}
         </button>
-      </nav>
-      <nav
-        v-if="!underpassSplit&&!customer&&!route.path.startsWith('/admin-app/')&&!props.embedded&&relatedIds.length>1"
-        class="service-tabs tabs"
-        aria-label="업무 구분"
-      >
-        <RouterLink
-          v-for="id in relatedIds"
-          :key="id"
-          :to="resourceLink(id)"
-          :aria-current="resourceId===id?'page':undefined"
-        >
-          {{backendResources[id]?.title}}
-        </RouterLink>
       </nav>
       <nav v-if="restored&&resourceId==='reviews'" class="tabs review-tabs" aria-label="판별 구분">
         <button
@@ -1202,14 +1191,6 @@ defineExpose({ open, load })
           {{resourceId==='my-inquiries'?'검색':'조회'}}
         </button>
       </form>
-      <nav
-        v-if="!customer&&!route.path.startsWith('/admin-app/')&&!props.embedded&&shortcuts.length"
-        class="resource-shortcuts"
-        aria-label="관련 업무 바로가기"
-      >
-        <RouterLink v-for="link in shortcuts" :key="link.id" :to="resourceLink(link.id)">
-          {{adminResourceTitles[link.id]||link.label}} →</RouterLink>
-      </nav>
       <p v-if="error" class="service-error" role="alert">
         {{error}} <RouterLink v-if="!app.account" :to="customer?'/login':'/admin-login'">로그인</RouterLink>
       </p>
@@ -1449,7 +1430,7 @@ defineExpose({ open, load })
             </template>
           </dl>
           <div v-if="mode==='detail'&&facilityList" class="facility-drawer-quick">
-            <TunnelCctvDialog :facility-name="detail.name" />
+            <TunnelCctvDialog :facility-name="detail.name" :underpass-id="detail.id" />
             <RouterLink :to="{path:route.path.startsWith('/admin-app/')?'/admin-app/screen-5':'/fac-detail',query:{id:String(detail.id),underpassId:String(detail.id),tab:'cctv'}}">시설 CCTV 보기</RouterLink>
           </div>
           <component :is="facilityList?'details':'div'" v-if="mode==='detail'&&canWrite" :class="facilityList?'facility-drawer-more':'resource-body'">

@@ -53,6 +53,42 @@
 #app .admin-interface.admin-shell :is(.service-actions,.pm-head-actions,.pm-detail-actions,.page-head > .actions) {
   display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:8px; margin:0;
 }
+#app .admin-interface.admin-shell .service-heading>.service-actions { margin-left:auto; }
+#app .admin-interface.admin-shell .service-heading.record-page-heading {
+  flex-direction:column; align-items:flex-start;
+}
+#app .admin-interface.admin-shell .service-heading.record-page-heading>.service-actions {
+  width:100%; margin-left:0; justify-content:flex-start;
+}
+#app .admin-interface.admin-shell .record-page-heading>.service-actions>.resource-refresh {
+  margin-left:auto;
+}
+#app .admin-interface.admin-shell .service-filters>button[type=submit] {
+  margin-left:auto; flex-shrink:0;
+}
+/* 단계·기간·탭처럼 선택하는 버튼 묶음은 왼쪽 기준선에 맞춘다. */
+#app .admin-interface.admin-shell :is(main.page,.service-workspace,.chat-monitor)>
+:is(.tabs,.notice-category-tabs,.notification-category-tabs,.chat-monitor-tabs,.chat-monitor-period) {
+  display:flex; justify-content:flex-start; flex-wrap:wrap; gap:8px;
+}
+#app .admin-interface.admin-shell .pm-filters>.tabs {
+  order:0; margin:0; padding:0; justify-content:flex-start;
+}
+#app .admin-interface.admin-shell .pm-filters { gap:12px; margin:0 0 12px; }
+#app .admin-interface.admin-shell .pm-filters>.pm-type {
+  flex-basis:auto; margin-left:auto; justify-content:flex-end;
+}
+#app .admin-interface.admin-shell .pm-filter-row>.pm-range {
+  order:0; margin-left:0; justify-content:flex-start;
+}
+#app .admin-interface.admin-shell .pm-filter-row>button { margin-left:0; }
+#app .admin-interface.admin-shell .restored-facility-filters>.chips {
+  flex-basis:100%; width:100%; justify-content:flex-start;
+}
+#app .admin-interface.admin-shell .service-heading .heading-navigation {
+  display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap;
+  gap:8px; min-height:44px; margin:0; padding:0; border:0;
+}
 #app .admin-interface.admin-shell :is(.page-head,.service-heading,.service-filters,.pm-filter-row,.pm-filters) :is(button:not(.ui-icon-button),a.btn,input:not([type=checkbox]):not([type=radio]),select),
 #app .admin-interface.admin-shell :is(.tabs,.service-tabs) > :is(button,a) {
   box-sizing:border-box; min-height:var(--admin-control-height); height:var(--admin-control-height);

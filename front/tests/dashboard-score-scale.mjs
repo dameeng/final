@@ -20,10 +20,16 @@ try {
  })
  await page.goto(`http://127.0.0.1:${server.httpServer.address().port}/admin-dashboard`)
  await expect(page.locator('.fixed-top5 [role=meter]')).toHaveCount(5)
- for(const width of [1440,900]) {
+ for(const width of [1440,900,390]) {
   await page.setViewportSize({width,height:1000})
   for(const theme of ['light','dark']) {
    await page.evaluate(theme=>document.documentElement.dataset.theme=theme,theme)
+   const containers=await page.locator('.fixed-top5').evaluate(el=>[el,...el.querySelectorAll('.dashboard-fixed-content,.widget-original-content,.rank')].map(node=>({
+    overflow:getComputedStyle(node).overflowY,scroll:node.scrollHeight,client:node.clientHeight,
+   })))
+   assert(containers.every(item=>!['auto','scroll'].includes(item.overflow)||item.scroll<=item.client+1),'Top5 has no internal scrolling at any viewport')
+   const boxes=await page.locator('.fixed-top5').evaluate(el=>({card:el.getBoundingClientRect().bottom,last:el.querySelector('.rank>li:last-child').getBoundingClientRect().bottom}))
+   assert(boxes.last<=boxes.card+1,'All five items fit inside their card')
    for(const row of await page.locator('.fixed-top5 .rank>li').all()) {
     const result=await row.evaluate(el=>{
      const track=el.querySelector('[role=meter]'),bar=track.firstElementChild,score=el.querySelector('.sc')

@@ -1,6 +1,7 @@
 import { chromium } from '@playwright/test'
 import { createServer } from 'vite'
 import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
 const server = await createServer({ configLoader:'runner', server:{ host:'127.0.0.1', port:0, strictPort:false } })
 await server.listen()
 const browser = await chromium.launch({ channel:'msedge', headless:true })
@@ -8,14 +9,19 @@ try {
   const page = await browser.newPage(), errors = []
   page.on('pageerror', error => errors.push(error.message))
   await page.route('**/map-cctv.json', route => route.fulfill({ json:[{ id:'1', name:'테스트 도로 CCTV', address:'부산', url:'https://example.test/live.m3u8', lat:35.17, lng:129.07 }] }))
-  await page.route('**/map-vms.json', route => route.fulfill({ json:[{ id:'v1', name:'테스트 전광판', address:'부산 도로', lat:35.18, lng:129.08, content:'지하차도 통제 중\n우회 바랍니다' }] }))
+  const vmsApi = /\/api\/its-vms(?:\/[^/?]+)?$/
+  let vmsRows=[{id:57,name:'테스트 전광판',lat:35.18,lng:129.08,pages:[{pageNo:1,content:'지하차도 통제 중\n우회 바랍니다'}]}]
+  await page.route(vmsApi, route => {
+    const id=new URL(route.request().url()).pathname.split('/')[3]
+    return route.fulfill({json:{success:true,data:id?vmsRows.find(row=>String(row.id)===id):vmsRows}})
+  })
   await page.route('**/live.m3u8', route => route.fulfill({ status:503 }))
   await page.goto(`http://127.0.0.1:${server.httpServer.address().port}/tests/traffic-layers-fixture.html`)
   assert.equal(await page.locator('.traffic-toggle-track').count(), 2)
   await page.getByRole('button',{ name:'CCTV', exact:true }).click()
   assert.equal(await page.getByRole('button',{ name:'CCTV', exact:true }).getAttribute('aria-pressed'), 'true')
   await page.locator('.traffic-device-marker.cctv').waitFor()
-  const controlsHeading = page.locator('.traffic-controls-heading')
+  const controlsHeading = page.getByRole('button',{name:'교통 시설',exact:true})
   await controlsHeading.click()
   assert.equal(await controlsHeading.getAttribute('aria-expanded'), 'false')
   assert.equal(await page.locator('.traffic-layer-switches').isVisible(), false)
@@ -37,22 +43,21 @@ try {
   assert.equal(await page.getByRole('button',{ name:'내부 지하차도 보기',exact:true }).count(),0)
   assert.equal(await page.locator('dialog[open]').count(),0)
   await page.unroute('**/map-cctv.json')
-  await page.unroute('**/map-vms.json')
+  vmsRows=JSON.parse(await readFile(new URL('../public/map-vms.json',import.meta.url),'utf8')).map(row=>({...row,spec:row.type,pages:[{pageNo:1,content:'초량지하차도\n통제 중 통행 금지'},{pageNo:2,content:'북항지하차도\n통제 중 우회하세요'},{pageNo:3,content:'안전운전 하세요'}]}))
   await page.reload()
   await page.getByRole('button',{ name:'CCTV',exact:true }).click()
   await page.waitForFunction(() => [...document.querySelectorAll('.traffic-device-marker')].reduce((sum, marker) => sum+Number(marker.dataset.cctvCount),0) === 241)
   await page.getByRole('button',{ name:'VMS 전광판',exact:true }).click()
   await page.waitForFunction(() => [...document.querySelectorAll('.traffic-device-marker')].reduce((sum, marker) => sum+Number(marker.dataset.vmsCount),0) === 120)
   await page.locator('.traffic-device-marker.vms').first().click()
-  assert.match(await page.getByRole('dialog').textContent(),/전광판 규격: 2단10열/)
-  assert.match(await page.getByRole('dialog').textContent(),/예시 문구/)
-  assert.match(await page.locator('.vms-display').textContent(),/안전운전 하세요/)
+  assert.doesNotMatch(await page.getByRole('dialog').textContent(),/예시 문구/)
+  assert.match(await page.locator('.vms-display').textContent(),/초량지하차도/)
   await page.getByRole('button',{name:'다음 문구',exact:true}).click()
-  assert.match(await page.locator('.vms-led-text').textContent(),/차간거리를 유지하세요/)
+  assert.match(await page.locator('.vms-led-text').textContent(),/북항지하차도/)
   await page.getByRole('button',{name:'이전 문구',exact:true}).click()
-  assert.match(await page.locator('.vms-led-text').textContent(),/안전운전 하세요/)
+  assert.match(await page.locator('.vms-led-text').textContent(),/초량지하차도/)
   await page.locator('.vms-display').press('ArrowLeft')
-  assert.match(await page.locator('.vms-led-text').textContent(),/우천 시 감속 운행/)
+  assert.match(await page.locator('.vms-led-text').textContent(),/안전운전 하세요/)
   await page.keyboard.press('Escape')
   await page.evaluate(() => window.setTrafficZoom(7))
   await page.waitForFunction(() => [...document.querySelectorAll('.traffic-device-marker')].reduce((sum, marker) => sum+Number(marker.dataset.cctvCount)+Number(marker.dataset.vmsCount),0) === 361)
