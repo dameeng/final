@@ -47,6 +47,30 @@ try {
   assert.match(await manual.getAttribute('href'),/^\/verify\?underpassId=7$/)
   await manual.click()
   await expect(page).toHaveURL(/\/verify\?underpassId=7$/)
+  for (const resource of ['display','presets','reasons','notices','faqs','ocr']) {
+    await page.goto(base+'/admin-data/'+resource)
+    const heading = page.locator('.service-heading').first()
+    await expect(page.locator('.resource-shortcuts')).toHaveCount(0)
+    if (resource!=='ocr') {
+      const tabs=page.locator('.page-selection-tabs')
+      await expect(tabs).toHaveCount(1)
+      const left=await tabs.evaluate(el=>el.getBoundingClientRect().left)
+      const titleLeft=await heading.evaluate(el=>el.querySelector('h1').getBoundingClientRect().left)
+      assert(Math.abs(left-titleLeft)<2,'Selection tabs align left: '+resource)
+      continue
+    }
+    await expect(heading.locator('.heading-navigation')).not.toHaveCount(0)
+    const geometry = await heading.evaluate(el => {
+      const title = el.querySelector('h1').getBoundingClientRect()
+      return [...el.querySelectorAll('.heading-navigation a')].map(link => {
+        const rect = link.getBoundingClientRect()
+        return {height:rect.height,top:rect.top,titleBottom:title.bottom,left:rect.left,titleLeft:title.left}
+      })
+    })
+    assert(geometry.every(rect=>rect.height===44&&rect.top>=rect.titleBottom&&rect.left>=rect.titleLeft),'Record navigation sits below the title with standard 44px buttons: '+resource+' '+JSON.stringify(geometry))
+    const actionsLeft=await heading.locator('.service-actions').evaluate(el=>el.getBoundingClientRect().left)
+    assert(Math.abs(actionsLeft-geometry[0].titleLeft)<2,'Record action group aligns left')
+  }
   for (const prefix of ['/admin-data/ocr','/admin-app/ocr']) {
     queries.length = 0
     await page.goto(base+prefix+'?id=42&regionId=3')

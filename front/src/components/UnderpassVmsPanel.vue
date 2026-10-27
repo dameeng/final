@@ -128,7 +128,7 @@ onBeforeUnmount(() => { listController?.abort(); pageController?.abort(); clearT
         <div class="vms-actions"><button type="button" :disabled="pagesLoading" @click="refresh">{{pagesLoading?'조회 중…':'새로고침'}}</button><button type="button" class="is-primary" :disabled="!manageable" :title="manageable?'':'담당 외 시설은 문구를 추가할 수 없습니다.'" @click="openEditor()">수동 페이지 추가</button></div>
       </header>
       <div class="vms-now">
-        <div><h3>지금 표출 중</h3><VmsLedDisplay :messages="pages.map(p=>p.content)" /></div>
+        <div><h3>지금 표출 중</h3><VmsLedDisplay :pages="pages" /></div>
         <p class="vms-note">페이지가 여러 장이면 순서대로 돌아가며 표출됩니다. 자동 페이지는 단계에 따라 색이 바뀌고, 수동 페이지는 노랑입니다.</p>
       </div>
       <p v-if="pageError" class="vms-error" role="alert">{{pageError}}</p>
