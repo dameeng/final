@@ -43,11 +43,26 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
     // 시간에 따라 연속적으로 조금씩 움직이는 정상 범위 잡음.
     private static final String LIVE_NOISE = "(0.55*sin(EXTRACT(EPOCH FROM x.t)/97.0+x.id)+0.25*sin(EXTRACT(EPOCH FROM x.t)/31.0+x.id))";
 
+    // 배수펌프 실시간 값만 흔들림을 키우는 배수. 모델이 "평소"로 보는 폭(센서별 표준편차 σ)의 약 1~2σ 안에서 움직이게 맞췄다.
+    // 모델은 평소에서 3σ 이상 벗어나야 "평소와 달라요"로 보므로, 키워도 정상 상태가 이상으로 잡히지 않는다. 1.0 이면 예전과 같다.
+    private static final double PUMP_LIVE_NOISE_SCALE = 2.2;
+
     private static final String NOISE = "((random() + random() + random() - 1.5) * 2)";   // 평균 0, 표준편차 약 1
 
     /** 설비 종류별 만드는 방법 */
     private record Spec(PmEquipmentType type, String table, long rampSec, long spikeLenSec,
             double ampDanger, double ampCaution, double ampSpike, String insertSql) {
+    }
+
+    /** 실시간으로 쌓는 값의 흔들림 식. 전광판은 안쪽 SELECT 별칭이 y 이고, 배수펌프는 폭을 키운다 */
+    private static String liveNoise(PmEquipmentType type) {
+        if (type == PmEquipmentType.DISPLAY) {
+            return LIVE_NOISE.replace("x.", "y.");
+        }
+        if (type == PmEquipmentType.PUMP) {
+            return PUMP_LIVE_NOISE_SCALE + "*" + LIVE_NOISE;
+        }
+        return LIVE_NOISE;
     }
 
     private static final Spec PUMP = new Spec(PmEquipmentType.PUMP, "pm_sensor_pump", 36 * 3600L, 2 * 3600L, 0.3, 0.06, 0.06, """
@@ -253,7 +268,7 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
                              e.until_at - make_interval(secs => e.step * (:maxSamples - 1))),
                          e.until_at, make_interval(secs => e.step)) AS g(t)
                     """.replace("{TABLE}", spec.table());
-            String sql = spec.insertSql().replace("+ 1.0 * {N} AS a", "+ 1.0 * "+LIVE_NOISE+" AS a").replace("{SEV}", times).replace("{N}", spec.type()==PmEquipmentType.DISPLAY?LIVE_NOISE.replace("x.","y."):LIVE_NOISE);
+            String sql = spec.insertSql().replace("+ 1.0 * {N} AS a", "+ 1.0 * "+LIVE_NOISE+" AS a").replace("{SEV}", times).replace("{N}", liveNoise(spec.type()));
             int added = em.createNativeQuery(sql)
                     .setParameter("type", spec.type().name()).setParameter("now", now)
                     .setParameter("ampD", spec.ampDanger())
@@ -324,7 +339,7 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
                 + "GREATEST(CAST(:now AS timestamp), COALESCE((SELECT MAX(recorded_at)+interval '1 microsecond' FROM "
                 +spec.table()+" WHERE equip_id=e.id),CAST(:now AS timestamp))) AS t, CAST(:severity AS double precision) AS s "
                 +"FROM pm_equipment e WHERE e.id=:equipId AND NOT e.is_deleted";
-        return em.createNativeQuery(spec.insertSql().replace("+ 1.0 * {N} AS a", "+ 1.0 * "+LIVE_NOISE+" AS a").replace("{SEV}",times).replace("{N}",spec.type()==PmEquipmentType.DISPLAY?LIVE_NOISE.replace("x.","y."):LIVE_NOISE))
+        return em.createNativeQuery(spec.insertSql().replace("+ 1.0 * {N} AS a", "+ 1.0 * "+LIVE_NOISE+" AS a").replace("{SEV}",times).replace("{N}",liveNoise(spec.type())))
                 .setParameter("now",dbClock.now()).setParameter("severity",danger?spec.ampDanger():0.0)
                 .setParameter("equipId",equipId).executeUpdate();
     }
