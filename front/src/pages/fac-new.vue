@@ -139,11 +139,7 @@ onBeforeUnmount(() => dispose?.())
     </aside>
 
 <main class="page">
-      <div class="crumb">
-        <span>지하차도 관리 &gt; <strong class="inl-7891572d91">등록</strong>
-        </span>
-        <span class="note"></span>
-      </div>
+      
 <div class="page-head">
         <h1>지하차도 등록</h1>
         <div class="row">

@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
 import { uiIconPaths } from '../utils/ui-icons'
+import { adminPageTitle } from '../data/adminTitles'
 const route = useRoute()
 const items = [
   {
-    label: '현황',
+    label: adminPageTitle('/admin-app/screen-3'),
     path: '/admin-app/screen-3',
     icon: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
   },
-  { label: '통제', path: '/admin-app/screen-4', icon: 'M4 5h16v14H4zM4 10h16M9 5v14M15 5v14' },
+  { label: adminPageTitle('/admin-app/screen-4'), path: '/admin-app/screen-4', icon: 'M4 5h16v14H4zM4 10h16M9 5v14M15 5v14' },
   {
     label: '예지보전',
     path: '/admin-app/screen-9',
@@ -25,7 +26,7 @@ function active(path: string) {
   const current = route.path
   if (path.endsWith('screen-4'))
     return /^\/admin-app\/(screen-[4-8]|ocr|reviews|transits)$/.test(current)
-  if (path.endsWith('screen-9')) return /^\/admin-app\/(screen-(9|10|11|12)|history)$/.test(current)
+  if (path.endsWith('screen-9')) return /^\/admin-app\/(screen-(9|10|11|12)|history|inspection)$/.test(current)
   if (path === '/admin-app/notifications')
     return ['/admin-app/screen-13', '/admin-app/notifications'].includes(current)
   if (path.endsWith('screen-14'))

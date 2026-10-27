@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import RiskLevelBadge from '../components/RiskLevelBadge.vue'
+import { matchesKoreanSearch } from '../utils/korean-search'
 import { useRiskChartClock } from '../composables/useRiskChartClock'
 import { mapMarkerSvg } from '../utils/map-marker'
 import { pageFriendlyMapScroll } from '../runtime/mapScroll'
@@ -325,6 +326,7 @@ function controlLabel(f: Facility) {
   return f.controlled === true ? '통제 중' : f.controlled === false ? '정상 운영' : '상태 확인 필요'
 }
 function closeFacility() {
+  removeAppMapPopup('facility')
   detailAbort?.abort()
   selectedId.value = ''
   detail.value = null
@@ -421,8 +423,6 @@ function locateUser() {
   )
 }
 let viewportObserver: ResizeObserver | undefined
-let toolbarObserver: ResizeObserver | undefined
-let adminSheetObserver: ResizeObserver | undefined
 function sizeCustomerMap() {
   const root = customerRoot.value
   if (!root) return
@@ -442,6 +442,52 @@ let sdkPoll: number | undefined
 let observer: ResizeObserver | undefined
 // 카카오 SDK에서 제공하는 객체입니다. 팀 프로젝트에 SDK 타입이 있으면 교체할 수 있습니다.
 let maps: any, map: any, infoWindow: any, clusterInfoWindow: any, geocoder: any
+let appMapPopup: { node: HTMLElement; position: any; kind: 'facility' | 'cluster'; observer: ResizeObserver } | undefined
+function removeAppMapPopup(kind?: 'facility' | 'cluster') {
+  if (!appMapPopup || (kind && appMapPopup.kind !== kind)) return
+  appMapPopup.observer.disconnect()
+  appMapPopup.node.remove()
+  appMapPopup = undefined
+  customerRoot.value?.classList.remove('admin-map-popup-active', 'admin-map-popup-compact')
+}
+function positionAppMapPopup() {
+  const root = customerRoot.value, popup = appMapPopup
+  if (!root || !popup) return
+  root.classList.toggle('admin-map-popup-compact', root.clientHeight < 360)
+  const rect = root.getBoundingClientRect()
+  let top = 8
+  for (const element of root.querySelectorAll<HTMLElement>('.admin-map-search,.map-overlay-toolbar')) {
+    if (element.getClientRects().length) top = Math.max(top, element.getBoundingClientRect().bottom - rect.top + 8)
+  }
+  const bottom = root.clientHeight - 12
+  const width = Math.min(280, root.clientWidth - 24)
+  popup.node.style.width = `${width}px`
+  popup.node.style.maxHeight = `${Math.max(0, bottom - top)}px`
+  const height = popup.node.getBoundingClientRect().height
+  const point = map.getProjection?.().containerPointFromCoords(popup.position)
+  const x = point?.x ?? root.clientWidth / 2, y = point?.y ?? root.clientHeight / 2
+  const below = y + 22, above = y - height - 22
+  const preferred = below + height <= bottom ? below : above >= top ? above : top
+  popup.node.style.left = `${Math.max(12, Math.min(root.clientWidth - width - 12, x - width / 2))}px`
+  popup.node.style.top = `${Math.max(top, Math.min(bottom - height, preferred))}px`
+}
+function showAppMapPopup(node: HTMLElement, position: any, kind: 'facility' | 'cluster') {
+  const root = customerRoot.value
+  if (!root) return
+  removeAppMapPopup()
+  infoWindow?.close()
+  clusterInfoWindow?.close()
+  root.classList.add('admin-map-popup-active')
+  node.classList.add('admin-map-floating-popup')
+  root.append(node)
+  const observer = new ResizeObserver(positionAppMapPopup)
+  appMapPopup = { node, position, kind, observer }
+  observer.observe(root)
+  observer.observe(node)
+  for (const element of root.querySelectorAll('.admin-map-search,.map-overlay-toolbar')) observer.observe(element)
+  positionAppMapPopup()
+}
+watch(selectedId, value => { if (!value) removeAppMapPopup('facility') })
 let overlays: any[] = []
 let markers: { id: string; marker: any; click: () => void }[] = []
 watch(
@@ -668,7 +714,7 @@ const filtered = computed(() =>
     (f) =>
       (!regionId.value || f.regionId === regionId.value) &&
       (!district.value || busanDistrict(f.assignedRegionName, f.address) === district.value) &&
-      (!query.value || (f.name + ' ' + f.address).includes(query.value)) &&
+      matchesKoreanSearch(f.name + ' ' + f.address + ' ' + f.assignedRegionName, query.value) &&
       (!legendFilter.value || legendState(stateLabel(f)) === legendFilter.value) &&
       (!statusFilter.value ||
         (statusFilter.value === '미확인'
@@ -758,6 +804,35 @@ watch(pages, () => {
 
 let initialFacilityBoundsApplied = false
 async function searchFacilities() {
+  if (adminAppMap.value) {
+    closeFacility()
+    closeClusterPopup()
+    clusterFacilityIds.value = []
+    if (query.value.trim()) {
+      regionId.value = ''
+      district.value = ''
+      statusFilter.value = ''
+      legendFilter.value = ''
+    }
+    if (!facilities.value.length) await refresh()
+    await nextTick()
+    if (!map) return
+    const rows = filtered.value.filter(f => f.latitude !== null && f.longitude !== null && Number.isFinite(f.latitude) && Number.isFinite(f.longitude))
+    if (!rows.length) return
+    map.relayout()
+    if (rows.length === 1) {
+      await selectFacility(rows[0]!)
+      map.setLevel(4)
+    } else {
+      const bounds = new maps.LatLngBounds()
+      rows.forEach(f => bounds.extend(new maps.LatLng(f.latitude, f.longitude)))
+      const root = customerRoot.value
+      const toolbar = root?.querySelector('.map-overlay-toolbar')
+      const top = root && toolbar ? Math.ceil(toolbar.getBoundingClientRect().bottom - root.getBoundingClientRect().top) + 16 : 160
+      map.setBounds(bounds, top, 32, 72, 32)
+    }
+    return
+  }
   await refresh()
   await nextTick()
   if (!map || selectedId.value) return
@@ -1085,6 +1160,7 @@ async function showAllFacilities() {
 let dismissedPopupId = ''
 function dismissFacilityPopup() {
   dismissedPopupId = selectedId.value
+  removeAppMapPopup('facility')
   infoWindow?.close()
 }
 function dismissPopupOutside(event: PointerEvent) {
@@ -1144,8 +1220,11 @@ function openSelectedPopup() {
     p.textContent = detailError.value
     content.append(p)
   }
-  infoWindow.setContent(content)
-  infoWindow.open(map, item.marker)
+  if (adminAppMap.value) showAppMapPopup(content, item.marker.getPosition?.() || new maps.LatLng(row.latitude, row.longitude), 'facility')
+  else {
+    infoWindow.setContent(content)
+    infoWindow.open(map, item.marker)
+  }
 }
 // 상태별 마커 색상. 위에 있을수록 위험한 상태이며 겹칠 때 앞쪽에 그립니다.
 const markerStyles = [
@@ -1303,6 +1382,7 @@ let clusterPopupOpen = false,
   clusterPopupRequest = 0
 function closeClusterPopup() {
   clusterPopupRequest++
+  removeAppMapPopup('cluster')
   if (clusterPopupOpen) clusterInfoWindow?.close()
   clusterPopupOpen = false
 }
@@ -1369,9 +1449,12 @@ async function selectCluster(cluster: any) {
     list.append(item)
   }
   content.append(header, list)
-  clusterInfoWindow.setContent(content)
-  clusterInfoWindow.setPosition?.(position)
-  clusterInfoWindow.open(map)
+  if (adminAppMap.value) showAppMapPopup(content, position, 'cluster')
+  else {
+    clusterInfoWindow.setContent(content)
+    clusterInfoWindow.setPosition?.(position)
+    clusterInfoWindow.open(map)
+  }
   clusterPopupOpen = true
   maps.event.preventMap?.()
 }
@@ -1582,6 +1665,7 @@ async function initializeMap() {
           initialFacilityBoundsApplied = facilities.value.length > 0
           maps.event.addListener(map, 'zoom_changed', handleZoomChanged)
           maps.event.addListener(map, 'click', dismissMapPopups)
+          maps.event.addListener(map, 'bounds_changed', positionAppMapPopup)
           drawMap()
           void resolveRegions()
           observer = new ResizeObserver(() => {
@@ -1703,19 +1787,6 @@ useBackendEvents((event) => {
 })
 onMounted(() => {
   sizeCustomerMap()
-  if (props.mapOnly && customerRoot.value) {
-    const root = customerRoot.value
-    const toolbar = root.querySelector<HTMLElement>('.map-overlay-toolbar')
-    if (toolbar) {
-      toolbarObserver = new ResizeObserver(() => root.style.setProperty('--admin-map-toolbar-height', `${Math.ceil(toolbar.getBoundingClientRect().bottom - root.getBoundingClientRect().top - 12)}px`))
-      toolbarObserver.observe(toolbar)
-    }
-    const sheet = root.querySelector<HTMLElement>('.admin-facility-sheet')
-    if (adminAppMap.value && sheet) {
-      adminSheetObserver = new ResizeObserver(() => root.style.setProperty('--admin-sheet-actual-height', `${sheet.getBoundingClientRect().height}px`))
-      adminSheetObserver.observe(sheet)
-    }
-  }
   viewportObserver = new ResizeObserver(sizeCustomerMap)
   const header = document.querySelector('.customer-header')
   if (header) viewportObserver.observe(header)
@@ -1729,8 +1800,7 @@ onMounted(() => {
   document.addEventListener('pointerdown', collapseSheetOutside, { capture: true, passive: true })
 })
 onBeforeUnmount(() => {
-  toolbarObserver?.disconnect()
-  adminSheetObserver?.disconnect()
+  removeAppMapPopup()
   clearTimeout(streamRefresh)
   listObserver?.disconnect()
   viewportObserver?.disconnect()
@@ -1760,6 +1830,7 @@ onBeforeUnmount(() => {
   if (map) {
     maps.event.removeListener(map, 'zoom_changed', handleZoomChanged)
     maps.event.removeListener(map, 'click', dismissMapPopups)
+    maps.event.removeListener(map, 'bounds_changed', positionAppMapPopup)
     removeMarkers()
   }
 })
@@ -1767,16 +1838,16 @@ onBeforeUnmount(() => {
 
 <template>
   <main v-if="props.mapOnly" ref="customerRoot" class="map-only-live" :class="{'admin-app-map':adminAppMap}"
-    :style="adminAppMap?{'--map-sheet-height':sheetHeight!==null?sheetHeight+'px':sheetOpen?'72%':'68px'}:undefined"
+
     ><div ref="mapElement" class="customer-map-canvas" aria-label="카카오 지도"></div>
-    <form v-if="adminAppMap" class="admin-map-search" @submit.prevent="sheetOpen=true;searchFacilities()">
-      <input v-model.trim="query" type="search" placeholder="지하차도 이름 검색" aria-label="지하차도 이름 검색" /><button type="submit">검색</button>
+    <form v-if="adminAppMap" class="admin-map-search" @submit.prevent="searchFacilities()">
+      <input v-model.trim="query" type="search" placeholder="지하차도·지역 검색" aria-label="지하차도·지역 검색" /><button type="submit">검색</button>
     </form>
     <div class="map-overlay-toolbar"><ul class="map-only-legend" aria-label="마커 등급 안내"
       ><li v-for="style in markerLegendStyles" :key="style.label"
         ><button type="button" class="legend-filter-button" :aria-pressed="legendFilter===style.label" :class="{'legend-muted':legendFilter&&legendFilter!==style.label}" @click="toggleLegend(style.label)"><i :style="{background:style.color}"></i>{{style.label}}</button></li
       ><li v-if="props.manager"><span style="background:#9aa3ae"></span>담당 외 시설</li></ul>
-      <TrafficMapLayers :map="trafficMap" :maps="trafficMaps" :toggle-controls="adminAppMap" /></div>
+      <TrafficMapLayers :map="trafficMap" :maps="trafficMaps" :toggle-controls="adminAppMap" :app="appMap||adminAppMap" /></div>
     <div class="admin-map-control-dock">
       <button v-if="adminAppMap" type="button" class="map-control-toggle" :aria-expanded="mapControlsExpanded" aria-label="지도 조작 접기·펼치기" @click="mapControlsExpanded=!mapControlsExpanded">지도 <span aria-hidden="true">{{mapControlsExpanded?'›':'‹'}}</span></button>
     <div v-show="!adminAppMap||mapControlsExpanded" class="kakao-map-controls"
@@ -1803,27 +1874,7 @@ onBeforeUnmount(() => {
         </button
       ></div
     >
-    <aside class="admin-facility-sheet" :class="{'is-dragging':sheetHeight!==null}" :style="sheetStyle" aria-label="지하차도 시설 목록">
-      <button type="button" class="admin-sheet-handle" :aria-expanded="sheetOpen" aria-controls="admin-map-facilities"
-        @pointerdown="startSheet" @pointermove="moveSheet" @pointerup="endSheet" @pointercancel="endSheet" @lostpointercapture="endSheet" @click="toggleSheet">
-        {{sheetOpen?'시설 목록 접기':'위로 밀어 시설 목록 보기'}} · {{filtered.length}}곳
-      </button>
-      <div v-show="sheetOpen||sheetHeight!==null" id="admin-map-facilities" class="admin-sheet-content">
-        <input v-model.trim="query" type="search" placeholder="지하차도 이름 검색" aria-label="시설 이름 검색" />
-        <p v-if="listError" role="alert">{{listError}}</p>
-        <p v-else-if="loading&&!facilities.length" role="status">시설을 불러오는 중입니다.</p>
-        <p v-else-if="!filtered.length" role="status">조회 조건에 맞는 시설이 없습니다.</p>
-        <ul>
-          <li v-for="row in filtered" :key="row.id" :class="{'is-selected':selectedId===row.id}">
-            <button type="button" class="admin-sheet-facility" @click="selectFacility(row)">
-              <RiskLevelBadge :value="displayState(row)" />
-              <span><strong>{{row.name}}</strong><small>{{controlLabel(row)}} · {{row.address||row.assignedRegionName||'주소 미제공'}}</small></span>
-            </button>
-            <RouterLink :to="'/admin-app/screen-5?id='+row.id" :aria-label="row.name+' 상세보기'">상세 ›</RouterLink>
-          </li>
-        </ul>
-      </div>
-    </aside>
+
     </main
   >
  <main
@@ -1853,7 +1904,7 @@ onBeforeUnmount(() => {
             ><span v-for="style in markerLegendStyles" :key="style.label"
               ><button type="button" class="legend-filter-button" :aria-pressed="legendFilter===style.label" :class="{'legend-muted':legendFilter&&legendFilter!==style.label}" @click="toggleLegend(style.label)"><i :style="{background:style.color}"></i>{{style.label}}</button></span
             ><span><i style="background:#1671d9"></i>내 위치</span></div
-          ><TrafficMapLayers :map="trafficMap" :maps="trafficMaps" toggle-controls /></div>
+          ><TrafficMapLayers :map="trafficMap" :maps="trafficMaps" toggle-controls :app="appMap||adminAppMap" /></div>
     <div class="customer-map-control-dock">
       <button type="button" class="map-control-toggle" :aria-expanded="mapControlsExpanded" aria-label="지도 조작 접기·펼치기" @click="mapControlsExpanded=!mapControlsExpanded">지도 <span aria-hidden="true">{{mapControlsExpanded?'›':'‹'}}</span></button>
     <div v-show="mapControlsExpanded" class="kakao-map-controls" aria-label="지도 조작"
@@ -2088,6 +2139,7 @@ onBeforeUnmount(() => {
               @click="statusFilter=value!"
               >{{label}}</button
           ><button
+            v-if="!appMap"
             type="button"
             class="btn refresh-facilities"
             :disabled="loading"
@@ -2195,7 +2247,7 @@ onBeforeUnmount(() => {
           ><button type="button" class="legend-filter-button" :aria-pressed="legendFilter===style.label" :class="{'legend-muted':legendFilter&&legendFilter!==style.label}" @click="toggleLegend(style.label)"><i :style="{background:style.color}"></i>{{style.label}}</button></li
         ><li
           ><span style="width:10px;height:10px;background:#9aa3ae;border-radius:50%"></span>담당 외 시설</li
-        ></ul><TrafficMapLayers :map="trafficMap" :maps="trafficMaps" /></div>
+        ></ul><TrafficMapLayers :map="trafficMap" :maps="trafficMaps" :app="appMap||adminAppMap" /></div>
       <p v-if="mapError" class="manager-sdk-error" role="status">{{mapError}}</p>
 <ManagerMapPanel
         v-model:expanded="managerPanelExpanded"

@@ -145,9 +145,9 @@ onBeforeUnmount(() => {
 </script>
 <template>
   <main class="service-workspace customer-notification-center" :class="{'app-notification-center':route.path.startsWith('/customer-app/')}"
-    ><div class="service-heading"
+    ><div class="service-heading" :class="{'app-resource-heading':route.path.startsWith('/customer-app/')}"
       ><h1>알림 내역</h1
-      ><button type="button" :disabled="loading" @click="refresh">새로고침</button></div
+      ><button v-if="!route.path.startsWith('/customer-app/')" type="button" :disabled="loading" @click="refresh">새로고침</button></div
     ><details v-if="route.path.startsWith('/customer-app/')" class="notification-settings-details"
       ><summary>알림 수신 설정</summary><NotificationSettings /></details
     ><NotificationSettings v-else /><div class="notification-center-tools"

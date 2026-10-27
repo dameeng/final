@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { adminPageTitle } from '../data/adminTitles'
 import { displayDate } from '../utils/display-date'
 import { riskChartSeries } from '../utils/risk-chart'
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
@@ -88,7 +89,7 @@ onBeforeUnmount(() => {
 <template>
   <BackendLayout>
     <section class="service-workspace">
-      <div class="service-heading"><h1>통계·위험도 추이</h1></div>
+      <div class="service-heading"><h1>{{adminPageTitle('/admin-reports')}}</h1></div>
       <form class="service-filters" @submit.prevent="load">
         <label>통계 종류<select v-model="selected">
             <option v-for="(value,key) in dashboardReports" :key="key" :value="key">

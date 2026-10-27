@@ -1,3 +1,4 @@
+import { adminPageTitle } from './adminTitles'
 export const adminAppMenuGroups = [
   {
     title: '현황·시설',
@@ -8,11 +9,11 @@ export const adminAppMenuGroups = [
     ],
   },
   {
-    title: 'OCR·차량',
+    title: '차량 기록',
     links: [
       ['OCR 인식 기록', '/admin-app/ocr'],
-      ['수동 판별', '/admin-app/reviews'],
-      ['차량 통과 기록', '/admin-app/transits'],
+      ['번호판 판별 대기', '/admin-app/reviews'],
+      ['입출구 로그', '/admin-app/transits'],
     ],
   },
   {
@@ -30,4 +31,4 @@ export const adminAppMenuGroups = [
       ['더보기·내 정보', '/admin-app/screen-14'],
     ],
   },
-]
+].map(group => ({ ...group, links: group.links.map(([label, ...paths]) => [adminPageTitle(paths.find(Boolean) || '', label), ...paths]) }))

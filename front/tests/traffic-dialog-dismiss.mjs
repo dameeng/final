@@ -1,47 +1,43 @@
-import { chromium } from '@playwright/test'
+import { chromium, expect } from '@playwright/test'
 import { createServer } from 'vite'
 import assert from 'node:assert/strict'
 const server=await createServer({configLoader:'runner',server:{host:'127.0.0.1',port:0,strictPort:false}})
 await server.listen()
 const browser=await chromium.launch({channel:'msedge',headless:true})
 try {
- const page=await browser.newPage({viewport:{width:1057,height:844}}), errors=[]
+ const page=await browser.newPage(),errors=[]
  page.on('pageerror',error=>errors.push(error.message))
- await page.route('**/map-cctv.json',route=>route.fulfill({json:[
-  {id:'1',name:'테스트 해변',address:'부산',lat:35.17,lng:129.07,url:'https://video.test/live.m3u8'},
-  {id:'2',name:'테스트 교차로',address:'부산',lat:35.17,lng:129.07,url:'https://video.test/live.m3u8'},
- ]}))
+ await page.route('**/map-cctv.json',route=>route.fulfill({json:[{id:'1',name:'테스트 해변',address:'부산',lat:35.17,lng:129.07,url:'https://video.test/live.m3u8'}]}))
  await page.route('https://video.test/**',route=>route.fulfill({status:404}))
- await page.goto(`http://127.0.0.1:${server.httpServer.address().port}/tests/traffic-layers-fixture.html`)
- await page.evaluate(()=>window.setTrafficOverlap(true))
- await page.getByRole('button',{name:'CCTV',exact:true}).click()
- const marker=page.locator('.traffic-device-marker.device-group'),dialog=page.getByRole('dialog',{name:'교통 시설 정보'})
- await marker.click()
- assert.equal(await dialog.locator('li').count(),2)
- assert.equal(await dialog.evaluate(element=>element.parentElement===document.body),true)
- assert.equal(await dialog.evaluate(element=>getComputedStyle(element).pointerEvents),'auto')
- await dialog.getByRole('button',{name:/테스트 해변/}).click()
- await dialog.getByRole('heading',{name:'테스트 해변',exact:true}).waitFor()
- await dialog.getByRole('button',{name:'목록으로 돌아가기'}).click()
- await dialog.getByRole('heading',{name:'확인할 시설을 선택하세요'}).waitFor()
- await dialog.getByRole('button',{name:'닫기',exact:true}).click()
- await page.waitForFunction(()=>!document.querySelector('.traffic-device-dialog').open)
- for(const width of [1057,390]) {
-  await page.setViewportSize({width,height:844})
-  await marker.click()
-  await dialog.getByRole('heading',{name:'확인할 시설을 선택하세요'}).click()
-  assert.equal(await dialog.evaluate(element=>element.open),true,'팝업 안 빈 공간은 유지')
-  await page.mouse.click(2,2)
-  await page.waitForFunction(()=>!document.querySelector('.traffic-device-dialog').open)
-  await marker.click()
-  await dialog.getByRole('button',{name:/테스트 교차로/}).click()
-  await page.mouse.click(2,2)
-  await page.waitForFunction(()=>!document.querySelector('.traffic-device-dialog').open)
+ await page.route('**/map-vms.json',route=>route.fulfill({json:[{id:'v1',name:'테스트 전광판',lat:35.17,lng:129.07,example:true,content:'안전운전 하세요\n전방 도로 상황을 확인하세요'}]}))
+ for(const [width,height,app] of [[1280,844,false],[1280,844,true],[390,844,true],[320,280,true]]) {
+  await page.setViewportSize({width,height})
+  await page.goto(`http://127.0.0.1:${server.httpServer.address().port}/tests/traffic-layers-fixture.html${app?'?app=1':''}`)
+  if(app) await page.locator('#app').evaluate(el=>el.style.cssText='width:min(430px,100%);margin:0 auto;padding:16px;box-sizing:border-box')
+  await page.getByRole('button',{name:'CCTV',exact:true}).click()
+  await page.locator('.traffic-device-marker').first().click()
+  const view=page.locator(app?'.workflow-page:visible':'dialog.traffic-device-dialog[open]')
+  await expect(view.getByRole('heading',{name:'테스트 해변',exact:true})).toBeVisible()
+  await expect(page.locator('dialog[open]')).toHaveCount(app?0:1)
+  for(const theme of ['light','dark']) {
+   await page.evaluate(theme=>document.documentElement.dataset.theme=theme,theme)
+   const box=await view.boundingBox(),video=await view.locator('video').boundingBox()
+   assert(box.width<=(app?430:900)&&box.x>=0&&box.x+box.width<=width,'CCTV page fits its content area')
+   assert(video.width<=box.width,'Video fits page')
+   assert.equal(await view.evaluate(el=>el.tagName),app?'SECTION':'DIALOG','Only apps use content pages; web uses native dialogs')
+  }
+  await view.getByRole('button',{name:'닫기',exact:true}).click()
+  await expect(view).toHaveCount(0)
+  await expect(page.locator('video')).toHaveCount(0)
+  await page.getByRole('button',{name:'VMS 전광판',exact:true}).click()
+  await page.locator('.traffic-device-marker').first().click()
+  await view.getByRole('button',{name:/테스트 전광판/}).click()
+  await expect(view.getByRole('heading',{name:'테스트 전광판',exact:true})).toBeVisible()
+  await view.getByRole('button',{name:'다음 문구',exact:true}).click()
+  await expect(view.locator('.vms-led-counter')).toHaveText('2 / 3')
+  await view.getByRole('button',{name:app?'‹ 뒤로':'닫기',exact:true}).click()
+  await expect(view).toHaveCount(0)
  }
- await marker.click();await page.keyboard.press('Escape')
- await page.waitForFunction(()=>!document.querySelector('.traffic-device-dialog').open)
- await page.getByRole('button',{name:'CCTV',exact:true}).click()
- assert.equal(await page.locator('.traffic-device-marker').count(),0,'닫은 뒤 지도 버튼 클릭 가능')
  assert.deepEqual(errors,[])
- console.log('통과: 지도 툴바 안 팝업의 닫기·시설 선택·뒤로가기·PC/모바일 배경 클릭·Escape·닫은 뒤 클릭')
+ console.log('PASS CCTV/VMS as content pages in app/web, both themes, phone/landscape; playback cleanup and page return')
 } finally {await browser.close();await server.close()}

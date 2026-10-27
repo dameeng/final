@@ -100,7 +100,7 @@ onBeforeUnmount(release)
 <template>
   <button ref="trigger" class="btn tunnel-cctv-trigger" :class="{'tunnel-cctv-trigger--app':appMode}" type="button" @click="open">내부 CCTV 보기</button>
   <Teleport to="body">
-    <dialog ref="dialog" class="tunnel-cctv-modal" :class="{'tunnel-cctv-modal--app':appMode}" :style="appBounds" aria-label="신월여의지하도로 내부 CCTV" @close="release" @cancel="release">
+    <WorkflowPage ref="dialog" class="tunnel-cctv-modal" :class="{'tunnel-cctv-modal--app':appMode}" :style="appBounds" aria-label="신월여의지하도로 내부 CCTV" @close="release" @cancel="release">
       <header>
         <div><p class="tunnel-cctv-eyebrow">서울터널 · 공개 교통 영상</p><h2>신월여의지하도로 CCTV</h2></div>
         <button class="tunnel-cctv-close" type="button" aria-label="내부 CCTV 창 닫기" @click="close">닫기</button>
@@ -125,7 +125,7 @@ onBeforeUnmount(release)
         <p>제공처 사정에 따라 영상이 지연되거나 일시 중단될 수 있습니다.</p>
         <div><button type="button" :disabled="loading||videoLoading" @click="selected?loadStream():loadList()">다시 연결</button><a :href="seoulTunnelSource" target="_blank" rel="noopener noreferrer">공식 사이트에서 보기 ↗</a></div>
       </footer>
-    </dialog>
+    </WorkflowPage>
   </Teleport>
 </template>
 <style scoped src="../styles/components/tunnel-cctv-dialog.css"></style>

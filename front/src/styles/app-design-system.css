@@ -1,0 +1,104 @@
+/* 상태색은 배경과 글자를 함께 정의한다. 웹과 앱에서 동일한 의미를 쓴다. */
+:root {
+  --status-safe-bg:#e1f3ea; --status-safe-ink:#176344;
+  --status-watch-bg:#eceefa; --status-watch-ink:#505399;
+  --status-caution-bg:#fff1d6; --status-caution-ink:#865000;
+  --status-danger-bg:#fce5e9; --status-danger-ink:#a02e40;
+  --status-neutral-bg:#eaf0f7; --status-neutral-ink:#445b73;
+}
+:root[data-theme=dark] {
+  --status-safe-bg:#193f35; --status-safe-ink:#a2e8c7;
+  --status-watch-bg:#303451; --status-watch-ink:#d0ceff;
+  --status-caution-bg:#47391e; --status-caution-ink:#ffdb8f;
+  --status-danger-bg:#4a2935; --status-danger-ink:#ffb9c7;
+  --status-neutral-bg:#293d53; --status-neutral-ink:#d1dfef;
+}
+#app .risk-level-badge { background:var(--status-neutral-bg); color:var(--status-neutral-ink); border-radius:6px; font-weight:600; line-height:20px; }
+#app .risk-level-badge--safe { background:var(--status-safe-bg); color:var(--status-safe-ink); }
+#app .risk-level-badge--watch { background:var(--status-watch-bg); color:var(--status-watch-ink); }
+#app .risk-level-badge--caution { background:var(--status-caution-bg); color:var(--status-caution-ink); }
+#app :is(.risk-level-badge--alert,.risk-level-badge--severe) { background:var(--status-danger-bg); color:var(--status-danger-ink); }
+#app :is(.app-operation-badge,.pm-inspection-state,.ocr-log-state) { background:var(--status-neutral-bg); color:var(--status-neutral-ink); border-radius:6px; font-weight:600; }
+#app :is(.app-operation-badge.is-blocked,.pm-inspection-state--check_needed,.ocr-log-failed) { background:var(--status-danger-bg); color:var(--status-danger-ink); }
+#app :is(.pm-inspection-state--resolved,.ocr-log-completed) { background:var(--status-safe-bg); color:var(--status-safe-ink); }
+#app .ocr-log-pending { background:var(--status-caution-bg); color:var(--status-caution-ink); }
+
+/* 앱 공통 카드와 글자 체계. 지도 배치와 스크롤 영역은 유지한다. */
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) {
+  --app-card-radius:14px; --app-control-radius:9px; --app-section-gap:16px;
+  color:var(--r-ink); background:var(--r-canvas);
+}
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) :is(.app-restored-body,.bd) { color:var(--r-ink); background-color:var(--r-canvas); }
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) :is(.app-facility-summary,.app-facility-records,.app-metric,.pm-equipment-card,.pm-kpi,.inspection-target,.inspection-report,.app-more-menu,.account-actions,.profile-card,.inspection-history-list) {
+  border:1px solid var(--r-line); border-radius:var(--app-card-radius); background:var(--r-surface); color:var(--r-ink);
+  box-shadow:0 3px 12px #17365706;
+}
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) :is(.btn,.chip,.service-filters input,.service-filters select,.account-actions button,.account-service button) { border-radius:var(--app-control-radius); font-size:13px; font-weight:600; }
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) :is(.service-filters,.pm-filter-card) { background:var(--r-soft); border-color:var(--r-line); border-radius:var(--app-card-radius); }
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) :is(.service-heading h1,.page-head h1) { font-size:20px; line-height:28px; letter-spacing:-.025em; }
+#app .manager-app-shell :is(.app-facility-metrics h2,.app-facility-records h2,.inspection-report h2) { font-size:15px; line-height:22px; font-weight:700; }
+#app .manager-app-shell :is(.app-facility-records h2,.inspection-report h2) { display:flex; align-items:center; gap:8px; }
+#app .manager-app-shell :is(.app-facility-records h2,.inspection-report h2)::before { content:''; flex:0 0 3px; height:14px; border-radius:3px; background:var(--r-accent); }
+#app .manager-app-shell .app-facility-summary { background:linear-gradient(135deg,var(--r-surface),var(--r-soft)); }
+#app .manager-app-shell .app-facility-specs dd { font-size:14px; }
+#app .manager-app-shell .app-metric { gap:5px; min-height:100px; }
+#app .manager-app-shell .app-metric>small { font-size:13px; }
+#app .manager-app-shell .app-metric-caption { font-size:12px; }
+#app .manager-app-shell .app-record-copy strong { font-size:14px; }
+#app .manager-app-shell .app-record-copy small { font-size:12px; }
+#app .manager-app-shell .app-detail-badges { flex-wrap:wrap; align-items:center; }
+#app .manager-app-shell .app-detail-badges>.app-operation-badge { font-size:12px; line-height:20px; padding:3px 8px; }
+#app .manager-app-shell .app-more-menu>a { min-height:56px; font-size:14px; }
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) :is(.pm-kpi strong,.app-metric>b) { font-variant-numeric:tabular-nums; }
+:root[data-theme=dark] #app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) :is(.app-more-menu,.account-actions,.profile-card,.inspection-history-list) { background:var(--r-surface); color:var(--r-ink); border-color:var(--r-line); }
+:root[data-theme=dark] #app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) :is(.app-more-menu>a,.account-actions button,.account-service button) { color:var(--r-ink); border-color:var(--r-line); }
+#app .compact-notice-list { display:grid; gap:8px; margin:0; padding:0; list-style:none; }
+#app .compact-notice-card { display:grid; gap:8px; width:100%; min-height:82px; padding:14px; border:1px solid var(--r-line); border-radius:12px; background:var(--r-surface); color:var(--r-ink); text-align:left; font:inherit; cursor:pointer; }
+#app .compact-notice-title { display:flex; align-items:flex-start; gap:8px; min-width:0; }
+#app .compact-notice-title strong { flex:1; min-width:0; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; font-size:14px; line-height:22px; font-weight:650; }
+#app .compact-notice-title>.notice-important-badge { flex-shrink:0; margin-top:1px; font-size:11px; line-height:18px; }
+#app .compact-notice-title>span:last-child { flex-shrink:0; color:var(--r-muted); font-size:18px; line-height:22px; }
+#app .compact-notice-meta { display:flex; align-items:center; justify-content:space-between; gap:8px; color:var(--r-muted); font-size:12px; line-height:18px; }
+#app .compact-notice-empty { padding:20px 14px; color:var(--r-muted); font-size:13px; }
+
+/* 앱 전체에서 사용하는 필터·입력·답변·설정의 공통 치수. 웹에는 적용하지 않는다. */
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) :is(.service-filters,.pm-filter-card,.notification-settings-details) {
+  padding:14px; margin:0 0 16px; border:1px solid var(--r-line); border-radius:14px;
+  background:var(--r-surface); color:var(--r-ink); box-sizing:border-box;
+}
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) .service-filters { display:grid; grid-template-columns:minmax(0,1fr); gap:12px; }
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) .service-form-fields { min-width:0; width:100%; gap:12px; }
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) .service-form-fields>label { min-width:0; margin:0; gap:7px; }
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) :is(.service-field-label,.account-panel form>label,.app-account-form label) { font-size:13px; line-height:20px; font-weight:550; color:var(--r-ink); }
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) :is(.service-filters,.service-form-fields,.account-panel,.app-account-form) :is(input,select,textarea):not([type=checkbox]):not([type=radio]):not([type=range]) {
+  box-sizing:border-box; width:100%; min-width:0; min-height:44px; padding:10px 12px;
+  border:1px solid var(--r-line); border-radius:9px; background:var(--r-surface); color:var(--r-ink); font:inherit; font-size:14px; line-height:22px;
+}
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) :is(.service-filters,.account-panel,.app-account-form) button[type=submit] { min-height:44px; padding:10px 14px; border-radius:9px; font-size:13px; font-weight:600; }
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) .service-filters>button[type=submit] { width:100%; }
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) .account-panel { border-color:var(--r-line); border-radius:14px; background:var(--r-surface); }
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) .account-summary { grid-template-columns:92px minmax(0,1fr); gap:12px; font-size:13px; line-height:21px; }
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) .account-summary dt { color:var(--r-muted); }
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) .service-result-count { margin:0 0 12px; color:var(--r-muted); font-size:12px; line-height:20px; }
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) :is(.service-pagination,.service-pager) button { min-height:40px; border-radius:9px; font-size:12px; }
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) .service-error { padding:12px; border-radius:10px; background:var(--status-danger-bg); color:var(--status-danger-ink); font-size:13px; line-height:21px; }
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) .service-message { padding:12px; border-radius:10px; background:var(--r-selected); color:var(--r-ink); font-size:13px; line-height:21px; }
+
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) .faq-accordion { display:grid; gap:10px; border:0; border-radius:0; overflow:visible; background:transparent; box-shadow:none; }
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) .faq-accordion-item { margin:0; border:1px solid var(--r-line); border-radius:14px; overflow:hidden; background:var(--r-surface); }
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) .faq-accordion-item summary { box-sizing:border-box; min-height:60px; padding:14px; gap:10px; background:var(--r-surface); }
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) .faq-accordion-item summary strong { font-size:14px; line-height:22px; font-weight:600; }
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) .faq-question-mark { display:grid; place-items:center; width:26px; height:26px; border-radius:8px; background:var(--r-selected); color:var(--r-accent); font-size:13px; line-height:20px; }
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) .faq-expand-icon { width:16px; height:16px; }
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) .faq-inline-answer { margin:0 12px 12px; padding:12px; gap:10px; border:0; border-radius:10px; background:var(--r-soft); color:var(--r-ink); }
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) .faq-answer-mark { font-size:13px; line-height:22px; color:var(--r-accent); }
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) .faq-answer-content p { font-size:13px; line-height:22px; word-break:keep-all; overflow-wrap:anywhere; }
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) .faq-answer-content .sub { margin:0 0 6px; color:var(--r-muted); font-size:11px; line-height:17px; }
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) .faq-empty { margin:0; padding:20px 14px; font-size:13px; }
+
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) .workflow-page>form { padding:16px; border:1px solid var(--r-line); border-radius:14px; background:var(--r-surface); color:var(--r-ink); }
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) .workflow-page>form>header h2 { font-size:18px; line-height:26px; }
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) .workflow-page .service-form-fields { grid-template-columns:minmax(0,1fr); }
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) .notification-center-list>li { border-color:var(--r-line); border-radius:14px; background:var(--r-surface); }
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) .notification-center-title { font-size:14px; line-height:22px; }
+#app :is(.manager-app-shell,.customer-app-editorial,.service-mobile) .notification-center-body { padding:12px; margin:0 12px 12px; border-radius:10px; background:var(--r-soft); font-size:13px; line-height:22px; }

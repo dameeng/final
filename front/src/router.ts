@@ -5,6 +5,8 @@ import { restoreSession } from './services/session'
 import { requiresCustomer, requiresManager } from './services/access'
 const routes = [
   { path: '/admin-app/menu', component: pages['./pages/admin-app-menu.vue'] },
+  { path: '/admin-app/inspection', component: pages['./pages/pm-inspection.vue'] },
+  { path: '/pm-inspection', component: pages['./pages/pm-inspection.vue'] },
   {
     path: '/admin-app/:resource(ocr|reviews|transits|transfers|notices|inquiries)',
     component: pages['./pages/backend-resource.vue'],

@@ -1,3 +1,4 @@
+import { adminPageTitle } from './adminTitles'
 export const adminSections = [
   {
     title: '종합 현황',
@@ -64,4 +65,4 @@ export const adminSections = [
       ['통계·위험 추이', '/admin-reports'],
     ],
   },
-]
+].map(group => ({ ...group, links: group.links.map(([label, ...paths]) => [adminPageTitle(paths.find(Boolean) || '', label), ...paths]) }))

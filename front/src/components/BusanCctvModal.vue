@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import BusanCctvViewer from './BusanCctvViewer.vue'
@@ -26,7 +26,7 @@ function outside(event: MouseEvent) {
 onBeforeUnmount(() => dialog.value?.close())
 </script>
 <template>
-  <dialog
+  <WorkflowPage
     ref="dialog"
     class="busan-cctv-modal"
     :class="{ 'app-cctv-modal': appScreen }"
@@ -47,5 +47,5 @@ onBeforeUnmount(() => dialog.value?.close())
     <footer class="cctv-confirm-footer">
       <button type="button" @click="open=false">확인</button>
     </footer>
-  </dialog>
+  </WorkflowPage>
 </template>

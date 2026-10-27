@@ -57,8 +57,8 @@ onBeforeUnmount(() => { disposed = true; version++; detailVersion++; clearInterv
 <template>
   <BackendLayout>
     <section class="chat-monitor" :aria-busy="busy">
-      <p class="chat-monitor-crumb">챗봇 &gt; {{statistics?'통계':'대화 로그'}}</p>
-      <header class="chat-monitor-heading"><h1>챗봇</h1><button type="button" :disabled="busy" @click="load">새로고침</button></header>
+      
+      <header class="chat-monitor-heading service-heading"><h1>챗봇</h1><button type="button" :disabled="busy" @click="load">새로고침</button></header>
       <nav class="chat-monitor-tabs" aria-label="챗봇 탭"><RouterLink to="/bot-logs" :aria-current="!statistics?'page':undefined">대화 로그</RouterLink><RouterLink to="/bot-stats" :aria-current="statistics?'page':undefined">통계</RouterLink></nav>
       <p v-if="error" role="alert" class="service-error">{{error}}</p>
       <p v-if="busy&&!stats&&!logs" role="status">대화 기록을 불러오는 중입니다…</p>
@@ -80,6 +80,6 @@ onBeforeUnmount(() => { disposed = true; version++; detailVersion++; clearInterv
       </template>
       <p class="chat-monitor-note">AI 연결 후 저장된 실제 질문·답변만 표시합니다. 개인정보는 입력하지 않도록 안내하며, 이메일·휴대전화 번호·API 키 형식은 저장 시 가립니다.</p>
     </section>
-    <dialog ref="dialog" class="chat-log-dialog" aria-labelledby="chat-log-title" @click="outside" @cancel.prevent="closeDetail"><header><h2 id="chat-log-title">대화 기록</h2><button type="button" @click="closeDetail">닫기</button></header><div class="chat-log-dialog-body"><p v-if="detailBusy" role="status">대화를 불러오는 중입니다…</p><p v-if="detailError" role="alert">{{detailError}}</p><article v-for="turn in conversation" :key="turn.id"><small>{{time(turn.createdAt)}} · {{turn.result==='answered'?'답변함':'답변 못 함'}}</small><div class="chat-log-question"><b>이용자</b><p>{{turn.question}}</p></div><div class="chat-log-answer"><b>{{turn.result==='answered'?'ROUTEL AI':'안내'}}</b><ChatAnswer :text="turn.answer||'답변을 완료하지 못했습니다.'" /></div></article></div></dialog>
+    <WorkflowPage ref="dialog" class="chat-log-dialog" aria-labelledby="chat-log-title" @click="outside" @cancel.prevent="closeDetail"><header><h2 id="chat-log-title">대화 기록</h2><button type="button" @click="closeDetail">닫기</button></header><div class="chat-log-dialog-body"><p v-if="detailBusy" role="status">대화를 불러오는 중입니다…</p><p v-if="detailError" role="alert">{{detailError}}</p><article v-for="turn in conversation" :key="turn.id"><small>{{time(turn.createdAt)}} · {{turn.result==='answered'?'답변함':'답변 못 함'}}</small><div class="chat-log-question"><b>이용자</b><p>{{turn.question}}</p></div><div class="chat-log-answer"><b>{{turn.result==='answered'?'ROUTEL AI':'안내'}}</b><ChatAnswer :text="turn.answer||'답변을 완료하지 못했습니다.'" /></div></article></div></WorkflowPage>
   </BackendLayout>
 </template>

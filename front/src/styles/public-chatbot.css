@@ -262,3 +262,38 @@ body:has(.public-chat-dialog[open]) {
 .public-chat-launcher.is-dragging {
   cursor: grabbing;
 }
+#app #public-chat-launcher {
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  box-sizing:border-box; width:88px; min-width:88px; height:116px; min-height:116px;
+  padding:0; border:0!important; border-radius:16px;
+  background:transparent!important; box-shadow:none!important; color:var(--r-accent)!important; opacity:1;
+}
+#app #public-chat-launcher::before { display:none; content:none; }
+#app #public-chat-launcher .chat-launcher-mascot {
+  display:block; flex:none; width:84px; height:84px; border-radius:0; object-fit:contain;
+  pointer-events:none; user-select:none; filter:drop-shadow(0 4px 8px #17365730);
+  transition:transform 180ms ease;
+  transform-origin:50% 85%;
+}
+#app #public-chat-launcher .chat-launcher-caption {
+  display:block; padding:4px 10px; border:1px solid var(--r-line); border-radius:999px;
+  background:var(--r-surface); color:var(--r-accent); font-size:11px; font-weight:650; line-height:16px;
+  white-space:nowrap; box-shadow:0 2px 6px #17365710; pointer-events:none;
+}
+@media (hover:hover) and (prefers-reduced-motion:no-preference) {
+  #app #public-chat-launcher:is(:hover,:focus-visible):not(.is-dragging) .chat-launcher-mascot {
+    animation:chat-mascot-greeting 1100ms ease-in-out infinite;
+  }
+}
+@keyframes chat-mascot-greeting {
+  0%,100% { transform:translateY(0) rotate(0); }
+  25% { transform:translateY(-5px) rotate(-5deg); }
+  65% { transform:translateY(-3px) rotate(5deg); }
+}
+@media (max-width:600px) {
+  #app #public-chat-launcher { width:76px; min-width:76px; height:104px; min-height:104px; }
+  #app #public-chat-launcher .chat-launcher-mascot { width:72px; height:72px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  #app #public-chat-launcher .chat-launcher-mascot { transition:none; }
+}

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { adminPageTitle } from '../data/adminTitles'
 import { managerAppPath } from '../utils/manager-app-path'
 const appPath = (path: string) => managerAppPath(path, route.path)
 // 예지보전 점검 이력 (/pm-history). 예전 목업(pm-history.vue + data/pm-history.json)을 대신한다.
@@ -10,6 +11,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import BackendLayout from '../components/BackendLayout.vue'
 import RiskLevelBadge from '../components/RiskLevelBadge.vue'
+import PmEquipmentCards from '../components/PmEquipmentCards.vue'
 import { backend, queryString, type PageData } from '../services/backend'
 import { useBackendEvents } from '../composables/useBackendEvents'
 import { displayDate } from '../utils/display-date'
@@ -160,16 +162,16 @@ function resetFilters() {
 <template>
   <BackendLayout class="page-pm-history">
     <section class="service-workspace pm-history-live">
-      <div class="crumb"><span>예지보전 &gt; 점검 이력</span></div>
+      
       <div class="page-head service-heading">
         <div>
-          <h1>점검 이력</h1>
+          <h1>{{adminPageTitle('/pm-history')}}</h1>
           <div class="sub">점검 대기에서 남긴 조치 기록 · 점검 전 점수와 점검 뒤 첫 점수를 비교해요</div>
         </div>
         <div class="pm-head-actions">
           <RouterLink class="btn" :to="appPath('/pm-queue')">점검 대기 →</RouterLink>
-          <RouterLink class="btn" :to="appPath('/pm-equipment')">설비 목록 →</RouterLink>
-          <button class="btn" type="button" :disabled="loading" @click="load">새로고침</button>
+          <RouterLink class="btn" :to="appPath('/pm-equipment')">{{adminPageTitle('/pm-equipment')}} →</RouterLink>
+          <button v-if="!route.path.startsWith('/admin-app/')" class="btn" type="button" :disabled="loading" @click="load">새로고침</button>
         </div>
       </div>
 
@@ -214,12 +216,13 @@ function resetFilters() {
         <p v-if="dateError" class="pm-date-error" role="alert">{{dateError}}</p>
       </section>
 
+      <div class="pm-results-viewport" :aria-busy="loading">
       <p v-if="error" role="alert" class="service-error">{{error}} <button @click="load">다시 시도</button></p>
       <p v-if="loading&&!list" role="status">점검 이력을 불러오는 중입니다.</p>
 
       <p v-if="list" class="pm-summary">
         <template v-if="selectedEquipment">{{selectedEquipment.name}} · </template>
-        {{startDate||endDate?`${startDate||'처음'} ~ ${endDate||'오늘'}`:'전체 기간'}} · <b>{{list.totalItems}}건</b>
+        {{startDate||endDate?`${startDate||'처음'} ~ ${endDate||'오늘'}`:'전체 기간'}} · <b>{{list?.totalItems??0}}건</b>
       </p>
 
       <div v-if="list&&!list.items.length" class="card pm-empty">
@@ -228,22 +231,23 @@ function resetFilters() {
         <RouterLink class="btn sm" :to="appPath('/pm-queue')">점검 대기로 가기</RouterLink>
       </div>
 
-      <div v-if="list?.items.length" class="service-table-wrap">
+      <PmEquipmentCards v-if="route.path.startsWith('/admin-app/')&&list?.items.length" :items="list.items" />
+      <div v-else-if="list?.items.length" class="service-table-wrap">
         <table class="service-table pm-table">
           <thead>
             <tr><th>일시</th><th>설비</th><th>지하차도</th><th>조치 내용</th><th>등록자</th><th>점검 전 → 후</th></tr>
           </thead>
           <tbody>
             <tr v-for="row in list.items" :key="row.actionId">
-              <td class="pm-nowrap">{{displayDate(row.createdAt)}}</td>
-              <td class="pm-nowrap">
+              <td data-label="일시" class="pm-nowrap"><div class="pm-cell-content">{{displayDate(row.createdAt)}}</div></td>
+              <td data-label="설비" class="pm-nowrap"><div class="pm-cell-content">
                 <RouterLink class="pm-name" :to="{path:appPath('/pm-equipment-detail'),query:{id:String(row.equipId)}}">{{row.name}}</RouterLink>
                 <small class="pm-type-tag">{{pmLabel(PM_TYPES,row.type)}}</small>
-              </td>
-              <td class="pm-nowrap">{{row.underpassName}}</td>
-              <td class="pm-content">{{row.content}}</td>
-              <td class="pm-nowrap">{{row.managerName||'—'}}</td>
-              <td class="pm-nowrap">
+              </div></td>
+              <td data-label="지하차도" class="pm-nowrap"><div class="pm-cell-content">{{row.underpassName}}</div></td>
+              <td data-label="조치 내용" class="pm-content" :title="row.content"><div class="pm-cell-content"><div class="pm-cell-summary">{{row.content}}</div></div></td>
+              <td data-label="등록자" class="pm-nowrap"><div class="pm-cell-content">{{row.managerName||'—'}}</div></td>
+              <td data-label="점검 전 → 후" class="pm-nowrap"><div class="pm-cell-content">
                 <span class="pm-scores">
                   <RiskLevelBadge v-if="row.eventLevel" :value="row.eventLevel" />
                   <span>{{fmt(row.scoreBefore)}} →</span>
@@ -253,16 +257,17 @@ function resetFilters() {
                     ({{change(row)!>0?'+':''}}{{change(row)!.toFixed(1)}})
                   </small>
                 </span>
-              </td>
+              </div></td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <div v-if="list&&list.totalPages>1" class="pm-pager">
-        <button class="btn sm" type="button" :disabled="page<=1" @click="page--">이전</button>
-        <span>{{page}} / {{list.totalPages}} · 전체 {{list.totalItems}}건</span>
-        <button class="btn sm" type="button" :disabled="page>=list.totalPages" @click="page++">다음</button>
+      </div>
+      <div class="pm-pager">
+        <button class="btn sm" type="button" :disabled="loading||page<=1" @click="page--">이전</button>
+        <span>{{page}} / {{Math.max(1,list?.totalPages||1)}} · 전체 {{list?.totalItems??0}}건</span>
+        <button class="btn sm" type="button" :disabled="loading||page>=Math.max(1,list?.totalPages||1)" @click="page++">다음</button>
       </div>
       <p class="pm-note">조치 기록은 점검 대기에서만 남길 수 있어요 · 등록자는 기록한 관리자로 자동 저장돼요 · 점검 뒤 점수는 조치 기록 뒤 처음 들어온 점수예요</p>
     </section>

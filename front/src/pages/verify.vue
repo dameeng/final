@@ -139,10 +139,7 @@ onBeforeUnmount(() => dispose?.())
     </aside>
 
 <main class="page">
-      <div class="crumb">
-        <span>수동 판별</span>
-        <span class="note"></span>
-      </div>
+      
 <div class="page-head">
         <h1>수동 판별</h1>
         <div class="row">

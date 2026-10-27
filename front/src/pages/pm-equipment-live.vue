@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { adminPageTitle } from '../data/adminTitles'
 import { managerAppPath } from '../utils/manager-app-path'
 const appPath = (path: string) => managerAppPath(path, route.path)
 // 예지보전 설비 목록 (/pm-equipment). 예전 목업(pm-equipment.vue + data/pm-equipment.json)을 대신한다.
@@ -10,6 +11,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import BackendLayout from '../components/BackendLayout.vue'
 import RiskLevelBadge from '../components/RiskLevelBadge.vue'
+import PmEquipmentCards from '../components/PmEquipmentCards.vue'
 import PmSparkline from '../components/PmSparkline.vue'
 import PmActionModal from '../components/PmActionModal.vue'
 import { backend, queryString, type PageData } from '../services/backend'
@@ -135,11 +137,10 @@ function act(row: Equipment) {
 <template>
   <BackendLayout class="page-pm-equipment">
     <section class="service-workspace pm-equipment-live">
-      <div class="crumb">예지보전 &gt; 설비</div>
+      
       <div class="page-head service-heading">
         <div>
-          <h1>장비 현황</h1>
-          <div class="sub">담당 지역 설비 상태와 노면 탐지 결과 · 노면은 위험 점수를 산정하지 않습니다.</div>
+          <h1>{{adminPageTitle('/pm-equipment')}}</h1>
         </div>
         <div class="pm-head-actions">
           <span class="pm-engine" :class="'pm-engine--'+engineLabel[1]" role="status">
@@ -147,7 +148,7 @@ function act(row: Equipment) {
             <template v-if="engine?.lastReceivedAt"> · 마지막 수신 {{displayDate(engine.lastReceivedAt)}}</template>
           </span>
           <RouterLink class="btn" :to="appPath('/pm-queue')">점검 대기 →</RouterLink>
-          <button class="btn" type="button" :disabled="loading" @click="load">새로고침</button>
+          <button v-if="!route.path.startsWith('/admin-app/')" class="btn" type="button" :disabled="loading" @click="load">새로고침</button>
         </div>
       </div>
 
@@ -187,11 +188,13 @@ function act(row: Equipment) {
         </label>
       </div>
 
+      <div class="pm-results-viewport" :aria-busy="loading">
       <p v-if="error" role="alert" class="service-error">{{error}} <button @click="load">다시 시도</button></p>
       <p v-if="loading&&!list" role="status">설비 목록을 불러오는 중입니다.</p>
       <p v-if="list&&!list.items.length" class="pm-empty">조건에 맞는 설비가 없어요.</p>
 
-      <div v-if="list?.items.length" class="service-table-wrap">
+      <PmEquipmentCards v-if="route.path.startsWith('/admin-app/')&&list?.items.length" :items="list.items" />
+      <div v-else-if="list?.items.length" class="service-table-wrap">
         <table class="service-table pm-table">
           <thead>
             <tr>
@@ -201,22 +204,24 @@ function act(row: Equipment) {
           </thead>
           <tbody>
             <tr v-for="row in list.items" :key="row.equipId" tabindex="0" @click="openDetail(row)" @keydown.enter="openDetail(row)">
-              <td class="pm-name">{{row.name}}</td>
-              <td>{{pmLabel(PM_TYPES,row.type)}}</td>
-              <td>{{row.underpassName}}</td>
-              <td>
+              <td data-label="설비" class="pm-name"><div class="pm-cell-content">{{row.name}}</div></td>
+              <td data-label="종류"><div class="pm-cell-content">{{pmLabel(PM_TYPES,row.type)}}</div></td>
+              <td data-label="지하차도"><div class="pm-cell-content">{{row.underpassName}}</div></td>
+              <td data-label="위험 점수 / 상태"><div class="pm-cell-content">
                 <span v-if="row.type==='ROAD'" class="road-state">{{row.roadStatus||'미분석'}}</span>
                 <RiskLevelBadge v-else-if="row.level" :value="row.level" />
                 <b v-if="row.type!=='ROAD'" class="pm-score">{{row.score==null?'—':Number(row.score).toFixed(1)}}</b>
-              </td>
-              <td :class="{'pm-up':Number(row.scoreChange7d)>0}">{{change(row.scoreChange7d)}}</td>
-              <td><PmSparkline :values="row.sparkline" :level="row.level||''" /></td>
-              <td class="pm-reason" :title="row.reasons?.join('\n')">
+              </div></td>
+              <td data-label="7일 변화" :class="{'pm-up':Number(row.scoreChange7d)>0}"><div class="pm-cell-content">{{change(row.scoreChange7d)}}</div></td>
+              <td data-label="최근 24시간"><div class="pm-cell-content"><PmSparkline :values="row.sparkline" :level="row.level||''" /></div></td>
+              <td data-label="주요 사유" class="pm-reason" :title="row.reasons?.join('\n')"><div class="pm-cell-content">
+                <div class="pm-cell-summary">
                 {{row.type==='ROAD'?(row.roadStatus||'미분석'):(row.reasons?.[0]||'이상 없음')}}
                 <small v-if="row.reasons?.length>1">외 {{row.reasons.length-1}}건</small>
-              </td>
-              <td>{{row.lastReceivedAt?displayDate(row.lastReceivedAt):(row.type==='ROAD'?'미분석':'미수신')}}</td>
-              <td @click.stop>
+                </div>
+              </div></td>
+              <td data-label="마지막 수신"><div class="pm-cell-content">{{row.lastReceivedAt?displayDate(row.lastReceivedAt):(row.type==='ROAD'?'미분석':'미수신')}}</div></td>
+              <td data-label="점검 상태" @click.stop><div class="pm-cell-content">
                 <button
                   v-if="row.openEventId"
                   type="button"
@@ -228,19 +233,20 @@ function act(row: Equipment) {
                 </button>
                 <button v-else-if="row.type==='ROAD'" class="btn sm" type="button" @click="openDetail(row)">결과 보기</button>
                 <span v-else class="pm-none">—</span>
-              </td>
+              </div></td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <div v-if="list&&list.totalPages>1" class="pm-pager">
-        <button class="btn sm" type="button" :disabled="page<=1" @click="page--">이전</button>
-        <span>{{page}} / {{list.totalPages}} · 전체 {{list.totalItems}}개</span>
-        <button class="btn sm" type="button" :disabled="page>=list.totalPages" @click="page++">다음</button>
       </div>
-      <p v-else-if="list" class="pm-note">
-        전체 {{list.totalItems}}개 · 확인 대상 노면 우선 / 설비 점수 높은 순<template v-if="engine?.sensorStale"> · 센서 수신 끊김 {{engine.sensorStale}}대</template>
+      <div class="pm-pager">
+        <button class="btn sm" type="button" :disabled="loading||page<=1" @click="page--">이전</button>
+        <span>{{page}} / {{Math.max(1,list?.totalPages||1)}} · 전체 {{list?.totalItems??0}}개</span>
+        <button class="btn sm" type="button" :disabled="loading||page>=Math.max(1,list?.totalPages||1)" @click="page++">다음</button>
+      </div>
+      <p class="pm-note">
+        전체 {{list?.totalItems??0}}개 · 확인 대상 노면 우선 / 설비 점수 높은 순<template v-if="engine?.sensorStale"> · 센서 수신 끊김 {{engine.sensorStale}}대</template>
       </p>
     </section>
     <PmActionModal ref="modal" @done="load" />

@@ -2,7 +2,10 @@
 <script type="module">
 import { createApp, h } from 'vue'
 import TrafficMapLayers from '../src/components/TrafficMapLayers.vue'
+import WorkflowPage from '../src/components/WorkflowPage.vue'
 import '../src/styles/customer-map-live.css'
+import '../src/styles/reference-finish.css'
+import '../src/styles/overlay-polish.css'
 const host = document.createElement('div'); host.id = 'map'; host.style.marginTop='200px'; document.body.append(host)
 let level = 5
 let overlap = false
@@ -16,6 +19,6 @@ const maps = {
   event: { addListener(target,type,listener) { if (!listeners.has(type)) listeners.set(type,new Set()); listeners.get(type).add(listener) }, removeListener(target,type,listener) { listeners.get(type)?.delete(listener) }, preventMap() {} },
 }
 createApp({ setup() { return () => h('div', [
-  h('div', {class:'map-overlay-toolbar'}, [h(TrafficMapLayers, { map, maps, toggleControls:true })]),
-]) } }).mount('#app')
+  h('div', {class:'map-overlay-toolbar'}, [h(TrafficMapLayers, { map, maps, toggleControls:true, app:new URLSearchParams(location.search).has('app') })]),
+]) } }).component('WorkflowPage',WorkflowPage).mount('#app')
 </script></body></html>

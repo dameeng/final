@@ -11,6 +11,7 @@ export interface CustomerNotification {
   createdAt: string
   refType?: string
   refId?: number
+  regionId?: number | null
   severity?: string
   riskLevel?: string
   currentRiskLevel?: string
