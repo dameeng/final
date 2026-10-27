@@ -25,6 +25,6 @@ public interface HazardService {
     /** 2초마다 DB 를 보고 위험 상태가 달라졌으면 알린다 */
     void refreshIfChanged();
 
-    /** 지금 DB 기준으로 다시 읽고, 달라졌으면 WebSocket / SSE 로 알린다 */
+    /** 지금 DB 기준으로 다시 읽고, 달라졌으면 SSE 로 알린다 */
     void refresh();
 }
