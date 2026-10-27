@@ -4,7 +4,7 @@
 .overview-control-notice h2 { margin:0 0 12px; font-size:18px; }
 .overview-control-notice p { margin:0 0 24px; line-height:1.6; font-size:14px; }
 .overview-control-notice button { width:100%; min-height:42px; border:0; border-radius:10px; background:var(--ui-accent,#2563a7); color:#fff; font-weight:600; cursor:pointer; }
-.app-manager-overview .app-overview { display:flex; flex-direction:column; flex:1; min-height:490px; }
+.app-manager-overview .app-overview { display:flex; flex-direction:column; flex:1; min-height:0; }
 .app-manager-overview .app-overview>.kv,.app-manager-overview .app-overview>.ban,.app-manager-overview .app-overview>p { flex-shrink:0; }
 .app-manager-overview .app-overview .map-only-live { flex:1; height:auto; min-height:400px; }
 .map-only-live .map-overlay-toolbar>.map-only-legend { position:static; inset:auto; order:2; width:auto; max-width:100%; box-sizing:border-box; gap:4px 6px; padding:6px 8px; }

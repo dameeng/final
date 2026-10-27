@@ -4,25 +4,9 @@ import { useBackendEvents } from '../composables/useBackendEvents'
 import LiveMap from './c-live-map.vue'
 import { backend } from '../services/backend'
 const summary = ref<any>(),
-  levels = ref<any[] | null>(null),
   error = ref(''),
   loading = ref(false),
   controller = new AbortController()
-const count = (key: string) =>
-  levels.value
-    ? levels.value.reduce(
-        (sum, row) =>
-          sum +
-          Number(
-            key === 'warningCount'
-              ? (row.warningCount ?? Number(row.watchCount || 0) + Number(row.cautionCount || 0))
-              : key === 'dangerCount'
-                ? (row.dangerCount ?? Number(row.alertCount || 0) + Number(row.severeCount || 0))
-                : row[key] || 0,
-          ),
-        0,
-      )
-    : '—'
 const blocked = computed(() => summary.value?.blockedCount ?? '—')
 const controlNotice = ref<HTMLDialogElement>()
 watch(blocked, value => {
@@ -40,13 +24,11 @@ async function load() {
   error.value = ''
   const results = await Promise.allSettled([
     backend('/api/dashboard/facility-kpi', { signal: controller.signal }),
-    backend('/api/dashboard/region-risk-level', { signal: controller.signal }),
   ])
   if (controller.signal.aborted) return
-  results.forEach((r, i) => {
+  results.forEach((r) => {
     if (r.status === 'fulfilled') {
-      if (i === 0) summary.value = r.value
-      else levels.value = Array.isArray(r.value) ? r.value : []
+      summary.value = r.value
     } else error.value = r.reason.message
   })
   loading.value = false
@@ -87,24 +69,6 @@ onBeforeUnmount(() => {
         <form method="dialog"><button type="submit" autofocus>확인</button></form>
       </dialog>
     </Teleport>
-    <div class="kv overview-stats" aria-label="시설 상태별 현황">
-      <div data-state="safe">
-        <small>안전</small>
-        <b>{{count('safeCount')}}</b>
-      </div>
-      <div data-state="warning">
-        <small>주의</small>
-        <b>{{count('warningCount')}}</b>
-      </div>
-      <div data-state="danger">
-        <small>위험</small>
-        <b>{{count('dangerCount')}}</b>
-      </div>
-      <div data-state="blocked">
-        <small>통제 중</small>
-        <b>{{blocked}}</b>
-      </div>
-    </div>
     <LiveMap manager map-only />
   </section>
 </template>

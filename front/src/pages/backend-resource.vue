@@ -360,11 +360,13 @@ const missingParent = computed(() =>
 )
 async function lookup(fields: Field[], row?: Record<string, any>) {
   const scope = resourceId.value
+  const lookupRoute = route.fullPath
+  const myTransfers = scope === 'transfers' && app.account?.role === 'REGIONAL_ADMIN'
   for (const field of fields) {
     if (!field.source) continue
     let url =
       field.source === 'underpasses'
-        ? '/api/underpasses?size=500' + (underpassSplit.value ? '&scope=MINE&sort=NAME' : '')
+        ? '/api/underpasses?size=500' + (underpassSplit.value || myTransfers ? '&scope=MINE&sort=NAME' : '')
         : field.source === 'regions'
           ? '/api/regions'
           : field.source === 'shifts'
@@ -392,7 +394,7 @@ async function lookup(fields: Field[], row?: Record<string, any>) {
         app.account?.role === 'REGIONAL_ADMIN'
           ? new Set((app.account.regions || []).map((region) => String(region.id)))
           : undefined
-      if (alive && scope === resourceId.value && (!row || selected.value?.id === row.id))
+      if (alive && scope === resourceId.value && lookupRoute === route.fullPath && (!row || selected.value?.id === row.id)) {
         choices[field.key] = asPage<any>(result).items.filter((item) => !mine || mine.has(String(item.id))).map((item) => ({
           value: String(item.id),
           label:
@@ -400,6 +402,13 @@ async function lookup(fields: Field[], row?: Record<string, any>) {
               ? `${item.name}${item.dummy ? ' (시연용)' : ''} · ${item.id}`
               : item.name || item.content || `${item.cameraRole} · ${item.id}`,
         }))
+        // 이관 문서는 담당 지하차도로 바로 진입하되, 문서 링크의 시설 선택은 유지한다.
+        if (myTransfers && !row && field.key === 'underpassId' &&
+            resource.value.parents?.includes(field) && !parents.underpassId &&
+            !route.query.underpassId && choices[field.key]?.length) {
+          selectUnderpass(choices[field.key]![0]!.value)
+        }
+      }
     } catch {
       /* Main list retains its own request error. */
     }
