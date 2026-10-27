@@ -92,7 +92,7 @@ async function withdraw() {
       <button type="button" :disabled="busy" @click="error='';password='';dialog?.showModal()">회원탈퇴</button>
     </div>
     <p v-if="error&&!dialog?.open" role="alert">{{error}}</p>
-    <dialog
+    <WorkflowPage
       ref="dialog"
       class="account-withdraw"
       @click="($event.target===dialog)&&!busy&&dialog?.close()"
@@ -113,9 +113,9 @@ async function withdraw() {
           <button type="submit" :disabled="busy">회원탈퇴</button>
         </div>
       </form>
-    </dialog>
+    </WorkflowPage>
     <p v-if="message" role="status">{{message}}</p>
-    <dialog ref="passwordDialog" class="account-withdraw" aria-labelledby="change-password-title">
+    <WorkflowPage ref="passwordDialog" class="account-withdraw" aria-labelledby="change-password-title">
       <form @submit.prevent="changePassword">
         <h2 id="change-password-title">비밀번호 변경</h2>
         <label>현재 비밀번호<PasswordInput
@@ -146,7 +146,7 @@ async function withdraw() {
           <button type="submit" :disabled="busy">비밀번호 변경</button>
         </div>
       </form>
-    </dialog>
+    </WorkflowPage>
   </section>
 </template>
 <style scoped src="../styles/components/account-actions.css"></style>

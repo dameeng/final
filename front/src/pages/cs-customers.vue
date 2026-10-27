@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { adminPageTitle } from '../data/adminTitles'
 import AdminSidebarLinks from '../components/AdminSidebarLinks.vue'
 import MenuIcon from '../components/MenuIcon.vue'
 import AdminIdentity from '../components/AdminIdentity.vue'
@@ -139,11 +140,8 @@ onBeforeUnmount(() => dispose?.())
     </aside>
 
 <main class="page">
-      <div class="crumb">
-        <span>고객 서비스 &gt; 고객 조회</span>
-        <span class="note"></span>
-      </div>
-<div class="page-head"><h1>고객 서비스</h1></div>
+      
+<div class="page-head"><h1>{{adminPageTitle('/cs-customers')}}</h1></div>
       <nav class="tabs" aria-label="고객 서비스 탭">
         <a href="/cs-customers" aria-current="page">고객 조회</a>
         <a href="/cs-inquiries">문의 처리 <span class="count">2</span>

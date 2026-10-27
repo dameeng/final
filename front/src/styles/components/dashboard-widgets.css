@@ -61,3 +61,5 @@ button:disabled { opacity:.4; cursor:default; } button:hover:not(:disabled) { bo
 .dashboard-widget--status.widget-size-full .widget-kpis dd { margin:0; font-size:24px; line-height:1.3; }
 @media(max-width:900px) { .personal-widget-grid .dashboard-widget--status.widget-size-full .widget-kpis { grid-template-columns:repeat(3,minmax(0,1fr)); } }
 @media(max-width:640px) { .personal-widget-grid .dashboard-widget--status.widget-size-full .widget-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }.dashboard-widget--status.widget-size-full .widget-kpis>div { padding:8px 10px; } }
+.widget-data-list li:has(>.widget-event-link) { padding:0; }
+.widget-event-link { display:grid; gap:6px; padding:12px; border-radius:8px; color:inherit; text-decoration:none; }

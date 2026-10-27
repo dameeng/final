@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AdminBackButton from './AdminBackButton.vue'
+import { workflowPageState } from '../utils/workflow-page-state'
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useApp } from '../stores/app'
@@ -15,7 +16,7 @@ const auth = computed(
     (!manager.value && /\/screen-[234]$/.test(route.path)),
 )
 const map = computed(() => route.path === '/customer-app/screen-5')
-const title = computed(() =>
+const baseTitle = computed(() =>
   route.path === '/admin-app/notifications'
     ? '알림'
     : auth.value
@@ -40,6 +41,7 @@ const title = computed(() =>
                   ? 'FAQ'
                   : '내 정보',
 )
+const title = computed(() => workflowPageState.title || baseTitle.value)
 const links = [
   ['현황', '/admin-app/screen-3', '▦'],
   ['통제', '/admin-app/screen-4', '◼'],

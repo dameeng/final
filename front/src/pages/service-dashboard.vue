@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useNewItemGlow } from '../composables/useNewItemGlow'
+import { dashboardEventTarget } from '../utils/dashboard-event-target'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useBackendEvents } from '../composables/useBackendEvents'
@@ -192,7 +193,7 @@ onBeforeUnmount(() => {
               ><p v-if="!events.length">표시할 이벤트가 없습니다.</p
               ><ol class="tl" tabindex="0" aria-label="최근 이벤트 목록"
                 ><li v-for="event in pageEvents" :key="eventKey(event)" :data-event="event.eventType" :data-risk="event.riskLevel"
-                  ><div class="timeline-event-card" :class="{'notification-arrival-glow':isNewEvent(event)}"
+                  ><RouterLink :to="dashboardEventTarget(event)" data-button class="timeline-event-card" :class="{'notification-arrival-glow':isNewEvent(event)}"
                   ><time :datetime="event.createdAt">{{displayDate(event.createdAt)}}</time
                   ><div class="timeline-event-body"
                     ><span
@@ -201,7 +202,7 @@ onBeforeUnmount(() => {
                     ><strong>{{event.underpassName}}</strong
                     ><small
                       >{{event.reason||valueLabels[event.riskLevel]||event.riskLevel}}</small
-                    ></div></div
+                    ></div></RouterLink
                   ></li
                 ></ol
               ><nav v-if="events.length" class="event-pagination" aria-label="최근 이벤트 페이지"
@@ -226,7 +227,7 @@ onBeforeUnmount(() => {
                     ><RouterLink class="t" :to="{path:'/pm-equipment-detail',query:{id:equipment.equipId}}"
                       >{{equipment.name
                       }}<small>{{equipment.underpassName}} · {{PM_TYPES[equipment.type] || equipment.type}} · {{equipment.type==='ROAD'?(equipment.roadStatus || '미분석'):(PM_LEVELS[equipment.level || ''] || '수신 대기')}}</small></RouterLink
-                    ><span class="sc">{{equipment.score==null?'—':Number(equipment.score).toFixed(1)}}</span><span v-if="equipment.score!=null&&!route.path.startsWith('/admin-app/')" class="dashboard-score-track" aria-hidden="true"><i></i></span></li
+                    ><span class="sc">{{equipment.score==null?'—':Number(equipment.score).toFixed(1)}}<small v-if="equipment.score!=null"> / 100</small></span><span v-if="equipment.score!=null&&!route.path.startsWith('/admin-app/')" class="dashboard-score-track" role="meter" aria-label="설비 위험 점수" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="parseFloat(riskFill(equipment.score))"><i aria-hidden="true"></i></span></li
                   ></ol
                 ></section
               ></div

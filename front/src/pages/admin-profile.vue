@@ -43,11 +43,7 @@ function save() {
       <AdminSidebarNav />
     </aside>
  <main class="profile-main">
-      <nav class="profile-crumb">
-        <RouterLink to="/admin-dashboard">종합 현황</RouterLink>
-        <span>›</span>
-        <span>관리자 마이페이지</span>
-      </nav>
+      
       <div class="profile-title">
         <div>
           <h1>관리자 마이페이지</h1>

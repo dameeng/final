@@ -1,0 +1,81 @@
+/* 웹·앱 공통. 크기나 위치를 바꾸지 않고 색으로만 조작 가능 상태를 알린다. */
+/* 단독 텍스트 링크·로고에는 버튼 배경을 적용하지 않는다. */
+:root {
+  --control-hover-bg:#dceaff;
+  --control-hover-ink:#174b8f;
+  --control-hover-border:#638dcc;
+  --control-selected-hover-bg:#c6ddff;
+  --control-primary-hover-bg:#174d91;
+  --control-danger-hover-bg:#a52335;
+}
+:root[data-theme=dark] {
+  --control-hover-bg:#304d70;
+  --control-hover-ink:#f0f6ff;
+  --control-hover-border:#91bff6;
+  --control-selected-hover-bg:#3b6090;
+  --control-primary-hover-bg:#245f9e;
+  --control-danger-hover-bg:#a92c42;
+}
+#app #customer-header-dropdown .header-dropdown-column>a {
+  box-sizing:border-box; border:1px solid transparent; border-radius:8px;
+  transition:background-color 140ms ease,color 140ms ease,border-color 140ms ease;
+}
+@media (hover:hover) {
+  #app #customer-header-dropdown .header-dropdown-column>a:hover {
+    background:var(--r-selected,#e8f0ff) !important;
+    color:var(--r-accent,#225bb5) !important;
+    border-color:var(--r-accent,#225bb5) !important;
+    text-decoration:none !important;
+  }
+}
+#app #customer-header-dropdown .header-dropdown-column>a:focus-visible {
+  background:var(--r-selected,#e8f0ff); color:var(--r-accent,#225bb5); border-color:var(--r-accent,#225bb5);
+}
+:root :is(button:not(.link):not(.text-button):not(.row-open),a[href]:is(.btn,.button:not(.link):not(.text-button):not(.row-open),[role=button],[data-button],.pm-equipment-card,.pm-kpi,.header-download,.app-guide-button:not(.link):not(.text-button):not(.row-open),.information-link-button:not(.link):not(.text-button):not(.row-open),:where(.service-actions,.facility-drawer-quick,.facility-action-grid,.facility-drawer-footer,.app-facility-records nav,.app-more-menu,.app-facility-rows,.customer-section-sidebar,.mypage-sidebar nav,.service-tabs,.admin-app-bottom-nav,.customer-app-nav,.app-restored-nav,.admin-sidebar-groups,.admin-menu-page nav)>a),summary:not(.text-button),[role=button],input[type=button],input[type=submit],input[type=reset]):not(:disabled):not([aria-disabled=true]) {
+  cursor:pointer;
+  transition:background-color 140ms ease,color 140ms ease;
+}
+@media (hover:hover) {
+  #app a[href]:not(.btn,.button:not(.link):not(.text-button):not(.row-open),[role=button],[data-button],.pm-equipment-card,.pm-kpi,.header-download,.app-guide-button:not(.link):not(.text-button):not(.row-open),.information-link-button:not(.link):not(.text-button):not(.row-open),:where(.service-actions,.facility-drawer-quick,.facility-action-grid,.facility-drawer-footer,.app-facility-records nav,.app-more-menu,.app-facility-rows,.customer-section-sidebar,.mypage-sidebar nav,.service-tabs,.admin-app-bottom-nav,.customer-app-nav,.app-restored-nav,.admin-sidebar-groups,.admin-menu-page nav)>a):hover { background:transparent !important; box-shadow:none !important; text-decoration:none !important; }
+  #app :is(.admin-home-logo,.customer-logo,.resource-shortcuts a,.customer-member-nav>a:not(.header-download)):hover,
+  #app :is(button.link,button.text-button):hover { background:transparent !important; box-shadow:none !important; text-decoration:none !important; }
+  #app :is(.admin-home-logo,.customer-logo,.customer-member-nav>a:not(.header-download)):hover { color:inherit !important; }
+  #app .customer-header .customer-member-nav>a:is([href="/login"],[href="/signup"]):hover { color:var(--r-accent,#225bb5) !important; }
+  #app .resource-shortcuts a:hover { color:var(--ink-sub,#526b86) !important; }
+  #app a[href]:hover { text-decoration:none !important; }
+  :root :is(button:not(.link):not(.text-button):not(.row-open),a[href]:is(.btn,.button:not(.link):not(.text-button):not(.row-open),[role=button],[data-button],.pm-equipment-card,.pm-kpi,.header-download,.app-guide-button:not(.link):not(.text-button):not(.row-open),.information-link-button:not(.link):not(.text-button):not(.row-open),:where(.service-actions,.facility-drawer-quick,.facility-action-grid,.facility-drawer-footer,.app-facility-records nav,.app-more-menu,.app-facility-rows,.customer-section-sidebar,.mypage-sidebar nav,.service-tabs,.admin-app-bottom-nav,.customer-app-nav,.app-restored-nav,.admin-sidebar-groups,.admin-menu-page nav)>a),summary:not(.text-button),[role=button],input[type=button],input[type=submit],input[type=reset]):not(:disabled):not([aria-disabled=true]):hover,
+  #app :is(button:not(.link):not(.text-button):not(.row-open),a[href]:is(.btn,.button:not(.link):not(.text-button):not(.row-open),[role=button],[data-button],.pm-equipment-card,.pm-kpi,.header-download,.app-guide-button:not(.link):not(.text-button):not(.row-open),.information-link-button:not(.link):not(.text-button):not(.row-open),:where(.service-actions,.facility-drawer-quick,.facility-action-grid,.facility-drawer-footer,.app-facility-records nav,.app-more-menu,.app-facility-rows,.customer-section-sidebar,.mypage-sidebar nav,.service-tabs,.admin-app-bottom-nav,.customer-app-nav,.app-restored-nav,.admin-sidebar-groups,.admin-menu-page nav)>a),summary:not(.text-button),[role=button],input[type=button],input[type=submit],input[type=reset]):not(:disabled):not([aria-disabled=true]):hover {
+    background-color:var(--control-hover-bg) !important;
+    background-image:none !important;
+    color:var(--control-hover-ink) !important;
+    border-color:var(--r-line,#dbe3ed) !important;
+    text-decoration:none !important;
+    box-shadow:none !important;
+  }
+  :root :is(button:not(.link):not(.text-button):not(.row-open),a[href]:is(.btn,.button:not(.link):not(.text-button):not(.row-open),[role=button],[data-button],.pm-equipment-card,.pm-kpi,.header-download,.app-guide-button:not(.link):not(.text-button):not(.row-open),.information-link-button:not(.link):not(.text-button):not(.row-open),:where(.service-actions,.facility-drawer-quick,.facility-action-grid,.facility-drawer-footer,.app-facility-records nav,.app-more-menu,.app-facility-rows,.customer-section-sidebar,.mypage-sidebar nav,.service-tabs,.admin-app-bottom-nav,.customer-app-nav,.app-restored-nav,.admin-sidebar-groups,.admin-menu-page nav)>a),summary:not(.text-button),[role=button],input[type=button],input[type=submit],input[type=reset]):not(:disabled):not([aria-disabled=true]):hover:not(:focus-visible),
+  #app :is(button:not(.link):not(.text-button):not(.row-open),a[href]:is(.btn,.button:not(.link):not(.text-button):not(.row-open),[role=button],[data-button],.pm-equipment-card,.pm-kpi,.header-download,.app-guide-button:not(.link):not(.text-button):not(.row-open),.information-link-button:not(.link):not(.text-button):not(.row-open),:where(.service-actions,.facility-drawer-quick,.facility-action-grid,.facility-drawer-footer,.app-facility-records nav,.app-more-menu,.app-facility-rows,.customer-section-sidebar,.mypage-sidebar nav,.service-tabs,.admin-app-bottom-nav,.customer-app-nav,.app-restored-nav,.admin-sidebar-groups,.admin-menu-page nav)>a),summary:not(.text-button),[role=button],input[type=button],input[type=submit],input[type=reset]):not(:disabled):not([aria-disabled=true]):hover:not(:focus-visible) { outline:none !important; }
+  :root :is(button:not(.link):not(.text-button):not(.row-open),a[href]:is(.btn,.button:not(.link):not(.text-button):not(.row-open),[role=button],[data-button],.pm-equipment-card,.pm-kpi,.header-download,.app-guide-button:not(.link):not(.text-button):not(.row-open),.information-link-button:not(.link):not(.text-button):not(.row-open),:where(.service-actions,.facility-drawer-quick,.facility-action-grid,.facility-drawer-footer,.app-facility-records nav,.app-more-menu,.app-facility-rows,.customer-section-sidebar,.mypage-sidebar nav,.service-tabs,.admin-app-bottom-nav,.customer-app-nav,.app-restored-nav,.admin-sidebar-groups,.admin-menu-page nav)>a),[role=button]):not(:disabled):not([aria-disabled=true]):is([aria-pressed=true],[aria-selected=true],[aria-current=page],.is-current,.on):hover,
+  #app :is(button:not(.link):not(.text-button):not(.row-open),a[href]:is(.btn,.button:not(.link):not(.text-button):not(.row-open),[role=button],[data-button],.pm-equipment-card,.pm-kpi,.header-download,.app-guide-button:not(.link):not(.text-button):not(.row-open),.information-link-button:not(.link):not(.text-button):not(.row-open),:where(.service-actions,.facility-drawer-quick,.facility-action-grid,.facility-drawer-footer,.app-facility-records nav,.app-more-menu,.app-facility-rows,.customer-section-sidebar,.mypage-sidebar nav,.service-tabs,.admin-app-bottom-nav,.customer-app-nav,.app-restored-nav,.admin-sidebar-groups,.admin-menu-page nav)>a),[role=button]):not(:disabled):not([aria-disabled=true]):is([aria-pressed=true],[aria-selected=true],[aria-current=page],.is-current,.on):hover {
+    background-color:var(--control-selected-hover-bg) !important;
+  }
+  :root :is(button:not(.link):not(.text-button):not(.row-open),a[href]:is(.btn,.button:not(.link):not(.text-button):not(.row-open),[role=button],[data-button],.pm-equipment-card,.pm-kpi,.header-download,.app-guide-button:not(.link):not(.text-button):not(.row-open),.information-link-button:not(.link):not(.text-button):not(.row-open),:where(.service-actions,.facility-drawer-quick,.facility-action-grid,.facility-drawer-footer,.app-facility-records nav,.app-more-menu,.app-facility-rows,.customer-section-sidebar,.mypage-sidebar nav,.service-tabs,.admin-app-bottom-nav,.customer-app-nav,.app-restored-nav,.admin-sidebar-groups,.admin-menu-page nav)>a),input[type=submit]):not(:disabled):not([aria-disabled=true]):is(.primary,.p,.is-primary,.app-facility-control,.app-control-primary):hover,
+  #app :is(button:not(.link):not(.text-button):not(.row-open),a[href]:is(.btn,.button:not(.link):not(.text-button):not(.row-open),[role=button],[data-button],.pm-equipment-card,.pm-kpi,.header-download,.app-guide-button:not(.link):not(.text-button):not(.row-open),.information-link-button:not(.link):not(.text-button):not(.row-open),:where(.service-actions,.facility-drawer-quick,.facility-action-grid,.facility-drawer-footer,.app-facility-records nav,.app-more-menu,.app-facility-rows,.customer-section-sidebar,.mypage-sidebar nav,.service-tabs,.admin-app-bottom-nav,.customer-app-nav,.app-restored-nav,.admin-sidebar-groups,.admin-menu-page nav)>a),input[type=submit]):not(:disabled):not([aria-disabled=true]):is(.primary,.p,.is-primary,.app-facility-control,.app-control-primary):hover,
+  #app .auth-service button[type=submit]:not(:disabled):not([aria-disabled=true]):hover {
+    background-color:var(--control-primary-hover-bg) !important;
+    color:#fff !important;
+    border-color:var(--control-primary-hover-bg) !important;
+  }
+  :root :is(button:not(.link):not(.text-button):not(.row-open),a[href]:is(.btn,.button:not(.link):not(.text-button):not(.row-open),[role=button],[data-button],.pm-equipment-card,.pm-kpi,.header-download,.app-guide-button:not(.link):not(.text-button):not(.row-open),.information-link-button:not(.link):not(.text-button):not(.row-open),:where(.service-actions,.facility-drawer-quick,.facility-action-grid,.facility-drawer-footer,.app-facility-records nav,.app-more-menu,.app-facility-rows,.customer-section-sidebar,.mypage-sidebar nav,.service-tabs,.admin-app-bottom-nav,.customer-app-nav,.app-restored-nav,.admin-sidebar-groups,.admin-menu-page nav)>a)):not(:disabled):not([aria-disabled=true]):is(.danger,.d,.is-danger):hover,
+  #app :is(button:not(.link):not(.text-button):not(.row-open),a[href]:is(.btn,.button:not(.link):not(.text-button):not(.row-open),[role=button],[data-button],.pm-equipment-card,.pm-kpi,.header-download,.app-guide-button:not(.link):not(.text-button):not(.row-open),.information-link-button:not(.link):not(.text-button):not(.row-open),:where(.service-actions,.facility-drawer-quick,.facility-action-grid,.facility-drawer-footer,.app-facility-records nav,.app-more-menu,.app-facility-rows,.customer-section-sidebar,.mypage-sidebar nav,.service-tabs,.admin-app-bottom-nav,.customer-app-nav,.app-restored-nav,.admin-sidebar-groups,.admin-menu-page nav)>a)):not(:disabled):not([aria-disabled=true]):is(.danger,.d,.is-danger):hover {
+    background-color:var(--control-danger-hover-bg) !important;
+    color:#fff !important;
+    border-color:var(--control-danger-hover-bg) !important;
+  }
+}
+:root :is(button:not(.link):not(.text-button):not(.row-open),a[href]:is(.btn,.button:not(.link):not(.text-button):not(.row-open),[role=button],[data-button],.pm-equipment-card,.pm-kpi,.header-download,.app-guide-button:not(.link):not(.text-button):not(.row-open),.information-link-button:not(.link):not(.text-button):not(.row-open),:where(.service-actions,.facility-drawer-quick,.facility-action-grid,.facility-drawer-footer,.app-facility-records nav,.app-more-menu,.app-facility-rows,.customer-section-sidebar,.mypage-sidebar nav,.service-tabs,.admin-app-bottom-nav,.customer-app-nav,.app-restored-nav,.admin-sidebar-groups,.admin-menu-page nav)>a),summary:not(.text-button),[role=button],input[type=button],input[type=submit],input[type=reset]):not(:disabled):not([aria-disabled=true]):focus-visible {
+  outline:2px solid var(--control-hover-border);
+  outline-offset:2px;
+}
+@media (prefers-reduced-motion:reduce) {
+  :root :is(button:not(.link):not(.text-button):not(.row-open),a[href]:is(.btn,.button:not(.link):not(.text-button):not(.row-open),[role=button],[data-button],.pm-equipment-card,.pm-kpi,.header-download,.app-guide-button:not(.link):not(.text-button):not(.row-open),.information-link-button:not(.link):not(.text-button):not(.row-open),:where(.service-actions,.facility-drawer-quick,.facility-action-grid,.facility-drawer-footer,.app-facility-records nav,.app-more-menu,.app-facility-rows,.customer-section-sidebar,.mypage-sidebar nav,.service-tabs,.admin-app-bottom-nav,.customer-app-nav,.app-restored-nav,.admin-sidebar-groups,.admin-menu-page nav)>a),summary:not(.text-button),[role=button],input[type=button],input[type=submit],input[type=reset]) { transition:none; }
+}

@@ -139,11 +139,7 @@ onBeforeUnmount(() => dispose?.())
     </aside>
 
 <main class="page">
-      <div class="crumb">
-        <span>예지보전 &gt; <a href="/pm-equipment" class="inl-36ec741785">설비</a> &gt; <strong class="inl-7891572d91">P-01</strong>
-        </span>
-        <span class="note"></span>
-      </div>
+      
 <div class="page-head">
         <h1>설비 상세</h1>
         <div class="row">

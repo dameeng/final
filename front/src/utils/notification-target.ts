@@ -2,7 +2,7 @@ import type { RouteLocationRaw } from 'vue-router'
 import { managerAppPath } from './manager-app-path'
 
 export function notificationTarget(
-  item: {id:number;refType?:string;refId?:number|string},
+  item: {id:number;refType?:string;refId?:number|string;regionId?:number|string|null},
   manager:boolean,
   currentPath:string,
   historyPath:string,
@@ -18,7 +18,7 @@ export function notificationTarget(
     if(manager) {
       if(type==='PM_EQUIPMENT')return detail('/pm-equipment-detail')
       if(type==='PM_EVENT')return {path:target('/pm-queue'),query:{eventId:String(id)}}
-      if(type==='PLATE_LOG')return detail('/admin-data/ocr')
+      if(type==='PLATE_LOG')return {path:target('/admin-data/ocr'),query:{id:String(id),...(item.regionId!=null?{regionId:String(item.regionId)}:{})}}
     }
   }
   if(manager&&type==='PM_REPORT')return {path:target('/pm-history')}

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { adminPageTitle } from '../data/adminTitles'
 import AdminSidebarLinks from '../components/AdminSidebarLinks.vue'
 import MenuIcon from '../components/MenuIcon.vue'
 import AdminIdentity from '../components/AdminIdentity.vue'
@@ -139,12 +140,9 @@ onBeforeUnmount(() => dispose?.())
     </aside>
 
 <main class="page">
-      <div class="crumb">
-        <span>알림 센터</span>
-        <span class="note"></span>
-      </div>
+      
 <div class="page-head">
-        <h1>알림 센터</h1>
+        <h1>{{adminPageTitle('/notifications')}}</h1>
         <div class="row">
           <label class="inl-6146cae132">
             <input type="checkbox" id="only" /> 안 읽은 알림만</label>

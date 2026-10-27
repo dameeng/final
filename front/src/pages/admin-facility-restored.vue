@@ -157,7 +157,7 @@ function control() {
 <template>
   <BackendLayout class="page-fac-detail">
     <section class="service-workspace restored-facility-detail">
-      <div class="crumb">지하차도 관리 &gt; {{facility?.name||'시설 상세'}}</div>
+      
       <div class="page-head service-heading">
         <div>
           <h1>

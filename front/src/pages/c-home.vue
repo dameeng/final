@@ -19,26 +19,30 @@ const visionRoadmap = [
         <p class="home-hero-lead">출발 전, 작은 확인으로.</p>
         <p class="home-description">지하차도 통제 현황과 안전 안내를<br />한눈에 확인하세요.</p>
         <div class="home-actions">
-          <RouterLink to="/info/underpasses" class="home-button home-button-primary">지하차도 현황 <span aria-hidden="true">↗</span></RouterLink>
-          <RouterLink to="/info/business" class="home-button home-button-secondary">서비스 소개 <span aria-hidden="true">→</span></RouterLink>
+          <RouterLink to="/info/underpasses" class="btn primary home-button home-button-primary">지하차도 현황 <span aria-hidden="true">↗</span></RouterLink>
+          <RouterLink to="/info/business" class="btn home-button home-button-secondary">서비스 소개 <span aria-hidden="true">→</span></RouterLink>
         </div>
       </div>
     </section>
 
     <section class="home-services" aria-labelledby="home-services-title">
       <header class="home-section-heading">
-        <div><h2 id="home-services-title">도로의 상황을 살피고,<br />안전한 이동을 돕습니다.</h2></div>
+        <div><span class="home-section-index">01 / 일상의 안전</span><h2 id="home-services-title">도로의 상황을 살피고,<br />안전한 이동을 돕습니다.</h2></div>
         <p>복잡한 정보는 덜고, 필요한 정보는 가까이.<br />이동 전에 꼭 필요한 안전 정보를 확인하세요.</p>
       </header>
       <div class="home-service-grid">
         <article class="home-service-card">
-          <div class="home-card-top"><span class="home-service-icon"><UiIcon name="location" /></span></div>
+          <span class="home-service-number" aria-hidden="true">01</span>
+          <svg class="home-service-drawing" viewBox="0 0 240 120" fill="none" aria-hidden="true"><path d="M-10 105H75Q115 105 115 65T155 25H250" stroke="currentColor" stroke-width="26" opacity=".07"/><path d="M-10 105H75Q115 105 115 65T155 25H250" stroke="currentColor" stroke-dasharray="5 7" opacity=".35"/><circle cx="115" cy="65" r="17" stroke="currentColor" opacity=".3"/><circle cx="115" cy="65" r="5" fill="currentColor"/></svg>
+          <div class="home-card-top"><span class="home-service-icon home-service-icon-location"><UiIcon name="location" /></span></div>
           <h3>내가 지날 길의 상태를 한눈에</h3>
           <p>지도에서 지하차도의 위치와 통제 여부를 확인하고,<br class="home-desktop-break" /> 이동할 구간의 상황을 살펴보세요.</p>
           <RouterLink to="/info/underpasses">지하차도 통제 현황 <span aria-hidden="true">↗</span></RouterLink>
         </article>
         <article class="home-service-card">
-          <div class="home-card-top"><span class="home-service-icon"><UiIcon name="bell" /></span></div>
+          <span class="home-service-number" aria-hidden="true">02</span>
+          <svg class="home-service-drawing" viewBox="0 0 240 120" fill="none" aria-hidden="true"><circle cx="172" cy="60" r="48" stroke="currentColor" opacity=".12"/><circle cx="172" cy="60" r="33" stroke="currentColor" opacity=".2"/><circle cx="172" cy="60" r="18" stroke="currentColor" opacity=".3"/><circle cx="172" cy="60" r="5" fill="currentColor"/><path d="M10 60H139" stroke="currentColor" stroke-dasharray="5 7" opacity=".3"/></svg>
+          <div class="home-card-top"><span class="home-service-icon home-service-icon-bell"><UiIcon name="bell" /></span></div>
           <h3>놓치지 말아야 할 안전 안내</h3>
           <p>공지사항과 이용 안내를 통해<br class="home-desktop-break" /> 서비스 이용에 필요한 정보를 확인하세요.</p>
           <RouterLink to="/info/notices">안전 안내 확인 <span aria-hidden="true">↗</span></RouterLink>
@@ -68,9 +72,9 @@ const visionRoadmap = [
     </section>
 
     <section class="home-vision" aria-labelledby="home-vision-title">
-      <header class="home-section-heading"><div><h2 id="home-vision-title">더 촘촘하게 연결될<br />내일의 도로 안전.</h2></div><p>정보 확인부터 위험 변화 파악과 신속한 안내까지.<br />안전한 이동을 돕는 서비스를 단계적으로 발전시키겠습니다.</p></header>
+      <header class="home-section-heading"><div><span class="home-section-index">02 / 앞으로의 여정</span><h2 id="home-vision-title">더 촘촘하게 연결될<br />내일의 도로 안전.</h2></div></header>
       <ol class="home-roadmap" aria-label="연도별 추진 목표"><li v-for="goal in visionRoadmap" :key="goal.year"><span class="home-roadmap-year">{{goal.year}}</span><h3>{{goal.title}}</h3><p>{{goal.description}}</p></li></ol>
     </section>
-    <section class="home-closing"><div><h2>출발하기 전, 한 번 더 확인하세요.</h2></div><RouterLink class="home-button home-button-primary" to="/info/underpasses">지하차도 현황 확인 <span aria-hidden="true">↗</span></RouterLink></section>
+    <section class="home-closing"><div><h2>출발하기 전, 한 번 더 확인하세요.</h2></div><RouterLink id="home-underpass-cta" class="btn primary home-button home-button-primary" to="/info/underpasses">지하차도 현황 확인 <span aria-hidden="true">↗</span></RouterLink></section>
   </main>
 </template>

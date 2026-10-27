@@ -303,21 +303,17 @@ watch([data,trends],async()=>{
 <template>
   <BackendLayout class="page-pm-equipment-detail">
     <section ref="detailRoot" class="service-workspace pm-detail">
-      <div class="crumb">
-        <span><RouterLink :to="appPath('/pm-equipment')">예지보전 &gt; 설비</RouterLink> &gt; {{eq.name||'설비 상세'}}</span>
-      </div>
+      
       <div class="page-head service-heading">
         <div>
-          <p class="pm-eyebrow">PREDICTIVE MAINTENANCE</p>
+          
           <h1>{{eq.name||'설비 상세'}} <RiskLevelBadge v-if="eq.level" :value="eq.level" /></h1>
           <div class="sub">{{pmLabel(PM_TYPES,eq.type,'')}}<template v-if="eq.underpassName"> · {{eq.underpassName}}</template></div>
         </div>
         <div class="pm-detail-actions">
           <button class="btn" type="button" :disabled="position<=0" @click="go(-1)">‹ 이전 설비</button>
           <button class="btn" type="button" :disabled="position<0||position>=order.length-1" @click="go(1)">다음 설비 ›</button>
-          <button v-if="eq.type==='ROAD' && eq.openEventId" class="btn primary" type="button" @click="roadPanel?.focusReview()">탐지 확인·조치</button>
-          <button v-else-if="eq.openEventId" class="btn primary" type="button" @click="act">점검 처리</button>
-          <RouterLink class="btn" :to="appPath('/pm-equipment')">← 목록으로</RouterLink>
+          <RouterLink class="btn pm-back-to-list" :to="appPath('/pm-equipment')">목록으로 가기</RouterLink>
         </div>
       </div>
       <p v-if="!id">설비 목록에서 설비를 선택해 주세요.</p>
@@ -326,6 +322,7 @@ watch([data,trends],async()=>{
 
       <template v-if="data">
         <template v-if="eq.type==='ROAD'">
+          <section v-if="eq.openEventId" class="card pm-road-inspection-entry"><h2>점검 확인</h2><div class="pm-buttons"><button class="btn" type="button" @click="roadPanel?.focusReview()">탐지 확인·조치</button><RouterLink class="btn primary" :to="{path:appPath('/pm-inspection'),query:{id:String(eq.equipId),eventId:String(eq.openEventId)}}">확인 필요</RouterLink></div></section>
           <RoadEquipmentPanel ref="roadPanel" :equip-id="Number(eq.equipId)" :refresh-key="roadRefresh" @updated="load()" />
           <section class="card">
             <h2>최근 점검 이력</h2>
@@ -355,7 +352,7 @@ watch([data,trends],async()=>{
             </dl>
           </section>
           <section class="card pm-inspection-card">
-            <div class="pm-section-heading"><h2>점검 현황</h2><span class="pm-period">점검 관리</span></div>
+            <div class="pm-section-heading"><h2>점검 현황</h2><div class="pm-inspection-link-slot"><RouterLink v-if="eq.openEventId" class="btn primary" :to="{path:appPath('/pm-inspection'),query:{id:String(eq.equipId),eventId:String(eq.openEventId)}}">확인 필요</RouterLink><span v-else class="pm-period">점검 관리</span></div></div>
             <p v-if="eq.openEventId" class="pm-open-event">
               <span class="pm-chip pm-chip--open">{{pmLabel(PM_EVENT_STATUS,eq.openEventStatus)}}</span>
               <template v-if="openEvent">{{pmLabel(PM_TRIGGERS,openEvent.triggerType)}} · {{displayDate(openEvent.createdAt)}}</template>
@@ -424,7 +421,7 @@ watch([data,trends],async()=>{
 
         <section class="card">
           <h2>판단 근거 · 특징값 {{features.length}}개</h2>
-          <p class="pm-muted small">초록 띠 = 정상 범위 · 회색 눈금 = 평소 값 · 점 = 지금 값 (범위를 벗어나면 빨강)</p>
+          <p class="pm-muted small">파란 띠 = 정상 범위 · 회색 눈금 = 평소 값 · 점 = 지금 값 (범위를 벗어나면 빨강)</p>
           <p v-if="!features.length" class="pm-muted">아직 판단 근거가 없어요.</p>
           <div v-for="f in features" :key="f.key" class="pm-feature">
             <span>{{f.label}} <small v-if="f.kind==='변화량'">(변화량)</small></span>
@@ -535,6 +532,7 @@ watch([data,trends],async()=>{
 <style scoped>
 .pm-detail { display: grid; gap: 14px; }
 .pm-detail-actions, .pm-buttons { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+:global(#app .manager-app-shell) .pm-detail-actions>.pm-back-to-list { flex:0 0 100%; width:100%; }
 .pm-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; }
 .pm-detail h2 { margin: 0 0 10px; font-size: 16px; }
 .pm-big { display: block; font-size: 34px; font-weight: 700; }
@@ -564,9 +562,9 @@ watch([data,trends],async()=>{
 .pm-meter b.first { background: var(--danger, #c0392b); }
 .pm-feature { display: grid; grid-template-columns: 170px minmax(0, 1fr) 200px 64px; gap: 12px; align-items: center; padding: 6px 0; border-top: 1px solid var(--line-soft, #eef0f3); }
 .pm-feature small { color: var(--ink-sub, #5b6573); }
-.pm-feature-bar { position: relative; height: 16px; border-radius: 4px; background: var(--line-soft, #eef0f3); }
+.pm-feature-bar { position:relative; height:16px; border-radius:4px; background:var(--r-soft,#f5f8fc); }
 .pm-feature-bar i { position: absolute; display: block; }
-.pm-feature-bar .range { top: 4px; height: 8px; border-radius: 3px; background: #9fe1cb; }
+.pm-feature-bar .range { top:4px; height:8px; border-radius:3px; background:color-mix(in srgb,var(--r-accent,#2375d6) 30%,var(--r-surface,#fff)); }
 .pm-feature-bar .median { top: 2px; width: 2px; height: 12px; background: #5f5e5a; }
 .pm-feature-bar .dot { top: 2px; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: var(--primary, #2b5c8a); }
 .pm-feature-bar .dot.out { background: var(--danger, #c0392b); }
@@ -574,7 +572,7 @@ watch([data,trends],async()=>{
 .pm-chart { width: 100%; height: auto; display: block; margin: 6px 0; }
 .pm-chart .zone-danger { fill: #fcebeb; }
 .pm-chart .zone-caution { fill: #faeeda; }
-.pm-chart .zone-normal { fill: #e1f5ee; }
+.pm-chart .zone-normal { fill:var(--pm-band-fill,#eaf3ff); }
 .pm-chart .line-main { fill: none; stroke: var(--primary, #2b5c8a); stroke-width: 2.5; }
 .pm-chart .line-max { fill: none; stroke: var(--primary, #2b5c8a); stroke-opacity: .3; stroke-width: 1.5; }
 .pm-chart .line-sensor { fill: none; stroke: #d85a30; stroke-width: 2; }
@@ -593,7 +591,7 @@ watch([data,trends],async()=>{
 .pm-legend .sw { display: inline-block; width: 16px; height: 3px; border-radius: 2px; }
 .pm-legend .sw-sensor { background: #d85a30; }
 .pm-legend .sw-second { background: #888780; }
-.pm-legend .sw-band { height: 10px; background: #e1f5ee; border: 1px solid #9fe1cb; }
+.pm-legend .sw-band { height:10px; background:var(--pm-band-fill,#eaf3ff); border:1px solid color-mix(in srgb,var(--r-accent,#2375d6) 35%,var(--r-line,#dce7f2)); }
 .pm-legend-now { margin-left: auto; }
 .pm-legend-now b { color: var(--ink, #1f2630); }
 .pm-chart .lbl-danger { fill: #a32d2d; }

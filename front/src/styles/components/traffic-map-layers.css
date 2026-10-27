@@ -35,3 +35,22 @@ button.traffic-device-marker:focus-visible { outline:2px solid #287ed2; outline-
 .traffic-device-dialog h2 { font-size:20px; margin:12px 0; }.traffic-device-type { color:#2468a4; font-weight:700; font-size:13px; }
 .traffic-device-dialog video { width:100%; aspect-ratio:16/9; background:#17212b; }.traffic-device-dialog small { display:block; margin-top:12px; line-height:1.6; color:#63758a; }
 .vms-display { padding:30px 20px; background:#102019; color:#ffdc67; border:5px solid #34423b; border-radius:8px; font-size:24px; font-weight:700; white-space:pre-wrap; text-align:center; line-height:1.7; }
+/* Teleport된 창도 앱 프레임(430px) 안의 여백을 따른다. */
+:root .traffic-device-dialog.traffic-device-app-dialog {
+  box-sizing:border-box; width:min(406px,calc(100vw - 24px)); max-width:calc(100vw - 24px);
+  max-height:calc(100dvh - 32px); padding:16px; border-radius:14px;
+  background:var(--r-surface,#fff); color:var(--r-ink,#172d48); overflow-x:hidden; overflow-y:auto;
+}
+:root .traffic-device-dialog.traffic-device-app-dialog>header { min-height:44px; gap:8px; margin:0 0 16px; padding:0 0 12px; border-bottom:1px solid var(--r-line,#dbe3ed); }
+:root .traffic-device-dialog.traffic-device-app-dialog header button { flex:0 0 40px; width:40px; height:40px; padding:0; color:var(--r-ink,#172d48); background:var(--r-soft,#eaf0f7); }
+:root .traffic-device-dialog.traffic-device-app-dialog>h2 { margin:0 0 12px; font-size:18px; line-height:26px; overflow-wrap:anywhere; }
+:root .traffic-device-dialog.traffic-device-app-dialog>p { font-size:13px; line-height:20px; margin:0 0 12px; }
+:root .traffic-device-dialog.traffic-device-app-dialog video { display:block; width:100%; max-width:100%; height:auto; aspect-ratio:16/9; object-fit:contain; border-radius:8px; }
+:root .traffic-device-dialog.traffic-device-app-dialog>small { margin-top:14px; font-size:12px; line-height:19px; color:var(--r-muted,#586b82); }
+:root .traffic-device-dialog.traffic-device-app-dialog .traffic-device-type { color:var(--r-accent,#225bb5); }
+:root .traffic-device-dialog.traffic-device-app-dialog .vms-led-carousel { container-type:inline-size; margin:16px 0 0; min-width:0; }
+:root .traffic-device-dialog.traffic-device-app-dialog .vms-display { box-sizing:border-box; width:100%; min-width:0; min-height:170px; padding:14px 12px 20px; border-width:5px; }
+:root .traffic-device-dialog.traffic-device-app-dialog .vms-led-caption { margin-bottom:16px; }
+:root .traffic-device-dialog.traffic-device-app-dialog .vms-led-text { min-height:88px; font-size:clamp(16px,5.5cqi,22px); line-height:1.8; letter-spacing:.02em; }
+:root .traffic-device-dialog.traffic-device-app-dialog .vms-led-controls { gap:12px; margin-top:12px; }
+:root .traffic-device-dialog.traffic-device-app-dialog .vms-led-controls>button { width:40px; height:40px; }
