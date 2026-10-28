@@ -166,7 +166,7 @@ function control() {
           <div class="sub">{{facility?.roadAddress}}</div>
         </div>
         <div class="facility-detail-actions">
-          <TunnelCctvDialog v-if="facility" :facility-name="facility.name" />
+          <TunnelCctvDialog v-if="facility" :facility-name="facility.name" :underpass-id="id" />
           <RouterLink v-if="facility&&tab!=='cctv'" class="btn primary" :to="{path:'/fac-detail',query:{id,underpassId:id,tab:'cctv'}}">시설 CCTV 보기</RouterLink>
           <RouterLink class="btn" to="/fac-list">← 목록으로</RouterLink>
         </div>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppPagination from '../components/AppPagination.vue'
 import RiskLevelBadge from '../components/RiskLevelBadge.vue'
 import { matchesKoreanSearch } from '../utils/korean-search'
 import { useRiskChartClock } from '../composables/useRiskChartClock'
@@ -25,11 +26,12 @@ let disposeMapScroll: (() => void) | undefined
 
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { displayDate, dateParts } from '../utils/display-date'
-import { RouterLink, useRoute } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import TrafficMapLayers from '../components/TrafficMapLayers.vue'
 const trafficMap = shallowRef<any>(), trafficMaps = shallowRef<any>()
 const mapControlsExpanded = ref(true)
 const currentRoute = useRoute()
+const router = useRouter()
 
 const props = withDefaults(defineProps<{ manager?: boolean; mapOnly?: boolean; dashboardVisual?: boolean }>(), {
   manager: false,
@@ -46,7 +48,7 @@ function startSheet(event: PointerEvent) {
   if (!event.isPrimary || event.button !== 0) return
   const handle = event.currentTarget as HTMLElement,
     rect = handle.parentElement!.getBoundingClientRect(),
-    limit = customerRoot.value!.clientHeight * 0.88
+    limit = Math.max(68, customerRoot.value!.clientHeight - 74)
   sheetMoved = false
   sheetDrag = { id: event.pointerId, y: event.clientY, height: rect.height, limit }
   handle.setPointerCapture(event.pointerId)
@@ -59,7 +61,10 @@ function moveSheet(event: PointerEvent) {
     sheetHeight.value = Math.max(68, Math.min(sheetDrag.limit, sheetDrag.height + delta))
 }
 function endSheet() {
-  if (sheetHeight.value !== null) sheetOpen.value = sheetHeight.value > 130
+  if (sheetHeight.value !== null && sheetDrag) {
+    if (sheetHeight.value > sheetDrag.height + 6) sheetOpen.value = true
+    else if (sheetHeight.value < sheetDrag.height - 6) sheetOpen.value = false
+  }
   sheetHeight.value = null
   sheetDrag = undefined
 }
@@ -70,11 +75,23 @@ function toggleSheet() {
   }
   sheetOpen.value = !sheetOpen.value
 }
+let listTouch: { y: number; top: boolean } | undefined
+function startListTouch(event: TouchEvent) {
+  if (!appMap.value || event.touches.length !== 1) { listTouch = undefined; return }
+  const target = event.target as Element
+  const list = target.closest<HTMLElement>('.lst,.det')
+  listTouch = { y: event.touches[0]!.clientY, top: !list || list.scrollTop <= 0 }
+}
+function endListTouch(event: TouchEvent) {
+  if (listTouch?.top && event.changedTouches.length && event.changedTouches[0]!.clientY - listTouch.y > 60)
+    sheetOpen.value = false
+  listTouch = undefined
+}
 function collapseSheetOutside(event: PointerEvent) {
   if ((!appMap.value && !adminAppMap.value) || !sheetOpen.value || sheetDrag) return
   const target = event.target
   if (!(target instanceof Element)) return
-  if (target.closest('.app-map-sheet,.admin-facility-sheet,dialog[open]')) return
+  if (target.closest('.app-map-sheet,.app-map-search,.admin-facility-sheet,dialog[open]')) return
   sheetOpen.value = false
   sheetHeight.value = null
 }
@@ -82,7 +99,7 @@ const sheetStyle = computed(() =>
   appMap.value || props.mapOnly
     ? {
         height:
-          sheetHeight.value !== null ? sheetHeight.value + 'px' : sheetOpen.value ? '72%' : '68px',
+          sheetHeight.value !== null ? sheetHeight.value + 'px' : sheetOpen.value ? 'calc(100% - 74px)' : '68px',
       }
     : undefined,
 )
@@ -712,8 +729,9 @@ watch(availableDistricts, (names) => {
 const filtered = computed(() =>
   facilities.value.filter(
     (f) =>
-      (!regionId.value || f.regionId === regionId.value) &&
-      (!district.value || busanDistrict(f.assignedRegionName, f.address) === district.value) &&
+      (!props.manager || !query.value.trim() || ownsFacility(f)) &&
+      ((props.manager && !!query.value.trim()) || !regionId.value || f.regionId === regionId.value) &&
+      ((props.manager && !!query.value.trim()) || !district.value || busanDistrict(f.assignedRegionName, f.address) === district.value) &&
       matchesKoreanSearch(f.name + ' ' + f.address + ' ' + f.assignedRegionName, query.value) &&
       (!legendFilter.value || legendState(stateLabel(f)) === legendFilter.value) &&
       (!statusFilter.value ||
@@ -731,6 +749,30 @@ const selected = computed(() =>
     ? detail.value
     : facilities.value.find((f) => f.id === selectedId.value) || null,
 )
+const managerSearchOpen = ref(false), managerSearchIndex = ref(-1)
+const managerSearchResults = computed(() => query.value.trim() ? filtered.value.slice(0, 5) : [])
+function chooseManagerSearch(facility: Facility) {
+  district.value = ''
+  regionId.value = facility.regionId || 'busan'
+  query.value = facility.name
+  managerSearchOpen.value = false
+  managerSearchIndex.value = -1
+  void selectFacility(facility)
+}
+function managerSearchKey(event: KeyboardEvent) {
+  if (event.isComposing) return
+  if (event.key === 'Escape') { managerSearchOpen.value = false; managerSearchIndex.value = -1 }
+  else if (['ArrowDown', 'ArrowUp'].includes(event.key) && managerSearchResults.value.length) {
+    event.preventDefault()
+    managerSearchOpen.value = true
+    const count = managerSearchResults.value.length
+    managerSearchIndex.value = (managerSearchIndex.value + (event.key === 'ArrowDown' ? 1 : count - 1) + count) % count
+  } else if (event.key === 'Enter' && managerSearchOpen.value && managerSearchIndex.value >= 0) {
+    const facility = managerSearchResults.value[managerSearchIndex.value]
+    if (facility) { event.preventDefault(); chooseManagerSearch(facility) }
+  }
+}
+watch(query, () => { managerSearchIndex.value = -1 })
 const missingCoordinates = computed(
   () => filtered.value.filter((f) => f.latitude === null || f.longitude === null).length,
 )
@@ -745,9 +787,7 @@ const listRows = computed(() =>
 )
 const pages = computed(() => Math.max(1, Math.ceil(listRows.value.length / pageSize.value)))
 const shown = computed(() =>
-  appMap.value
-    ? listRows.value
-    : listRows.value.slice((page.value - 1) * pageSize.value, page.value * pageSize.value),
+  listRows.value.slice((page.value - 1) * pageSize.value, page.value * pageSize.value),
 )
 let listObserver: ResizeObserver | undefined,
   listElement: HTMLElement | null = null
@@ -1182,9 +1222,20 @@ function openSelectedPopup() {
   content.className = 'routel-map-popup'
   content.addEventListener('mousedown', () => maps.event.preventMap?.())
   content.addEventListener('touchstart', () => maps.event.preventMap?.(), { passive: true })
-  const heading = document.createElement('strong')
+  const heading = document.createElement('a')
   heading.className = 'routel-map-popup__title'
   heading.textContent = row.name
+  const destination = {
+    path: adminAppMap.value ? '/admin-app/screen-5' : props.manager ? '/fac-detail' : appMap.value ? '/customer-app/screen-6' : '/c-map',
+    query: { id: row.id },
+  }
+  heading.href = router.resolve(destination).href
+  heading.setAttribute('aria-label', `${row.name} 상세 보기`)
+  heading.onclick = (event) => {
+    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return
+    event.preventDefault()
+    void router.push(destination)
+  }
   const header = document.createElement('header'), close = document.createElement('button')
   header.className = 'routel-map-popup__header'
   close.type = 'button'
@@ -1882,7 +1933,7 @@ onBeforeUnmount(() => {
     ref="customerRoot"
     class="wire-page page-c-map legacy-live-map"
     :class="{'mobile-app-map':appMap,'mobile-app-detail':appDetail,'map-sheet-open':sheetOpen||sheetHeight!==null&&sheetHeight>130}"
-    :style="appMap?{'--map-sheet-height':sheetHeight!==null?sheetHeight+'px':sheetOpen?'var(--map-expanded-sheet-height,72%)':'68px'}:undefined"
+    :style="appMap?{'--map-sheet-height':sheetHeight!==null?sheetHeight+'px':sheetOpen?'calc(100% - 74px)':'68px'}:undefined"
   >
     <div class="app map-swap-layout map-columns">
       <form
@@ -1942,6 +1993,9 @@ onBeforeUnmount(() => {
         v-if="selected"
         class="panel swapped-detail"
         aria-label="선택한 지하차도"
+        @touchstart.passive="startListTouch"
+        @touchend.passive="endListTouch"
+        @touchcancel="listTouch=undefined"
         :class="{'app-map-sheet':appMap,'is-collapsed':appMap&&!sheetOpen,'is-dragging':sheetHeight!==null}"
         :style="sheetStyle"
         ><button
@@ -1955,6 +2009,7 @@ onBeforeUnmount(() => {
           @pointercancel="endSheet"
           @lostpointercapture="endSheet"
           @click="toggleSheet"
+          @wheel.prevent="sheetOpen=$event.deltaY>0"
           >{{sheetOpen?'목록 접기':'목록 펼치기'}} · {{listRows.length}}곳</button
         >
     <button type="button" class="btn back-to-list" @click="closeFacility">목록으로</button>
@@ -2095,6 +2150,9 @@ onBeforeUnmount(() => {
         v-else
         class="panel facility-list-panel"
         aria-label="지하차도 목록"
+        @touchstart.passive="startListTouch"
+        @touchend.passive="endListTouch"
+        @touchcancel="listTouch=undefined"
         :class="{'app-map-sheet':appMap,'is-collapsed':appMap&&!sheetOpen,'is-dragging':sheetHeight!==null}"
         :style="sheetStyle"
         ><button
@@ -2108,6 +2166,7 @@ onBeforeUnmount(() => {
           @pointercancel="endSheet"
           @lostpointercapture="endSheet"
           @click="toggleSheet"
+          @wheel.prevent="sheetOpen=$event.deltaY>0"
           >{{sheetOpen?'목록 접기':'목록 펼치기'}} · {{listRows.length}}곳</button
         >
     <div class="ph"
@@ -2177,8 +2236,9 @@ onBeforeUnmount(() => {
             >조회 조건에 맞는 지하차도가 없습니다.</li
           ></ul
         >
+    <AppPagination v-if="appMap&&listRows.length" :page="page" :pages="pages" :disabled="loading" @change="changePage" />
     <nav
-          v-if="!appMap&&listRows.length"
+          v-else-if="listRows.length"
           class="customer-list-pagination"
           aria-label="지하차도 목록 페이지"
           ><div class="list-page-buttons"
@@ -2214,11 +2274,15 @@ onBeforeUnmount(() => {
             >{{name}}</option
           ></select
         ></label
-      ><label class="underpass-map-label-2"
+      ><label class="underpass-map-label-2 manager-map-search" @focusout="!($event.currentTarget as HTMLElement).contains($event.relatedTarget as Node)&& (managerSearchOpen=false)"
         >지하차도명·주소<input
-          v-model.trim="query"
+          :value="query"
           type="search"
-          aria-label="지하차도명·주소 검색" /></label
+          aria-label="지하차도명·주소 검색" autocomplete="off" :aria-expanded="managerSearchOpen&&!!query.trim()" aria-controls="manager-map-search-results" @focus="managerSearchOpen=true" @input="query=($event.target as HTMLInputElement).value;managerSearchOpen=true" @compositionend="query=($event.target as HTMLInputElement).value" @keydown="managerSearchKey" />
+        <ul v-if="managerSearchOpen&&query.trim()" id="manager-map-search-results" class="manager-map-search-results" aria-label="담당 지하차도 검색 결과">
+          <li v-for="(facility,index) in managerSearchResults" :key="facility.id"><button type="button" :class="{'is-highlighted':managerSearchIndex===index}" @pointerdown.prevent @click="chooseManagerSearch(facility)"><span class="manager-search-facility-copy"><strong>{{facility.name}}</strong><small>{{facility.assignedRegionName||facility.address}}</small></span><span v-if="facility.controlled" class="manager-search-blocked">통제</span><RiskLevelBadge v-else :value="stateLabel(facility)" /></button></li>
+          <li v-if="!managerSearchResults.length" class="manager-map-search-empty">검색된 담당 지하차도가 없습니다.</li>
+        </ul></label
       ><label
         >상태<select v-model="statusFilter"
           ><option value="">전체 상태</option

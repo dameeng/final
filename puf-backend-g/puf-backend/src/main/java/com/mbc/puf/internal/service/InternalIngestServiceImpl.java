@@ -8,6 +8,8 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -16,6 +18,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.mbc.puf.alert.service.AlertService;
@@ -72,9 +76,8 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 	// confidence가 이 값 미만이면(매칭은 됐어도) LOW_CONFIDENCE로 본다. 정식 기준이 정해지면 조정
 	private static final BigDecimal LOW_CONFIDENCE_THRESHOLD = new BigDecimal("0.600");
 
-	// 출구 보조 매칭(숫자만 같은 번호)을 허용할 입구 인식 후 시간(초). 같은 숫자의 다른 차와 잘못 짝짓지 않게 너무 길게 두지는 않는다
-	// 60 -> 240: 0.5배속 시연 영상은 입구 -> 출구가 70~190초 걸려서 한글만 다르게 읽은 차(898러1929/898라1929)가 매칭되지 않았음
-	private static final long SIMILAR_MATCH_WINDOW_SEC = 240;
+	// 출구 보조 매칭(숫자만 같은 번호)을 허용할 입구 인식 후 시간(초). 같은 숫자의 다른 차와 잘못 짝짓지 않게 짧게 둔다
+	private static final long SIMILAR_MATCH_WINDOW_SEC = 60;
 
 	// 같은 카메라·같은 번호를 중복으로 보고 건너뛰는 시간(초)
 	private static final long DUPLICATE_WINDOW_SEC = 30;
@@ -84,6 +87,10 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 
 	// 캡처 이미지를 저장할 하위 폴더명 (file.upload-dir 아래)
 	private static final String IMAGE_SUBDIR = "plate-logs";
+
+	// 저장을 허용하는 이미지 확장자. 그 밖의 값(확장자 없음, 이상한 문자 포함)이면 .jpg 로 저장한다
+	private static final Set<String> IMAGE_EXTENSIONS = Set.of(".jpg", ".jpeg", ".png");
+	private static final String DEFAULT_IMAGE_EXTENSION = ".jpg";
 
 	// 출구 매칭 대상 상태: 아직 안 나간 차
 	private static final List<TransitStatus> ACTIVE_TRANSIT = List.of(TransitStatus.IN_TRANSIT, TransitStatus.REMAINING);
@@ -300,21 +307,50 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 			Path dir = Paths.get(uploadDir, IMAGE_SUBDIR, today);
 			Files.createDirectories(dir);
 
-			String original = image.getOriginalFilename();
-			String ext = "";
-			if (original != null && original.contains(".")) {
-				ext = original.substring(original.lastIndexOf('.'));
-			}
-			String filename = UUID.randomUUID() + ext;
+			String filename = UUID.randomUUID() + safeImageExtension(image.getOriginalFilename());
 
 			Path target = dir.resolve(filename);
 			image.transferTo(target);
+			deleteFileIfNotCommitted(target);
 
 			return IMAGE_SUBDIR + "/" + today + "/" + filename;
 		} catch (IOException e) {
 			log.warn("번호판 캡처 이미지 저장 실패 (인식 결과 저장은 계속 진행): {}", e.getMessage());
 			return null;
 		}
+	}
+
+	// 업로드된 파일 이름에서 확장자를 꺼내되, 허용 목록에 있는 것만 쓴다 (파일 이름에 경로 문자를 섞어 보내는 것을 막는다)
+	private static String safeImageExtension(String originalFilename) {
+		if (originalFilename == null) {
+			return DEFAULT_IMAGE_EXTENSION;
+		}
+		int dot = originalFilename.lastIndexOf('.');
+		if (dot < 0) {
+			return DEFAULT_IMAGE_EXTENSION;
+		}
+		String ext = originalFilename.substring(dot).toLowerCase(Locale.ROOT);
+		return IMAGE_EXTENSIONS.contains(ext) ? ext : DEFAULT_IMAGE_EXTENSION;
+	}
+
+	// DB 저장이 롤백되면 방금 저장한 파일은 DB 에 기록이 없으므로 지운다 (고아 파일 방지)
+	private void deleteFileIfNotCommitted(Path file) {
+		if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+			return;
+		}
+		TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+			@Override
+			public void afterCompletion(int status) {
+				if (status == STATUS_COMMITTED) {
+					return;
+				}
+				try {
+					Files.deleteIfExists(file);
+				} catch (IOException e) {
+					log.warn("롤백된 번호판 캡처 이미지 삭제 실패: {} ({})", file, e.getMessage());
+				}
+			}
+		});
 	}
 
 	// 수위계 측정값 수신: 저장 → 최신 수위 캐시 갱신 → 단계 재판정(경계 이상이면 자동 차단)

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppPagination from '../components/AppPagination.vue'
 import { adminPageTitle } from '../data/adminTitles'
 import { displayDate } from '../utils/display-date'
 import { riskChartSeries } from '../utils/risk-chart'
@@ -167,7 +168,8 @@ onBeforeUnmount(() => {
           </tbody>
         </table>
       </div>
-      <nav v-if="!loading && rows.length" class="service-pagination" aria-label="보고서 페이지">
+      <AppPagination v-if="route.path.startsWith('/admin-app/')&&!loading&&rows.length" :page="page" :pages="pages" @change="page=$event" />
+      <nav v-else-if="!loading && rows.length" class="service-pagination" aria-label="보고서 페이지">
         <button :disabled="page===1" @click="page--">이전</button>
         <span>{{page}} / {{pages}} 페이지</span>
         <button :disabled="page===pages" @click="page++">다음</button>

@@ -35,6 +35,7 @@ import com.mbc.puf.common.enums.ReasonType;
 import com.mbc.puf.notification.service.NotificationService;
 import com.mbc.puf.display.service.VmsDisplayService;
 import com.mbc.puf.display.service.VmsReconcileRequested;
+import com.mbc.puf.navigation.service.HazardRefreshRequested;
 import com.mbc.puf.stream.StreamPayloads;
 import com.mbc.puf.stream.StreamPublisher;
 import com.mbc.puf.underpass.dto.UnderpassDetailResponse;
@@ -42,6 +43,7 @@ import com.mbc.puf.underpass.entity.Underpass;
 import com.mbc.puf.underpass.entity.UnderpassEvent;
 import com.mbc.puf.underpass.repository.UnderpassEventRepository;
 import com.mbc.puf.underpass.repository.UnderpassRepository;
+import com.mbc.puf.underpass.service.UnderpassServiceImpl;
 import com.mbc.puf.underpass.repository.TransitRepository;
 import jakarta.persistence.EntityManager;
 import org.slf4j.Logger;
@@ -67,6 +69,7 @@ import java.util.stream.Collectors;
 public class ControlServiceImpl implements ControlService {
 
     private static final Logger log = LoggerFactory.getLogger(ControlServiceImpl.class);
+    private static final String DOC_TYPE_CONTROL_NOTICE = "CONTROL_NOTICE";
     private static final DateTimeFormatter FILE_DT = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
 
     private final ReasonPresetRepository reasonPresetRepository;
@@ -241,6 +244,7 @@ public class ControlServiceImpl implements ControlService {
         // 4) 이 지하차도와 연결된 전광판들의 문구는 이 트랜잭션이 커밋된 뒤에 다시 맞춘다 (차단 → 빨강 "통제 중" 페이지)
         //    전광판 쪽 오류가 차단을 되돌리지 않게 하려는 것이다. 못 맞추면 60초 주기 점검이 다시 맞춘다
         eventPublisher.publishEvent(new VmsReconcileRequested(underpassId, event.getId(), operatorId));
+        eventPublisher.publishEvent(new HazardRefreshRequested());   // 내비 위험지점도 커밋 뒤에 바로 다시 계산
 
         // 5) 경찰 이관 기록 저장 (전달서에 들어갈 내용은 스냅샷으로 같이 저장)
         //    전광판은 아직 갱신 전이므로, 차단 때 뜰 문구를 미리 계산해서 전달서에 적는다 (갱신 후 값과 같다)
@@ -303,6 +307,7 @@ public class ControlServiceImpl implements ControlService {
 
         // 3) 전광판 문구는 이 트랜잭션이 커밋된 뒤에 다시 맞춘다 (해제 → 초록 "통행 재개" 페이지, 일정 시간 뒤 사라짐)
         eventPublisher.publishEvent(new VmsReconcileRequested(underpassId, event.getId(), loginUser.id()));
+        eventPublisher.publishEvent(new HazardRefreshRequested());   // 내비 위험지점도 커밋 뒤에 바로 다시 계산
 
         // 4) 경찰 이관 기록 저장 (PDF 는 커밋 뒤에 만든다)
         ControlNoticeData notice = buildNotice(underpass, event, blockEvent, loginUser.id(), null);
@@ -321,7 +326,7 @@ public class ControlServiceImpl implements ControlService {
         try {
             LocalDateTime now = transfer.getCreatedAt() != null ? transfer.getCreatedAt() : LocalDateTime.now();
             byte[] pdf = pdfGenerator.generatePolicePdf(notice);
-            UnderpassDetailResponse detail = toDetail(underpassRepository.findByIdAndDeletedFalse(underpassId).orElseThrow());
+            UnderpassDetailResponse detail = UnderpassServiceImpl.toDetail(underpassRepository.findByIdAndDeletedFalse(underpassId).orElseThrow());
             String filename = String.format("경찰이관_%s_%s_%s.pdf", action, notice.underpassName(), FILE_DT.format(now));
             return new PdfResult(filename, pdf, detail);
         } catch (RuntimeException e) {
@@ -379,7 +384,7 @@ public class ControlServiceImpl implements ControlService {
 
         streamPublisher.dataChangedToAdmins(underpass.getRegionId(), "fire-transfer", "CREATE", transfer.getId());
 
-        UnderpassDetailResponse detail = toDetail(underpass);
+        UnderpassDetailResponse detail = UnderpassServiceImpl.toDetail(underpass);
         String filename = String.format("소방이관_%s_%s.pdf", underpass.getName(), FILE_DT.format(now));
         return new PdfResult(filename, pdf, detail);
     }
@@ -444,7 +449,7 @@ public class ControlServiceImpl implements ControlService {
             filename = String.format("소방이관_%s_%s.pdf", underpass.getName(), FILE_DT.format(transferAt));
         }
 
-        UnderpassDetailResponse detail = toDetail(underpass);
+        UnderpassDetailResponse detail = UnderpassServiceImpl.toDetail(underpass);
         return new PdfResult(filename, pdf, detail);
     }
 
@@ -601,20 +606,6 @@ public class ControlServiceImpl implements ControlService {
         return item;
     }
 
-    private UnderpassDetailResponse toDetail(Underpass u) {
-        // UnderpassDetailResponse 생성자 / 팩토리 메서드가 없으므로 setter 방식 사용
-        // (UnderpassServiceImpl 의 toDetail 이 private 이라 여기서는 간략하게 채운다)
-        UnderpassDetailResponse r = new UnderpassDetailResponse();
-        r.setId(u.getId());
-        r.setName(u.getName());
-        r.setRegionId(u.getRegionId());
-        r.setRoadAddress(u.getRoadAddress());
-        r.setCurrentStatus(u.getCurrentStatus());
-        r.setCurrentRiskLevel(u.getCurrentRiskLevel());
-        r.setCurrentRiskScore(u.getCurrentRiskScore());
-        return r;
-    }
-
     // ─────────────────────────── 스냅샷 / 전광판 전환 ───────────────────────────
 
     private static String toJson(Map<String, Object> map) {
@@ -624,6 +615,7 @@ public class ControlServiceImpl implements ControlService {
     // 전달서 내용을 스냅샷(JSON)으로. 값이 없는 항목은 넣지 않는다
     private String snapshotOf(ControlNoticeData n, BigDecimal waterCm, boolean auto) {
         Map<String, Object> m = new LinkedHashMap<>();
+        m.put("docType", DOC_TYPE_CONTROL_NOTICE);   // 통제 정보 전달서라는 표시 (예전 기록은 "auto" 키로 구분한다)
         m.put("auto", auto);
         if (n.riskScore() != null) m.put("riskScore", n.riskScore());
         if (n.rainfallMm() != null) m.put("rainfallMm", n.rainfallMm());
@@ -657,7 +649,10 @@ public class ControlServiceImpl implements ControlService {
 
     private boolean isControlNotice(CtrlTransfer transfer) {
         if (transfer.getSnapshot() == null) return false;
-        try { return JSON.readValue(transfer.getSnapshot(), Map.class).containsKey("auto"); }
+        try {
+            Map<?, ?> m = JSON.readValue(transfer.getSnapshot(), Map.class);
+            return DOC_TYPE_CONTROL_NOTICE.equals(m.get("docType")) || m.containsKey("auto");   // "auto" 는 docType 이 생기기 전 기록용
+        }
         catch (RuntimeException ex) { return false; }
     }
 

@@ -1,0 +1,7 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body><div id="video-test"></div><script type="module">
+import {createApp,ref,h} from 'vue'
+import TrafficVideo from '../src/components/TrafficVideo.vue'
+const source=ref('/api/cctv/1/stream')
+window.setVideoSource=value=>{source.value=value}
+createApp({render:()=>h(TrafficVideo,{src:source.value,hls:true})}).mount('#video-test')
+</script></body></html>

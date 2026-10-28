@@ -95,14 +95,21 @@
 
 /* Teleported notifications use the same spacing in all four shells. */
 :root .customer-notification-popup { --overlay-space: 22px; max-width: calc(100vw - 24px); max-height: calc(100dvh - 24px); border-radius: 16px; }
-:root .customer-notification-popup>header { gap: 14px; padding: 17px var(--overlay-space); }
+:root .customer-notification-popup>header { flex-shrink:0; gap:8px; padding:8px 14px; }
 :root .customer-notification-popup>header h2 { line-height: 1.5; }
-:root .customer-notification-popup>header button { flex-shrink: 0; width: 36px; height: 36px; }
+:root .customer-notification-popup>header .ui-icon-button { flex-shrink:0; width:36px; height:36px; }
+:root .customer-notification-popup>header .notification-read-all { display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto; width:auto; min-width:72px; height:36px; padding:5px 10px; white-space:nowrap; word-break:keep-all; font-size:12px; line-height:1; }
+:root .customer-notification-popup>header h2 { min-width:0; font-size:14px; }
+:root .customer-notification-popup>header h2 small { display:block; margin-left:0; white-space:nowrap; }
 :root .customer-notification-popup .notification-popup-body { overscroll-behavior: contain; }
-:root .customer-notification-popup .notification-popup-body a { gap: 7px; padding: 18px var(--overlay-space); }
-:root .customer-notification-popup .notification-popup-body :is(strong,span,time) { line-height: 1.6; }
+:root .customer-notification-popup .notification-popup-body a { grid-template-columns:minmax(0,1fr) auto; gap:3px 8px; padding:10px 14px; }
+:root .customer-notification-popup .notification-popup-body :is(strong,span,time) { line-height:1.45; }
+:root .customer-notification-popup .notification-popup-category { grid-column:1; grid-row:1; }
+:root .customer-notification-popup .notification-popup-body time { grid-column:2; grid-row:1; font-size:10px; white-space:nowrap; }
+:root .customer-notification-popup .notification-popup-body :is(strong,.notification-popup-copy) { grid-column:1/-1; }
+:root .customer-notification-popup .notification-popup-copy { -webkit-line-clamp:1; }
 :root .customer-notification-popup .notification-popup-body>p { padding: 22px var(--overlay-space); }
-:root .customer-notification-popup>footer { padding: 17px var(--overlay-space); line-height: 1.6; }
+:root .customer-notification-popup>footer { flex-shrink:0; padding:10px 14px; line-height:1.6; }
 
 /* Video/device dialogs retain the original player dimensions and controls. */
 :root dialog.traffic-device-dialog, #app dialog.traffic-device-dialog,
@@ -166,3 +173,40 @@
 :root[data-theme=dark] dialog.pass-signup-dialog :is(.pass-eyebrow,.pass-time,footer,.pass-phone>span) { color: var(--r-muted); }
 :root[data-theme=dark] dialog.pass-signup-dialog .pass-carriers button:not([aria-pressed=true]) { background: var(--r-surface); color: var(--r-ink); border-color: var(--r-line); }
 :root[data-theme=dark] dialog.pass-signup-dialog input:not([type=checkbox]):not(:disabled) { background: var(--r-surface); color: var(--r-ink); border-color: var(--r-line); }
+
+:root .account-withdraw .password-input,
+#app .account-security-form .password-input {
+  box-sizing:border-box;
+  min-height:48px;
+  border:1px solid var(--r-line,#cbd5e1);
+  border-radius:10px;
+  background:var(--r-surface,#fff);
+}
+:root .account-withdraw .password-input>input,
+#app .account-security-form .password-input>input {
+  display:block;
+  height:48px;
+  min-height:48px;
+  padding:12px 48px 12px 14px;
+  margin:0;
+  border:0!important;
+  border-radius:10px;
+  background:transparent!important;
+  color:var(--r-ink,#172d48);
+  box-shadow:none!important;
+  outline:none;
+  font:inherit;
+  line-height:22px;
+}
+:root .account-withdraw .password-input:focus-within { border-color:var(--r-accent,#225bb5); }
+:root .account-withdraw .password-input>.password-visibility,
+#app .account-security-form .password-input>.password-visibility {
+  width:40px;
+  height:40px;
+  min-height:0;
+  padding:0;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:var(--r-muted,#64748b);
+}

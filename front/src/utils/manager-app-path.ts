@@ -5,6 +5,8 @@ const appPaths: Record<string, string> = {
   '/pm-queue': '/admin-app/screen-11',
   '/pm-inspection': '/admin-app/inspection',
   '/pm-history': '/admin-app/history',
+  '/pm-settings': '/admin-app/pm-settings',
+  '/pm-daily': '/admin-app/pm-daily',
   '/admin-data/ocr': '/admin-app/ocr',
   '/admin-data/notices': '/admin-app/notices',
   '/admin-data/inquiries': '/admin-app/inquiries',

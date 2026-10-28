@@ -9,6 +9,7 @@ export interface CustomerNotification {
   body: string
   read: boolean
   createdAt: string
+  urgent?: boolean
   refType?: string
   refId?: number
   regionId?: number | null

@@ -44,11 +44,12 @@ try {
     const baseline = await geometry()
     const checkGeometry = async message => {
       const current=await geometry()
-      if(path==='/pm-queue') {
+      {
         assert.deepEqual(current.heading,baseline.heading,message+' heading')
         assert.deepEqual(current.filter,baseline.filter,message+' filters')
-        assert.equal(await viewport.evaluate(el=>getComputedStyle(el).overflowY),'visible','Queue grows with its rows instead of scrolling internally')
-      } else assert.deepEqual(current,baseline,message)
+        assert.equal(await viewport.evaluate(el=>getComputedStyle(el).overflowY),'visible','Paginated results grow with their rows instead of scrolling internally')
+        assert(await viewport.evaluate(el=>el.scrollHeight<=el.clientHeight+1),'All result rows fit without vertical scrolling')
+      }
     }
     const type = page.locator('.pm-type select,.pm-filter-card .pm-select select').first()
     for (const [value, count] of [['CCTV', 1], ['PUMP', 0], ['', 10]]) {

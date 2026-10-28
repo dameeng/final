@@ -2,9 +2,13 @@ package com.mbc.puf.plate.service;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import com.mbc.puf.alert.service.AlertService;
 import com.mbc.puf.car.entity.Car;
@@ -43,6 +47,8 @@ import jakarta.persistence.EntityManager;
 @Service
 public class PlateLogReviewServiceImpl implements PlateLogReviewService {
 
+    private static final Logger log = LoggerFactory.getLogger(PlateLogReviewServiceImpl.class);
+
 
     private static final String FROM = " from PlateLog p join Camera c on c.id = p.cameraId"
             + " join Underpass u on u.id = c.underpassId";
@@ -57,12 +63,15 @@ public class PlateLogReviewServiceImpl implements PlateLogReviewService {
     private final DbClock dbClock;
     private final EntityManager em;
     private final com.mbc.puf.stream.StreamPublisher streamPublisher;   // SSE 실시간 이벤트
+    private final TransactionTemplate tx;                               // 자동 마감 처리에서 트랜잭션을 직접 나눠 쓴다
 
     public PlateLogReviewServiceImpl(PlateLogRepository plateLogRepository, UnderpassRepository underpassRepository,
                                      UnderpassEventRepository eventRepository, CameraRepository cameraRepository,
                                      CarRepository carRepository, AlertService alertService,
                                      ScopeResolver scopeResolver, DbClock dbClock, EntityManager em,
-                                     com.mbc.puf.stream.StreamPublisher streamPublisher) {
+                                     com.mbc.puf.stream.StreamPublisher streamPublisher,
+                                     PlatformTransactionManager transactionManager) {
+        this.tx = new TransactionTemplate(transactionManager);
         this.plateLogRepository = plateLogRepository;
         this.underpassRepository = underpassRepository;
         this.eventRepository = eventRepository;
@@ -207,22 +216,38 @@ public class PlateLogReviewServiceImpl implements PlateLogReviewService {
         alertService.sendAlertsForPlate(underpass, camera.getCameraRole(), cars, plateLog.getDetectedNum());
     }
 
+    // 1) 마감 지난 대기 건을 자동 처리 상태로 바꾸는 것까지 먼저 커밋하고,
+    // 2) 알림·화면 알림은 한 건씩 따로 처리한다. 한 건의 알림이 실패해도 상태 변경과 다른 건은 그대로 남는다
+    //    (실패한 알림은 로그만 남기고 다시 보내지 않는다)
     @Override
-    @Transactional
     public void autoProcessExpired() {
         var now = dbClock.now();
-        // 처리 전에 대상(마감 지난 대기 건)을 먼저 읽어 두었다가, 처리 후 화면에 하나씩 알린다
-        var expired = plateLogRepository.findExpiredPending(now);
-        if (expired.isEmpty()) {
+        List<Object[]> expired = tx.execute(status -> {
+            // 처리 전에 대상(마감 지난 대기 건)을 먼저 읽어 두었다가, 처리 후 화면에 하나씩 알린다
+            List<Object[]> rows = plateLogRepository.findExpiredPending(now);
+            if (!rows.isEmpty()) {
+                plateLogRepository.autoProcessExpired(now);
+            }
+            return rows;
+        });
+        if (expired == null || expired.isEmpty()) {
             return;
         }
-        plateLogRepository.autoProcessExpired(now);
         for (Object[] row : expired) {
-            sendAlertOnAutoClose((Long) row[0]);
-            streamPublisher.dataChangedToAdmins((Long) row[2], "plate-log", "UPDATE", (Long) row[0]);
-            streamPublisher.publishToAdmins((Long) row[2], "plate-queue-done",
-                    new com.mbc.puf.stream.StreamPayloads.PlateQueue((Long) row[0], (Long) row[1], null, null, null,
-                            ReviewStatus.AUTO_PROCESSED, null, null));
+            Long plateLogId = (Long) row[0];
+            try {
+                tx.executeWithoutResult(status -> sendAlertOnAutoClose(plateLogId));
+            } catch (RuntimeException e) {
+                log.warn("[plate] 자동 마감 건 {} 알림 실패 (상태는 이미 처리됨): {}", plateLogId, e.toString());
+            }
+            try {
+                streamPublisher.dataChangedToAdmins((Long) row[2], "plate-log", "UPDATE", plateLogId);
+                streamPublisher.publishToAdmins((Long) row[2], "plate-queue-done",
+                        new com.mbc.puf.stream.StreamPayloads.PlateQueue(plateLogId, (Long) row[1], null, null, null,
+                                ReviewStatus.AUTO_PROCESSED, null, null));
+            } catch (RuntimeException e) {
+                log.warn("[plate] 자동 마감 건 {} 화면 알림 실패: {}", plateLogId, e.toString());
+            }
         }
     }
 }

@@ -22,13 +22,15 @@ export const adminAppMenuGroups = [
       ['설비 목록', '/admin-app/screen-9'],
       ['점검 대상·알림', '/admin-app/screen-11'],
       ['점검 이력', '/admin-app/history'],
+      ['설비·기준 설정', '/admin-app/pm-settings'],
+      ['데일리 리포트', '/admin-app/pm-daily'],
     ],
   },
   {
     title: '알림·운영',
     links: [
       ['내 관리자 알림', '/admin-app/notifications'],
-      ['더보기·내 정보', '/admin-app/screen-14'],
+      ['마이페이지', '/admin-app/screen-14'],
     ],
   },
 ].map(group => ({ ...group, links: group.links.map(([label, ...paths]) => [adminPageTitle(paths.find(Boolean) || '', label), ...paths]) }))

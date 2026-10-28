@@ -3,10 +3,13 @@ import AdminPageDirectory from '../components/AdminPageDirectory.vue'
 import ServiceResource from './backend-resource.vue'
 import FeedbackToast from '../components/FeedbackToast.vue'
 import AccountActions from '../components/AccountActions.vue'
+import ManagerPushDevices from '../components/ManagerPushDevices.vue'
+import profileMascot from '../assets/mascot/routel-ru-transparent.png'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useApp } from '../stores/app'
 import { backend } from '../services/backend'
+import { detachPushToken } from '../services/devicePush'
 import BackendLayout from '../components/BackendLayout.vue'
 import ServiceFields from '../components/ServiceFields.vue'
 import { formatPhone } from '../utils/phone'
@@ -25,6 +28,18 @@ const route = useRoute(),
   loading = ref(true),
   busy = ref(false)
 const editing = ref(false)
+async function logoutManager() {
+  if (busy.value) return
+  busy.value = true
+  try {
+    try { await detachPushToken() } catch { /* Sign-out remains available if device cleanup fails. */ }
+    await backend('/api/auth/logout', { method:'POST' })
+    app.authVersion++
+    app.clearAccount()
+    await router.replace('/admin-app/screen-1')
+  } catch (e) { error.value = (e as Error).message }
+  finally { busy.value = false }
+}
 function cancelEdit() {
   for (const field of fields.value) values[field.key] = profile.value[field.key] || ''
   editing.value = false
@@ -46,7 +61,7 @@ const pageTitle = computed(() =>
   mobileCombined.value
     ? '내 정보 관리'
     : manager.value
-    ? '관리자 마이페이지'
+    ? managerApp.value ? '마이페이지' : '관리자 마이페이지'
     : accountSection.value === 'withdraw'
       ? '회원 탈퇴'
       : accountSection.value === 'settings'
@@ -162,12 +177,13 @@ onBeforeUnmount(() => controller.abort())
         >{{error}} <RouterLink :to="manager?'/admin-login':'/login'">로그인</RouterLink></p
       ><p v-if="message" class="service-message" role="status">{{message}}</p
       ><template v-if="profile.id"
+        ><section v-if="managerApp" class="manager-mypage-profile"><div class="manager-mypage-identity"><span class="manager-profile-avatar" aria-hidden="true"><img :src="profileMascot" alt="" width="44" height="44" /></span><div><small>ROUTEL 관리자</small><h2>{{profile.name}}님</h2></div></div><p>내 정보와 업무 설정을 관리하세요.</p><div class="manager-mypage-assignment"><span>{{profile.regions?.map((region:any)=>region.name).join(' · ')||'담당 지역 미지정'}}</span><span><UiIcon name="document" />{{profile.shift?.name||'근무조 미지정'}}</span></div></section
         ><component
           :is="managerApp?'details':'section'"
           v-if="manager||['summary','profile','settings'].includes(accountSection)"
           :id="!manager?'account-settings':undefined"
           class="account-panel"
-          ><summary v-if="managerApp" class="manager-profile-summary"><span class="manager-profile-avatar" aria-hidden="true">{{profile.name?.slice(0,1)}}</span><span><strong>{{profile.name}}님</strong><small>기본 정보 확인 및 수정</small></span><span class="manager-profile-chevron" aria-hidden="true">⌄</span></summary><h2 v-if="pageTitle!=='내 정보'">내 정보</h2
+          ><summary v-if="managerApp" class="manager-profile-summary"><UiIcon name="user" /><span><strong>내 정보 관리</strong></span><span class="manager-profile-chevron" aria-hidden="true">›</span></summary><h2 v-if="pageTitle!=='내 정보'">내 정보</h2
           ><p>{{profile.name}} · {{profile.loginId}}</p
           ><template v-if="manager"
             ><p
@@ -221,11 +237,11 @@ onBeforeUnmount(() => controller.abort())
             ><button :disabled="busy" type="submit">계정 탈퇴</button></form
           ></section
         ></template
-      ><nav v-if="managerApp" class="app-more-menu"
-        ><RouterLink to="/admin-app/history">점검 이력 <span>›</span></RouterLink
-        ><RouterLink to="/admin-app/notifications">알림 내역 <span>›</span></RouterLink
-        ><RouterLink to="/admin-app/contacts">관할 담당자 연락처 <span>›</span></RouterLink></nav
-      ><AdminPageDirectory v-else-if="manager" /><AccountActions v-if="manager" /></section
+      ><h2 v-if="managerApp" class="manager-mypage-group-title">업무·이용 안내</h2><nav v-if="managerApp" class="app-more-menu" aria-label="마이페이지 메뉴"
+        ><RouterLink to="/admin-app/history"><UiIcon name="document" />점검 이력 <span>›</span></RouterLink
+        ><RouterLink to="/admin-app/notifications"><UiIcon name="bell" />알림 내역 <span>›</span></RouterLink
+        ><RouterLink to="/admin-app/contacts"><UiIcon name="user" />관할 담당자 연락처 <span>›</span></RouterLink></nav
+      ><AdminPageDirectory v-else-if="manager" /><details v-if="managerApp" class="manager-mypage-devices"><summary><UiIcon name="bell" />알림 기기 관리<span>›</span></summary><ManagerPushDevices /></details><ManagerPushDevices v-else-if="manager" /><AccountActions v-if="manager" /><button v-if="managerApp" type="button" class="manager-mypage-logout" :disabled="busy" @click="logoutManager"><UiIcon name="logout" />로그아웃</button></section
   ></component>
 </template>
 <style scoped src="../styles/pages/service-account.css"></style>

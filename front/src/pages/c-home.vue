@@ -33,7 +33,14 @@ const visionRoadmap = [
       <div class="home-service-grid">
         <article class="home-service-card">
           <span class="home-service-number" aria-hidden="true">01</span>
-          <svg class="home-service-drawing" viewBox="0 0 240 120" fill="none" aria-hidden="true"><path d="M-10 105H75Q115 105 115 65T155 25H250" stroke="currentColor" stroke-width="26" opacity=".07"/><path d="M-10 105H75Q115 105 115 65T155 25H250" stroke="currentColor" stroke-dasharray="5 7" opacity=".35"/><circle cx="115" cy="65" r="17" stroke="currentColor" opacity=".3"/><circle cx="115" cy="65" r="5" fill="currentColor"/></svg>
+          <svg class="home-service-drawing" viewBox="0 0 240 120" fill="none" aria-hidden="true">
+            <path d="m35 35 48-15 48 15 48-15v70l-48 15-48-15-48 15Z" fill="currentColor" opacity=".04"/>
+            <path d="m35 35 48-15 48 15 48-15v70l-48 15-48-15-48 15Z" stroke="currentColor" opacity=".2"/>
+            <path d="M83 20v70m48-55v70" stroke="currentColor" stroke-dasharray="4 5" opacity=".2"/>
+            <ellipse cx="132" cy="83" rx="19" ry="5" fill="currentColor" opacity=".08"/>
+            <path d="M132 77s22-20 22-36a22 22 0 0 0-44 0c0 16 22 36 22 36Z" fill="var(--r-surface,white)" stroke="currentColor" opacity=".65"/>
+            <circle cx="132" cy="41" r="7" fill="currentColor"/>
+          </svg>
           <div class="home-card-top"><span class="home-service-icon home-service-icon-location"><UiIcon name="location" /></span></div>
           <h3>내가 지날 길의 상태를 한눈에</h3>
           <p>지도에서 지하차도의 위치와 통제 여부를 확인하고,<br class="home-desktop-break" /> 이동할 구간의 상황을 살펴보세요.</p>
@@ -72,9 +79,9 @@ const visionRoadmap = [
     </section>
 
     <section class="home-vision" aria-labelledby="home-vision-title">
-      <header class="home-section-heading"><div><span class="home-section-index">02 / 앞으로의 여정</span><h2 id="home-vision-title">더 촘촘하게 연결될<br />내일의 도로 안전.</h2></div></header>
-      <ol class="home-roadmap" aria-label="연도별 추진 목표"><li v-for="goal in visionRoadmap" :key="goal.year"><span class="home-roadmap-year">{{goal.year}}</span><h3>{{goal.title}}</h3><p>{{goal.description}}</p></li></ol>
+      <header class="home-section-heading"><div><span class="home-section-index">02 / 앞으로의 여정</span><h2 id="home-vision-title">더 촘촘하게 연결될<br />내일의 도로 안전.</h2></div><p>정보의 기반에서 더 넓은 연결까지.<br />ROUTEL이 차근차근 만들어갈 변화입니다.</p></header>
+      <ol class="home-roadmap" aria-label="연도별 추진 목표"><li v-for="(goal,index) in visionRoadmap" :key="goal.year"><div class="home-roadmap-top"><span class="home-roadmap-step">STEP {{String(index+1).padStart(2,'0')}}</span><span class="home-roadmap-arrow" aria-hidden="true">{{index===visionRoadmap.length-1?'↗':'→'}}</span></div><span class="home-roadmap-year">{{goal.year}}</span><h3>{{goal.title}}</h3><p>{{goal.description}}</p></li></ol>
     </section>
-    <section class="home-closing"><div><h2>출발하기 전, 한 번 더 확인하세요.</h2></div><RouterLink id="home-underpass-cta" class="btn primary home-button home-button-primary" to="/info/underpasses">지하차도 현황 확인 <span aria-hidden="true">↗</span></RouterLink></section>
+    <section class="home-closing"><div><span class="home-closing-eyebrow">안전한 이동의 시작</span><h2>출발하기 전,<br class="home-closing-break" /> 한 번 더 확인하세요.</h2><p>지금 지날 지하차도의 통제 현황을 확인해 보세요.</p></div><RouterLink id="home-underpass-cta" class="btn primary home-button home-button-primary" to="/info/underpasses">지하차도 현황 확인 <span aria-hidden="true">↗</span></RouterLink></section>
   </main>
 </template>

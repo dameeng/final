@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import com.mbc.puf.cctv.client.*;
+import com.mbc.puf.stream.StreamHub;
 import com.mbc.puf.stream.StreamPublisher;
 import com.mbc.puf.stream.RealtimePayloads.AnalysisStateChange;
 import tools.jackson.databind.JsonNode;
@@ -21,15 +22,19 @@ public class AnalysisStateBroadcaster {
     private final SinkholeServerClient sinkhole;
     private final ObjectMapper mapper;
     private final StreamPublisher stream;
+    private final StreamHub hub;   // 관리자 연결이 있는지 확인용
     private final long sinkholeCamera;
     private final Map<Long, State> previous = new HashMap<>();
     private record State(String state, boolean running, String error) {}
     public AnalysisStateBroadcaster(JdbcTemplate db, OcrServerClient ocr, SinkholeServerClient sinkhole,
-            ObjectMapper mapper, StreamPublisher stream, @Value("${puf.sinkhole.camera-id:230}") long sinkholeCamera) {
-        this.db=db; this.ocr=ocr; this.sinkhole=sinkhole; this.mapper=mapper; this.stream=stream; this.sinkholeCamera=sinkholeCamera;
+            ObjectMapper mapper, StreamPublisher stream, StreamHub hub, @Value("${puf.sinkhole.camera-id:230}") long sinkholeCamera) {
+        this.db=db; this.ocr=ocr; this.sinkhole=sinkhole; this.mapper=mapper; this.stream=stream; this.hub=hub; this.sinkholeCamera=sinkholeCamera;
     }
     @Scheduled(initialDelay=5000, fixedDelay=3000, scheduler="realtimeScheduler")
     public synchronized void poll() {
+        if (!hub.hasAdminConnections()) {
+            return;   // 보는 관리자가 없으면 DB 와 분석 서버를 조회하지 않는다 (관리자가 접속하면 다음 주기부터 다시 확인)
+        }
         List<Map<String,Object>> cameras=db.queryForList("""
                 SELECT c.id AS camera_id,c.underpass_id,u.region_id
                   FROM camera c JOIN underpass u ON u.id=c.underpass_id

@@ -1,0 +1,36 @@
+/* Glow belongs to data strokes only; axes, labels and normal-range bands stay crisp. */
+:root[data-theme=dark] #app .pm-detail .pm-chart .line-sensor {
+  stroke:#ff9b6c;
+  filter:drop-shadow(0 0 2px #ff9b6c88) drop-shadow(0 0 6px #ff814633);
+}
+:root[data-theme=dark] #app .pm-detail .pm-chart .dot-sensor {
+  fill:#ffad83; stroke:#ffe0cc; stroke-width:1.5;
+  filter:drop-shadow(0 0 3px #ff9b6cbb) drop-shadow(0 0 8px #ff814655);
+}
+:root[data-theme=dark] #app .pm-detail .pm-chart .line-main {
+  stroke:#70b7ff;
+  filter:drop-shadow(0 0 2px #70b7ff88) drop-shadow(0 0 6px #438fff33);
+}
+:root[data-theme=dark] #app .pm-detail .pm-chart .dot-main {
+  fill:#8ac7ff; stroke:#d9edff; stroke-width:1.5;
+  filter:drop-shadow(0 0 3px #70b7ffbb) drop-shadow(0 0 8px #438fff55);
+}
+:root[data-theme=dark] #app .pm-detail .pm-chart .line-second {
+  stroke:#a3c4dd;
+  filter:drop-shadow(0 0 2px #a3c4dd44);
+}
+:root[data-theme=dark] #app .pm-detail .pm-chart .line-max { stroke:#70b7ff; }
+:root[data-theme=dark] #app .pm-detail .pm-legend .sw-sensor {
+  background:#ff9b6c; box-shadow:0 0 5px #ff9b6c66;
+}
+:root[data-theme=dark] #app .water-dashboard :is(.water-risk-line,.dashboard-observed-line) {
+  stroke:#70b7ff;
+  filter:drop-shadow(0 0 2px #70b7ff88) drop-shadow(0 0 6px #438fff33);
+}
+:root[data-theme=dark] #app .water-dashboard .dashboard-forecast-line {
+  stroke:#65ded3;
+  filter:drop-shadow(0 0 2px #65ded377) drop-shadow(0 0 5px #38c9bc33);
+}
+:root[data-theme=dark] #app .water-dashboard :is(.water-risk-sample,.dashboard-observed-point) {
+  filter:drop-shadow(0 0 3px #70b7ff88);
+}

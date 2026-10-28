@@ -163,16 +163,26 @@
 #app .home-premium .home-brand { padding:48px 0; border-width:1px 0; border-radius:0; background:transparent; grid-template-columns:1fr 1fr; }
 #app .home-premium .home-brand h2 { font-size:clamp(34px,3.5vw,48px); letter-spacing:-.05em; }
 :root[data-theme=dark] #app .home-premium .home-brand { background:transparent; }
-#app .home-premium .home-roadmap { gap:0; }
-#app .home-premium .home-roadmap>li { position:relative; padding:30px 28px 0 0; border:0; border-top:1px solid var(--r-line); border-radius:0; background:transparent; box-shadow:none; transform:none; }
-#app .home-premium .home-roadmap>li::before { content:''; position:absolute; width:7px; height:7px; border:1px solid var(--r-muted); border-radius:50%; background:var(--r-surface); top:-4px; left:0; }
+#app .home-premium .home-roadmap { gap:16px; margin:0; }
+#app .home-premium .home-vision>.home-section-heading { border-top:0; padding-top:0; }
+#app .home-premium .home-roadmap>li { position:relative; padding:24px; min-width:0; min-height:260px; box-sizing:border-box; border:1px solid var(--r-line); border-radius:16px; background:var(--r-surface); box-shadow:0 4px 16px #17365705; transform:none; }
+#app .home-premium .home-roadmap>li::before { content:''; position:absolute; height:3px; width:44px; border:0; border-radius:0 0 3px 3px; background:var(--r-accent); top:0; left:24px; }
+#app .home-roadmap-top { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:26px; }
+#app .home-roadmap-step { font-size:10px; font-weight:650; letter-spacing:.12em; color:var(--r-muted); }
+#app .home-roadmap-arrow { display:grid; place-items:center; width:30px; height:30px; border-radius:50%; background:var(--r-soft); color:var(--r-accent); font-size:18px; }
 #app .home-premium .home-roadmap>li:hover { transform:none; border-color:var(--r-line); box-shadow:none; }
-#app .home-premium .home-roadmap-year { padding:0; background:transparent; color:var(--r-ink); font-size:32px; font-weight:500; letter-spacing:-.05em; }
+#app .home-premium .home-roadmap-year { padding:0; background:transparent; color:var(--r-accent); font-size:38px; line-height:1.2; font-weight:600; letter-spacing:-.05em; }
 #app .home-premium .home-roadmap h3 { margin-top:16px; }
-#app .home-premium .home-roadmap p { max-width:260px; }
-#app .home-premium .home-closing { padding:32px 0; border-radius:0; border-top:1px solid var(--r-line); background:transparent; }
+#app .home-premium .home-roadmap p { max-width:none; margin-bottom:0; font-size:13px; }
+#app .home-premium .home-closing { position:relative; isolation:isolate; overflow:hidden; padding:40px 44px; border:1px solid #ffffff18; border-radius:18px; background:var(--r-primary); color:#fff; }
+#app .home-premium .home-closing::after { content:''; position:absolute; z-index:-1; width:360px; height:360px; right:-80px; top:-150px; border:1px solid #ffffff20; border-radius:50%; box-shadow:0 0 0 55px #ffffff06,0 0 0 110px #ffffff04; pointer-events:none; }
+#app .home-closing-eyebrow { display:block; margin-bottom:12px; color:#d3e6ff; font-size:11px; font-weight:600; letter-spacing:.06em; }
+#app .home-premium .home-closing h2 { margin:0; color:#fff; font-size:28px; line-height:1.45; letter-spacing:-.035em; }
+#app .home-premium .home-closing p { margin:12px 0 0; color:#d3e6ff; font-size:13px; line-height:1.7; }
+#app .home-premium .home-closing .home-button-primary { flex-shrink:0; min-height:48px; background:#fff!important; border:1px solid #fff; color:#194e8d!important; box-shadow:none; }
+#app .home-closing-break { display:none; }
 @media (max-width:1100px) {
-  #app .home-premium .home-roadmap { row-gap:36px; }
+  #app .home-premium .home-roadmap { row-gap:16px; }
 }
 @media (max-width:760px) {
   #app .home-premium section { margin-bottom:52px; }
@@ -184,7 +194,104 @@
   #app .home-service-number { font-size:46px; right:24px; }
   #app .home-service-drawing { width:130px; right:75px; }
   #app .home-premium .home-brand { grid-template-columns:1fr; padding:30px 0; }
-  #app .home-premium .home-roadmap>li { padding-right:18px; }
-  #app .home-premium .home-roadmap-year { font-size:28px; }
-  #app .home-premium .home-closing { padding:26px 0; }
+  #app .home-premium .home-roadmap { grid-template-columns:1fr; }
+  #app .home-premium .home-roadmap>li { padding:22px; min-height:0; }
+  #app .home-roadmap-top { margin-bottom:16px; }
+  #app .home-premium .home-roadmap-year { font-size:32px; }
+  #app .home-premium .home-closing { padding:28px 24px; gap:24px; }
+  #app .home-premium .home-closing h2 { font-size:25px; }
+  #app .home-closing-break { display:block; }
+}
+
+/* Each introduction occupies one viewport; taller content remains scrollable. */
+html:has(.home-premium) {
+  scroll-snap-type:y mandatory;
+  scroll-padding-top:var(--customer-header-height,76px);
+}
+#app .customer-shell:has(.home-premium) .customer-header {
+  position:sticky;
+  top:0;
+  z-index:50;
+}
+#app .customer-shell .customer-page-layout.is-home:has(.home-premium) {
+  padding-top:0;
+  padding-bottom:0;
+}
+#app .home-premium>section {
+  box-sizing:border-box;
+  min-height:calc(100dvh - var(--customer-header-height,76px));
+  margin:0;
+  padding-block:48px;
+  scroll-snap-align:start;
+  scroll-snap-stop:always;
+}
+#app .home-premium .home-hero { display:flex; align-items:center; }
+#app .home-premium :is(.home-services,.home-vision) {
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+#app .customer-shell:has(.home-premium) footer { scroll-snap-align:start; }
+@media (max-width:700px) {
+  #app .home-premium>section { padding-block:28px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  html:has(.home-premium) { scroll-behavior:auto; }
+}
+
+/* Supporting information uses a quieter, compact presentation. */
+#app .home-premium .home-vision {
+  min-height:0;
+  padding-block:40px;
+  border-top:1px solid var(--r-line);
+}
+#app .home-premium .home-vision .home-section-heading { margin-bottom:24px; }
+#app .home-premium .home-vision .home-section-heading h2 {
+  font-size:clamp(21px,2vw,26px);
+  font-weight:550;
+  line-height:1.5;
+}
+#app .home-premium .home-roadmap { gap:24px; }
+#app .home-premium .home-roadmap>li {
+  min-height:0;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+#app .home-premium .home-roadmap>li::before,
+#app .home-roadmap-top { display:none; }
+#app .home-premium .home-roadmap-year {
+  font-size:22px;
+  font-weight:500;
+  color:var(--r-muted);
+}
+#app .home-premium .home-roadmap h3 { margin-top:12px; font-size:14px; font-weight:550; }
+#app .home-premium .home-roadmap p { margin-top:8px; font-size:12px; line-height:1.8; }
+#app .home-premium .home-closing {
+  min-height:0;
+  padding:28px 0;
+  border:0;
+  border-top:1px solid var(--r-line);
+  border-radius:0;
+  background:transparent;
+  color:var(--r-ink);
+  gap:24px;
+}
+#app .home-premium .home-closing::after,
+#app .home-closing-eyebrow { display:none; }
+#app .home-premium .home-closing h2 { color:var(--r-ink); font-size:20px; font-weight:550; }
+#app .home-premium .home-closing p { color:var(--r-muted); font-size:12px; margin-top:8px; }
+#app .home-premium .home-closing .home-button-primary {
+  background:transparent!important;
+  color:var(--r-accent)!important;
+  border:1px solid var(--r-line);
+  font-weight:500;
+  min-height:44px;
+}
+@media (max-width:700px) {
+  #app .home-premium .home-roadmap { grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px 16px; }
+  #app .home-premium .home-closing { align-items:flex-start; }
+  #app .home-closing-break { display:none; }
 }

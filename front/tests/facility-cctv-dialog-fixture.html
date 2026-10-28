@@ -1,0 +1,13 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><body><div id="app"></div>
+<script type="module">
+import {createApp,h,ref} from 'vue'
+import {createRouter,createMemoryHistory} from 'vue-router'
+import TunnelCctvDialog from '../src/components/TunnelCctvDialog.vue'
+import WorkflowPage from '../src/components/WorkflowPage.vue'
+const router=createRouter({history:createMemoryHistory(),routes:[{path:'/',component:{render:()=>null}}]})
+const facility=ref(7)
+createApp({render:()=>h('div',[
+  h('button',{onClick:()=>facility.value=8},'시설 변경'),
+  h(TunnelCctvDialog,{underpassId:facility.value,facilityName:facility.value===7?'초량지하차도':'북항지하차도'}),
+])}).use(router).component('WorkflowPage',WorkflowPage).mount('#app')
+</script></body></html>

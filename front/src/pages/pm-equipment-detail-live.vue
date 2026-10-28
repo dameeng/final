@@ -30,6 +30,7 @@ type Feature = {
 type Cause = { key: string; label: string; value: number; unit?: string; median: number; contribution: number; points: number }
 type Detail = {
   equipment: Record<string, any>
+  currentSensors?: { recordedAt: string | null; values: Record<string, number | null> } | null
   detail: { features?: Feature[]; extra?: Record<string, any> } | null
   cautionMin: number; dangerMin: number
   lastCheckedAt: string | null; recentActions: Record<string, any>[]
@@ -69,14 +70,20 @@ let controller: AbortController | undefined, trendController: AbortController | 
 
 const eq = computed(() => data.value?.equipment || {})
 const extra = computed(() => data.value?.detail?.extra || {})
+const sensorColumns = computed(() => PM_SENSOR_COLUMNS[eq.value.type] || [])
+const sensorSnapshot = computed(() => data.value?.currentSensors)
+const sensorCurrentRows = computed(() => sensorColumns.value.map(([key, label]) => ({
+  key, label, unit: PM_SENSOR_UNITS[key] || '', value: sensorSnapshot.value?.values[key] ?? null,
+})))
 const features = computed(() =>
   [...(data.value?.detail?.features || [])].sort((a, b) => b.contribution - a.contribution),
 )
 // 전광판은 본체 온도만 그리면 하루 온도 변화에 묻혀서, 본체·외기 온도를 한 그래프에 겹쳐 보여준다
 const tabs = computed<[string, string][]>(() => {
   const cols = PM_SENSOR_COLUMNS[eq.value.type] || []
+  if (eq.value.type === 'CCTV') return cols.map(([key, label]) => [key, key === 'video_receive_rate' ? '수신율' : key === 'packet_loss_rate' ? '손실률' : label])
   if (eq.value.type !== 'DISPLAY') return cols
-  return [['temperature_c', '본체 · 외기 온도'], ...cols.filter(([c]) => c !== 'temperature_c' && c !== 'ambient_c')]
+  return [['temperature_c', '온도 비교'], ...cols.filter(([c]) => c !== 'temperature_c' && c !== 'ambient_c')]
 })
 const position = computed(() => order.value.indexOf(Number(id.value)))
 const scoreValue = computed(() => (eq.value.score == null ? null : Number(eq.value.score)))
@@ -293,6 +300,12 @@ function timeTicks(t0: number, t1: number) {
   return out
 }
 const tabLabel = computed(() => tabs.value.find(([c]) => c === column.value)?.[1] || column.value)
+const sensorChartScroll = ref<HTMLElement>()
+watch([sensorChartScroll, id, column], async () => {
+  await nextTick()
+  const chart = sensorChartScroll.value
+  if (chart) chart.scrollLeft = chart.scrollWidth - chart.clientWidth
+}, { flush: 'post' })
 watch([data,trends],async()=>{
   await nextTick()
   detailRoot.value?.querySelectorAll('.card:not([data-pm-observed])').forEach(card=>{
@@ -438,16 +451,29 @@ watch([data,trends],async()=>{
           </div>
         </section>
 
+        <section v-if="sensorColumns.length" class="card pm-current-sensors" aria-label="센서 현재값">
+          <div class="pm-section-heading"><h2>센서 현재값</h2><span class="pm-period">{{sensorColumns.length}}개 센서</span></div>
+          <p class="pm-muted small" v-if="sensorSnapshot?.recordedAt">최근 측정 · {{displayDate(sensorSnapshot.recordedAt)}}</p>
+          <p class="pm-muted small" v-else>아직 수신된 센서 측정값이 없습니다.</p>
+          <dl class="pm-current-sensor-grid">
+            <div v-for="sensor in sensorCurrentRows" :key="sensor.key" class="pm-current-sensor" :data-sensor="sensor.key">
+              <dt>{{sensor.label}}</dt>
+              <dd><strong>{{num(sensor.value)}}</strong><span v-if="sensor.value!==null&&sensor.unit">{{sensor.unit}}</span><small v-if="sensor.value===null">미수신</small></dd>
+            </div>
+          </dl>
+        </section>
+
         <section v-if="extra.sensors?.length" class="card pm-sensor-table-card">
-          <div class="pm-section-heading"><h2>센서 현재값</h2><span class="pm-period">{{extra.sensors.length}}개 센서</span></div>
+          <div class="pm-section-heading"><h2>최근 분석 센서 비교</h2><span class="pm-period">{{extra.sensors.length}}개 센서</span></div>
+          <p class="pm-muted small">{{displayDate(data?.scoredAt)}} 분석 기준 · 최신 측정값은 위의 센서 현재값에서 확인하세요.</p>
           <div class="service-table-wrap">
             <table class="service-table">
               <thead><tr><th>센서</th><th>지금</th><th>평소</th><th>벗어난 정도</th><th>상태</th></tr></thead>
               <tbody>
                 <tr v-for="s in extra.sensors" :key="s['항목']">
-                  <td>{{s['센서']}}</td><td>{{num(s['현재'])}}</td><td>{{num(s['평소'])}}</td>
-                  <td>{{num(s['벗어난정도'],2)}}</td>
-                  <td><span class="pm-chip" :class="{'pm-chip--open':s['상태']!=='정상'}">{{s['상태']}}</span></td>
+                  <td data-label="센서">{{s['센서']}}</td><td data-label="분석 시 값">{{num(s['현재'])}}</td><td data-label="평소">{{num(s['평소'])}}</td>
+                  <td data-label="벗어난 정도">{{num(s['벗어난정도'],2)}}</td>
+                  <td data-label="상태"><span class="pm-chip" :class="{'pm-chip--open':s['상태']!=='정상'}">{{s['상태']}}</span></td>
                 </tr>
               </tbody>
             </table>
@@ -468,7 +494,7 @@ watch([data,trends],async()=>{
             <span v-if="trends.length>1"><i class="sw sw-second"></i>외기 온도</span>
             <span v-if="trendChart.band"><i class="sw sw-band"></i>평소 범위 {{trendChart.band.label}}</span>
           </div>
-          <div class="pm-chart-scroll" tabindex="0" role="region" aria-label="센서 추이 그래프. 좁은 화면에서는 가로로 스크롤할 수 있습니다.">
+          <div ref="sensorChartScroll" class="pm-chart-scroll" tabindex="0" role="region" aria-label="센서 추이 그래프. 좁은 화면에서는 가로로 스크롤할 수 있습니다.">
           <svg v-if="trendChart" :key="column" class="pm-chart pm-chart--wide" :viewBox="`0 0 ${TCW} ${TCH}`" role="img" :aria-label="tabLabel+' 최근 7일 추이'">
             <rect v-if="trendChart.band" :x="PL" :y="trendChart.band.y" :width="TPW" :height="trendChart.band.h" class="zone-normal" />
             <g v-for="t in trendChart.yTicks" :key="'y'+t.y">
@@ -514,6 +540,7 @@ watch([data,trends],async()=>{
           <section class="card pm-history-card">
             <div class="pm-section-heading"><h2>단계 기준 변경 이력</h2><span class="pm-period">{{threshold?.history?.length||0}}건</span></div>
             <div class="pm-current-thresholds"><span>현재 적용 기준</span><b>주의 <strong>{{data.cautionMin}}</strong></b><b>위험 <strong>{{data.dangerMin}}</strong></b></div>
+            <RouterLink :to="{path:appPath('/pm-settings'),query:{equipId:String(eq.equipId),underpassId:String(eq.underpassId)}}">이 설비 기준 변경 →</RouterLink>
             <p v-if="!threshold?.history?.length" class="pm-muted pm-history-empty">기준 변경 기록이 없습니다.</p>
             <ul v-else class="pm-list pm-timeline">
               <li v-for="(h,i) in threshold.history" :key="i">

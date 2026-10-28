@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppPagination from '../components/AppPagination.vue'
 import { adminPageTitle } from '../data/adminTitles'
 import { managerAppPath } from '../utils/manager-app-path'
 const appPath = (path: string) => managerAppPath(path, route.path)
@@ -264,7 +265,8 @@ function resetFilters() {
       </div>
 
       </div>
-      <div class="pm-pager">
+      <AppPagination v-if="route.path.startsWith('/admin-app/')" :page="page" :pages="list?.totalPages||1" :disabled="loading" @change="page=$event" />
+      <div v-else class="pm-pager">
         <button class="btn sm" type="button" :disabled="loading||page<=1" @click="page--">이전</button>
         <span>{{page}} / {{Math.max(1,list?.totalPages||1)}} · 전체 {{list?.totalItems??0}}건</span>
         <button class="btn sm" type="button" :disabled="loading||page>=Math.max(1,list?.totalPages||1)" @click="page++">다음</button>

@@ -14,7 +14,11 @@
 
 현재 웹 지도 팝업·고객앱 현황·길찾기의 CCTV 목록은 `public/map-cctv.json`에서 읽고 영상은 목록에 저장된 부산 스트리밍 서버 URL에서 재생합니다. 과거 목록 API인 `https://its.busan.go.kr/api-n/v1/bsits/user/cctvs`는 현재 코드에서 직접 호출하지 않습니다. 별도 인증키나 프로젝트 백엔드가 필요하지 않습니다. `src/services/busanCctv.ts`에서 1분간 목록을 캐시하고, 선택 시설/목적지 반경 5km 내 영상을 거리순으로 표시합니다. 제공 카메라의 이름·주소·시설과의 거리를 안내하며 지하차도 내부 영상으로 단정하지 않습니다. 재생은 hls.js를 사용하고, 팝업을 닫거나 화면을 떠나면 연결을 해제합니다. 출처: 부산광역시 교통정보서비스센터.
 
-`/customer-app/screen-7`에서 출발지·도착지를 검색하면 카카오모빌리티 자동차 경로와 구간별 안내를 표시합니다. 목적지 주변 기상청 실황과 부산 도로 CCTV를 함께 조회합니다. 별도로 구현된 ITS CCTV 중계는 현재 이 화면에서 호출하지 않습니다. CCTV는 제공 지역에만 표시하며, 지하차도 내부 영상으로 간주하지 않습니다. 실제 침수·통제 데이터는 연결되지 않았습니다.
+`/customer-app/screen-7`에서 출발지·도착지를 검색하면 경로와 구간별 안내를 표시합니다. 로그인 사용자는 Spring `/api/navigation/route`로 실제 침수·통제 상태를 반영하고, 관심·주의 구간은 우회를 제안하며 통제 구간은 필수 우회합니다. 필수 우회를 찾지 못하면 안내를 시작하지 않습니다. SSE `data-changed(navigation-hazard)`로 위험 정보가 바뀌면 재탐색합니다. 비로그인 조회는 기존 `/directions`를 사용합니다. 주변 CCTV는 ITS API를 우선 조회하고 부산시 CCTV 목록을 함께 지원합니다.
+
+예지보전 설비·기준 설정은 `/pm-settings`, 데일리 리포트·PDF는 `/pm-daily`에서 사용합니다. 관리자 앱에서는 `/admin-app/pm-settings`, `/admin-app/pm-daily`를 사용합니다. 인수인계 `/shift-report`는 직전 근무 조회, 미리보기·저장, 저장 목록·메모 수정을 지원합니다. 서버가 `summary.demo=true`를 반환하는 직전 근무 요약에는 시연 데이터 안내가 표시됩니다.
+
+푸시 기기 연동: Firebase 또는 네이티브 클라이언트가 **실제 발급받은** 토큰을 `window.dispatchEvent(new CustomEvent('routel:push-token', { detail: { token, platform: 'WEB' /* 또는 APP */ } }))`로 전달하면 로그인 역할에 맞는 `/api/{customers|managers}/me/device-tokens`에 등록합니다. 로그인 시 `routel:request-push-token` 이벤트로 토큰을 요청하고, 로그아웃 전 현재 토큰을 해제합니다. 프런트는 임의 토큰을 만들지 않습니다. 실제 FCM 발송에는 별도의 Firebase 토큰 발급 설정과 백엔드 `puf.fcm.enabled=true`, 서비스 계정 설정이 필요합니다. SSE 긴급 팝업은 FCM 설정 없이 동작합니다.
 
 `.env` 또는 `.env.local`의 `KAKAO_REST_API_KEY`, `KMA_SERVICE_KEY`, `ITS_API_KEY`는 `server/navigation-api.mjs`에서만 사용합니다. `VITE_` 접두어를 붙이지 마세요. 장소 검색 REST 권한이 없는 경우 기존 JavaScript 지도 SDK의 장소·주소 검색으로 보완합니다. 실제 카카오 인증이나 사용자 로그인은 이 대체 검색과 별개입니다.
 

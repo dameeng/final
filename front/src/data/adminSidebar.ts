@@ -15,6 +15,8 @@ export const adminSidebarGroups = [
       ['장비 현황', '/pm-equipment', '/pm-equipment'],
       ['점검 대기', '/pm-queue', '/pm-queue'],
       ['정비 이력', '/pm-history', '/pm-history'],
+      ['설비·기준 설정', '/pm-settings', '/pm-settings'],
+      ['데일리 리포트', '/pm-daily', '/pm-daily'],
     ],
   },
   {

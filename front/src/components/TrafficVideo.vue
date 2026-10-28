@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref, watch, nextTick } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref, watch, nextTick } from 'vue'
 const props = defineProps<{ src: string; hls?: boolean }>(),
   video = ref<HTMLVideoElement>(),
   error = ref('')
+const mjpeg = computed(()=>/\/api\/cctv\/[^/]+\/stream(?:[?#]|$)|\.mjp(?:e?g)?(?:[?#]|$)/i.test(props.src||''))
 let hls: import('hls.js').default | undefined,
   version = 0
 async function start(src: string) {
@@ -12,7 +13,7 @@ async function start(src: string) {
   error.value = ''
   await nextTick()
   if (!video.value || ticket !== version) return
-  if (props.hls || /\.m3u8(?:\?|$)/i.test(src)) {
+  if (/\.m3u8(?:\?|$)/i.test(src) || props.hls&&!/\.(?:mp4|webm|ogg)(?:[?#]|$)/i.test(src)) {
     const { default: Hls } = await import('hls.js')
     if (ticket !== version || !video.value) return
     if (!Hls.isSupported()) {
@@ -54,7 +55,8 @@ onBeforeUnmount(() => {
 </script>
 <template>
   <div>
-    <video
+    <img v-if="mjpeg" :src="src" alt="실시간 CCTV 영상" style="display:block;width:100%;max-width:100%;object-fit:contain" @error="error='영상을 불러오지 못했습니다.'" />
+    <video v-else
       ref="video"
       controls
       playsinline

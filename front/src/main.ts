@@ -38,6 +38,8 @@ import './styles/admin-layout-system.css'
 import './styles/app-frame.css'
 import './styles/interaction-states.css'
 import './styles/app-design-system.css'
+import './styles/manager-spacing.css'
+import './styles/dark-chart-glow.css'
 createApp(App)
   .component('PasswordInput', PasswordInput)
   .component('UiIcon', UiIcon)

@@ -362,8 +362,8 @@ try {
     .getByRole('button', { name: '전체 목록으로', exact: true })
     .click()
   assert.equal(await page.locator('.facility-list-panel .lst').getAttribute('data-page-size'), '5')
-  assert.equal(await page.locator('.facility-list-panel .it').count(), 12)
-  assert.equal(await page.locator('.customer-list-pagination').count(), 0)
+  assert.equal(await page.locator('.facility-list-panel .it').count(), 5)
+  assert.equal(await page.locator('.app-number-pagination').count(), 1)
   assert.notEqual(
     await page.locator('.app-map-sheet').evaluate((el) => getComputedStyle(el).backgroundColor),
     'rgba(0, 0, 0, 0)',
@@ -384,7 +384,19 @@ try {
     Math.abs(sheetBox.y + sheetBox.height - mapBox.y - mapBox.height) < 2,
     'sheet stays against the bottom of the map',
   )
-  assert(sheetBox.height <= mapBox.height * 0.89, 'expanded sheet leaves the upper map visible')
+  const searchBox = await page.locator('.app-map-search').boundingBox()
+  assert(sheetBox.y >= searchBox.y + searchBox.height, 'expanded list stays below search')
+  assert(sheetBox.y - searchBox.y - searchBox.height < 20, 'list fills the space below search')
+  assert.equal(await page.locator('.mobile-app-map .mapw').isVisible(), false, 'expanded list hides map markers and controls')
+  await page.getByRole('searchbox', { name: '지하차도 이름 검색' }).click()
+  assert.equal(await handle.getAttribute('aria-expanded'), 'true', 'search keeps list expanded')
+  const expandedHandle = await handle.boundingBox()
+  await page.mouse.move(expandedHandle.x + 50, expandedHandle.y + 25)
+  await page.mouse.down()
+  await page.mouse.move(expandedHandle.x + 50, expandedHandle.y + 105, { steps: 8 })
+  await page.mouse.up()
+  assert.equal(await handle.getAttribute('aria-expanded'), 'false', 'downward swipe collapses the list')
+  assert.equal(await page.locator('.mobile-app-map .mapw').isVisible(), true, 'collapsing restores map markers and controls')
   await page.screenshot({ path: 'tests/app-map-restored.png' })
   await page.setViewportSize({ width: 390, height: 700 })
   assert.equal(

@@ -83,5 +83,14 @@ export const useManagerNotifications = defineStore('manager-notifications', () =
     }
     await refresh()
   }
-  return { unread, recent, loading, error, refresh, refreshPreview, ingest, reset, read }
+  async function readAll() {
+    if (app.account?.role !== 'REGIONAL_ADMIN') return
+    const user = app.account.id
+    await backend('/api/managers/me/notifications/read-all', { method: 'PUT' })
+    if (app.account?.id !== user || app.account.role !== 'REGIONAL_ADMIN') return
+    eventRevision++
+    recent.value.forEach(row => { row.read = true })
+    await Promise.all([refresh(), refreshPreview()])
+  }
+  return { unread, recent, loading, error, refresh, refreshPreview, ingest, reset, read, readAll }
 })

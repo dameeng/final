@@ -117,9 +117,9 @@
 #app .app-account-body { gap:16px; background:var(--r-canvas); }
 #app .app-account-profile { padding:20px; background:linear-gradient(135deg,var(--r-surface),var(--r-soft)); border-color:var(--r-line); }
 #app .app-profile-heading { display:flex; align-items:center; gap:12px; }
-#app .app-profile-avatar { display:grid; place-items:center; flex:0 0 48px; height:48px; border-radius:15px; background:var(--r-selected); color:var(--r-accent); font-size:22px; font-weight:750; }
+#app .app-profile-avatar { display:grid; place-items:center; flex:0 0 44px; height:44px; border-radius:14px; background:var(--r-selected); color:var(--r-accent); font-size:20px; font-weight:750; }
 #app .app-profile-heading small { display:block; margin-bottom:3px; color:var(--r-muted); font-size:11px; line-height:16px; }
-#app .app-profile-heading h2 { margin:0; font-size:20px; line-height:28px; }
+#app .app-profile-heading h2 { margin:0; font-size:18px; line-height:26px; }
 #app .app-account-profile .app-profile-description { margin:14px 0 0; color:var(--r-muted); font-size:13px; line-height:21px; }
 #app .app-account-profile>.app-account-primary { margin-top:16px; }
 #app .app-account-menu { display:grid; gap:18px; }
@@ -128,9 +128,9 @@
 #app .app-account-menu-card>:is(a,button) { box-sizing:border-box; width:100%; min-height:58px; padding:11px 14px; gap:11px; margin:0; border:0; border-radius:0; background:transparent; color:var(--r-ink); font:inherit; text-decoration:none; }
 #app .app-account-menu-card>:is(a,button)+:is(a,button) { border-top:1px solid var(--r-line); }
 #app .app-account-menu-card>:is(a,button) { border-radius:0!important; }
-#app .app-account-menu .app-menu-icon { display:grid; place-items:center; flex:0 0 32px; height:32px; margin:0; border-radius:9px; background:var(--r-selected); color:var(--r-accent); }
-#app .app-menu-icon .ui-icon { width:19px; height:19px; }
-#app .app-account-menu .app-menu-label { flex:1; min-width:0; margin:0; font-size:14px; line-height:21px; font-weight:550; }
+#app .app-account-menu .app-menu-icon { display:grid; place-items:center; flex:0 0 28px; height:28px; margin:0; border-radius:8px; background:var(--r-selected); color:var(--r-accent); }
+#app .app-menu-icon .ui-icon { --ui-icon-size:17px; width:17px; height:17px; }
+#app .app-account-menu .app-menu-label { flex:1; min-width:0; margin:0; font-size:13px; line-height:20px; font-weight:550; }
 #app .app-account-menu .app-menu-chevron { flex-shrink:0; margin:0; color:var(--r-muted); font-size:20px; line-height:24px; }
 #app .app-account-menu-card>a small { font-size:10px; color:var(--r-muted); opacity:1; white-space:nowrap; }
 #app .app-account-menu .app-menu-withdraw .app-menu-icon { background:var(--status-danger-bg); color:var(--status-danger-ink); }

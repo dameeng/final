@@ -23,6 +23,7 @@ import com.mbc.puf.common.security.LoginUser;
 import com.mbc.puf.common.security.ScopeResolver;
 import com.mbc.puf.pm.dto.PmActionItem;
 import com.mbc.puf.pm.dto.PmEquipmentDetailResponse;
+import com.mbc.puf.pm.dto.PmCurrentSensors;
 import com.mbc.puf.pm.dto.PmEquipmentListItem;
 import com.mbc.puf.pm.dto.PmEventItem;
 import com.mbc.puf.pm.dto.PmScorePoint;
@@ -179,7 +180,27 @@ public class PmQueryServiceImpl implements PmQueryService {
         LocalDateTime lastCheckedAt = recent.isEmpty() ? null : recent.get(0).getCreatedAt();
         return new PmEquipmentDetailResponse(item, detail, cautionMin, dangerMin, lastCheckedAt, recent,
                 row == null ? null : row.getModelVersion(), row == null ? null : row.getPredictedAt(),
-                anomalyStartedAt, topCauses(detail, row == null ? null : row.getScore()));
+                anomalyStartedAt, topCauses(detail, row == null ? null : row.getScore()),
+                currentSensors(equipId, item.getType()));
+    }
+
+    /** The caller has already checked the equipment scope via findEquipment. */
+    PmCurrentSensors currentSensors(Long equipId, PmEquipmentType type) {
+        String table = PmSensorServiceImpl.tableOf(type);
+        List<String> columns = PmSensorServiceImpl.columnsOf(type);
+        if (table == null || columns == null) return null; // ROAD uses video analysis.
+        String selected = columns.stream().map(column -> "s." + column).collect(java.util.stream.Collectors.joining(", "));
+        List<Object[]> rows = new NativeSql("SELECT s.recorded_at, " + selected + " FROM " + table
+                + " s WHERE s.equip_id = :equipId ORDER BY s.recorded_at DESC LIMIT 1")
+                .param("equipId", equipId).rows(em);
+        if (rows.isEmpty()) return new PmCurrentSensors(null, java.util.Map.of());
+        Object[] row = rows.get(0);
+        java.util.Map<String, Double> values = new java.util.LinkedHashMap<>();
+        for (int i = 0; i < columns.size(); i++) {
+            Object value = row[i + 1];
+            values.put(columns.get(i), value == null ? null : ((Number) value).doubleValue());
+        }
+        return new PmCurrentSensors(toLdt(row[0]), values);
     }
 
     /** detail.features 에서 영향도 상위 3개를 골라 기여 점수(영향도 × 점수 / 100)로 바꾼다. features 가 없으면 빈 목록 */

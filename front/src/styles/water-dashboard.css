@@ -133,6 +133,15 @@
 }
 #app .water-dashboard .fixed-top5 .rank>li { row-gap:5px; padding-bottom:10px; }
 #app .water-dashboard .fixed-top5 .rank .sc small { font-size:11px; font-weight:400; color:var(--dash-muted); }
+#app .water-dashboard .fixed-top5 .dashboard-fixed-content,
+#app .water-dashboard .fixed-top5 .widget-original-content {
+  box-sizing:border-box; height:auto; min-height:100%; max-height:none;
+  overflow:visible!important;
+}
+#app .water-dashboard .fixed-top5 .rank {
+  flex:none; height:auto; min-height:0; max-height:none; overflow:visible;
+}
+#app .water-dashboard .fixed-top5 .rank>li { flex:none; min-height:64px; }
 #app .water-dashboard .dashboard-score-track>i {
   display:block; height:100%; width:var(--risk-fill,0%); border-radius:inherit;
   background:linear-gradient(90deg,var(--dash-teal),var(--dash-accent));

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import AppPagination from '../components/AppPagination.vue'
+import FacilityConfiguration from '../components/FacilityConfiguration.vue'
+import NotificationDetailView from '../components/NotificationDetailView.vue'
 import { matchesKoreanSearch } from '../utils/korean-search'
 import TunnelCctvDialog from '../components/TunnelCctvDialog.vue'
 import RemainingVehicleTransfer from '../components/RemainingVehicleTransfer.vue'
@@ -154,6 +157,7 @@ async function markManagerNotificationRead(row: Record<string, any>) {
   finally { saving.value = false }
 }
 function managerNotificationTarget(row:Record<string,any>) {
+  if (appPage.value) return { path: route.path, query: { ...route.query, notification: String(row.id) } }
   return notificationTarget({id:Number(row.id),refType:row.refType,refId:row.refId,regionId:row.regionId},true,route.path,route.path)
 }
 async function openManagerNotification(event:MouseEvent,row:Record<string,any>) {
@@ -382,6 +386,11 @@ function path(template: string, row = selected.value) {
 const missingParent = computed(() =>
   resource.value?.parents?.some((field) => field.required && !parents[field.key]),
 )
+const recordFacilityRegions = reactive<Record<string, string>>({})
+function syncRecordRegion() {
+  if (['ocr', 'reviews', 'transits'].includes(resourceId.value) && filters.underpassId)
+    filters.regionId = recordFacilityRegions[String(filters.underpassId)] || ''
+}
 async function lookup(fields: Field[], row?: Record<string, any>) {
   const scope = resourceId.value
   const lookupRoute = resourceRouteKey()
@@ -391,7 +400,7 @@ async function lookup(fields: Field[], row?: Record<string, any>) {
     if (!field.source) continue
     let url =
       field.source === 'underpasses'
-        ? '/api/underpasses?size=500' + (underpassSplit.value || myTransfers || myRecords ? '&scope=MINE&sort=NAME' : '')
+        ? '/api/underpasses?size=500' + (underpassSplit.value || app.account?.role === 'REGIONAL_ADMIN' ? '&scope=MINE&sort=NAME' : '')
         : field.source === 'regions'
           ? '/api/regions'
           : field.source === 'shifts'
@@ -414,13 +423,24 @@ async function lookup(fields: Field[], row?: Record<string, any>) {
       // 관리자 시설 목록의 지역 필터는 담당 지역만 (목록 자체가 scope=MINE 이라 다른 지역은 0건)
       const mine =
         field.source === 'regions' &&
-        (facilityList.value || appFacilityList.value) &&
+        (facilityList.value || appFacilityList.value || myRecords) &&
         resource.value.filters?.includes(field) &&
         app.account?.role === 'REGIONAL_ADMIN'
           ? new Set((app.account.regions || []).map((region) => String(region.id)))
           : undefined
       if (alive && scope === resourceId.value && lookupRoute === resourceRouteKey() && (!row || selected.value?.id === row.id)) {
-        choices[field.key] = asPage<any>(result).items.filter((item) => !mine || mine.has(String(item.id))).map((item) => ({
+        const items = asPage<any>(result).items.filter((item) =>
+          (!mine || mine.has(String(item.id))) &&
+          !(app.account?.role === 'REGIONAL_ADMIN' && field.source === 'underpasses' && !ownsFacility(item)))
+        if (myRecords && field.source === 'underpasses' && !row) {
+          for (const key of Object.keys(recordFacilityRegions)) delete recordFacilityRegions[key]
+          for (const item of items) {
+            const region = item.assignedRegionId ?? item.regionId ?? item.region?.id
+            if (region != null) recordFacilityRegions[String(item.id)] = String(region)
+          }
+          syncRecordRegion()
+        }
+        choices[field.key] = items.map((item) => ({
           value: String(item.id),
           label:
             field.source === 'vms'
@@ -442,9 +462,7 @@ async function lookup(fields: Field[], row?: Record<string, any>) {
 async function load() {
   if (props.operationsOnly) return
   if (!resource.value || missingParent.value) return
-  // 특정 시설 조회와 기본 담당 지역이 충돌하지 않도록 시설을 우선한다.
-  if (['ocr', 'reviews', 'transits'].includes(resourceId.value) && filters.underpassId)
-    filters.regionId = ''
+  syncRecordRegion()
   abort?.abort()
   abort = new AbortController()
   const seq = ++request
@@ -742,7 +760,7 @@ function recordFilterChanged(event: Event) {
   if (['ocr', 'reviews', 'transits'].includes(resourceId.value)) {
     const label = (event.target as HTMLElement).getAttribute('aria-label')
     if (label === '담당 지역') filters.underpassId = ''
-    if (label === '지하차도') filters.regionId = ''
+    if (label === '지하차도') syncRecordRegion()
   }
   if (customer.value) search()
 }
@@ -772,7 +790,7 @@ async function openLinkedOcrRecord(id: string) {
     }
     if (record.underpassId != null && String(filters.underpassId) !== String(record.underpassId)) {
       filters.underpassId = String(record.underpassId)
-      filters.regionId = ''
+      syncRecordRegion()
       page.value = 1
       await load()
       if (!alive || error.value || String(route.query.id) !== id) return
@@ -850,7 +868,7 @@ watch(
     abort?.abort()
     request++
     modal.value?.close()
-    for (const obj of [filters, parents, choices])
+    for (const obj of [filters, parents, choices, recordFacilityRegions])
       Object.keys(obj).forEach((key) => delete obj[key])
     facilitySearchRows.value=[]; facilitySearchOpen.value=false; facilitySearchIndex.value=-1
     page.value = 1
@@ -1050,8 +1068,9 @@ defineExpose({ open, load })
 </script>
 <template>
   <component :is="customer||props.embedded?'div':BackendLayout">
+    <NotificationDetailView v-if="managerNotificationList&&route.query.notification" manager />
     <section
-      v-if="resource"
+      v-else-if="resource"
       class="service-workspace"
       :class="{'restored-admin-workspace':restored,'resource-operations-only':props.operationsOnly,'underpass-workspace':underpassSplit}"
     >
@@ -1062,13 +1081,13 @@ defineExpose({ open, load })
       >← 알림 발송 기록으로 돌아가기</RouterLink>
       <!-- 제목과 같은 글자를 위에 한 번 더 쓰지 않는다 (고객 서비스 묶음 이름만 표시) -->
       
-      <div class="service-heading page-head" :class="{'app-resource-heading':appPage&&!props.embedded}">
+      <div class="service-heading page-head" :class="{'app-resource-heading':appPage&&!props.embedded,'review-page-heading':resourceId==='reviews','record-page-heading':!appPage&&!props.embedded&&['ocr','reviews','transits'].includes(resourceId)}">
         <component :is="props.embedded?'h2':'h1'">{{pageTitle}}</component>
-        <nav v-if="underpassSplit&&!appPage&&!props.embedded&&relatedIds.length>1" class="service-tabs tabs split-heading-tabs" aria-label="업무 구분">
-          <RouterLink v-for="id in relatedIds" :key="id" :to="resourceLink(id)" :aria-current="resourceId===id?'page':undefined">{{backendResources[id]?.title}}</RouterLink>
-        </nav>
         <div class="service-actions">
           <RouterLink v-if="resourceId==='ocr'&&!appPage" class="btn" :to="resourceLink('reviews')">번호판 판별 대기</RouterLink>
+          <nav v-if="!customer&&!appPage&&!props.embedded&&shortcuts.length" class="heading-navigation" aria-label="관련 업무 바로가기">
+            <RouterLink v-for="link in shortcuts" :key="link.id" class="btn" :to="resourceLink(link.id)">{{adminResourceTitles[link.id]||link.label}}</RouterLink>
+          </nav>
           <span v-if="underpassSplit&&!vmsSplit&&parents.underpassId&&!loading" class="split-result-count" role="status">총 {{data.totalItems}}건</span>
           <button
             v-if="resourceId==='manager-notifications'"
@@ -1076,12 +1095,15 @@ defineExpose({ open, load })
             :disabled="saving"
             @click="readAllManagerNotifications"
           >모두 읽음</button>
-          <button v-if="!vmsSplit&&!appPage" type="button" :disabled="loading||missingParent" @click="load">새로고침</button>
+          <button v-if="!vmsSplit&&!appPage" class="resource-refresh" type="button" :disabled="loading||missingParent" @click="load">새로고침</button>
           <button v-if="resource.create&&canWrite&&!vmsSplit" type="button" @click="open('create')">
             {{resourceId==='cars'?'차량 등록':resourceId==='my-inquiries'?'문의 등록':facilityList?'+ 지하차도 등록':'새로 등록'}}
           </button>
         </div>
       </div>
+      <nav v-if="!customer&&!appPage&&!props.embedded&&relatedIds.length>1" class="service-tabs tabs page-selection-tabs" aria-label="업무 구분">
+        <RouterLink v-for="id in relatedIds" :key="id" class="btn" :to="resourceLink(id)" :aria-current="resourceId===id?'page':undefined">{{backendResources[id]?.title}}</RouterLink>
+      </nav>
       <nav v-if="publicNotices" class="notice-category-tabs" aria-label="공지사항 분류">
         <button
           v-for="[label,value] in [['전체',''],['중요','true'],['일반','false']]"
@@ -1092,20 +1114,6 @@ defineExpose({ open, load })
         >
           {{label}}
         </button>
-      </nav>
-      <nav
-        v-if="!underpassSplit&&!customer&&!route.path.startsWith('/admin-app/')&&!props.embedded&&relatedIds.length>1"
-        class="service-tabs tabs"
-        aria-label="업무 구분"
-      >
-        <RouterLink
-          v-for="id in relatedIds"
-          :key="id"
-          :to="resourceLink(id)"
-          :aria-current="resourceId===id?'page':undefined"
-        >
-          {{backendResources[id]?.title}}
-        </RouterLink>
       </nav>
       <nav v-if="restored&&resourceId==='reviews'" class="tabs review-tabs" aria-label="판별 구분">
         <button
@@ -1202,19 +1210,11 @@ defineExpose({ open, load })
           {{resourceId==='my-inquiries'?'검색':'조회'}}
         </button>
       </form>
-      <nav
-        v-if="!customer&&!route.path.startsWith('/admin-app/')&&!props.embedded&&shortcuts.length"
-        class="resource-shortcuts"
-        aria-label="관련 업무 바로가기"
-      >
-        <RouterLink v-for="link in shortcuts" :key="link.id" :to="resourceLink(link.id)">
-          {{adminResourceTitles[link.id]||link.label}} →</RouterLink>
-      </nav>
       <p v-if="error" class="service-error" role="alert">
         {{error}} <RouterLink v-if="!app.account" :to="customer?'/login':'/admin-login'">로그인</RouterLink>
       </p>
       <p v-if="message" class="service-message" role="status">{{message}} <RouterLink v-if="resourceId==='facilities'&&selected?.id&&mode==='action'&&/\/(block|release)$/.test(action?.path||'')" :to="{path:'/admin-data/transfers',query:{underpassId:String(selected.id)}}">경찰·소방 문서 보기 →</RouterLink></p>
-      <p v-if="underpassSplit&&!parents.underpassId">왼쪽 목록에서 지하차도를 누르면 {{splitTargets[resourceId]}} 화면이 나옵니다.</p>
+      <div v-if="underpassSplit&&!parents.underpassId" class="configuration-pick-facility"><span aria-hidden="true"><UiIcon name="location" /></span><h2>관리할 지하차도를 선택하세요</h2><p>왼쪽 내 지하차도 목록에서 시설을 선택하면<br />해당 시설의 {{splitTargets[resourceId]}} 등록 현황과 설정을 확인할 수 있습니다.</p></div>
       <UnderpassVmsPanel
         v-else-if="vmsSplit"
         :key="String(parents.underpassId)"
@@ -1227,11 +1227,12 @@ defineExpose({ open, load })
       <template v-else>
         <p v-if="!underpassSplit" class="service-result-count" role="status">총 {{data.totalItems}}건</p>
         <AdminAppFacilityRows v-if="appFacilityList" :items="facilityRows" />
+        <FacilityConfiguration v-else-if="underpassSplit&&(resourceId==='thresholds'||resourceId==='cameras')" :kind="resourceId as 'thresholds'|'cameras'" :facility-id="String(parents.underpassId)" :facility-name="splitUnderpassName" :rows="data.items" :total="data.totalItems" :can-write="!!canWrite" @action="(kind,row)=>open(kind,row)" />
         <ul v-else-if="managerNotificationList" class="manager-notification-cards" aria-label="관리자 알림 목록">
           <li v-for="row in data.items" :key="row.id" :class="{'is-unread':!row.read}">
-            <div class="manager-notification-meta"><span class="manager-notification-category">{{valueLabels[row.category]||'알림'}}</span><span v-if="!row.read" class="manager-notification-unread">● 안 읽음</span><time>{{display(row.createdAt)}}</time></div>
+            <div class="manager-notification-meta"><span class="manager-notification-category">{{valueLabels[row.category]||'알림'}}</span><span v-if="!appPage&&!row.read" class="manager-notification-unread">● 안 읽음</span><time>{{display(row.createdAt)}}</time></div>
             <RouterLink :to="managerNotificationTarget(row)" custom v-slot="{href}"><a :href="href" class="manager-notification-content" @click="openManagerNotification($event,row)"><h2>{{row.title}}</h2><p>{{row.body}}</p></a></RouterLink>
-            <button v-if="!row.read" type="button" :disabled="saving" @click="markManagerNotificationRead(row)">읽음 처리</button><small v-else class="manager-notification-read">✓ 읽음</small>
+            <template v-if="!appPage"><button v-if="!row.read" type="button" :disabled="saving" @click="markManagerNotificationRead(row)">읽음 처리</button><small v-else class="manager-notification-read">✓ 읽음</small></template>
           </li>
           <li v-if="!data.items.length" class="manager-notification-empty">표시할 알림이 없습니다.</li>
         </ul>
@@ -1356,7 +1357,8 @@ defineExpose({ open, load })
           </table>
         </div>
         <!-- 지하차도별 화면은 한 페이지가 대부분이라, 표 아래 끝을 왼쪽 목록 끝과 맞추려고 한 페이지면 숨긴다 -->
-        <div v-if="!underpassSplit||data.totalPages>1" class="service-pagination">
+        <AppPagination v-if="appPage" :page="page" :pages="data.totalPages" :disabled="loading" @change="navigatePage" />
+        <div v-else-if="!underpassSplit||data.totalPages>1" class="service-pagination">
           <button :disabled="page<=1" @click="navigatePage(page-1)">이전</button>
           <span>{{page}} / {{Math.max(1,data.totalPages)}} 페이지</span>
           <button :disabled="page>=data.totalPages" @click="navigatePage(page+1)">다음</button>
@@ -1449,7 +1451,7 @@ defineExpose({ open, load })
             </template>
           </dl>
           <div v-if="mode==='detail'&&facilityList" class="facility-drawer-quick">
-            <TunnelCctvDialog :facility-name="detail.name" />
+            <TunnelCctvDialog :facility-name="detail.name" :underpass-id="detail.id" />
             <RouterLink :to="{path:route.path.startsWith('/admin-app/')?'/admin-app/screen-5':'/fac-detail',query:{id:String(detail.id),underpassId:String(detail.id),tab:'cctv'}}">시설 CCTV 보기</RouterLink>
           </div>
           <component :is="facilityList?'details':'div'" v-if="mode==='detail'&&canWrite" :class="facilityList?'facility-drawer-more':'resource-body'">

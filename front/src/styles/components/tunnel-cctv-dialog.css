@@ -41,3 +41,17 @@
   .tunnel-cctv-modal>header { gap: 12px; }
   .tunnel-cctv-modal>footer>div>* { flex: 1 1 auto; }
 }
+@media (min-width:901px) {
+  :global(:root dialog.tunnel-cctv-modal:not(.tunnel-cctv-modal--app)) {
+    width:min(1000px,calc(100vw - 80px));
+    max-width:calc(100vw - 80px);
+    padding:28px;
+  }
+  .tunnel-cctv-modal:not(.tunnel-cctv-modal--app) .tunnel-cctv-player :deep(video),
+  .tunnel-cctv-modal:not(.tunnel-cctv-modal--app) .tunnel-cctv-player>img {
+    width:100%;
+    max-height:60dvh;
+    aspect-ratio:16 / 9;
+    object-fit:contain;
+  }
+}

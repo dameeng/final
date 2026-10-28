@@ -23,10 +23,14 @@ import PmEquipmentDetailLive from './pages/pm-equipment-detail-live.vue'
 import PmQueueLive from './pages/pm-queue-live.vue'
 import PmHistoryLive from './pages/pm-history-live.vue'
 import PmInspection from './pages/pm-inspection.vue'
+import PmSettings from './pages/pm-settings-live.vue'
+import PmDaily from './pages/pm-daily-live.vue'
 import ServiceResource from './pages/backend-resource.vue'
 import LiveMap from './pages/c-live-map.vue'
 import { resourceRoutes } from './data/backendResources'
 import AdminHandover from './components/AdminHandover.vue'
+import ManagerUrgentAlert from './components/ManagerUrgentAlert.vue'
+import DevicePushBridge from './components/DevicePushBridge.vue'
 import CustomerHeader from './components/CustomerHeader.vue'
 import CustomerArrivalAlert from './components/CustomerArrivalAlert.vue'
 import CustomerFooter from './components/CustomerFooter.vue'
@@ -101,6 +105,8 @@ const serviceComponent = computed(() => {
   if (['/pm-queue', '/admin-app/screen-11'].includes(path)) return PmQueueLive
   if (['/pm-history', '/admin-app/history'].includes(path)) return PmHistoryLive
   if (['/pm-inspection', '/admin-app/inspection'].includes(path)) return PmInspection
+  if (['/pm-settings', '/admin-app/pm-settings'].includes(path)) return PmSettings
+  if (['/pm-daily', '/admin-app/pm-daily'].includes(path)) return PmDaily
   // screen-6(통제)·7(통제 중)·8(해제)은 시설 0번 고정 목업이었다. 실제 통제·해제 API를 쓰는 시설 화면으로 보낸다
   if (['/admin-app/screen-5', '/admin-app/screen-6', '/admin-app/screen-7', '/admin-app/screen-8'].includes(path))
     return AdminAppFacilityLive
@@ -151,8 +157,10 @@ function unmounted(vnode: VNode) {
     <AdminAppHeader v-if="managerApp&&route.path!=='/admin-app/menu'" />
     <PwaStatus :hide-install="managerApp" v-if="/^\/(admin|customer)-app\//.test(route.path)" />
     <AdminHandover v-if="app.account?.role==='REGIONAL_ADMIN'" />
+    <ManagerUrgentAlert v-if="app.account?.role==='REGIONAL_ADMIN'" />
     <CustomerHeader v-if="customer" />
     <CustomerArrivalAlert />
+    <DevicePushBridge />
     <RouterView v-slot="{Component}">
       <CustomerPageLayout v-if="customer">
         <MyPageLayout v-if="route.path.startsWith('/my-')">
