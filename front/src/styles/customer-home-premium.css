@@ -262,6 +262,23 @@ html:has(.home-premium) {
 }
 #app .home-premium .home-roadmap>li::before,
 #app .home-roadmap-top { display:none; }
+#app .home-premium .home-vision .home-section-heading { align-items:center; gap:32px; margin-bottom:32px; }
+#app .home-premium .home-roadmap { padding-top:8px; }
+#app .home-premium .home-roadmap>li { position:relative; padding:26px 16px 16px 0; }
+#app .home-premium .home-roadmap>li::before {
+  content:''; display:block; position:absolute; left:0; top:0; width:9px; height:9px;
+  border:2px solid var(--r-accent); border-radius:50%; background:var(--r-canvas); box-sizing:border-box; z-index:1;
+}
+#app .home-premium .home-roadmap>li::after {
+  content:''; position:absolute; left:9px; right:-24px; top:4px; height:1px; background:var(--r-line);
+}
+#app .home-premium .home-roadmap>li:last-child::after { right:0; }
+#app .home-premium .home-roadmap>li:first-child::before { background:var(--r-accent); box-shadow:0 0 0 5px color-mix(in srgb,var(--r-accent) 8%,transparent); }
+#app .home-premium .home-roadmap-top { display:flex; align-items:center; margin-bottom:10px; }
+#app .home-premium .home-roadmap-step { font-size:10px; letter-spacing:.08em; font-weight:500; color:var(--r-muted); }
+#app .home-premium .home-roadmap-arrow { display:none; }
+#app .home-premium .home-roadmap h3 { margin-top:10px; font-size:15px; }
+#app .home-premium .home-roadmap p { max-width:29ch; font-size:13px; line-height:1.85; }
 #app .home-premium .home-roadmap-year {
   font-size:22px;
   font-weight:500;
@@ -292,6 +309,52 @@ html:has(.home-premium) {
 }
 @media (max-width:700px) {
   #app .home-premium .home-roadmap { grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px 16px; }
+  #app .home-premium .home-roadmap>li { padding-right:0; }
+  #app .home-premium .home-roadmap>li::after { right:-16px; }
+  #app .home-premium .home-roadmap>li:nth-child(even)::after { right:0; }
+  #app .home-premium .home-vision { padding-block:28px; }
+  #app .home-premium .home-vision .home-section-heading { align-items:flex-start; gap:16px; margin-bottom:24px; }
+  #app .home-premium .home-roadmap>li { padding-top:20px; padding-bottom:8px; }
+  #app .home-premium .home-roadmap p { font-size:12px; line-height:1.7; }
   #app .home-premium .home-closing { align-items:flex-start; }
   #app .home-closing-break { display:none; }
+}
+
+/* Stagger the brand message and illustration instead of centering them on one row. */
+@media(min-width:701px) {
+  #app .home-premium .home-brand { align-items:start; align-content:center; }
+  #app .home-premium .home-brand-copy { align-self:start; padding-top:0; }
+  #app .home-premium .home-brand-art { align-self:start; margin-top:120px; }
+}
+/* A light travels through the four milestones in order. */
+#app .home-premium .home-roadmap>li::before {
+  background:var(--r-canvas); box-shadow:none;
+  animation:home-milestone-light 12s ease-in-out infinite;
+  animation-delay:calc(var(--roadmap-index,0) * 3s);
+}
+#app .home-premium .home-roadmap>li:not(:last-child)::after {
+  background-color:var(--r-line);
+  background-image:linear-gradient(90deg,transparent,var(--r-accent),transparent);
+  background-repeat:no-repeat;
+  background-size:32% 100%; background-position:-50% 0;
+  animation:home-milestone-travel 12s linear infinite;
+  animation-delay:calc(var(--roadmap-index,0) * 3s);
+}
+@keyframes home-milestone-light {
+  0%,14% { background:var(--r-accent); box-shadow:0 0 0 5px color-mix(in srgb,var(--r-accent) 12%,transparent),0 0 12px color-mix(in srgb,var(--r-accent) 28%,transparent); }
+  24%,100% { background:var(--r-canvas); box-shadow:none; }
+}
+@keyframes home-milestone-travel {
+  0%,6% { background-position:-50% 0; opacity:1; }
+  25% { background-position:150% 0; opacity:1; }
+  26%,100% { background-position:150% 0; }
+}
+@media(max-width:700px) {
+  #app .home-premium .home-roadmap>li:nth-child(2)::after { animation:none; background-image:none; }
+}
+@media(prefers-reduced-motion:reduce) {
+  #app .home-premium .home-roadmap>li::before,
+  #app .home-premium .home-roadmap>li:not(:last-child)::after { animation:none; }
+  #app .home-premium .home-roadmap>li:not(:last-child)::after { background-image:none; }
+  #app .home-premium .home-roadmap>li:first-child::before { background:var(--r-accent); }
 }

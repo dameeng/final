@@ -132,6 +132,16 @@ try {
  for(const path of ['/pm-settings','/pm-daily']) {
   await page.goto(base+path)
   await expect(page.locator('.pm-admin-tools')).toBeVisible()
+  if(path==='/pm-settings') {
+   await expect(page.locator('.pm-settings-table')).toBeVisible()
+   await expect(page.locator('.pm-settings-list')).toHaveCount(0)
+  } else {
+   await expect(page.locator('.daily-web-section table')).toHaveCount(6)
+   await expect(page.locator('.daily-section')).toHaveCount(0)
+   const groups=await page.locator('.daily-web-grid').evaluate(el=>({width:el.getBoundingClientRect().width,boxes:[...el.children].map(child=>{const r=child.getBoundingClientRect();return {left:r.left,top:r.top,bottom:r.bottom,width:r.width}})}))
+   assert(groups.boxes.every(box=>Math.abs(box.width-groups.width)<1),'Daily report tables use full width')
+   assert(groups.boxes.every((box,i)=>i===0||Math.abs(box.top-groups.boxes[i-1].bottom-24)<1),'Report sections have consistent 24px spacing')
+  }
   const size=await page.locator('.pm-admin-tools').evaluate(el=>{
    const box=el.getBoundingClientRect(),heading=el.querySelector('.service-heading').getBoundingClientRect(),button=el.querySelector('.service-actions button').getBoundingClientRect()
    return {x:box.x,width:box.width,titleTop:heading.top,buttonRight:button.right,buttonHeight:button.height}

@@ -18,7 +18,7 @@ try {
       const count = url.searchParams.get('type') === 'PUMP' ? 0 : url.searchParams.get('type') === 'CCTV' ? 1 : 10
       data = { items: Array.from({ length: count }, (_, i) => ({
         equipId: i + 1, eventId: i + 1, actionId: i + 1, name: 'C-' + (i + 1), type: 'CCTV',
-        underpassName: '초량지하차도', score: 82, level: 'DANGER', eventLevel: 'DANGER',
+        underpassName: '초량지하차도', score: 82, currentScore:34, level: 'DANGER', eventLevel: 'DANGER',
         scoreBefore: 82, scoreAfter: 40, scoreChange7d: 3, lastReceivedAt: '2026-10-27T12:38:00',
         createdAt: '2026-10-27T12:38:00', reasons: ['패킷 손실률이 평소보다 높아요'],
         content: '긴 점검 기록 '.repeat(100), managerName: '관리자', sparkline: [30, 40, 82],
@@ -83,6 +83,8 @@ try {
         await expect(page.locator('.pm-filters .tabs')).not.toContainText('확인 필요')
         await expect(page.locator('.pm-filters .tabs')).not.toContainText('점검 중')
         await expect(page.locator('.pm-equipment-card').first().locator('.pm-inspection-state')).toHaveText('확인 필요')
+        await expect(page.locator('.pm-equipment-card').first().locator('.pm-equipment-card-score')).toContainText('34.0')
+        await expect(page.locator('.pm-equipment-card').first().locator('.pm-equipment-card-score')).toHaveAttribute('aria-label','현재 위험 점수 34.0점')
         await expect(page.locator('.pm-results-viewport button')).toHaveCount(0)
       }
       const overlapping = await page.locator('.pm-equipment-cards').evaluate(list => {

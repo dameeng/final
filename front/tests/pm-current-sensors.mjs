@@ -22,7 +22,7 @@ try {
     else if (path === '/api/customers/me') data = null
     else if (path === '/api/pm/equipments/15') data = {
       equipment, currentSensors: { recordedAt: missing ? null : '2026-10-28T12:10:00', values: missing ? {} : Object.fromEntries(columns[type].map((key, i) => [key, i === 1 ? 0 : i === 2 ? null : value])) },
-      detail: { features: [], extra: type === 'PUMP' ? { sensors: [{ '항목': 'vibration', '센서': '진동', '현재': 999, '평소': 10, '상태': '정상' }] } : {} },
+      detail: { features: type==='WATER_LEVEL'&&!missing?[{key:'water_change',label:'수위 변화',value:3,unit:'배',normal:{median:1,low:0,high:2},contribution:100,direction:'up'}]:[], extra: type !== 'WATER_LEVEL' ? { sensors: columns[type].map((key,i)=>({ '항목': key, '센서': key, '현재': i===0?999:i===1?0:null, '평소': 10, '벗어난정도':0, '상태': i===0?'평소와 달라요':'정상' })) } : {} },
       cautionMin: 40, dangerMin: 70, topCauses: [], recentActions: [], scoredAt: '2026-10-27T12:00:00',
     }
     else if (path === '/api/pm/equipments') data = { ...data, items: [equipment] }
@@ -49,7 +49,17 @@ try {
       if (columns[type].length > 1) await expect(sensors.locator('strong').nth(1)).toHaveText('0')
       if (columns[type].length > 2) await expect(sensors.locator('.pm-current-sensor').nth(2)).toContainText('미수신')
       assert(await sensors.evaluate(el => el.scrollWidth <= el.clientWidth + 1), `${type} sensor card fits at ${width}px`)
-      if (type==='PUMP' && width<1440) {
+      if (type!=='WATER_LEVEL') {
+        await expect(page.locator('.pm-sensor-table-card tbody tr')).toHaveCount(columns[type].length)
+        await expect(page.locator('.pm-sensor-table-card')).toContainText('평소와 달라요')
+        if(type==='DISPLAY') await expect(page.locator('.pm-sensor-table-card')).toContainText('최근 24시간 평균')
+      } else {
+        await expect(page.locator('.pm-sensor-table-card')).toContainText('최근 분석 지표 비교')
+        await expect(page.locator('.pm-sensor-table-card')).toContainText('평소 범위 벗어남')
+        await expect(page.locator('.pm-sensor-table-card tbody tr')).toHaveCount(1)
+        await expect(page.locator('.pm-sensor-table-card')).toContainText('3배')
+      }
+      if (type!=='WATER_LEVEL' && width<1440) {
         const comparison=page.locator('.pm-sensor-table-card tbody tr').first()
         assert(await comparison.evaluate(el=>el.getBoundingClientRect().height<115),'Analysis comparison uses a compact two-row box')
         assert(await comparison.evaluate(el=>el.scrollWidth<=el.clientWidth+1),'Analysis values fit compact box')
@@ -64,6 +74,7 @@ try {
   await page.reload()
   await expect(page.locator('.pm-current-sensors')).toContainText('아직 수신된 센서 측정값이 없습니다.')
   await expect(page.locator('.pm-current-sensor strong').first()).toHaveText('—')
+  await expect(page.locator('.pm-sensor-table-card')).toContainText('아직 비교할 분석 지표가 없습니다.')
   assert.deepEqual(errors, [])
   console.log('PASS four equipment types, latest raw vs old model values, units, null/zero/no-score/no-data, realtime refresh and 320/390px app + web layout')
 } finally { await browser.close(); await server.close() }

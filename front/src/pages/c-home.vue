@@ -80,7 +80,7 @@ const visionRoadmap = [
 
     <section class="home-vision" aria-labelledby="home-vision-title">
       <header class="home-section-heading"><div><span class="home-section-index">02 / 앞으로의 여정</span><h2 id="home-vision-title">더 촘촘하게 연결될<br />내일의 도로 안전.</h2></div><p>정보의 기반에서 더 넓은 연결까지.<br />ROUTEL이 차근차근 만들어갈 변화입니다.</p></header>
-      <ol class="home-roadmap" aria-label="연도별 추진 목표"><li v-for="(goal,index) in visionRoadmap" :key="goal.year"><div class="home-roadmap-top"><span class="home-roadmap-step">STEP {{String(index+1).padStart(2,'0')}}</span><span class="home-roadmap-arrow" aria-hidden="true">{{index===visionRoadmap.length-1?'↗':'→'}}</span></div><span class="home-roadmap-year">{{goal.year}}</span><h3>{{goal.title}}</h3><p>{{goal.description}}</p></li></ol>
+      <ol class="home-roadmap" aria-label="연도별 추진 목표"><li v-for="(goal,index) in visionRoadmap" :key="goal.year" :style="{'--roadmap-index':index}"><div class="home-roadmap-top"><span class="home-roadmap-step">STEP {{String(index+1).padStart(2,'0')}}</span><span class="home-roadmap-arrow" aria-hidden="true">{{index===visionRoadmap.length-1?'↗':'→'}}</span></div><span class="home-roadmap-year">{{goal.year}}</span><h3>{{goal.title}}</h3><p>{{goal.description}}</p></li></ol>
     </section>
     <section class="home-closing"><div><span class="home-closing-eyebrow">안전한 이동의 시작</span><h2>출발하기 전,<br class="home-closing-break" /> 한 번 더 확인하세요.</h2><p>지금 지날 지하차도의 통제 현황을 확인해 보세요.</p></div><RouterLink id="home-underpass-cta" class="btn primary home-button home-button-primary" to="/info/underpasses">지하차도 현황 확인 <span aria-hidden="true">↗</span></RouterLink></section>
   </main>
