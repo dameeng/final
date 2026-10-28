@@ -16,6 +16,11 @@ function ingest(row: CustomerNotification) {
   if (app.account?.role !== 'REGIONAL_ADMIN' || row.urgent !== true || row.read || seen.has(row.id)) return
   seen.add(row.id); queue.value.push(row)
 }
+// 다른 탭·기기에서 이미 읽은 긴급 알림은 대기열에서 빼고, 열려 있던 팝업도 닫는다.
+function dismissRead(data: Record<string, any>) {
+  queue.value = queue.value.filter((item) =>
+    data.all ? Boolean(data.category) && item.category !== data.category : item.id !== data.id)
+}
 async function refresh() {
   if (app.account?.role !== 'REGIONAL_ADMIN') return
   request?.abort(); const controller = new AbortController(); request = controller
@@ -49,6 +54,7 @@ watch(() => [app.account?.id, app.account?.role], () => {
 useBackendEvents(({ name, data }) => {
   if (name === 'connected') void refresh()
   if (name === 'notification-new') ingest(data as CustomerNotification)
+  if (name === 'notification-read-change') dismissRead(data)
 })
 onBeforeUnmount(() => { generation++; request?.abort(); dialog.value?.close() })
 </script>

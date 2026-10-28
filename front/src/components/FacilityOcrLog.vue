@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AppPagination from './AppPagination.vue'
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { asPage, backend, queryString } from '../services/backend'
 import { useBackendEvents } from '../composables/useBackendEvents'
 import { displayDate } from '../utils/display-date'
@@ -13,7 +13,7 @@ const page=ref(1), pages=ref(1), list=ref<HTMLOListElement>()
 const pageSize=computed(()=>props.app?20:10)
 async function changePage(value:number){page.value=value;await load();await nextTick();if(list.value)list.value.scrollTop=0}
 const isNewRecord=useNewItemGlow(()=>rows.value,record=>String(record.id),()=>ready.value)
-let controller:AbortController|undefined, refreshTimer:ReturnType<typeof setTimeout>|undefined, poll:ReturnType<typeof setInterval>|undefined
+let controller:AbortController|undefined, refreshTimer:ReturnType<typeof setTimeout>|undefined
 async function load(clear=false){
   controller?.abort()
   const request=new AbortController();controller=request
@@ -39,8 +39,9 @@ useBackendEvents(({name,data})=>{
     clearTimeout(refreshTimer);refreshTimer=setTimeout(()=>void load(),200)
   }
 })
-onMounted(()=>{poll=setInterval(()=>{if(!document.hidden&&!loading.value)void load()},10000)})
-onBeforeUnmount(()=>{controller?.abort();clearTimeout(refreshTimer);clearInterval(poll)})
+// 10초 폴링은 없앴다. 새 인식 로그는 data-changed(plate-log) / plate-queue-* / transit-update 로 받고,
+// SSE 가 끊겼다 다시 붙으면 connected 에서 한 번 다시 조회한다.
+onBeforeUnmount(()=>{controller?.abort();clearTimeout(refreshTimer)})
 </script>
 <template>
   <aside class="facility-ocr-log" aria-label="OCR 인식 로그">

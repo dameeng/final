@@ -7,7 +7,8 @@ const appPath = (path: string) => managerAppPath(path, route.path)
 //  GET /api/pm/equipments        설비 목록 (점수 높은 순, 담당 지역만)
 //  GET /api/pm/engine-status     예지보전 서버가 점수를 잘 보내는지
 //  GET /api/pm/events            점검 대기 건수
-// SSE pm-update / data-changed(pm-equipment·pm-event·pm-action·pm-threshold) 가 오면 다시 조회한다.
+// SSE pm-update / sinkhole-update / pm-engine-status / data-changed(pm-equipment·pm-event·pm-action·pm-threshold) 가 오면
+// 바뀐 부분만 다시 조회한다. 필터·페이지를 바꿀 때는 목록 1번만 조회한다.
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import BackendLayout from '../components/BackendLayout.vue'
@@ -18,7 +19,7 @@ import PmActionModal from '../components/PmActionModal.vue'
 import { backend, queryString, type PageData } from '../services/backend'
 import { useBackendEvents } from '../composables/useBackendEvents'
 import { displayDate } from '../utils/display-date'
-import { PM_TYPES, PM_LEVELS, PM_EVENT_STATUS, PM_ENGINE, pmLabel, isPmChange } from '../utils/pm-labels'
+import { PM_TYPES, PM_LEVELS, PM_EVENT_STATUS, PM_ENGINE, pmLabel } from '../utils/pm-labels'
 
 type Equipment = {
   roadStatus?: string | null
@@ -36,7 +37,7 @@ type Equipment = {
   openEventStatus: string | null
   sparkline: number[]
 }
-type Engine = { status: string; lastReceivedAt: string | null; equipmentTotal: number; sensorStale: number }
+type Engine = { status: string; lastReceivedAt: string | null; equipmentTotal: number; sensorStale: number; openNoDataEvents?: number }
 
 const route = useRoute()
 const PAGE_SIZE = useRoute().path.startsWith('/admin-app/') ? 5 : 10
@@ -64,40 +65,21 @@ const engineLabel = computed(() => PM_ENGINE[engine.value?.status || ''] || ['�
 const levelTabs = [['', '전체'], ['DANGER', '위험'], ['CAUTION', '주의'], ['SAFE', '안전']] as const
 const typeTabs = [['', '전체 종류'], ...Object.entries(PM_TYPES)] as const
 
-async function load() {
+// 목록(필터·페이지에 따라 달라짐)과 위쪽 집계(필터와 무관)를 따로 불러온다.
+let alive = true
+async function loadList() {
   controller?.abort()
   const current = new AbortController()
   controller = current
   loading.value = true
   error.value = ''
-  const get = <T,>(path: string) => backend<T>(path, { signal: current.signal })
   try {
-    const [rows, ...rest] = await Promise.allSettled([
-      get<PageData<Equipment>>(
-        '/api/pm/equipments' +
-          queryString({ level: level.value, type: type.value, page: page.value, size: PAGE_SIZE }),
-      ),
-      ...['DANGER', 'CAUTION', 'SAFE'].map((lv) =>
-        get<PageData<Equipment>>('/api/pm/equipments' + queryString({ level: lv, size: 1 })),
-      ),
-      get<PageData<unknown>>('/api/pm/events?size=1'),
-      get<Engine>('/api/pm/engine-status'),
-      get<PageData<Equipment>>('/api/pm/equipments?size=1'),
-    ])
-    if (current.signal.aborted) return
-    if (rows.status === 'rejected') throw rows.reason
-    list.value = rows.value
-    const next: Record<string, number> = {}
-    ;['DANGER', 'CAUTION', 'SAFE'].forEach((lv, i) => {
-      const r = rest[i]
-      if (r?.status === 'fulfilled') next[lv] = (r.value as PageData<unknown>).totalItems
-    })
-    counts.value = next
-    const ev = rest[3], en = rest[4]
-    openEvents.value = ev?.status === 'fulfilled' ? (ev.value as PageData<unknown>).totalItems : null
-    if (en?.status === 'fulfilled') engine.value = en.value as Engine
-    const total=rest[5]
-    equipmentTotal.value=total?.status==='fulfilled'?(total.value as PageData<Equipment>).totalItems:null
+    const rows = await backend<PageData<Equipment>>(
+      '/api/pm/equipments' +
+        queryString({ level: level.value, type: type.value, page: page.value, size: PAGE_SIZE }),
+      { signal: current.signal },
+    )
+    if (!current.signal.aborted) list.value = rows
   } catch (e) {
     if (!current.signal.aborted) error.value = (e as Error).message
   } finally {
@@ -105,22 +87,91 @@ async function load() {
   }
 }
 
-// 점수 묶음은 지역당 1번이지만 여러 이벤트가 몰려도 한 번만 다시 부른다
+type Summary = { levels?: boolean; total?: boolean; events?: boolean; engine?: boolean }
+const summaryVersion = { levels: 0, total: 0, events: 0, engine: 0 }
+// 집계 한 덩어리를 불러온다. 응답이 뒤늦게 와도 가장 최근 요청의 결과만 반영하고,
+// 실패하면 이전 값을 그대로 둔다(0건으로 바꾸지 않는다).
+async function summaryPart<T>(key: keyof typeof summaryVersion, run: () => Promise<T>, apply: (value: T) => void) {
+  const version = ++summaryVersion[key]
+  try {
+    const value = await run()
+    if (alive && version === summaryVersion[key]) apply(value)
+  } catch { /* 집계 조회 실패는 화면의 이전 값을 유지한다 */ }
+}
+function loadSummary(parts: Summary = { levels: true, total: true, events: true, engine: true }) {
+  const tasks: Promise<void>[] = []
+  if (parts.levels)
+    tasks.push(summaryPart('levels',
+      () => Promise.all(['DANGER', 'CAUTION', 'SAFE'].map((lv) =>
+        backend<PageData<Equipment>>('/api/pm/equipments' + queryString({ level: lv, size: 1 })).then((r) => [lv, r.totalItems] as const))),
+      (rows) => { counts.value = { ...counts.value, ...Object.fromEntries(rows) } }))
+  if (parts.events)
+    tasks.push(summaryPart('events', () => backend<PageData<unknown>>('/api/pm/events?size=1'),
+      (r) => { openEvents.value = r.totalItems }))
+  if (parts.engine)
+    tasks.push(summaryPart('engine', () => backend<Engine>('/api/pm/engine-status'),
+      (r) => { engine.value = r }))
+  if (parts.total)
+    tasks.push(summaryPart('total', () => backend<PageData<Equipment>>('/api/pm/equipments?size=1'),
+      (r) => { equipmentTotal.value = r.totalItems }))
+  return Promise.all(tasks)
+}
+// 새로고침 버튼·점검 처리 후에는 전부 다시 부른다
+function load() {
+  void loadSummary()
+  return loadList()
+}
+
+// 점수 묶음은 지역당 1번이지만 여러 이벤트가 몰려도 한 번만 다시 부른다.
+// 이벤트마다 바뀐 부분만 모아서(300ms) 조회한다.
 let refreshTimer: ReturnType<typeof setTimeout> | undefined
-function refreshSoon() {
+let wanted: Summary & { list?: boolean } = {}
+function refreshSoon(parts: Summary & { list?: boolean }) {
+  wanted = {
+    list: wanted.list || parts.list,
+    levels: wanted.levels || parts.levels,
+    total: wanted.total || parts.total,
+    events: wanted.events || parts.events,
+    engine: wanted.engine || parts.engine,
+  }
   clearTimeout(refreshTimer)
-  refreshTimer = setTimeout(() => void load(), 300)
+  refreshTimer = setTimeout(() => {
+    const next = wanted
+    wanted = {}
+    if (next.list) void loadList()
+    void loadSummary(next)
+  }, 300)
 }
 useBackendEvents(({ name, data }) => {
-  if (name === 'connected' || isPmChange(name, data, ['pm-equipment', 'pm-event', 'pm-action', 'pm-threshold']))
-    refreshSoon()
+  if (name === 'connected')
+    refreshSoon({ list: true, levels: true, total: true, events: true, engine: true })
+  else if (name === 'pm-engine-status') {
+    // 단계가 바뀌면 헤더에 바로 보이게 하고, 센서 끊김 건수 같은 집계는 다시 조회한다
+    if (engine.value)
+      engine.value = {
+        ...engine.value,
+        status: String(data.status ?? engine.value.status),
+        lastReceivedAt: data.lastReceivedAt ?? engine.value.lastReceivedAt,
+      }
+    refreshSoon({ engine: true })
+  } else if (name === 'sinkhole-update') refreshSoon({ list: true, events: true })
+  else if (name === 'pm-update') refreshSoon({ list: true, levels: true, events: true, engine: true })
+  else if (name === 'data-changed') {
+    const resource = String(data?.resource)
+    if (resource === 'pm-equipment') refreshSoon({ list: true, levels: true, total: true, events: true })
+    else if (resource === 'pm-event' || resource === 'pm-action') refreshSoon({ list: true, events: true })
+    else if (resource === 'pm-threshold') refreshSoon({ list: true, levels: true })
+  }
 })
+// 필터를 바꾸면 1쪽으로 돌아간다. 이미 1쪽이면 직접 조회하고, 아니면 page 감시가 조회한다 (중복 조회 방지)
 watch([level, type], () => {
-  page.value = 1
-  void load()
+  if (page.value !== 1) page.value = 1
+  else void loadList()
 })
-watch(page, () => void load(), { immediate: true })
+watch(page, () => void loadList(), { immediate: true })
+void loadSummary()
 onBeforeUnmount(() => {
+  alive = false
   clearTimeout(refreshTimer)
   controller?.abort()
 })

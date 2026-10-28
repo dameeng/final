@@ -5,6 +5,7 @@ import { useRoute } from 'vue-router'
 import TrafficVideo from './TrafficVideo.vue'
 import FacilityOcrLog from './FacilityOcrLog.vue'
 import { valueLabels } from '../data/backendResources'
+import { useBackendEvents } from '../composables/useBackendEvents'
 const props = defineProps<{ cameras: Record<string, any>[]; underpassId: string; facilityName?: string; compact?: boolean }>()
 const route = useRoute(),
   selected = ref('')
@@ -48,6 +49,56 @@ const starting = ref(false)
 const stopping = ref(false)
 const recognitionMessage = ref('')
 const recognitionError = ref(false)
+// 분석 서버 상태는 SSE(analysis-state-change)로 받는다.
+// 상태가 그대로면 새 이벤트가 오지 않으므로, 이미 실행 중인 서버에 접속한 경우를 위해 처음 한 번은 기존 상태 API로 조회한다.
+type AnalysisState = { state: string; running: boolean; error: string | null }
+const ANALYSIS_STATES = ['STARTING', 'RUNNING', 'STOPPING', 'STOPPED', 'COMPLETED', 'ERROR']
+const analysisState = ref<AnalysisState>()
+let stateShownAsError = false
+let stateRequest = 0
+const startingNow = computed(() => starting.value || analysisState.value?.state === 'STARTING')
+const stoppingNow = computed(() => stopping.value || analysisState.value?.state === 'STOPPING')
+function normalizeState(item: Record<string, any>): AnalysisState {
+  const error = typeof item.error === 'string' && item.error.trim() ? item.error : null
+  const running = Boolean(item.running)
+  const state = error ? 'ERROR' : ANALYSIS_STATES.includes(String(item.state)) ? String(item.state) : running ? 'RUNNING' : 'COMPLETED'
+  return { state, running, error }
+}
+function applyAnalysisState(next: AnalysisState) {
+  analysisState.value = next
+  if (isRoadCamera.value) roadStatus.value = { ...(roadStatus.value || {}), ...next }
+  if (next.state === 'ERROR') {
+    stateShownAsError = true
+    recognitionError.value = true
+    recognitionMessage.value = next.error || 'AI 분석 서버 상태를 확인하지 못했습니다.'
+  } else if (stateShownAsError) {
+    stateShownAsError = false
+    recognitionError.value = false
+    recognitionMessage.value = ''
+  }
+}
+async function loadAnalysisState() {
+  const camera = selected.value, facility = props.underpassId, version = ++stateRequest
+  if (!camera) return
+  try {
+    const data = await backend<Record<string, any>>('/api/cctv/analysis/state?cameraId=' + encodeURIComponent(camera))
+    if (version !== stateRequest || selected.value !== camera || props.underpassId !== facility) return
+    const item = data?.cameras?.find((row: Record<string, any>) => String(row.cameraId) === camera)
+    if (item) applyAnalysisState(normalizeState(item))
+  } catch { /* 상태를 받지 못해도 실행·정지 버튼에서 오류를 안내한다 */ }
+}
+watch(() => [selected.value, props.underpassId], () => {
+  stateRequest++
+  analysisState.value = undefined
+  stateShownAsError = false
+  void loadAnalysisState()
+}, { immediate: true })
+useBackendEvents(({ name, data }) => {
+  if (name === 'analysis-state-change') {
+    if (String(data.cameraId) !== selected.value || String(data.underpassId) !== props.underpassId) return
+    applyAnalysisState(normalizeState(data))
+  } else if (name === 'connected') void loadAnalysisState()
+})
 // AI 서버(FastAPI) 실시간 영상 주소인지 (/stream/226 처럼 끝나면 그림책(MJPEG) 방식 -> <img> 로 보여줌)
 // 영상과 실행·정지는 로그인 쿠키를 사용하는 Spring 중계 API로 요청합니다.
 const isAiStream = computed(() => /\/stream\/\d+$/.test(current.value?.streamUrl || ''))
@@ -127,11 +178,11 @@ const app = computed(() => route.path.startsWith('/admin-app/'))
       <h2>{{label(current)}}</h2>
       <div class="facility-recognition-controls">
         <div class="recognition-buttons">
-          <button type="button" class="recognition-start" :disabled="starting || stopping" @click="controlRecognition('start')">
-            {{ starting ? '분석 시작 중…' : '영상 분석 실행' }}
+          <button type="button" class="recognition-start" :disabled="startingNow || stoppingNow" @click="controlRecognition('start')">
+            {{ startingNow ? '분석 시작 중…' : '영상 분석 실행' }}
           </button>
-          <button type="button" class="recognition-start recognition-stop" :disabled="starting || stopping" @click="controlRecognition('stop')">
-            {{ stopping ? '정지 중…' : '정지' }}
+          <button type="button" class="recognition-start recognition-stop" :disabled="startingNow || stoppingNow" @click="controlRecognition('stop')">
+            {{ stoppingNow ? '정지 중…' : '정지' }}
           </button>
         </div>
         <p v-if="recognitionMessage" role="status" :class="{ 'recognition-error': recognitionError }">{{ recognitionMessage }}</p>

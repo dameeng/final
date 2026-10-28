@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useApp } from '../stores/app'
 import { useAdminProfile } from '../stores/adminProfile'
 import { backend } from '../services/backend'
+import { useBackendEvents } from '../composables/useBackendEvents'
 import type { Handover } from '../services/handover'
 import HandoverSummary from './HandoverSummary.vue'
 const route = useRoute(),
@@ -21,6 +22,10 @@ async function load() {
   catch (e) { if (!current.signal.aborted) message.value = (e as Error).message }
   finally { if (!current.signal.aborted) loading.value = false }
 }
+// 근무조·담당 지역이 바뀌면 열려 있는 팝업의 이전 근무자 정보를 다시 조회한다
+useBackendEvents(({ name }) => {
+  if (name === 'manager-assignment-change' && dialog.value?.open) void load()
+})
 const name = computed(() =>
   app.account?.role === 'REGIONAL_ADMIN' ? app.account.name : admin.profile.name,
 )

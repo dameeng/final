@@ -13,7 +13,6 @@ const route = useRoute(),
   mobile = computed(() => route.path.startsWith('/admin-app/'))
 import AdminSidebarNav from './AdminSidebarNav.vue'
 import AdminIdentity from './AdminIdentity.vue'
-import { useBackendEvents } from '../composables/useBackendEvents'
 import { useManagerNotifications } from '../stores/managerNotifications'
 withDefaults(defineProps<{ standardMenu?: boolean }>(), { standardMenu: false })
 const app = useApp(),
@@ -29,9 +28,6 @@ watch(
   },
   { immediate: true },
 )
-useBackendEvents(({ name }) => {
-  if (name === 'connected' || name === 'notification-new') void managerNotifications.refresh()
-})
 const navigating = ref(false)
 watch(
   () => route.fullPath,

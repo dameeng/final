@@ -198,6 +198,29 @@ export const useCustomerNotifications = defineStore('customer-notifications', ()
     }
     seen.add(row.id)
   }
+  // SSE notification-read-change: 다른 탭·기기에서 읽음 처리한 결과를 이 화면에 맞춘다.
+  // 새 알림이 아니므로 토스트·소리·강조 없이 읽음 상태와 건수만 바꾼다.
+  function applyReadChange(data: Record<string, any>) {
+    if (app.account?.role !== 'customer') return
+    if (owner !== app.account.id) reset()
+    eventRevision++
+    if (data.all) {
+      recent.value.forEach((row) => {
+        if (!data.category || row.category === data.category) row.read = true
+      })
+      appArrivals.value = appArrivals.value.filter((item) => data.category && item.category !== data.category)
+    } else if (Number.isSafeInteger(data.id)) {
+      const row = recent.value.find((item) => item.id === data.id)
+      if (row) row.read = true
+      appArrivals.value = appArrivals.value.filter((item) => item.id !== data.id)
+    }
+    if (data.unread) {
+      counts.value = data.unread.byCategory || {}
+      app.unread = Math.max(0, Number(data.unread.total) || 0)
+    }
+    // 여러 탭의 응답 순서가 바뀔 수 있으니 최종 숫자는 REST 로 다시 확인한다
+    void refresh()
+  }
   async function list(filters: { page: number; size?: number; category?: string; unreadOnly?: boolean }) {
     return asPage<CustomerNotification>(
       await backend('/api/customers/me/notifications' + queryString({ ...filters, size: filters.size ?? 20 })),
@@ -236,6 +259,7 @@ export const useCustomerNotifications = defineStore('customer-notifications', ()
     setBrowserEnabled,
     refresh,
     ingest,
+    applyReadChange,
     list,
     read,
     readAll,

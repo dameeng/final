@@ -135,7 +135,7 @@ function queueDashboard(parts: number[]) {
   }, 200)
 }
 useBackendEvents(({ name, data }) => {
-  if (isPmChange(name, data, ['pm-equipment','pm-event','pm-action','pm-threshold'])) queueDashboard([3])
+  if (name === 'sinkhole-update' || isPmChange(name, data, ['pm-equipment','pm-event','pm-action','pm-threshold'])) queueDashboard([3])
   if (name === 'risk-update') {
     margins.value = margins.value.map((row) => {
       if (

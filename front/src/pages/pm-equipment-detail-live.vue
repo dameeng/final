@@ -189,7 +189,8 @@ async function loadTrend() {
 let refreshTimer: ReturnType<typeof setTimeout> | undefined
 useBackendEvents(({ name, data: payload }) => {
   if (name === 'pm-update' && !(payload?.items || []).some((i: any) => String(i.equipId) === id.value)) return
-  if (name === 'connected' || isPmChange(name, payload, ['pm-equipment', 'pm-event', 'pm-action', 'pm-threshold'])) {
+  const sinkholeHere = name === 'sinkhole-update' && String(payload?.equipId) === id.value
+  if (name === 'connected' || sinkholeHere || isPmChange(name, payload, ['pm-equipment', 'pm-event', 'pm-action', 'pm-threshold'])) {
     clearTimeout(refreshTimer)
     refreshTimer = setTimeout(() => void load(true), 300)
   }

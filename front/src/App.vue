@@ -40,14 +40,27 @@ import PublicChatbot from './components/PublicChatbot.vue'
 import CustomerRuGuide from './components/CustomerRuGuide.vue'
 import { mobileInteractions } from './runtime/mobileInteractions'
 import { useApp } from './stores/app'
+import { useManagerNotifications } from './stores/managerNotifications'
+import { useCustomerNotifications } from './stores/customerNotifications'
+import { restoreManager } from './services/managerSession'
 useBackendStream()
 const app = useApp()
+const managerNotifications = useManagerNotifications()
+const customerNotifications = useCustomerNotifications()
 const notificationGlow = useNotificationGlow()
 watch(() => [app.account?.id, app.account?.role], () => notificationGlow.reset())
 useBackendEvents(({ name, data }) => {
   if (name === 'notification-new') notificationGlow.mark('notification', data.id)
   if (name === 'notice-new') notificationGlow.mark('notice', data.id ?? data.noticeId)
   if (name === 'inquiry-new') notificationGlow.mark('inquiry', data.id ?? data.inquiryId)
+  // 읽음 동기화는 새 알림이 아니라서 glow·토스트를 표시하지 않는다
+  if (name === 'notification-read-change') {
+    managerNotifications.applyReadChange(data)
+    customerNotifications.applyReadChange(data)
+  }
+  // 담당 지역·근무조가 바뀌면 내 정보를 다시 받는다. 지역이 바뀌면 SSE 연결도 새 지역으로 다시 맺는다.
+  if (name === 'manager-assignment-change')
+    void restoreManager().then(() => managerNotifications.refresh())
 })
 watch(
   () => app.theme,
