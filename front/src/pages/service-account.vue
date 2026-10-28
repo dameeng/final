@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {openCustomerGuide} from '../services/customerOnboarding'
+function openManagerGuide(){window.dispatchEvent(new Event('routel-manager-guide-open'))}
 import AdminPageDirectory from '../components/AdminPageDirectory.vue'
 import CustomerProfileSummary from '../components/CustomerProfileSummary.vue'
 import ServiceResource from './backend-resource.vue'
@@ -243,8 +244,8 @@ onBeforeUnmount(() => controller.abort())
       ><h2 v-if="managerApp" class="manager-mypage-group-title">업무·이용 안내</h2><nav v-if="managerApp" class="app-more-menu" aria-label="마이페이지 메뉴"
         ><RouterLink to="/admin-app/history"><UiIcon name="document" />점검 이력 <span>›</span></RouterLink
         ><RouterLink to="/admin-app/notifications"><UiIcon name="bell" />알림 내역 <span>›</span></RouterLink
-        ><RouterLink to="/admin-app/contacts"><UiIcon name="user" />관할 담당자 연락처 <span>›</span></RouterLink></nav
-      ><AdminPageDirectory v-else-if="manager" /><details v-if="managerApp" class="manager-mypage-devices"><summary><UiIcon name="bell" />알림 기기 관리<span>›</span></summary><ManagerPushDevices /></details><ManagerPushDevices v-else-if="manager" /><AccountActions v-if="manager" /><button v-if="managerApp" type="button" class="manager-mypage-logout" :disabled="busy" @click="logoutManager"><UiIcon name="logout" />로그아웃</button></section
+        ><RouterLink to="/admin-app/contacts"><UiIcon name="user" />관할 담당자 연락처 <span>›</span></RouterLink><button type="button" class="manager-guide-launch" @click="openManagerGuide"><UiIcon name="map" />루와 관리자 사용법 보기<span class="account-menu-chevron" aria-hidden="true">›</span></button><details class="manager-mypage-devices"><summary><UiIcon name="bell" />알림 기기 관리<span>›</span></summary><ManagerPushDevices /></details></nav
+      ><AdminPageDirectory v-else-if="manager" /><ManagerPushDevices v-if="manager&&!managerApp" /><AccountActions v-if="manager" /><button v-if="managerApp" type="button" class="manager-mypage-logout" :disabled="busy" @click="logoutManager"><UiIcon name="logout" />로그아웃</button></section
   ></component>
 </template>
 <style scoped src="../styles/pages/service-account.css"></style>

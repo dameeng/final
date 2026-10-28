@@ -194,6 +194,6 @@ function unmounted(vnode: VNode) {
     <AdminAppNav v-if="managerApp&&route.path!=='/admin-app/menu'" />
     <CustomerFooter v-if="customer" />
     <PublicChatbot v-if="customer||route.path.startsWith('/customer-app/')" />
-    <CustomerRuGuide />
+    <CustomerRuGuide :key="managerApp?'manager-guide':'customer-guide'" :manager="managerApp" />
   </div>
 </template>

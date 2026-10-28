@@ -23,7 +23,7 @@ const summary = ref<any>(),
 const blocked = computed(() => summary.value?.blockedCount ?? '—')
 const controlNotice = ref<HTMLDialogElement>()
 watch(blocked, value => {
-  if (Number(value) > 0 && !hiddenToday() && !controlNotice.value?.open) controlNotice.value?.showModal()
+  if (Number(value) > 0 && !hiddenToday() && !controlNotice.value?.open && !document.querySelector('.ru-guide-dialog[open]')) controlNotice.value?.showModal()
   else if (Number(value) === 0) controlNotice.value?.close()
 }, { flush: 'post' })
 let reloadPending = false,

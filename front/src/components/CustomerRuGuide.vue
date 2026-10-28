@@ -6,12 +6,21 @@ import ru from '../assets/mascot/routel-ru-transparent.png'
 import wink from '../assets/mascot/routel-ru-wink.png'
 import {completeCustomerGuide,customerGuidePending} from '../services/customerOnboarding'
 import walk from '../assets/mascot/routel-ru-walk.png'
+import {managerGuideSteps} from '../data/managerGuide'
+import {backend} from '../services/backend'
+import {ownsFacility} from '../services/facilityAccess'
+const props=defineProps<{manager?:boolean}>()
+const guideEvent=props.manager?'routel-manager-guide-open':'routel-customer-guide-open'
+const guideFacility=ref(''),guideEquipment=ref('')
 const route=useRoute(),router=useRouter(),app=useApp()
 const dialog=ref<HTMLDialogElement>(),heading=ref<HTMLElement>(),opened=ref(false),step=ref(0),moving=ref(false)
 const card=ref<HTMLElement>(),coachStyle=ref<Record<string,string>>(),actor=ref({left:0,top:0}),travelling=ref(false),direction=ref(1)
 const mobile=ref(false),spotlight=ref<{left:number;top:number;width:number;height:number}>(),error=ref('')
 let timer:ReturnType<typeof setTimeout>|undefined,owner='',returnTo='',trigger:HTMLElement|null=null
 let travelTimer:ReturnType<typeof setTimeout>|undefined,placementTimer:ReturnType<typeof setTimeout>|undefined,cardObserver:ResizeObserver|undefined
+let contentObserver:ResizeObserver|undefined,contentTimer:ReturnType<typeof setTimeout>|undefined
+const guideScrollAreas=new Set<HTMLElement>()
+function resetGuideScrollAreas(){for(const area of guideScrollAreas)area.classList.remove('ru-guide-scroll-space');guideScrollAreas.clear()}
 let listOpenedByGuide=false
 function restoreGuideList(){
   if(!listOpenedByGuide)return
@@ -19,8 +28,10 @@ function restoreGuideList(){
   if(handle?.getAttribute('aria-expanded')==='true')handle.click()
   listOpenedByGuide=false
 }
-const eligible=computed(()=>app.account?.role==='customer'&&!/^\/(?:admin|fac-|pm-|cs-|bot-)/.test(route.path)&&!/^\/(?:login|signup|password-reset|find-id)(?:\/|$)/.test(route.path)&&!/^\/customer-app\/(?:screen-[1234]|password-reset|find-id)(?:\/|$)/.test(route.path))
-const steps=computed(()=>[
+const eligible=computed(()=>props.manager
+  ?!!app.account&&app.account.role!=='customer'&&route.path.startsWith('/admin-app/')&&!['/admin-app/screen-1','/admin-app/signup','/admin-app/password-reset'].includes(route.path)
+  :app.account?.role==='customer'&&!/^\/(?:admin|fac-|pm-|cs-|bot-)/.test(route.path)&&!/^\/(?:login|signup|password-reset|find-id)(?:\/|$)/.test(route.path)&&!/^\/customer-app\/(?:screen-[1234]|password-reset|find-id)(?:\/|$)/.test(route.path))
+const steps=computed(()=>props.manager?managerGuideSteps(guideFacility.value,guideEquipment.value):[
   {title:'안녕하세요, 안전 안내자 루예요!',body:'ROUTEL에 오신 걸 환영해요. 출발 전에 알아두면 좋은 기능을 저와 함께 하나씩 살펴볼까요?',hint:'버튼을 누르면 실제 화면을 함께 둘러봐요.',icon:'help',path:'',target:''},
   {title:'지나갈 지하차도, 먼저 확인해요',body:'지도에서 지하차도의 상태를 확인해요. 마커를 누르면 요약 카드가 뜨고, 지하차도 이름을 누르면 자세한 정보를 볼 수 있어요.',hint:'지도 → 마커 선택 → 이름을 눌러 상세 보기',icon:'map',path:mobile.value?'/customer-app/screen-5':'/c-map',target:mobile.value?'.app-map-search||.customer-app-nav a[href="/customer-app/screen-5"]':'.facility-list-panel .ph||.customer-header a[href="/c-map"]'},
   mobile.value?{title:'이동할 길도 함께 확인해요',body:'출발지와 도착지를 입력해 경로를 찾아보세요. 통제 구간 안내가 나오면 내용을 확인하고 안전한 우회 경로를 선택해 주세요.',hint:'출발지·도착지 입력 → 길찾기',icon:'route',path:'/customer-app/screen-7',target:'.navigation-search||.customer-app-nav a[href="/customer-app/screen-7"]'}
@@ -53,9 +64,52 @@ const current=computed(()=>steps.value[step.value]!)
 function targetElement(){
   for(const selector of current.value.target.split('||').filter(Boolean)){
     const element=document.querySelector<HTMLElement>(selector)
-    if(element?.getClientRects().length)return element
+    const rect=element?.getBoundingClientRect()
+    if(rect&&rect.width>8&&rect.height>8)return element
   }
   return null
+}
+async function revealTarget(){
+  const expectedStep=step.value
+  if(props.manager&&route.path==='/admin-app/screen-3'){
+    for(let attempt=0;attempt<40;attempt++){
+      const map=document.querySelector('.map-only-live')
+      if(map&&map.getBoundingClientRect().height>50)break
+      await new Promise(resolve=>setTimeout(resolve,50))
+      if(!opened.value||step.value!==expectedStep)return
+    }
+  }
+  if(props.manager&&(guideFacility.value&&current.value.target.startsWith('.app-facility-')||['/admin-app/reviews','/admin-app/pm-daily'].includes(current.value.path)||current.value.path.startsWith('/admin-app/screen-10?'))){
+    const selector=current.value.target.split('||')[0]!
+    for(let attempt=0;attempt<20&&!document.querySelector(selector);attempt++){
+      await new Promise(resolve=>setTimeout(resolve,50))
+      if(!opened.value||step.value!==expectedStep)return
+    }
+  }
+  if(!opened.value||step.value!==expectedStep)return
+  const target=targetElement(),scroller=props.manager?target?.closest<HTMLElement>('.app-restored-body,.app-extra-body'):undefined
+  if(target&&scroller){
+    if(route.path==='/admin-app/screen-3'){
+      scroller.classList.remove('ru-guide-scroll-space');guideScrollAreas.delete(scroller)
+      scroller.scrollTop=0
+    }else{
+      scroller.classList.add('ru-guide-scroll-space');guideScrollAreas.add(scroller)
+      const box=target.getBoundingClientRect(),area=scroller.getBoundingClientRect()
+      scroller.scrollTop+=box.top-area.top-12
+    }
+  }else target?.scrollIntoView({block:props.manager?'start':'nearest',behavior:'instant'})
+  await nextTick()
+}
+function watchGuideContent(){
+  contentObserver?.disconnect();clearTimeout(contentTimer)
+  if(!props.manager||!opened.value||step.value===0)return
+  const target=targetElement(),content=target?.closest('.app-restored-body,.app-extra-body')?.firstElementChild
+  contentObserver=new ResizeObserver(()=>{
+    clearTimeout(contentTimer)
+    contentTimer=setTimeout(()=>{if(opened.value)void revealTarget().then(measure)},80)
+  })
+  if(content)contentObserver.observe(content)
+  if(target&&target!==content)contentObserver.observe(target)
 }
 function measure(){
   if(!opened.value||!card.value)return
@@ -65,11 +119,13 @@ function measure(){
     return
   }
   const target=targetElement(),r=target?.getBoundingClientRect()
-  spotlight.value=r&&r.width>0&&r.top>=0&&r.bottom<=innerHeight?{left:Math.max(2,r.left-3),top:Math.max(2,r.top-3),width:r.width+6,height:r.height+6}:undefined
-  const frame=mobile.value?document.querySelector<HTMLElement>('.customer-mobile-header')?.getBoundingClientRect():undefined
+  const area=target?.closest('.app-restored-body,.app-extra-body,.navigation-body')?.getBoundingClientRect()
+  const visibleTop=Math.max(2,r?.top??0,area?.top??0),visibleBottom=Math.min(innerHeight-2,r?.bottom??0,area?.bottom??innerHeight)
+  spotlight.value=r&&r.width>8&&visibleBottom-visibleTop>8?{left:Math.max(2,r.left-3),top:visibleTop,width:r.width+6,height:visibleBottom-visibleTop}:undefined
+  const frame=mobile.value?document.querySelector<HTMLElement>(props.manager?'.manager-app-shell':'.customer-mobile-header')?.getBoundingClientRect():undefined
   const leftEdge=(frame?.left||0)+12,rightEdge=(frame?.right||innerWidth)-12
   const width=Math.min(360,rightEdge-leftEdge),actorHeight=innerHeight<=600?66:92
-  const nav=mobile.value?document.querySelector('.customer-app-nav')?.getBoundingClientRect():undefined
+  const nav=mobile.value?document.querySelector(props.manager?'.admin-app-bottom-nav':'.customer-app-nav')?.getBoundingClientRect():undefined
   const bottom=(nav?.top||innerHeight)-12,maxHeight=Math.max(160,bottom-actorHeight-28)
   const height=Math.min(card.value.getBoundingClientRect().height,maxHeight)
   const clamp=(value:number,min:number,max:number)=>Math.max(min,Math.min(value,Math.max(min,max)))
@@ -96,14 +152,27 @@ function measure(){
 async function start(){
   if(!eligible.value||opened.value)return
   if(document.querySelector('dialog[open]'))return
-  owner=String(app.account!.id);mobile.value=route.path.startsWith('/customer-app/');returnTo=route.fullPath
+  owner=String(app.account!.id);mobile.value=props.manager||route.path.startsWith('/customer-app/');returnTo=route.fullPath
   trigger=document.activeElement instanceof HTMLElement?document.activeElement:null
   step.value=0;error.value='';spotlight.value=undefined;coachStyle.value=undefined;opened.value=true
   await nextTick();dialog.value?.showModal();heading.value?.focus({preventScroll:true});measure()
   cardObserver?.disconnect();cardObserver=new ResizeObserver(measure)
   if(card.value)cardObserver.observe(card.value)
+  if(props.manager){
+    guideFacility.value='';guideEquipment.value=''
+    const results=await Promise.allSettled([backend<any>('/api/underpasses?page=1&size=100'),backend<any>('/api/pm/equipments?page=1&size=1')])
+    if(!opened.value||String(app.account?.id)!==owner)return
+    if(results[0].status==='fulfilled'){
+      const value=results[0].value,rows=Array.isArray(value)?value:value?.items||[]
+      const owned=rows.filter((row:any)=>ownsFacility(row))
+      const facility=owned.find((row:any)=>String(row.name||row.underpassName||'').includes('초량'))||owned[0]
+      guideFacility.value=String(facility?.id??facility?.underpassId??'')
+    }
+    if(results[1].status==='fulfilled')guideEquipment.value=String(results[1].value?.items?.[0]?.equipId??'')
+  }
 }
 function checkAutomatic(){
+  if(props.manager)return
   clearTimeout(timer)
   if(!eligible.value||opened.value||!customerGuidePending(String(app.account!.id)))return
   if(document.querySelector('dialog[open]')){timer=setTimeout(checkAutomatic,600);return}
@@ -112,26 +181,43 @@ function checkAutomatic(){
 async function go(index:number){
   if(moving.value||index<0||index>=steps.value.length)return
   moving.value=true;error.value='';spotlight.value=undefined
+  contentObserver?.disconnect();clearTimeout(contentTimer)
+  resetGuideScrollAreas()
   try{
     const destination=steps.value[index]!.path
-    if(destination&&route.path!==destination)await router.push(destination)
+    if(destination&&route.fullPath!==destination)await router.push(destination)
     step.value=index
     coachStyle.value=index===0?undefined:coachStyle.value
     await nextTick()
+    const action='action' in current.value?current.value.action:undefined
+    if(props.manager&&action){
+      let shown=false
+      for(let attempt=0;attempt<20&&!shown;attempt++){
+        window.dispatchEvent(new CustomEvent('routel-manager-guide-action',{detail:{mode:action,opened:()=>{shown=true}}}))
+        await new Promise(resolve=>setTimeout(resolve,50))
+        if(!opened.value)return
+      }
+      await nextTick()
+    }
     if(mobile.value&&current.value.target.startsWith('.app-map-sheet')){
       const handle=document.querySelector<HTMLButtonElement>('.app-map-sheet .mobile-sheet-handle')
       if(handle?.getAttribute('aria-expanded')==='false'){handle.click();listOpenedByGuide=true;await nextTick()}
     }else restoreGuideList()
-    targetElement()?.scrollIntoView({block:'nearest',behavior:'instant'})
+    await revealTarget()
     measure();heading.value?.focus({preventScroll:true})
-    clearTimeout(placementTimer);placementTimer=setTimeout(measure,350)
+    watchGuideContent()
+    clearTimeout(placementTimer);placementTimer=setTimeout(()=>{void revealTarget().then(measure)},350)
   }catch{error.value='화면을 이동하지 못했어요. 다시 눌러 주세요.'}
   finally{moving.value=false}
 }
 function finish(){
   if(!opened.value)return
+  if(props.manager)window.dispatchEvent(new CustomEvent('routel-manager-guide-action',{detail:{mode:'close'}}))
   restoreGuideList()
-  completeCustomerGuide(owner);opened.value=false;dialog.value?.close();spotlight.value=undefined
+  contentObserver?.disconnect();clearTimeout(contentTimer)
+  resetGuideScrollAreas()
+  if(!props.manager)completeCustomerGuide(owner)
+  opened.value=false;dialog.value?.close();spotlight.value=undefined
   clearTimeout(travelTimer);clearTimeout(placementTimer);cardObserver?.disconnect();travelling.value=false
   if(trigger?.isConnected)trigger.focus({preventScroll:true})
 }
@@ -141,11 +227,11 @@ watch(()=>[route.path,app.account?.id,app.account?.role],()=>{
   if(opened.value&&(!eligible.value||String(app.account?.id)!==owner)){opened.value=false;dialog.value?.close();spotlight.value=undefined}
   clearTimeout(timer);timer=setTimeout(checkAutomatic,250)
 },{immediate:true})
-onMounted(()=>{window.addEventListener('routel-customer-guide-open',manual);window.addEventListener('routel-customer-guide-ready',checkAutomatic);window.addEventListener('resize',measure);window.addEventListener('scroll',measure,true)})
-onBeforeUnmount(()=>{clearTimeout(timer);clearTimeout(travelTimer);clearTimeout(placementTimer);cardObserver?.disconnect();dialog.value?.close();window.removeEventListener('routel-customer-guide-open',manual);window.removeEventListener('routel-customer-guide-ready',checkAutomatic);window.removeEventListener('resize',measure);window.removeEventListener('scroll',measure,true)})
+onMounted(()=>{window.addEventListener(guideEvent,manual);window.addEventListener('routel-customer-guide-ready',checkAutomatic);window.addEventListener('resize',measure);window.addEventListener('scroll',measure,true)})
+onBeforeUnmount(()=>{clearTimeout(timer);clearTimeout(travelTimer);clearTimeout(placementTimer);clearTimeout(contentTimer);contentObserver?.disconnect();resetGuideScrollAreas();cardObserver?.disconnect();dialog.value?.close();window.removeEventListener(guideEvent,manual);window.removeEventListener('routel-customer-guide-ready',checkAutomatic);window.removeEventListener('resize',measure);window.removeEventListener('scroll',measure,true)})
 </script>
 <template>
-  <dialog ref="dialog" class="ru-guide-dialog" aria-labelledby="ru-guide-heading" aria-describedby="ru-guide-copy" @cancel.prevent="finish">
+  <dialog ref="dialog" class="ru-guide-dialog" :class="{'manager-ru-guide':manager}" aria-labelledby="ru-guide-heading" aria-describedby="ru-guide-copy" @cancel.prevent="finish">
     <template v-if="opened">
       <div v-if="spotlight" class="ru-guide-spotlight" :style="{left:spotlight.left+'px',top:spotlight.top+'px',width:spotlight.width+'px',height:spotlight.height+'px'}" aria-hidden="true"></div><div v-else class="ru-guide-dimmer" aria-hidden="true"></div>
       <div class="ru-guide-actor" :class="{'is-hidden':step===0,'is-travelling':travelling}" :style="{left:actor.left+'px',top:actor.top+'px','--guide-facing':direction}" aria-hidden="true"><img :src="travelling?walk:step===steps.length-1?wink:ru" alt="" width="84" height="92" /></div>
@@ -154,7 +240,7 @@ onBeforeUnmount(()=>{clearTimeout(timer);clearTimeout(travelTimer);clearTimeout(
         <div class="ru-guide-intro"><img v-if="step===0" :src="wink" alt="안전 안내자 루" width="92" height="92" /><div><small v-if="step===0">ROUTEL GUIDE</small><h2 id="ru-guide-heading" ref="heading" tabindex="-1">{{current.title}}</h2></div></div>
         <p id="ru-guide-copy">{{current.body}}</p>
         <p v-if="error" class="ru-guide-error" role="alert">{{error}}</p>
-        <div class="ru-guide-progress" role="progressbar" aria-label="사용 안내 진행" :aria-valuenow="step+1" :aria-valuemax="steps.length" :aria-valuemin="1"><span v-for="(_,index) in steps" :key="index" :class="{active:index===step,complete:index<step}" aria-hidden="true"></span><small>{{step+1}} / {{steps.length}}</small></div>
+        <div class="ru-guide-progress" role="progressbar" aria-label="사용 안내 진행" :aria-valuenow="step+1" :aria-valuemax="steps.length" :aria-valuemin="1"><div v-if="manager" class="ru-guide-progress-track" aria-hidden="true"><i :style="{width:((step+1)/steps.length*100)+'%'}"></i></div><template v-else><span v-for="(_,index) in steps" :key="index" :class="{active:index===step,complete:index<step}" aria-hidden="true"></span></template><small>{{step+1}} / {{steps.length}}</small></div>
         <footer><button v-if="step>0" type="button" :disabled="moving" @click="go(step-1)">이전</button><button type="button" class="ru-guide-next" :disabled="moving" @click="step===steps.length-1?done():go(step+1)">{{moving?'이동 중…':step===0?'루와 둘러보기':step===steps.length-1?'안내 마치기':'다음'}}<span class="ru-guide-next-arrow" aria-hidden="true">→</span></button></footer>
       </section>
     </template>
@@ -163,6 +249,8 @@ onBeforeUnmount(()=>{clearTimeout(timer);clearTimeout(travelTimer);clearTimeout(
 <style>
 #app dialog.ru-guide-dialog{position:fixed;inset:0;box-sizing:border-box;width:100vw;max-width:none;height:100dvh;max-height:none;margin:0;padding:0;border:0;border-radius:0;box-shadow:none;background:transparent;color:var(--r-ink);overflow:hidden;font-family:var(--r-font);}
 #app dialog.ru-guide-dialog::backdrop{background:transparent;backdrop-filter:none;animation:none;}
+#app :is(.app-restored-body,.app-extra-body).ru-guide-scroll-space::after{content:'';display:block;height:100dvh;flex:0 0 100dvh;pointer-events:none;}
+#app :is(.app-restored-body,.app-extra-body).ru-guide-scroll-space>*{flex-shrink:0;}
 body:has(.ru-guide-dialog[open]) #public-chat-launcher{display:none!important;}
 .ru-guide-dimmer{position:fixed;inset:0;background:#081b2d99;}
 .ru-guide-spotlight{position:fixed;pointer-events:none;border-radius:12px;box-shadow:0 0 0 9999px #081b2d99;outline:3px solid #89bfff;outline-offset:1px;}
@@ -190,6 +278,9 @@ body:has(.ru-guide-dialog[open]) #public-chat-launcher{display:none!important;}
 #app .ru-guide-progress>span{flex:1 1 0;min-width:0;height:5px;border-radius:10px;background:var(--r-line);}
 #app .ru-guide-progress>span.complete{background:#8bb4e1;}#app .ru-guide-progress>span.active{flex-grow:1.6;background:var(--r-accent);}
 #app .ru-guide-progress small{flex:0 0 auto;margin-left:8px;white-space:nowrap;font-size:11px;line-height:18px;color:var(--r-muted);font-variant-numeric:tabular-nums;}
+#app .manager-ru-guide .ru-guide-progress{gap:2px;}
+#app .ru-guide-progress-track{flex:1;min-width:0;height:4px;border-radius:4px;background:var(--r-line);overflow:hidden;}
+#app .ru-guide-progress-track>i{display:block;height:100%;border-radius:inherit;background:var(--r-accent);transition:width .2s ease;}
 #app .ru-guide-card footer{display:flex;align-items:center;gap:8px;}
 #app .ru-guide-card footer button{min-height:44px;padding:10px 18px;border:1px solid var(--r-line);border-radius:9px;background:var(--r-surface);color:var(--r-ink);font-size:14px;}
 #app .ru-guide-card footer .ru-guide-next{display:flex;align-items:center;justify-content:center;gap:10px;flex:1;border-color:transparent;background:var(--r-primary);color:#fff;font-weight:600;}

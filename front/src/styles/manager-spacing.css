@@ -1,4 +1,20 @@
 /* Manager app layout tokens. Map controls, header icons and status badges keep their own sizes. */
+#app .manager-app-shell dialog.pm-delete-dialog.pm-delete-app-dialog {
+  box-sizing:border-box; width:min(386px,calc(100vw - 32px)); max-width:min(386px,calc(100vw - 32px));
+  max-height:calc(100dvh - 48px); margin:auto; padding:20px; border-radius:16px; overflow:auto;
+}
+#app .manager-app-shell .pm-delete-app-dialog .pm-delete-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:20px; }
+#app .manager-app-shell .pm-delete-app-dialog .pm-delete-actions button { min-height:44px; min-width:72px; margin:0; }
+#app .manager-app-shell .restored-facility-filters .chips>button.facility-summary-button {
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+  height:68px; min-height:68px; padding:8px; border:1px solid var(--r-line); border-radius:12px;
+  background:var(--r-surface); color:var(--r-ink); line-height:20px; box-shadow:none;
+}
+#app .manager-app-shell .facility-summary-button>span { font-size:11px; font-weight:400; color:var(--r-muted); }
+#app .manager-app-shell .facility-summary-button>strong { font-size:23px; line-height:26px; font-weight:650; font-variant-numeric:tabular-nums; }
+#app .manager-app-shell .facility-summary-button>strong[data-level=DANGER] { color:var(--status-danger-ink,#d52c27); }
+#app .manager-app-shell .facility-summary-button>strong[data-level=WARNING] { color:var(--status-caution-ink,#bd7a09); }
+#app .manager-app-shell .restored-facility-filters .chips>button.facility-summary-button[aria-pressed=true] { border-color:var(--r-accent); box-shadow:inset 0 -2px var(--r-accent); }
 #app :is(.manager-app-shell,.restored-facility-detail) {
   --manager-page-space:12px;
   --manager-card-space:16px;
@@ -233,11 +249,19 @@
 #app .manager-app-shell .manager-profile-summary>span>strong { font-size:13px; font-weight:500; }
 #app .manager-app-shell .manager-mypage-group-title { margin:20px 0 8px; font-size:12px; font-weight:500; color:var(--r-muted); }
 #app .manager-app-shell .manager-account-page .app-more-menu>a { justify-content:flex-start; min-height:52px; padding:12px 16px; }
+#app .manager-app-shell .manager-account-page .app-more-menu>.manager-guide-launch {
+  display:flex; align-items:center; gap:12px; width:100%; min-height:52px; padding:12px 16px;
+  border:0; border-top:1px solid var(--r-line); border-radius:0; background:var(--r-surface); color:var(--r-ink); font:inherit; font-size:13px; text-align:left;
+}
 #app .manager-app-shell .manager-account-page .app-more-menu>a>span { margin-left:auto; }
 #app .manager-app-shell .manager-account-page :is(.app-more-menu,.manager-profile-summary,.manager-mypage-devices) .ui-icon { width:18px; height:18px; color:var(--r-accent); flex:none; }
 #app .manager-app-shell .manager-mypage-devices { margin:0 0 16px; border:1px solid var(--r-line); border-radius:14px; background:var(--r-surface); overflow:hidden; }
 #app .manager-app-shell .manager-mypage-devices>summary { display:flex; align-items:center; gap:12px; padding:14px 16px; min-height:52px; box-sizing:border-box; font-size:13px; list-style:none; cursor:pointer; }
 #app .manager-app-shell .manager-mypage-devices>summary::-webkit-details-marker { display:none; }
+#app .manager-app-shell .manager-account-page .app-more-menu>.manager-mypage-devices {
+  margin:0; border:0; border-top:1px solid var(--r-line); border-radius:0; background:transparent;
+}
+#app .manager-app-shell .manager-account-page .app-more-menu>.manager-mypage-devices>summary { min-height:52px; padding:12px 16px; }
 #app .manager-app-shell .manager-mypage-devices>summary>span { margin-left:auto; color:var(--r-muted); }
 #app .manager-app-shell .manager-account-page :is(.manager-profile-chevron,.app-more-menu>a>span,.manager-mypage-devices>summary>span,.account-menu-chevron) {
   display:inline-flex; align-items:center; justify-content:center; flex:0 0 16px;

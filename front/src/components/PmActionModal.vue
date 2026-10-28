@@ -36,7 +36,7 @@ function open(next: Target, first?: Mode) {
   error.value = ''
   dialog.value?.showModal()
 }
-defineExpose({ open })
+defineExpose({ open, close:()=>dialog.value?.close() })
 
 async function submit() {
   if (!target.value) return

@@ -1,4 +1,19 @@
 /* Final shared presentation for administrator web pages only. */
+#app .admin-interface.admin-shell .service-workspace[data-resource=transits] .service-table {
+  table-layout:fixed; width:100%; min-width:1160px;
+}
+#app .admin-interface.admin-shell .service-workspace[data-resource=transits] .service-table :is(th,td) {
+  padding:12px 16px; vertical-align:middle; text-align:center;
+}
+#app .admin-interface.admin-shell .service-workspace[data-resource=transits] .service-table :is(th,td)[data-field=underpassName] { width:22%; text-align:left; }
+#app .admin-interface.admin-shell .service-workspace[data-resource=transits] .service-table :is(th,td)[data-field=displayCarNum] { width:16%; font-variant-numeric:tabular-nums; }
+#app .admin-interface.admin-shell .service-workspace[data-resource=transits] .service-table :is(th,td)[data-field=status] { width:10%; }
+#app .admin-interface.admin-shell .service-workspace[data-resource=transits] .service-table :is(th,td)[data-field$=At] { width:16%; }
+#app .admin-interface.admin-shell .service-workspace[data-resource=transits] .service-table :is(th,td).resource-action-column { width:20%; text-align:center; }
+#app .admin-interface.admin-shell .service-workspace[data-resource=transits] .resource-action-column .service-actions {
+  display:flex; flex-flow:row nowrap; align-items:center; justify-content:center; gap:8px; margin:0;
+}
+#app .admin-interface.admin-shell .service-workspace[data-resource=transits] .resource-action-column button { flex:none; min-height:36px; white-space:nowrap; }
 #app .admin-interface.admin-shell :is(.service-heading,.page-head) h1,
 #app .admin-interface.admin-shell .account-service>h1 {
   display:flex; align-items:center; flex-wrap:wrap; gap:10px;

@@ -448,7 +448,7 @@ watch([data,trends],async()=>{
           </section>
         </div>
 
-        <section class="card">
+        <section class="card pm-evidence-card">
           <h2>판단 근거 · 특징값 {{features.length}}개</h2>
           <p class="pm-muted small">파란 띠 = 정상 범위 · 회색 눈금 = 평소 값 · 점 = 지금 값 (범위를 벗어나면 빨강)</p>
           <p v-if="!features.length" class="pm-muted">아직 판단 근거가 없어요.</p>

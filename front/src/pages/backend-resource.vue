@@ -338,6 +338,10 @@ const filters = reactive<Record<string, any>>({}),
   choices = reactive<Record<string, { value: string; label: string }[]>>({}),
   values = reactive<Record<string, any>>({})
 const facilitySearchRows = ref<Record<string, any>[]>([])
+function facilityCount(level:string){
+  const rows=facilitySearchRows.value.filter(row=>!filters.keyword||matchesKoreanSearch([row.name,row.regionName,row.roadAddress].filter(Boolean).join(' '),filters.keyword))
+  return rows.filter(row=>!level||matchesRisk(row.currentRiskLevel,level)).length
+}
 const facilitySearchOpen = ref(false), facilitySearchIndex = ref(-1)
 const facilitySuggestions = computed(() => !String(filters.keyword||'').trim() ? [] : facilitySearchRows.value.filter(row =>
   (!riskFilter.value || matchesRisk(row.currentRiskLevel,riskFilter.value)) &&
@@ -1158,12 +1162,12 @@ defineExpose({ open, load })
           <button
             v-for="[value,label] in [['','전체'],['DANGER','위험'],['WARNING','주의'],['SAFE','안전']]"
             :key="value"
-            class="chip"
+            class="chip" :class="{'facility-summary-button':appFacilityList}"
             type="button"
             :aria-pressed="riskFilter===value"
             @click="riskFilter=value;search()"
           >
-            {{label}}
+            <template v-if="appFacilityList"><span>{{label}}</span><strong :data-level="value">{{facilityCount(value)}}</strong></template><template v-else>{{label}}</template>
           </button>
         </div>
         <select v-model="filters.regionId" aria-label="담당 지역" @change="search">
