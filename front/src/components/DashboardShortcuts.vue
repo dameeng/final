@@ -9,7 +9,6 @@ function drop(event:DragEvent,before:string){event.preventDefault();shortcuts.dr
 
 <template>
   <nav class="dashboard-shortcuts" aria-label="업무 바로가기">
-    <div class="dashboard-shortcuts-heading"><p class="dashboard-shortcuts-title">업무 바로가기</p><button type="button" class="dashboard-shortcuts-edit" @click="shortcuts.requestEdit++">바로가기 편집</button></div>
     <p v-if="!shortcuts.items.length" class="dashboard-shortcuts-empty">바로가기 편집에서 필요한 메뉴를 추가하세요.</p>
     <div class="dashboard-shortcuts-grid">
       <div v-for="(shortcut,index) in shortcuts.items" :key="shortcut.to" class="dashboard-shortcut-wrap" :class="{'is-editing':shortcuts.editing}" :draggable="shortcuts.editing" @dragstart="drag($event,shortcut.to)" @dragover="shortcuts.editing&&$event.preventDefault()" @drop="drop($event,shortcut.to)">
@@ -33,7 +32,6 @@ function drop(event:DragEvent,before:string){event.preventDefault();shortcuts.dr
 
 <style scoped>
 #app .page-admin-dashboard .dashboard-shortcuts { margin:0 0 16px; }
-#app .page-admin-dashboard .dashboard-shortcuts-title { margin:0 0 10px; color:var(--r-muted); font-size:12px; font-weight:600; line-height:1.5; }
 .dashboard-shortcuts-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:12px; }
 #app .page-admin-dashboard .dashboard-shortcut { display:flex; align-items:center; gap:12px; min-width:0; min-height:68px; padding:14px; border:1px solid var(--r-line); border-radius:12px; background:var(--r-surface); color:var(--r-ink); text-decoration:none; }
 .dashboard-shortcut-icon { display:grid; place-items:center; width:36px; height:36px; flex:none; border-radius:10px; background:var(--r-selected); color:var(--r-accent); }
@@ -43,9 +41,6 @@ function drop(event:DragEvent,before:string){event.preventDefault();shortcuts.dr
 #app .page-admin-dashboard .dashboard-shortcut:focus-visible { outline:2px solid var(--r-accent); outline-offset:3px; }
 @media (max-width:1200px) { .dashboard-shortcuts-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }
 @media (max-width:600px) { .dashboard-shortcuts-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; } #app .page-admin-dashboard .dashboard-shortcut { padding:12px; gap:8px; } .dashboard-shortcut-arrow { display:none; } }
-.dashboard-shortcuts-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; }
-#app .page-admin-dashboard .dashboard-shortcuts-heading .dashboard-shortcuts-title { margin:0; }
-#app .page-admin-dashboard .dashboard-shortcuts-edit { padding:4px 8px; min-height:30px; border:1px solid var(--r-line); border-radius:6px; background:var(--r-surface); color:var(--r-accent); font-size:12px; }
 .dashboard-shortcut-wrap { min-width:0; display:flex; flex-direction:column; }
 .dashboard-shortcut-wrap>.dashboard-shortcut { flex:1; }
 .dashboard-shortcut-wrap.is-editing { outline:1px dashed var(--r-accent); outline-offset:2px; border-radius:12px; cursor:grab; }

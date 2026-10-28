@@ -43,5 +43,7 @@ try {
    }
   }
  }
- console.log('PASS 100-point bars fill exactly; proportional lower scores; aligned endpoints and separated borders in both themes')
+ await page.locator('.fixed-top5 .rank>li').first().click({position:{x:12,y:12}})
+ await expect(page).toHaveURL(/\/pm-equipment-detail\?id=1$/)
+ console.log('PASS 100-point bars, theme geometry and clicking anywhere on Top5 row opens equipment detail')
 } finally {await browser.close();await server.close()}

@@ -1,4 +1,5 @@
 import { useApp } from '../stores/app'
+import { detachPushToken } from './devicePush'
 // Cookie credentials and the observed first-phase endpoints are preserved.
 export async function customerRequest(path: string, body?: unknown) {
   const response = await fetch(path, {
@@ -32,6 +33,7 @@ export async function restoreCustomer() {
   }
 }
 export async function logoutCustomer() {
+  try { await detachPushToken() } catch { /* Token cleanup must not prevent sign-out. */ }
   const response = await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
   if (!response.ok) throw new Error('로그아웃에 실패했습니다.')
   useApp().clearAccount()

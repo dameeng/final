@@ -115,3 +115,16 @@
   .pm-detail .pm-card-visible,.pm-detail .pm-chart :is(.line-sensor,.line-second),.pm-detail .pm-gauge b,.pm-detail .pm-meter b { animation:none; }
   .pm-detail .card,.pm-detail .pm-sensor-tabs button,.pm-detail .pm-gauge b,.pm-detail .pm-meter b { transition:none; }
 }
+.pm-detail .pm-current-sensor-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:16px 0 0; }
+.pm-detail .pm-current-sensor { min-width:0; padding:14px; border:1px solid var(--r-line,var(--line)); border-radius:10px; background:var(--r-soft,var(--surface)); }
+.pm-detail .pm-current-sensor dt { margin-bottom:8px; font-size:12px; color:var(--r-muted,var(--ink-sub)); }
+.pm-detail .pm-current-sensor dd { display:flex; align-items:baseline; flex-wrap:wrap; gap:5px; margin:0; overflow-wrap:anywhere; }
+.pm-detail .pm-current-sensor strong { font-size:21px; font-variant-numeric:tabular-nums; line-height:1.5; }
+.pm-detail .pm-current-sensor :is(dd>span,dd>small) { font-size:12px; color:var(--r-muted,var(--ink-sub)); }
+@container(max-width:700px) {
+  .pm-detail .pm-current-sensor-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+  .pm-detail .pm-current-sensor { padding:12px; }
+  .pm-detail .pm-current-sensor strong { font-size:19px; }
+  .pm-detail .pm-sensor-table-card .service-table { min-width:0; }
+  .pm-detail .pm-sensor-table-card td { padding:6px 0; text-align:left!important; }
+}

@@ -14,6 +14,7 @@ const pageTitles: Record<string, string> = {
   '/pm-equipment': '장비 현황', '/pm-equipment-detail': '장비 상세',
   '/pm-queue': '점검 대기', '/pm-history': '점검 이력',
   '/pm-inspection': '점검 확인',
+  '/pm-settings': '예지보전 설비·기준 설정', '/pm-daily': '예지보전 데일리 리포트',
   '/verify': adminResourceTitles.reviews!, '/logs': '시설 이벤트 로그',
   '/notifications': adminResourceTitles.alerts!, '/admin-reports': '통계·위험 추이',
   '/cs-customers': adminResourceTitles.customers!, '/cs-inquiries': adminResourceTitles.inquiries!,
@@ -26,6 +27,7 @@ const appAliases: Record<string, string> = {
   'screen-9': '/pm-equipment', 'screen-10': '/pm-equipment-detail',
   'screen-11': '/pm-queue', history: '/pm-history', contacts: '/jurisdiction-contacts',
   inspection: '/pm-inspection',
+  'pm-settings': '/pm-settings', 'pm-daily': '/pm-daily',
   document: '/handover-pdf', notifications: '/admin-data/manager-notifications',
 }
 export function adminPageTitle(path: string, fallback = ''): string {

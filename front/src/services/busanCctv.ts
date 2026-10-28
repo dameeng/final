@@ -1,3 +1,6 @@
+import { backend } from './backend'
+type ItsCamera = { id:number;name:string;lat:number;lng:number;streamUrl:string;distance?:number }
+const fromIts = (row:ItsCamera):BusanCamera => ({id:'its-'+row.id,name:row.name,address:'',lat:row.lat,lng:row.lng,url:row.streamUrl,distance:row.distance})
 export type BusanCamera = {
   id: string
   name: string
@@ -14,13 +17,16 @@ export async function getBusanCameras(): Promise<BusanCamera[]> {
   if (cached && Date.now() - loadedAt < 60000) return cached
   if (pending) return pending
   pending = (async () => {
-    const response = await fetch('/map-cctv.json', {
-      cache: 'no-store',
-      signal: AbortSignal.timeout(15000),
-    })
-    if (!response.ok) throw Error('부산시 CCTV 목록을 불러오지 못했습니다.')
-    const rows = await response.json()
-    if (!Array.isArray(rows)) throw Error('CCTV 목록의 형식을 확인하지 못했습니다.')
+    const results=await Promise.allSettled([
+      backend<ItsCamera[]>('/api/its-cctvs').then(rows=>Array.isArray(rows)?rows.map(fromIts):[]),
+      fetch('/map-cctv.json',{cache:'no-store',signal:AbortSignal.timeout(15000)}).then(async response=>{
+        if(!response.ok)throw Error('부산시 CCTV 목록을 불러오지 못했습니다.')
+        const rows=await response.json();return Array.isArray(rows)?rows:[]
+      }),
+    ])
+    if(results.every(result=>result.status==='rejected'))throw Error('CCTV 목록을 불러오지 못했습니다.')
+    const rows=results.flatMap(result=>result.status==='fulfilled'?result.value:[])
+    const seen=new Set<string>()
     cached = rows
       .filter(
         (row) =>
@@ -30,6 +36,7 @@ export async function getBusanCameras(): Promise<BusanCamera[]> {
           Number.isFinite(Number(row.lng)) &&
           Math.abs(Number(row.lat)) <= 90 && Math.abs(Number(row.lng)) <= 180,
       )
+      .filter(row=>{const key=`${row.url}|${row.lat}|${row.lng}`;if(seen.has(key))return false;seen.add(key);return true})
       .map((row) => ({
         id: String(row.id),
         name: String(row.name || row.id),
@@ -57,6 +64,10 @@ export function distanceMeters(lat: number, lng: number, camera: Pick<BusanCamer
   return 6371000 * 2 * Math.asin(Math.min(1, Math.sqrt(a)))
 }
 export async function getNearbyBusanCctvs(lat: number, lng: number) {
+  try {
+    const rows=await backend<ItsCamera[]>(`/api/its-cctvs/nearby?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}&radius=5000&limit=15`)
+    if(Array.isArray(rows)&&rows.length)return rows.filter(row=>/^https?:\/\//i.test(row.streamUrl||'')).map(fromIts)
+  }catch{/* Retain the municipal camera source when ITS is unavailable. */}
   return (await getBusanCameras())
     .map((camera) => ({ ...camera, distance: distanceMeters(lat, lng, camera) }))
     .filter((camera) => camera.distance <= 5000)

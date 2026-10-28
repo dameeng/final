@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppPagination from './AppPagination.vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { asPage, backend, queryString } from '../services/backend'
 import { useBackendEvents } from '../composables/useBackendEvents'
@@ -55,7 +56,8 @@ onBeforeUnmount(()=>{controller?.abort();clearTimeout(refreshTimer);clearInterva
         <RouterLink :to="{path:app?'/admin-app/ocr':'/admin-data/ocr',query:{underpassId,id:String(record.id)}}">인식 기록 보기 →</RouterLink>
       </li>
     </ol>
-    <nav v-if="!app && rows.length" class="service-pagination" aria-label="OCR 인식 로그 페이지">
+    <AppPagination v-if="app&&rows.length" :page="page" :pages="pages" :disabled="loading" @change="changePage" />
+    <nav v-else-if="rows.length" class="service-pagination" aria-label="OCR 인식 로그 페이지">
       <button :disabled="loading||page===1" @click="changePage(page-1)">이전</button>
       <span>{{page}} / {{pages}} 페이지</span>
       <button :disabled="loading||page===pages" @click="changePage(page+1)">다음</button>

@@ -19,6 +19,7 @@ const app = useApp(),
   managerNotifications = useManagerNotifications(),
   opened = ref(false),
   openingId = ref<number|null>(null),
+  readingAll = ref(false),
   actionError = ref(''),
   button = ref<HTMLButtonElement>(),
   popup = ref<HTMLElement>(),
@@ -34,6 +35,7 @@ const notifications = computed(() =>
         reset: managerNotifications.reset,
         ingest: managerNotifications.ingest,
         read: managerNotifications.read,
+        readAll: managerNotifications.readAll,
       }
     : customerNotifications,
 )
@@ -86,7 +88,17 @@ async function toggle() {
   }
 }
 function target(item:CustomerNotification) {
+  if (/^\/(customer|admin)-app\//.test(route.path))
+    return { path: historyPath.value, query: { notification: String(item.id) } }
   return notificationTarget(item,manager.value,route.path,historyPath.value)
+}
+async function readAll() {
+  if (readingAll.value) return
+  readingAll.value = true
+  actionError.value = ''
+  try { await notifications.value.readAll() }
+  catch { actionError.value = '모두 읽음 처리하지 못했습니다. 다시 시도해 주세요.' }
+  finally { readingAll.value = false }
 }
 async function openNotification(event:MouseEvent,item:CustomerNotification) {
   const modified=event.ctrlKey||event.metaKey||event.shiftKey||event.altKey||event.button!==0
@@ -185,6 +197,7 @@ onBeforeUnmount(() => {
         <header>
           <h2>최근 알림 <small v-if="app.unread">{{app.unread}}건 안 읽음</small>
           </h2>
+          <button class="notification-read-all" type="button" :disabled="readingAll||!app.unread||openingId!==null" @click="readAll">{{readingAll?'처리 중…':'모두 읽음'}}</button>
           <button class="ui-icon-button" type="button" aria-label="알림 창 닫기" @click="close(true)">
           <UiIcon name="close" />
         </button>

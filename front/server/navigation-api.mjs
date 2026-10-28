@@ -56,6 +56,7 @@ export function navigationApi(env) {
   const middleware = async (req, res, next) => {
     const url = new URL(req.url || '/', 'http://localhost')
     if (!url.pathname.startsWith('/api/navigation/')) return next()
+    if (['/api/navigation/route', '/api/navigation/hazards', '/api/navigation/config'].includes(url.pathname)) return next()
     res.setHeader('Content-Type', 'application/json; charset=utf-8')
     res.setHeader('Cache-Control', 'no-store')
     const reply = (status, body) => {

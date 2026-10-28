@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { matchesKoreanSearch } from '../utils/korean-search'
+import { useBackendEvents } from '../composables/useBackendEvents'
 import NotificationBell from './NotificationBell.vue'
 import { pageFriendlyMapScroll } from '../runtime/mapScroll'
 let disposeMapScroll: (() => void) | undefined
@@ -19,6 +20,8 @@ import {
   type Route,
   type Point,
   type Guide,
+  type SafetyRoute,
+  safetyRouteCandidate,
 } from '../services/navigation'
 import { projectRoute, distanceMeters, formatDistance, routeTimeline } from '../utils/navigation-progress'
 import '../styles/customer-app-7.css'
@@ -36,6 +39,23 @@ const routes = ref<Route[]>([]),
   busy = ref(false),
   error = ref(''),
   mapError = ref('')
+const safety = ref<SafetyRoute|null>(null), safetyDialog = ref<HTMLDialogElement>()
+const safetyUnavailable = computed(()=>!!safety.value?.mandatory&&!safety.value.detoured)
+let hazardTimer: ReturnType<typeof setTimeout>|undefined, rerouting = false, prioritySpeechUntil = 0
+function announce(message:string) {
+  if (!speechSupported||!voice.value) return
+  prioritySpeechUntil=Date.now()+4000
+  speechSynthesis.cancel()
+  const utterance=new SpeechSynthesisUtterance(message);utterance.lang='ko-KR';speechSynthesis.speak(utterance)
+}
+async function showSafety() { await nextTick(); if(alive&&!safetyDialog.value?.open)safetyDialog.value?.showModal() }
+function acceptDetour() {
+  const running=requested.value
+  if(safety.value?.suggestedDetour)chooseRoute(1)
+  safetyDialog.value?.close()
+  if(running&&!safetyUnavailable.value)startNavigation()
+  announce('우회 경로로 안내합니다.')
+}
 type Weather = {
   temperature: number | null
   humidity: number | null
@@ -155,6 +175,8 @@ async function loadInfo(place: Place, signal: AbortSignal) {
 }
 async function search() {
   stopNavigation()
+  safety.value=null
+  safetyDialog.value?.close()
   position.value = null
   controller?.abort()
   const current = new AbortController()
@@ -173,11 +195,16 @@ async function search() {
       resolvePlace('destination', current.signal),
     ])
     void loadInfo(to, current.signal)
-    const candidates = await navigationRequest<Route[]>(
-      'directions',
-      { origin: coord(from), destination: coord(to) },
-      current.signal,
-    )
+    let candidates:Route[]
+    if (store.account) {
+      const assessed=await navigationRequest<SafetyRoute>('route',{origin:coord(from),destination:coord(to)},current.signal)
+      if(!alive||current.signal.aborted)return
+      safety.value=assessed
+      if(assessed.mandatory&&!assessed.detoured){void showSafety();throw Error(assessed.message||'통제 지하차도를 피하는 경로를 찾지 못했습니다.')}
+      candidates=[safetyRouteCandidate(assessed)]
+      if(assessed.suggestedDetour)candidates.push(safetyRouteCandidate(assessed.suggestedDetour))
+      if(assessed.mandatory||assessed.advisoryHazards?.length)void showSafety()
+    } else candidates=await navigationRequest<Route[]>('directions',{origin:coord(from),destination:coord(to)},current.signal)
     if (!candidates.length) throw Error('이 구간에서 자동차 경로를 찾지 못했습니다.')
     if (!alive || current.signal.aborted) return
     routes.value = candidates
@@ -410,7 +437,7 @@ function followPosition() {
   }
 }
 function startNavigation() {
-  if (!active.value || routePath.value.length < 2) return
+  if (!active.value || routePath.value.length < 2 || safetyUnavailable.value) return
   stopNavigation()
   gpsError.value = ''
   position.value = null
@@ -483,12 +510,20 @@ function editRoute() {
   editing.value = true
   searchExpanded.value = true
 }
-function reroute() {
+async function reroute() {
+  if(rerouting)return
+  rerouting=true
+  const running=requested.value
   if (position.value) {
     origin.value = { name: '내 위치', lat: position.value.lat, lng: position.value.lng }
     originText.value = '내 위치'
   }
-  void search()
+  try {
+    const pending=search()
+    announce('위험 정보를 반영해 경로를 재탐색합니다.')
+    await pending
+    if(running&&active.value&&!safetyUnavailable.value){startNavigation();announce('경로를 재탐색했습니다. 새 경로로 안내합니다.')}
+  } finally {rerouting=false}
 }
 function openCameras() {
   camera.value = null
@@ -516,6 +551,7 @@ watch([guideIndex, navigating, voice], () => {
     !speechSupported ||
     !currentGuide.value ||
     offRoute.value
+    || Date.now()<prioritySpeechUntil
   )
     return
   speechSynthesis.cancel()
@@ -528,7 +564,16 @@ watch([guideIndex, navigating, voice], () => {
 watch(voice, (enabled) => {
   if (!enabled && speechSupported) speechSynthesis.cancel()
 })
+useBackendEvents(({name,data})=>{
+  if(!store.account||!active.value)return
+  if(name!=='connected'&&!(name==='data-changed'&&data.resource==='navigation-hazard'))return
+  clearTimeout(hazardTimer)
+  hazardTimer=setTimeout(()=>{if(alive&&!busy.value)void reroute()},400)
+})
+watch(offRoute,(outside)=>{if(outside&&requested.value)announce('경로를 벗어났습니다. 경로 다시 찾기를 눌러 재탐색해 주세요.')})
 onBeforeUnmount(() => {
+  clearTimeout(hazardTimer)
+  safetyDialog.value?.close()
   stopNavigation()
   guideDialog.value?.close()
   cameraDialog.value?.close()
@@ -845,6 +890,12 @@ onBeforeUnmount(() => {
           ></div
         ></WorkflowPage
       >
+    <Teleport to="body"><dialog ref="safetyDialog" class="navigation-safety-dialog" aria-labelledby="navigation-safety-title">
+      <template v-if="safety"><header><span>{{safety.mandatory?'통제 지하차도 안내':'지하차도 위험 안내'}}</span><button type="button" aria-label="우회 안내 닫기" @click="safetyDialog?.close()">×</button></header><div><h2 id="navigation-safety-title">{{safetyUnavailable?'안전한 우회 경로를 찾지 못했습니다':safety.mandatory?'통제 구간을 피하는 경로입니다':'우회 경로로 이동하시겠습니까?'}}</h2><p>{{safety.message}}</p><p v-if="safety.suggestedDetour">우회 시 약 {{Math.ceil(safety.suggestedDetour.extraSec/60)}}분 추가 소요</p></div><footer><button v-if="safety.suggestedDetour" type="button" @click="safetyDialog?.close()">기존 경로 유지</button><button v-if="safety.suggestedDetour" type="button" class="primary" @click="acceptDetour">우회 경로 선택</button><button v-else type="button" class="primary" @click="safetyDialog?.close()">확인</button></footer></template>
+    </dialog></Teleport>
     </div></div
   >
 </template>
+<style scoped>
+.navigation-safety-dialog { box-sizing:border-box; width:min(420px,calc(100% - 32px)); max-height:calc(100dvh - 40px); padding:0; border:1px solid var(--status-caution-ink,#865000); border-radius:16px; background:var(--r-surface,#fff); color:var(--r-ink,#172d48); box-shadow:0 20px 70px #0004; } .navigation-safety-dialog::backdrop { background:#10203999; } .navigation-safety-dialog header { display:flex; align-items:center; justify-content:space-between; padding:14px 20px; background:var(--status-caution-bg,#fff1d6); font-weight:700; } .navigation-safety-dialog header button { border:0; background:transparent; color:inherit; font-size:24px; min-width:36px; min-height:36px; } .navigation-safety-dialog>div { padding:20px; } .navigation-safety-dialog h2 { margin:0 0 12px; font-size:20px; line-height:1.5; } .navigation-safety-dialog p { font-size:14px; line-height:1.8; overflow-wrap:anywhere; } .navigation-safety-dialog footer { display:flex; gap:8px; padding:0 20px 20px; } .navigation-safety-dialog footer button { flex:1; min-height:44px; padding:10px; border:1px solid var(--r-line,#dbe3ed); border-radius:9px; background:var(--r-surface,#fff); color:inherit; } .navigation-safety-dialog .primary { background:var(--r-accent,#225bb5); color:#fff; }
+</style>

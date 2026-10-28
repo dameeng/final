@@ -979,3 +979,18 @@
   }
 }
 
+/* Expanded customer lists fill the map below the persistent search bar. */
+.legacy-live-map.mobile-app-map .app.map-swap-layout>aside.app-map-sheet {
+  max-height: calc(100% - 74px);
+}
+.legacy-live-map.mobile-app-map.map-sheet-open .mapw {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+@media (max-height:600px) {
+  .legacy-live-map.mobile-app-map .app-map-sheet:not(.is-collapsed):not(.is-dragging) {
+    height: calc(100% - 74px)!important;
+  }
+}
+

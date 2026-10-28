@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PmPendingBadge from '../components/PmPendingBadge.vue'
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { adminAppMenuGroups } from '../data/admin-app-menu'
@@ -19,7 +20,7 @@ function close() {
     <nav aria-label="관리자 앱 페이지 목록">
       <section v-for="group in adminAppMenuGroups" :key="group.title">
         <h2>{{group.title}}</h2>
-        <RouterLink v-for="[label,path] in group.links" :key="path" :to="path!" :aria-current="previous.split('?')[0]===path?'page':undefined">{{label}}<span aria-hidden="true">›</span></RouterLink>
+        <RouterLink v-for="[label,path] in group.links" :key="path" :to="path!" :aria-current="previous.split('?')[0]===path?'page':undefined">{{label}}<PmPendingBadge v-if="path==='/admin-app/screen-11'" /><span aria-hidden="true">›</span></RouterLink>
       </section>
     </nav>
   </main>

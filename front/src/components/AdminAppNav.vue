@@ -20,7 +20,7 @@ const items = [
     path: '/admin-app/notifications',
     icon: uiIconPaths.bell,
   },
-  { label: '더보기', path: '/admin-app/screen-14', icon: uiIconPaths.menu },
+  { label: '마이페이지', path: '/admin-app/screen-14', icon: uiIconPaths.user },
 ]
 function active(path: string) {
   const current = route.path

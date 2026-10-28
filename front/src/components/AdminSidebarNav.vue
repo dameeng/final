@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PmPendingBadge from './PmPendingBadge.vue'
 import { useRoute } from 'vue-router'
 import { adminSidebarGroups, sidebarLinkActive } from '../data/adminSidebar'
 const route = useRoute()
@@ -21,6 +22,7 @@ const groups = adminSidebarGroups
           :aria-current="sidebarLinkActive([label!,preview!,path!],route.path)?'page':undefined"
         >
           {{label}}
+          <PmPendingBadge v-if="(preview||path)==='/pm-queue'" />
         </RouterLink>
       </template>
     </details>

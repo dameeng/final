@@ -129,6 +129,8 @@
   border-radius: 15px 15px 0 0;
 }
 #app .routel-map-popup__title { min-width: 0; margin: 0; font-size: 15px; line-height: 1.5; overflow-wrap: anywhere; }
+#app a.routel-map-popup__title { color: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+#app a.routel-map-popup__title:focus-visible { outline: 2px solid var(--r-accent,#225f9b); outline-offset: 3px; border-radius: 3px; }
 #app :is(.routel-map-popup__close,.routel-cluster-popup>header>button) {
   display: grid; place-items: center;
   flex: 0 0 28px; width: 28px; min-width: 28px; height: 28px; min-height: 28px;
@@ -196,3 +198,17 @@
     opacity: 0;
   }
 }
+
+.manager-live-map .manager-map-search { position:relative; }
+.manager-live-map .manager-map-search-results { position:absolute; z-index:60; left:0; right:0; top:100%; margin:6px 0 0; padding:4px; max-height:240px; overflow:auto; list-style:none; border:1px solid var(--r-line,#dce7f2); border-radius:10px; background:var(--r-surface,#fff); box-shadow:0 8px 24px #172e4920; }
+.manager-live-map .manager-map-search-results li { margin:0; padding:0; }
+.manager-live-map .manager-map-search-results button { display:flex; flex-direction:column; align-items:flex-start; gap:3px; width:100%; min-height:44px; padding:8px 10px; border:0; border-radius:6px; background:transparent; color:var(--r-ink,#172e49); text-align:left; cursor:pointer; }
+.manager-live-map .manager-map-search-results button:is(:hover,.is-highlighted,:focus-visible) { background:var(--r-selected,#e8f0ff); }
+.manager-live-map .manager-map-search-results strong { font-size:13px; font-weight:600; }
+.manager-live-map .manager-map-search-results small { font-size:11px; color:var(--r-muted,#64748b); }
+.manager-live-map .manager-map-search-empty { padding:12px!important; font-size:12px; color:var(--r-muted,#64748b); }
+
+.manager-live-map .manager-map-search-results button { flex-direction:row; align-items:center; justify-content:space-between; gap:12px; }
+.manager-live-map .manager-search-facility-copy { display:flex; flex-direction:column; gap:3px; min-width:0; }
+.manager-live-map .manager-map-search-results .risk-level-badge,.manager-live-map .manager-search-blocked { flex:none; font-size:11px; line-height:18px; padding:3px 8px; border-radius:5px; }
+.manager-live-map .manager-search-blocked { background:var(--admin-alert-surface,#fff0f2); color:var(--admin-alert-ink,#b84455); }

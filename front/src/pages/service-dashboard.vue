@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppPagination from '../components/AppPagination.vue'
 import { useNewItemGlow } from '../composables/useNewItemGlow'
 import { dashboardEventTarget } from '../utils/dashboard-event-target'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
@@ -205,7 +206,8 @@ onBeforeUnmount(() => {
                     ></div></RouterLink
                   ></li
                 ></ol
-              ><nav v-if="events.length" class="event-pagination" aria-label="최근 이벤트 페이지"
+              ><AppPagination v-if="events.length&&route.path.startsWith('/admin-app/')" :page="eventPage" :pages="eventPageCount" @change="eventPage=$event" />
+              <nav v-else-if="events.length" class="event-pagination" aria-label="최근 이벤트 페이지"
                 ><button type="button" :disabled="eventPage === 1" aria-label="최근 이벤트 이전 페이지" @click="eventPage--">이전</button
                 ><span aria-live="polite">{{eventPage}} / {{eventPageCount}}</span
                 ><button type="button" :disabled="eventPage === eventPageCount" aria-label="최근 이벤트 다음 페이지" @click="eventPage++">다음</button
@@ -224,7 +226,7 @@ onBeforeUnmount(() => {
                 ><ol class="rank"
                   ><li v-for="(equipment,index) in maintenanceTop" :key="equipment.equipId" :style="{'--risk-fill':riskFill(equipment.score)}"
                     ><span class="n">{{index+1}}</span
-                    ><RouterLink class="t" :to="{path:'/pm-equipment-detail',query:{id:equipment.equipId}}"
+                    ><RouterLink class="t dashboard-equipment-link" :to="{path:appLink('/pm-equipment-detail','/admin-app/screen-10'),query:{id:equipment.equipId}}"
                       >{{equipment.name
                       }}<small>{{equipment.underpassName}} · {{PM_TYPES[equipment.type] || equipment.type}} · {{equipment.type==='ROAD'?(equipment.roadStatus || '미분석'):(PM_LEVELS[equipment.level || ''] || '수신 대기')}}</small></RouterLink
                     ><span class="sc">{{equipment.score==null?'—':Number(equipment.score).toFixed(1)}}<small v-if="equipment.score!=null"> / 100</small></span><span v-if="equipment.score!=null&&!route.path.startsWith('/admin-app/')" class="dashboard-score-track" role="meter" aria-label="설비 위험 점수" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="parseFloat(riskFill(equipment.score))"><i aria-hidden="true"></i></span></li

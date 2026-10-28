@@ -33,6 +33,7 @@ button {
 .account-withdraw::backdrop {
   background: #172a4066;
 }
+
 label {
   display: grid;
   gap: 8px;

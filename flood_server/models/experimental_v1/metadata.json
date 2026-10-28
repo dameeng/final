@@ -1,0 +1,95 @@
+{
+  "features": [
+    "rain_now",
+    "rain_1h",
+    "rain_3h",
+    "rain_6h",
+    "rain_24h",
+    "rain_max_1h_24h",
+    "rain_prev3d",
+    "rain_trend",
+    "forecast_rain_1h",
+    "forecast_rain_3h",
+    "forecast_rain_6h",
+    "underpass_depth",
+    "underpass_length",
+    "pump_risk_score",
+    "dist_river_m",
+    "dist_sea_m"
+  ],
+  "monotonic_constraints": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    -1,
+    -1
+  ],
+  "metrics": {
+    "validation": {
+      "mae": 1.6506430811271466,
+      "rmse": 2.1485465966997266,
+      "mean_baseline_mae": 12.740510940551758
+    },
+    "test": {
+      "mae": 1.5928156427142965,
+      "rmse": 2.055647220734469,
+      "mean_baseline_mae": 11.656044960021973
+    }
+  },
+  "direction_checks": {
+    "underpass_depth": {
+      "violations": 0,
+      "mean_change": 0.09962659329264863,
+      "unchanged": 48
+    },
+    "pump_risk_score": {
+      "violations": 0,
+      "mean_change": 0.15796129698942485,
+      "unchanged": 6
+    },
+    "dist_river_m": {
+      "violations": 0,
+      "mean_change": -0.13566224380483533,
+      "unchanged": 92
+    },
+    "dist_sea_m": {
+      "violations": 0,
+      "mean_change": -0.01997108890029581,
+      "unchanged": 620
+    },
+    "forecast_rain_1h": {
+      "violations": 0,
+      "mean_change": 1.8630983522076237,
+      "unchanged": 12
+    },
+    "forecast_rain_3h": {
+      "violations": 0,
+      "mean_change": 1.2078458904154017,
+      "unchanged": 40
+    },
+    "forecast_rain_6h": {
+      "violations": 0,
+      "mean_change": 0.26628754078319467,
+      "unchanged": 111
+    }
+  },
+  "iterations": 210,
+  "experimental_only": true,
+  "limitations": [
+    "합성 공식으로 만든 점수를 학습함",
+    "실제 침수 확률을 검증한 모델이 아님",
+    "깊이와 펌프 점수에 임시 값이 포함됨",
+    "결과를 확인한 뒤 정한 개발용 데이터 분할임"
+  ]
+}

@@ -3,12 +3,24 @@ import { computed, nextTick, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useApp } from '../stores/app'
 import { useAdminProfile } from '../stores/adminProfile'
+import { backend } from '../services/backend'
+import type { Handover } from '../services/handover'
+import HandoverSummary from './HandoverSummary.vue'
 const route = useRoute(),
   router = useRouter(),
   app = useApp(),
   admin = useAdminProfile(),
   dialog = ref<HTMLDialogElement>(),
   message = ref('')
+const report = ref<Handover | null>(null), loading = ref(false)
+let request: AbortController | undefined
+async function load() {
+  request?.abort(); const current = new AbortController(); request = current
+  loading.value = true; message.value = ''; report.value = null
+  try { const result = await backend<Handover | null>('/api/shift-handovers/previous', { signal: current.signal }); if (!current.signal.aborted) report.value = result }
+  catch (e) { if (!current.signal.aborted) message.value = (e as Error).message }
+  finally { if (!current.signal.aborted) loading.value = false }
+}
 const name = computed(() =>
   app.account?.role === 'REGIONAL_ADMIN' ? app.account.name : admin.profile.name,
 )
@@ -53,8 +65,10 @@ async function open(manual = false) {
   message.value = ''
   dialog.value.showModal()
   markSeen()
+  void load()
 }
 function close() {
+  request?.abort()
   dialog.value?.close()
 }
 function hideToday() {
@@ -103,29 +117,10 @@ onBeforeUnmount(() => {
     </header>
     <div class="handover-body">
       <p>{{name}}님, 직전 근무조의 기록을 확인해 주세요.</p>
-      <section class="handover-summary">
-        <h3>직전 근무조 · 박○○</h3>
-        <p>06:00~14:00</p>
-        <dl>
-          <div>
-            <dt>통제</dt>
-            <dd>1건</dd>
-          </div>
-          <div>
-            <dt>위험 상승</dt>
-            <dd>3건</dd>
-          </div>
-          <div>
-            <dt>점검</dt>
-            <dd>2건</dd>
-          </div>
-          <div>
-            <dt>미처리 점검</dt>
-            <dd>2건</dd>
-          </div>
-        </dl>
-        <small>구성 예시 · 실제 근무 기록 연동 전입니다.</small>
-      </section>
+      <p v-if="loading" role="status">직전 근무 기록을 불러오는 중입니다.</p>
+      <HandoverSummary v-else-if="report" :report="report" />
+      <p v-else-if="!message">직전 근무 기록이 없습니다.</p>
+      <button v-if="message" type="button" @click="load">다시 불러오기</button>
       <div class="handover-links">
         <button type="button" @click="navigate('/shift-report')">데일리 리포트 · PDF 보기 →</button>
         <button type="button" @click="navigate('/pm-queue?pending=1')">미처리 점검 대상 보기 →</button>

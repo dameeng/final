@@ -21,7 +21,7 @@ const titles: Record<string, string> = {
   '11': '점검 대기',
   '12': '점검 등록',
   '13': '알림',
-  '14': '더보기·내 정보',
+  '14': '마이페이지',
   history: '점검 이력',
   document: '통제 전달 문서',
   contacts: '관할 담당자 연락처',

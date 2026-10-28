@@ -1,0 +1,300 @@
+/* Manager app layout tokens. Map controls, header icons and status badges keep their own sizes. */
+#app :is(.manager-app-shell,.restored-facility-detail) {
+  --manager-page-space:16px;
+  --manager-card-space:16px;
+  --manager-gap-small:8px;
+  --manager-gap:12px;
+  --manager-section-gap:24px;
+  --manager-control-height:44px;
+  --manager-control-radius:10px;
+  --manager-card-radius:14px;
+}
+#app .manager-app-shell .service-app-layout:not(.app-manager-overview):not(.app-map-screen):not(.app-auth)>.app-restored-body {
+  padding:var(--manager-page-space);
+}
+#app .manager-app-shell .app-restored-body>.service-workspace,
+#app .manager-app-shell .app-restored-body .app-service-content>.service-workspace {
+  width:100%; max-width:100%; min-width:0; margin:0; padding:0;
+}
+#app .manager-app-shell :is(.app-facility-detail,.pm-detail) { gap:var(--manager-section-gap); }
+#app .manager-app-shell .app-facility-detail { display:flex; flex-direction:column; }
+#app .manager-app-shell .app-facility-detail>:is(.app-facility-summary,.app-facility-metrics,.app-facility-records) { margin:0; }
+#app .manager-app-shell .app-facility-metrics>header { margin:0 0 12px; gap:12px; }
+#app .manager-app-shell .app-metric-grid { gap:12px; }
+#app .manager-app-shell :is(.service-heading,.page-head) {
+  gap:var(--manager-gap); margin:0 0 16px; align-items:center;
+}
+#app .manager-app-shell :is(.service-heading,.page-head)>div:empty { display:none; }
+#app .manager-app-shell :is(.service-actions,.pm-head-actions,.pm-detail-actions,.pm-buttons,.recognition-buttons,.row-actions,.inspection-actions,.facility-detail-actions) {
+  display:flex; align-items:center; flex-wrap:wrap; gap:var(--manager-gap-small);
+}
+#app .manager-app-shell :is(.service-actions,.pm-head-actions,.pm-detail-actions,.pm-buttons,.recognition-buttons,.row-actions,.inspection-actions,.facility-detail-actions)>:is(button,a),
+#app .manager-app-shell :is(.service-filters,.pm-filter-card,.account-panel,.pm-settings-card,.manager-notification-filters) button:not(.ui-icon-button),
+#app .manager-app-shell :is(.app-facility-control,.app-facility-records>.tunnel-cctv-trigger,.notification-detail-related),
+#app .manager-app-shell .service-modal form>footer>button {
+  box-sizing:border-box; display:inline-flex; justify-content:center; align-items:center;
+  min-height:var(--manager-control-height); margin:0; padding:10px 14px;
+  border-radius:var(--manager-control-radius); font:inherit; font-size:13px; font-weight:500; line-height:22px;
+}
+#app .manager-app-shell :is(.service-filters,.service-form-fields,.pm-filter-card,.account-panel,.pm-settings-card,.manager-notification-filters,.facility-camera-select) :is(input:not([type=checkbox]):not([type=radio]),select) {
+  box-sizing:border-box; min-height:var(--manager-control-height); margin:0; padding:10px 12px;
+  border-radius:var(--manager-control-radius); font:inherit; font-size:13px; line-height:22px;
+}
+#app .manager-app-shell :is(.service-filters,.service-form-fields,.pm-filter-card,.account-panel,.pm-settings-card) label,
+#app .manager-app-shell .facility-camera-select {
+  margin:0; gap:var(--manager-gap-small); font-size:13px; font-weight:500; line-height:20px;
+}
+#app .manager-app-shell :is(.app-facility-summary,.app-facility-records,.pm-filter-card,.inspection-target,.inspection-report,.account-panel,.pm-settings-card,.daily-section,.manager-notification-filters,.manager-push-devices),
+#app .manager-app-shell .pm-overview-grid>.card,
+#app .manager-app-shell .pm-analysis-grid>.card,
+#app .manager-app-shell .pm-detail>.card {
+  box-sizing:border-box; padding:var(--manager-card-space); border-radius:var(--manager-card-radius);
+}
+#app .manager-app-shell :is(.pm-equipment-card,.pm-settings-list>li,.daily-levels>section,.manager-notification-cards>li,.manager-profile-summary) {
+  box-sizing:border-box; padding:var(--manager-card-space); border-radius:var(--manager-card-radius);
+}
+#app .manager-app-shell .notification-detail-card { border-radius:var(--manager-card-radius); }
+#app .manager-app-shell :is(.notification-detail-header,.notification-detail-body) { padding:var(--manager-card-space); }
+#app .manager-app-shell .notification-detail-footer { padding:0 var(--manager-card-space) var(--manager-card-space); }
+#app .manager-app-shell :is(.pm-filter-card,.service-filters,.manager-notification-filters) {
+  gap:var(--manager-gap); margin:0 0 16px;
+}
+#app .manager-app-shell :is(.pm-grid,.app-facility-metrics,.app-facility-rows,.pm-settings-list,.pm-current-sensor-grid) { gap:var(--manager-gap); }
+
+/* Equipment settings use compact rows while keeping actions easy to tap. */
+#app .manager-app-shell .pm-settings-list {
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin:12px 0;
+  padding:0;
+}
+#app .manager-app-shell .pm-settings-list>li {
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  padding:12px;
+  margin:0;
+  min-height:0;
+  border-radius:10px;
+}
+#app .manager-app-shell .pm-settings-list .equipment-select {
+  margin:0;
+  padding:0;
+  min-height:0;
+  gap:6px;
+  line-height:1.5;
+}
+#app .manager-app-shell .pm-settings-list>li>p {
+  margin:0;
+  font-size:12px;
+  line-height:1.5;
+}
+#app .manager-app-shell .pm-settings-list>li>small {
+  display:block;
+  margin:0;
+  font-size:11px;
+  line-height:1.5;
+}
+#app .manager-app-shell .pm-settings-list .row-actions {
+  margin:0;
+  gap:8px;
+}
+#app .manager-app-shell .pm-settings-list .row-actions :is(a,button) {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:44px;
+  padding:6px 10px;
+  font-size:12px;
+  line-height:1.4;
+  box-sizing:border-box;
+}
+#app .manager-app-shell :is(.pm-section-heading,.app-facility-records>header) {
+  display:flex; align-items:center; justify-content:space-between; gap:var(--manager-gap); margin:0 0 12px;
+}
+#app .manager-app-shell :is(.app-facility-heading h1,.app-facility-heading h2) { margin:0; font-size:20px; font-weight:600; line-height:28px; }
+#app .manager-app-shell :is(.pm-section-heading h2,.app-facility-records h2,.inspection-target h2,.inspection-report h2,.account-panel h2,.daily-section h2,.manager-push-devices h2) {
+  margin:0; font-size:15px; font-weight:600; line-height:22px;
+}
+#app .manager-app-shell :is(.app-number-pagination,.service-pagination) { gap:4px; padding:12px 0; margin:0; }
+#app .manager-app-shell .app-number-pagination button { box-sizing:border-box; min-width:32px; min-height:40px; padding:8px; font-size:12px; line-height:22px; border-radius:8px; }
+
+/* Same tab geometry in manager app screens and the facility screen shown on the web. */
+/* Compact app summaries and consistent boxed lists. */
+#app .manager-app-shell .pm-daily-live .daily-levels { gap:8px; margin:12px 0; grid-template-columns:repeat(4,minmax(0,1fr)); }
+#app .manager-app-shell .pm-daily-live .daily-levels>section { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:8px 6px; min-height:68px; border-radius:12px; text-align:center; }
+#app .manager-app-shell .pm-daily-live .daily-levels h2 { margin:0 0 4px; color:var(--r-muted); font-size:11px; line-height:16px; font-weight:400; }
+#app .manager-app-shell .pm-daily-live .daily-levels strong { font-size:22px; line-height:26px; font-weight:600; }
+#app .manager-app-shell .pm-daily-live .daily-levels small { display:none; }
+#app .manager-app-shell .pm-daily-live .daily-level-danger strong { color:var(--admin-danger-ink,#dc362a); }
+#app .manager-app-shell .pm-daily-live .daily-level-caution strong { color:var(--admin-warning-ink,#bd7c0b); }
+#app .manager-app-shell .pm-daily-live .daily-section { margin:12px 0; padding:12px; }
+#app .manager-app-shell .pm-daily-live .daily-section h2 { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:0 0 8px; font-size:14px; }
+#app .manager-app-shell .pm-daily-live .daily-section h2 small { font-size:11px; font-weight:400; }
+#app .manager-app-shell .pm-daily-live .daily-section ul { margin:0; }
+#app .manager-app-shell .pm-daily-live .daily-section li { padding:8px 0; }
+#app .manager-app-shell .pm-daily-live .daily-section li :is(a,strong) { font-size:13px; line-height:20px; }
+#app .manager-app-shell .pm-daily-live .daily-section li span { margin-top:2px; font-size:11px; line-height:17px; color:var(--r-muted); }
+#app .manager-app-shell .pm-daily-live .daily-section .app-number-pagination { margin:8px 0 0; }
+#app .manager-app-shell .pm-equipment-cards { display:flex; flex-direction:column; gap:10px; }
+#app .manager-app-shell .pm-equipment-cards>.pm-equipment-card {
+  min-height:82px; padding:12px 14px; margin:0; gap:12px;
+  border:1px solid var(--r-line); border-radius:14px;
+  background:var(--r-surface); box-shadow:none;
+}
+#app .manager-app-shell .app-facility-rows { display:flex; flex-direction:column; gap:10px; }
+#app .manager-app-shell .app-facility-rows>a {
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  box-sizing:border-box; min-height:82px; margin:0; padding:12px 14px;
+  border:1px solid var(--r-line); border-radius:14px; background:var(--r-surface); text-decoration:none;
+}
+#app .manager-app-shell .pm-equipment-card-facility { font-size:12px; line-height:18px; }
+#app .manager-app-shell .pm-equipment-card-device { margin-top:4px; gap:4px; font-size:12px; line-height:20px; }
+#app .manager-app-shell .pm-equipment-card-device strong { font-size:14px; font-weight:600; }
+#app .manager-app-shell .pm-equipment-card-score { font-size:16px; font-weight:600; line-height:20px; }
+#app .manager-app-shell .pm-equipment-card-risk { gap:4px; }
+#app .manager-app-shell .pm-equipment-card:hover { background:var(--r-selected); }
+#app .manager-app-shell .pm-equipment-card:focus-visible { outline:2px solid var(--r-accent); outline-offset:-2px; }
+#app .manager-app-shell :is(.pm-equipment-live,.pm-queue-live) .pm-filters .tabs {
+  border:0; margin:0; padding:0; gap:8px;
+}
+#app .manager-app-shell :is(.pm-equipment-live,.pm-queue-live) .pm-filters .tabs button {
+  border:1px solid var(--r-line); border-radius:8px; background:var(--r-surface); color:var(--r-ink); font-size:12px; font-weight:500;
+}
+#app .manager-app-shell :is(.pm-equipment-live,.pm-queue-live) .pm-filters .tabs button[aria-pressed=true] {
+  border-color:var(--r-accent); background:var(--r-selected); color:var(--r-accent); box-shadow:inset 0 -2px var(--r-accent);
+}
+#app .manager-app-shell :is(.tabs,.service-tabs,.notification-category-tabs) {
+  display:flex; align-items:center; gap:8px; margin:0 0 16px; padding:0; flex-wrap:wrap;
+}
+#app .manager-app-shell :is(.tabs,.service-tabs,.notification-category-tabs)>:is(button,a),
+#app .restored-facility-detail>.tabs>a {
+  box-sizing:border-box; display:inline-flex; align-items:center; justify-content:center;
+  min-height:44px; margin:0; padding:10px 14px; border-width:1px; border-radius:10px;
+  font-size:13px; font-weight:500; line-height:22px; text-decoration:none;
+}
+#app .admin-interface.admin-shell .restored-facility-detail>.tabs {
+  display:flex; flex-direction:row; flex-wrap:nowrap; align-items:center; gap:8px;
+  width:fit-content; max-width:100%; margin:0 0 24px; padding:0;
+}
+#app .admin-interface.admin-shell .restored-facility-detail>.tabs>a { flex:0 0 72px; width:72px; min-width:0; max-width:none; }
+#app .restored-facility-detail>.tabs>a:is(.is-current,[aria-current=page]) {
+  border-width:1px; box-shadow:inset 0 -2px 0 var(--r-accent);
+}
+#app :is(.manager-app-shell,.restored-facility-detail) .facility-cctv-viewer { gap:16px; }
+#app :is(.manager-app-shell,.restored-facility-detail) .facility-camera-select { margin:0; gap:8px; font-size:13px; line-height:20px; }
+#app :is(.manager-app-shell,.restored-facility-detail) .facility-camera-select select { box-sizing:border-box; min-height:44px; padding:10px 12px; border-radius:10px; font-size:13px; line-height:22px; }
+#app :is(.manager-app-shell,.restored-facility-detail) .facility-cctv-viewer h2 { margin:0; font-size:15px; font-weight:600; line-height:22px; }
+#app :is(.manager-app-shell,.restored-facility-detail) .recognition-buttons { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0; }
+#app :is(.manager-app-shell,.restored-facility-detail) .recognition-buttons>button { box-sizing:border-box; min-height:44px; margin:0; padding:10px 16px; border-radius:10px; font:inherit; font-size:13px; font-weight:500; line-height:22px; }
+@media(max-width:360px) {
+  #app .manager-app-shell .pm-detail-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); width:100%; }
+  #app .manager-app-shell .pm-detail-actions>.pm-back-to-list { grid-column:1/-1; }
+}
+
+/* PM tools follow the same app forms, actions and section hierarchy. */
+:root[data-theme=dark] #app .manager-app-shell .admin-map-search { background:var(--r-surface)!important; color:var(--r-ink); border:1px solid var(--r-line); }
+:root[data-theme=dark] #app .manager-app-shell .admin-map-search input {
+  background:transparent!important; background-color:transparent!important; color:var(--r-ink)!important;
+  border:0; border-radius:0; box-shadow:none!important; outline:none; caret-color:var(--r-accent); color-scheme:dark;
+}
+:root[data-theme=dark] #app .manager-app-shell .admin-map-search input::placeholder { color:var(--r-muted); opacity:1; }
+:root[data-theme=dark] #app .manager-app-shell .admin-map-search button { background:transparent!important; color:var(--r-ink)!important; border:0; box-shadow:none; }
+:root[data-theme=dark] #app .manager-app-shell .admin-map-search:focus-within { border-color:var(--r-accent); box-shadow:0 0 0 2px color-mix(in srgb,var(--r-accent) 25%,transparent); }
+#app .manager-app-shell .app-list-result-count { margin:0 0 12px; font-size:12px; line-height:18px; font-weight:400; color:var(--r-muted); }
+#app .manager-app-shell .pm-settings-list-heading { display:flex; align-items:center; min-height:18px; margin:0 0 12px; }
+#app .manager-app-shell .pm-settings-list-heading>.app-list-result-count { display:block; margin:0; }
+#app .manager-app-shell .manager-mypage-profile { padding:18px 16px; margin:0 0 20px; border:1px solid var(--r-line); border-radius:14px; background:var(--r-surface); }
+#app .manager-app-shell .manager-mypage-identity { display:flex; align-items:center; gap:12px; }
+#app .manager-app-shell .manager-mypage-identity>.manager-profile-avatar { display:grid; place-items:center; flex:0 0 52px; width:52px; height:52px; border-radius:50%; background:var(--r-soft); overflow:hidden; }
+#app .manager-app-shell .manager-mypage-identity .manager-profile-avatar img { display:block; width:44px; height:44px; object-fit:contain; filter:grayscale(1); opacity:.8; }
+#app .manager-app-shell .manager-mypage-identity>div { display:flex; flex-direction:column; justify-content:center; gap:4px; min-height:52px; }
+#app .manager-app-shell .manager-mypage-identity h2 { margin:0; font-size:20px; font-weight:600; line-height:26px; }
+#app .manager-app-shell .manager-mypage-identity small { font-size:11px; line-height:16px; color:var(--r-muted); }
+#app .manager-app-shell .manager-mypage-profile>p { margin:14px 0; color:var(--r-muted); font-size:12px; line-height:1.7; }
+#app .manager-app-shell .manager-mypage-assignment { display:flex; flex-wrap:wrap; gap:8px; padding-top:12px; border-top:1px solid var(--r-line); }
+#app .manager-app-shell .manager-mypage-assignment>span { display:inline-flex; align-items:center; gap:5px; font-size:11px; color:var(--r-muted); }
+#app .manager-app-shell .manager-mypage-assignment .ui-icon { width:14px; height:14px; }
+#app .manager-app-shell .manager-account-page>.account-panel { padding:0; }
+#app .manager-app-shell .manager-account-page>.account-panel[open]>:not(summary) { margin-left:16px; margin-right:16px; }
+#app .manager-app-shell .manager-account-page>.account-panel[open]>h2 { margin-top:16px; margin-bottom:12px; font-size:15px; line-height:22px; }
+#app .manager-app-shell .manager-account-page>.account-panel[open]>p { margin-top:0; margin-bottom:12px; font-size:13px; line-height:1.7; }
+#app .manager-app-shell .manager-account-page>.account-panel[open]>small { display:block; margin-bottom:16px; font-size:11px; line-height:1.7; }
+#app .manager-app-shell .manager-account-page>.account-panel[open]>.account-summary { margin-top:0; margin-bottom:16px; }
+#app .manager-app-shell .manager-account-page>.account-panel[open]>button { margin:0 16px 16px; }
+#app .manager-app-shell .manager-account-page>.account-panel[open]>form { margin:16px; }
+#app .manager-app-shell .manager-account-page .manager-profile-summary { min-height:54px; padding:12px 16px; border-radius:0; }
+#app .manager-app-shell .manager-profile-summary>span>strong { font-size:13px; font-weight:500; }
+#app .manager-app-shell .manager-mypage-group-title { margin:20px 0 8px; font-size:12px; font-weight:500; color:var(--r-muted); }
+#app .manager-app-shell .manager-account-page .app-more-menu>a { justify-content:flex-start; min-height:52px; padding:12px 16px; }
+#app .manager-app-shell .manager-account-page .app-more-menu>a>span { margin-left:auto; }
+#app .manager-app-shell .manager-account-page :is(.app-more-menu,.manager-profile-summary,.manager-mypage-devices) .ui-icon { width:18px; height:18px; color:var(--r-accent); flex:none; }
+#app .manager-app-shell .manager-mypage-devices { margin:0 0 16px; border:1px solid var(--r-line); border-radius:14px; background:var(--r-surface); overflow:hidden; }
+#app .manager-app-shell .manager-mypage-devices>summary { display:flex; align-items:center; gap:12px; padding:14px 16px; min-height:52px; box-sizing:border-box; font-size:13px; list-style:none; cursor:pointer; }
+#app .manager-app-shell .manager-mypage-devices>summary::-webkit-details-marker { display:none; }
+#app .manager-app-shell .manager-mypage-devices>summary>span { margin-left:auto; color:var(--r-muted); }
+#app .manager-app-shell .manager-mypage-devices .manager-push-devices { border:0; margin:0; border-top:1px solid var(--r-line); border-radius:0; }
+#app .manager-app-shell .manager-account-page .account-actions { padding:0; margin:0; border:0!important; border-radius:0!important; background:transparent!important; box-shadow:none!important; }
+#app .manager-app-shell .manager-account-page .account-actions>h2 { margin:20px 0 8px; font-size:12px; font-weight:500; color:var(--r-muted); }
+#app .manager-app-shell .manager-account-page .account-actions>div { display:flex; flex-direction:column; gap:0; border:1px solid var(--r-line); border-radius:14px; overflow:hidden; }
+#app .manager-app-shell .manager-account-page .account-actions>div>button { display:flex; align-items:center; justify-content:space-between; width:100%; min-height:52px; margin:0; padding:12px 16px; border:0; border-radius:0; background:var(--r-surface); color:var(--r-ink); font-size:13px; font-weight:400; }
+#app .manager-app-shell .manager-account-page .account-actions>div>button { justify-content:flex-start; gap:12px; min-height:54px; }
+#app .manager-app-shell .manager-account-page .account-actions>div>button>.ui-icon { width:18px; height:18px; color:var(--r-accent); flex:none; }
+#app .manager-app-shell .manager-account-page .account-actions .account-menu-chevron { margin-left:auto; color:var(--r-muted); font-size:20px; }
+#app .manager-app-shell .manager-account-page .account-actions>div>button+button { border-top:1px solid var(--r-line); }
+#app .manager-app-shell .manager-mypage-logout { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; min-height:44px; margin:20px 0 8px; border:1px solid var(--r-line); border-radius:10px; background:var(--r-surface); color:var(--r-ink); font:inherit; font-size:13px; }
+#app .manager-app-shell .pm-sensor-table-card .service-table-wrap { border:0; background:transparent; overflow:visible; }
+#app .manager-app-shell .pm-sensor-table-card .service-table { display:block; min-width:0; width:100%; }
+#app .manager-app-shell .pm-sensor-table-card .service-table thead { display:none; }
+#app .manager-app-shell .pm-sensor-table-card .service-table tbody { display:flex; flex-direction:column; gap:8px; }
+#app .manager-app-shell .pm-sensor-table-card .service-table tbody tr {
+  display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; padding:10px;
+  margin:0; min-height:0; height:auto; border:1px solid var(--r-line); border-radius:10px; background:var(--r-surface);
+}
+#app .manager-app-shell .pm-sensor-table-card .service-table td[data-label] {
+  display:flex; flex-direction:column; align-items:flex-start; gap:3px; width:auto; min-width:0;
+  padding:0; margin:0; border:0; font-size:12px; line-height:18px; overflow-wrap:anywhere;
+}
+#app .manager-app-shell .pm-sensor-table-card .service-table td[data-label]::before { font-size:10px; line-height:15px; font-weight:400; color:var(--r-muted); }
+#app .manager-app-shell .pm-sensor-table-card .service-table td[data-label='센서'] { grid-column:1/3; grid-row:1; font-weight:600; }
+#app .manager-app-shell .pm-sensor-table-card .service-table td[data-label='상태'] { grid-column:3; grid-row:1; align-items:flex-end; }
+#app .manager-app-shell .pm-sensor-table-card .service-table td:is([data-label='센서'],[data-label='상태'])::before { display:none; }
+#app .manager-app-shell .pm-sensor-table-card .pm-chip { display:inline-flex; width:auto; min-width:0; padding:2px 7px; font-size:10px; line-height:16px; }
+#app .manager-app-shell .pm-admin-tools .pm-settings-list>li { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px 10px; }
+#app .manager-app-shell .pm-admin-tools .equipment-delete { padding:6px 10px; font-size:12px; }
+#app .admin-interface .pm-head-actions>.pm-navigation-link { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding-inline:8px; white-space:nowrap; }
+#app .admin-interface .pm-navigation-link>span:last-child { flex:none; font-size:14px; line-height:1; }
+#app .manager-app-shell .pm-admin-tools { color:var(--r-ink); font-size:13px; }
+#app .manager-app-shell .pm-admin-tools>.service-heading { margin-bottom:12px; }
+#app .manager-app-shell .pm-admin-tools>.service-heading .service-actions { width:100%; }
+#app .manager-app-shell .pm-admin-tools>.service-heading .service-actions>button { width:100%; }
+#app .manager-app-shell .pm-admin-tools :is(button,input:not([type=checkbox]),select) {
+  box-sizing:border-box; min-width:0; min-height:44px; max-width:100%;
+  border:1px solid var(--r-line); border-radius:10px; background:var(--r-surface); color:var(--r-ink);
+  padding:10px 12px; font:inherit; font-size:13px; line-height:22px;
+}
+#app .manager-app-shell .pm-admin-tools button { display:inline-flex; align-items:center; justify-content:center; cursor:pointer; }
+#app .manager-app-shell .pm-admin-tools button:disabled { opacity:.5; cursor:default; }
+#app .manager-app-shell .pm-admin-tools .service-filters {
+  display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px;
+  padding:12px; margin:0 0 12px; border:1px solid var(--r-line); border-radius:14px; background:var(--r-surface);
+}
+#app .manager-app-shell .pm-admin-tools .service-filters label { display:flex; flex-direction:column; gap:6px; min-width:0; font-size:12px; color:var(--r-muted); }
+#app .manager-app-shell .pm-admin-tools .service-filters :is(input,select) { width:100%; height:44px; color:var(--r-ink); }
+#app .manager-app-shell .pm-daily-live .service-filters { grid-template-columns:minmax(0,1fr) 72px; align-items:end; }
+#app .manager-app-shell .pm-admin-tools :is(.service-filters>button,.threshold-form>button) { background:var(--r-accent); color:#fff; border-color:var(--r-accent); font-weight:600; }
+#app .manager-app-shell .pm-admin-tools .pm-settings-card { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; padding:12px; margin:0 0 12px; }
+#app .manager-app-shell .pm-admin-tools .pm-settings-card h2 { grid-column:1/-1; margin:0 0 2px; font-size:14px; font-weight:600; line-height:22px; }
+#app .manager-app-shell .pm-admin-tools .pm-settings-card>label { width:auto; min-width:0; font-size:12px; color:var(--r-muted); gap:6px; }
+#app .manager-app-shell .pm-admin-tools .pm-settings-card>button { grid-column:1/-1; width:100%; }
+#app .manager-app-shell .pm-admin-tools .equipment-select input { width:16px; height:16px; margin:0 3px 0 0; accent-color:var(--r-accent); }
+#app .manager-app-shell .pm-admin-tools .row-actions>a { color:var(--r-accent); text-decoration:none; }
+#app .manager-app-shell .pm-admin-tools .row-actions>button { color:var(--admin-alert-ink,#b84455); }
+#app .manager-app-shell .pm-admin-tools .daily-section h2 { color:var(--r-ink); }
+#app .manager-app-shell .pm-admin-tools .daily-section h2 small { display:inline; color:var(--r-muted); }
+#app .manager-app-shell .pm-admin-tools .daily-section li>a { color:var(--r-ink); font-weight:600; text-decoration:none; }
+#app .manager-app-shell .pm-admin-tools .daily-section>p { margin:6px 0; font-size:12px; color:var(--r-muted); }
+#app .manager-app-shell .pm-admin-tools .app-number-pagination button { min-width:30px; min-height:36px; padding:6px; line-height:22px; }
+#app .manager-app-shell .pm-admin-tools .app-number-pagination button[aria-current=page] { background:var(--r-selected); border-color:var(--r-accent); color:var(--r-accent); }
+#app .manager-app-shell .pm-admin-tools :is(button,input,select,a):focus-visible { outline:2px solid var(--r-accent); outline-offset:2px; }

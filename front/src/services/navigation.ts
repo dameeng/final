@@ -6,6 +6,19 @@ export type Route = {
   sections: { roads: { vertexes: number[] }[]; guides?: Guide[] }[]
 }
 export type Point = { lat: number; lng: number }
+export type SafetyRoute = {
+  distance: number; duration: number; path: [number, number][]
+  guides: { lat: number; lng: number; name: string; text: string; at: number }[]
+  mandatory: boolean; detoured: boolean; message: string
+  passesHazards: string[]; blockedHazards: string[]; advisoryHazards: string[]
+  suggestedDetour?: { distance:number;duration:number;path:[number,number][];guides:SafetyRoute['guides'];message:string;extraSec:number } | null
+}
+export function safetyRouteCandidate(route: Pick<SafetyRoute,'distance'|'duration'|'path'|'guides'>): Route {
+  return { result_code:0, summary:{distance:route.distance,duration:route.duration}, sections:[{
+    roads:[{vertexes:route.path.flatMap(([lat,lng])=>[lng,lat])}],
+    guides:(route.guides||[]).map(guide=>({name:guide.name,x:guide.lng,y:guide.lat,distance:guide.at,guidance:guide.text})),
+  }] }
+}
 export async function navigationRequest<T>(
   path: string,
   params: Record<string, string>,
@@ -14,6 +27,7 @@ export async function navigationRequest<T>(
   const response = await fetch(`/api/navigation/${path}?${new URLSearchParams(params)}`, {
     signal,
     cache: 'no-store',
+    credentials: 'include',
   })
   const body = await response.json().catch(() => null)
   if (!response.ok || !body?.success)

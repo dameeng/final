@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppPagination from '../components/AppPagination.vue'
 import { adminPageTitle } from '../data/adminTitles'
 import { managerAppPath } from '../utils/manager-app-path'
 const appPath = (path: string) => managerAppPath(path, route.path)
@@ -174,6 +175,7 @@ function act(row: PmEvent, mode: 'start' | 'note' | 'resolve') {
         </label>
       </div>
 
+      <p v-if="route.path.startsWith('/admin-app/')" class="app-list-result-count" role="status">{{list?`총 ${list.totalItems}건`:'목록을 불러오는 중입니다.'}}</p>
       <div class="pm-results-viewport" :aria-busy="loading">
       <p v-if="error" role="alert" class="service-error">{{error}} <button @click="load">다시 시도</button></p>
       <p v-if="loading&&!list" role="status">점검 대상을 불러오는 중입니다.</p>
@@ -217,7 +219,8 @@ function act(row: PmEvent, mode: 'start' | 'note' | 'resolve') {
       </div>
 
       </div>
-      <div class="pm-pager">
+      <AppPagination v-if="route.path.startsWith('/admin-app/')" :page="page" :pages="list?.totalPages||1" :disabled="loading" @change="page=$event" />
+      <div v-else class="pm-pager">
         <button class="btn sm" type="button" :disabled="loading||page<=1" @click="page--">이전</button>
         <span>{{page}} / {{Math.max(1,list?.totalPages||1)}} · 전체 {{list?.totalItems??0}}건</span>
         <button class="btn sm" type="button" :disabled="loading||page>=Math.max(1,list?.totalPages||1)" @click="page++">다음</button>

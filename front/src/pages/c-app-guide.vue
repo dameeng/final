@@ -29,7 +29,7 @@ const features: Feature[] = [
     label: '위험 알림',
     title: '필요한 순간에, 안전 소식.',
     description:
-      '관심 시설의 위험 단계와 통제 소식을 확인하세요. 알림 내역을 모아 보고 필요한 정보를 다시 찾아볼 수 있어요.',
+      '지하차도 통제와 우회 안내를 확인하세요. 알림 내역을 모아 보고 필요한 정보를 다시 찾아볼 수 있어요.',
     screenTitle: '나의 안전 알림',
   },
   {
@@ -45,6 +45,7 @@ const features: Feature[] = [
 const selected = ref<FeatureId>('map'),
   platform = ref<Platform>('android')
 const current = computed(() => features.find((f) => f.id === selected.value)!)
+const promoPaused = ref(false)
 const steps = computed(() =>
   platform.value === 'android'
     ? [
@@ -55,7 +56,7 @@ const steps = computed(() =>
     : [
         'App Store 설치 링크가 열리면 ROUTEL 앱을 설치해 주세요.',
         '앱을 실행하고 회원 정보를 입력해 주세요.',
-        '알림 수신을 설정하고 관심 시설을 확인하세요.',
+        '알림 수신을 설정하고 지하차도 통제 안내를 확인하세요.',
       ],
 )
 </script>
@@ -77,16 +78,15 @@ const steps = computed(() =>
           ><span>지하차도 통제 현황</span><span>인근 날씨</span><span>안전 알림</span></div
         ></div
       >
-   <div class="app-guide-visual"
+   <div class="app-guide-visual" :class="{'promo-paused':promoPaused}"
         >
-        <svg class="app-guide-brand-route" viewBox="0 0 420 470" fill="none" aria-hidden="true"><path d="M12 364H66C102 364 112 328 112 287V151C112 102 143 78 185 78H408" stroke="currentColor" stroke-width="2" stroke-dasharray="4 8" /><circle cx="66" cy="364" r="6" fill="currentColor" /><circle cx="365" cy="78" r="6" fill="currentColor" /></svg
-        ><div class="app-guide-floating-note"
-          ><span class="app-guide-status-dot"></span> 이동 전 확인하는 작은 습관</div
+        <div class="app-guide-floating-note"
+          ><span class="app-guide-status-dot"></span><span class="app-guide-promo-idle">이동 전 확인하는 작은 습관</span><span class="app-guide-promo-alert">필요한 순간, 안전 알림 도착</span></div
         ><div class="app-guide-phone" aria-label="ROUTEL 앱 화면 예시"
           ><div class="app-guide-phone-notch"></div
           ><div class="app-guide-phone-top"
             ><b>ROUTEL<span>●</span></b
-            ><svg
+            ><span class="app-guide-promo-bell"><span class="app-guide-promo-count" aria-hidden="true">1</span><svg
               viewBox="0 0 24 24"
               width="18"
               height="18"
@@ -95,7 +95,8 @@ const steps = computed(() =>
               stroke-width="1.7"
               aria-hidden="true"
             >
-              <path d="M6 8a6 6 0 0 1 12 0c0 6 3 7 3 9H3c0-2 3-3 3-9m4 13h4" /></svg></div
+              <path d="M6 8a6 6 0 0 1 12 0c0 6 3 7 3 9H3c0-2 3-3 3-9m4 13h4" /></svg></span></div
+          ><div class="app-guide-promo-notification" aria-hidden="true"><div class="app-guide-promo-notification-top"><span class="app-guide-promo-notification-icon"><UiIcon name="bell" /></span><strong>ROUTEL · 안전 안내</strong><small>지금</small></div><b>지하차도가 통제 중입니다.</b><p>안전한 우회 경로를 이용해 주세요.</p></div
           ><div class="app-guide-phone-heading"
             ><small>오늘도 안전하게</small><h2>{{current.screenTitle}}</h2></div
           ><div class="app-guide-phone-map"
@@ -122,19 +123,21 @@ const steps = computed(() =>
                 <rect x="150" y="20" width="25" height="40" rx="7" />
                 <rect x="65" y="210" width="25" height="32" rx="7" />
               </g>
-              <path class="app-guide-route-glow" d="m-20 200 320-120" fill="none" stroke="#72b8ed" stroke-width="3" pathLength="1000" stroke-dasharray="70 930" stroke-linecap="round" />
+              <path d="M240 188.125 81.557 103.952 0 181.176" fill="none" stroke="#72b8ed" stroke-width="4" opacity=".35" stroke-linecap="round" stroke-linejoin="round" />
+              <path class="app-guide-route-glow" d="M240 188.125 81.557 103.952 0 181.176" fill="none" stroke="#2e75be" stroke-width="4" pathLength="1000" stroke-dasharray="110 890" stroke-linecap="round" stroke-linejoin="round" />
               <circle class="app-guide-map-beacon" cx="110" cy="160" r="22" fill="#16805d" opacity=".12" />
               <circle class="app-guide-map-beacon app-guide-map-beacon-next" cx="70" cy="67" r="18" fill="#16805d" opacity=".12" />
               <circle cx="110" cy="160" r="11" fill="#16805d" stroke="white" stroke-width="4" />
-              <circle cx="195" cy="105" r="11" fill="#ef9a32" stroke="white" stroke-width="4" />
+              <circle class="app-guide-promo-marker-halo" cx="195" cy="105" r="22" fill="#dc3f45" opacity="0" />
+              <circle class="app-guide-promo-marker" cx="195" cy="105" r="11" fill="#16805d" stroke="white" stroke-width="4" />
               <circle cx="70" cy="67" r="10" fill="#16805d" stroke="white" stroke-width="4" />
-              <circle cx="180" cy="230" r="7" fill="#2e75be" stroke="white" stroke-width="3" /></svg
+              <circle cx="240" cy="188.125" r="7" fill="#2e75be" stroke="white" stroke-width="3" /></svg
             ><div class="app-guide-map-chip">부산 지하차도 <span>↗</span></div></div
           ><div class="app-guide-phone-info" v-if="selected==='map'"
             ><span class="app-guide-mini-badge">안전</span><b>지하차도 상태 확인</b
             ><small>통제 현황 · 인근 날씨</small></div
           ><div class="app-guide-phone-info" v-else-if="selected==='alert'"
-            ><span class="app-guide-mini-badge orange">알림</span><b>관심 시설의 새로운 소식</b
+            ><span class="app-guide-mini-badge orange">통제</span><b>지하차도 통제 · 우회 안내</b
             ><small>위험 단계와 통제 정보를 확인하세요.</small></div
           ><div class="app-guide-phone-info" v-else
             ><span class="app-guide-mini-badge">출발 전</span><b>이동 구간을 살펴보세요</b
@@ -142,7 +145,7 @@ const steps = computed(() =>
           ><div class="app-guide-phone-nav"
             ><span class="active">현황</span><span>알림</span><span>내 정보</span></div
           ></div
-        ><p class="app-guide-preview-caption">앱 화면 예시</p></div
+        ><div class="app-guide-preview-footer"><p class="app-guide-preview-caption">안전 알림 수신 과정 · 앱 화면 예시</p><button type="button" class="app-guide-promo-control" :aria-label="promoPaused?'홍보 애니메이션 재생':'홍보 애니메이션 일시정지'" :aria-pressed="promoPaused" @click="promoPaused=!promoPaused">{{promoPaused?'▶ 재생':'Ⅱ 일시정지'}}</button></div></div
       >
     </section>
   <section class="app-guide-feature-section" aria-labelledby="app-features-title"

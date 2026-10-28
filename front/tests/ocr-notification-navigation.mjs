@@ -13,8 +13,11 @@ try {
     let data = {items:[],page:1,totalItems:0,totalPages:1}
     if (path === '/api/managers/me') data = {id:1,name:'관리자',role:'REGIONAL_ADMIN',regions:[{id:1,name:'중구'},{id:3,name:'동구'}]}
     else if (path === '/api/customers/me') data = null
-    else if (path === '/api/regions') data = [{id:1,name:'중구'},{id:3,name:'동구'}]
-    else if (path === '/api/underpasses') data = {...data,items:[{id:7,name:'초량지하차도',regionId:3}]}
+    else if (path === '/api/regions') data = [{id:1,name:'중구'},{id:3,name:'동구'},{id:9,name:'사하구'}]
+    else if (path === '/api/underpasses') {
+      assert.equal(url.searchParams.get('scope'),'MINE')
+      data = {...data,items:[{id:7,name:'초량지하차도',regionId:3},{id:8,name:'다른 지역 시설',regionId:9}]}
+    }
     else if (path === '/api/plate-logs') {
       const q = Object.fromEntries(url.searchParams)
       queries.push(q)
@@ -29,11 +32,13 @@ try {
   await page.goto(base+'/admin-data/ocr')
   await expect(page.getByLabel('담당 지역',{exact:true})).toHaveValue('1')
   await page.getByLabel('지하차도',{exact:true}).selectOption('7')
-  await expect(page.getByLabel('담당 지역',{exact:true})).toHaveValue('')
+  await expect(page.getByLabel('담당 지역',{exact:true})).toHaveValue('3')
+  await expect(page.getByLabel('담당 지역',{exact:true}).locator('option')).toHaveText(['전체','중구','동구'])
+  await expect(page.getByLabel('지하차도',{exact:true}).locator('option')).toHaveText(['전체','초량지하차도'])
   await page.getByRole('button',{name:'조회',exact:true}).click()
   await expect(page.locator('tbody')).toContainText('12가3456')
   assert.equal(queries.at(-1).underpassId,'7')
-  assert(!queries.at(-1).regionId)
+  assert.equal(queries.at(-1).regionId,'3')
   const manual = page.getByRole('link',{name:'번호판 판별 대기',exact:true})
   await expect(manual).toHaveClass('btn')
   const buttonStyles = await page.locator('.service-heading .service-actions').evaluate(el => {
@@ -76,8 +81,18 @@ try {
     await page.goto(base+prefix+'?id=42&regionId=3')
     await expect(page.locator('.ocr-record:visible')).toContainText('12가3456')
     await expect(page.getByLabel('지하차도',{exact:true})).toHaveValue('7')
+    await expect(page.getByLabel('담당 지역',{exact:true})).toHaveValue('3')
     assert(queries.some(q=>q.size==='100'&&q.page==='2'),'Find notification record beyond first page')
     if (prefix.includes('admin-data')) await expect(page.locator('dialog:visible')).toHaveCount(1)
+  }
+  for (const prefix of ['/admin-data/ocr','/admin-app/ocr']) {
+    await page.goto(base+prefix+'?underpassId=7')
+    await expect(page.getByLabel('담당 지역',{exact:true})).toHaveValue('3')
+    await expect(page.getByLabel('지하차도',{exact:true})).toHaveValue('7')
+    await page.getByLabel('담당 지역',{exact:true}).selectOption('1')
+    await expect(page.getByLabel('지하차도',{exact:true})).toHaveValue('')
+    await expect(page.getByLabel('담당 지역',{exact:true}).locator('option')).toHaveText(['전체','중구','동구'])
+    await expect(page.getByLabel('지하차도',{exact:true}).locator('option')).toHaveText(['전체','초량지하차도'])
   }
   const target = await page.evaluate(async () => {
     const {notificationTarget} = await import('/src/utils/notification-target.ts')

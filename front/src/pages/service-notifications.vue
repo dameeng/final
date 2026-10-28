@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import AppPagination from '../components/AppPagination.vue'
+import NotificationDetailView from '../components/NotificationDetailView.vue'
 import { useNotificationGlow } from '../stores/notificationGlow'
 const notificationGlow = useNotificationGlow()
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
@@ -77,6 +79,10 @@ async function load() {
   }
 }
 async function open(item: CustomerNotification) {
+  if (route.path.startsWith('/customer-app/')) {
+    await router.push({ path: route.path, query: { ...route.query, notification: String(item.id) } })
+    return
+  }
   if (expanded.value === item.id) {
     expanded.value = null
     return
@@ -96,6 +102,7 @@ async function open(item: CustomerNotification) {
     await router.push(destination)
 }
 async function selectFromLink() {
+  if (route.path.startsWith('/customer-app/')) return
   const id = Number(route.query.notification)
   if (!Number.isSafeInteger(id) || id <= 0) return
   const item = rows.value.find((row) => row.id === id)
@@ -144,7 +151,8 @@ onBeforeUnmount(() => {
 })
 </script>
 <template>
-  <main class="service-workspace customer-notification-center" :class="{'app-notification-center':route.path.startsWith('/customer-app/')}"
+  <NotificationDetailView v-if="route.path.startsWith('/customer-app/')&&route.query.notification" />
+  <main v-else class="service-workspace customer-notification-center" :class="{'app-notification-center':route.path.startsWith('/customer-app/')}"
     ><div class="service-heading" :class="{'app-resource-heading':route.path.startsWith('/customer-app/')}"
       ><h1>알림 내역</h1
       ><button v-if="!route.path.startsWith('/customer-app/')" type="button" :disabled="loading" @click="refresh">새로고침</button></div
@@ -179,20 +187,21 @@ onBeforeUnmount(() => {
         ><button
           type="button"
           class="notification-center-item"
-          :aria-expanded="expanded===item.id"
+          :aria-expanded="route.path.startsWith('/customer-app/')?undefined:expanded===item.id"
           @click="open(item)"
           ><span class="notification-center-category">{{notificationCategory(item.category)}}</span
           ><span class="notification-center-title">{{item.title}}</span
           ><span v-if="!item.read" class="notification-unread-dot" aria-label="안 읽음"></span
           ><time>{{displayDate(item.createdAt)}}</time
-          ><span aria-hidden="true">{{expanded===item.id?'⌃':'⌄'}}</span></button
+          ><span aria-hidden="true">{{route.path.startsWith('/customer-app/')?'›':expanded===item.id?'⌃':'⌄'}}</span></button
         ><p v-if="expanded===item.id" class="notification-center-body">{{item.body}}</p></li
       ><li
         v-if="!rows.length"
         class="notification-center-empty"
         >{{unreadOnly?'안 읽은 알림이 없습니다.':'받은 알림이 없습니다.'}}</li
       ></ul
-    ><nav class="service-pagination" aria-label="알림 페이지"
+    ><AppPagination v-if="route.path.startsWith('/customer-app/')" :page="page" :pages="pages" :disabled="loading" @change="page=$event;load()" />
+    <nav v-else class="service-pagination" aria-label="알림 페이지"
       ><button type="button" :disabled="page<=1||loading" @click="page--;load()">이전</button
       ><span>{{page}} / {{pages}} 페이지 · 전체 {{total}}개</span
       ><button type="button" :disabled="page>=pages||loading" @click="page++;load()"
