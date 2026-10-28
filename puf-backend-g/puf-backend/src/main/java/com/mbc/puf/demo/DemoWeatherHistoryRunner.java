@@ -81,7 +81,9 @@ public class DemoWeatherHistoryRunner implements ApplicationRunner {
         int total = 0;
         for (Object[] a : areas) {
             long areaId = ((Number) a[0]).longValue();
-            LocalDateTime firstExisting = a[1] == null ? null : ((Timestamp) a[1]).toLocalDateTime();
+            // Hibernate 7 은 timestamp 를 LocalDateTime 으로 돌려준다 (예전 java.sql.Timestamp 도 같이 받는다)
+            LocalDateTime firstExisting = a[1] == null ? null
+                    : (a[1] instanceof LocalDateTime l ? l : ((Timestamp) a[1]).toLocalDateTime());
             LocalDateTime end = firstExisting == null ? now : firstExisting.minusMinutes(stepMinutes);
             StringBuilder values = new StringBuilder();
             int n = 0;
