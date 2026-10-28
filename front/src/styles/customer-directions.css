@@ -785,6 +785,18 @@ dialog.navigation-weather-dialog {
   font: inherit;
 }
 .navigation-demo-controls small { flex-basis: 100%; }
+#app .navigation-demo-controls :is(select,button) {
+  box-sizing:border-box; min-width:0; min-height:40px; padding:8px 12px;
+  border:1px solid var(--r-line); border-radius:9px;
+  background:var(--r-surface); color:var(--r-ink); font:inherit; font-size:12px; line-height:20px;
+}
+#app .navigation-demo-controls .navigation-demo-actions {
+  display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.6fr); gap:8px; width:100%;
+}
+#app .navigation-demo-actions>button { width:100%; text-align:center; }
+#app .navigation-demo-actions>button:last-child { background:var(--r-selected); color:var(--r-accent); }
+#app .navigation-demo-actions>button:disabled { opacity:.55; cursor:wait; }
+#app .navigation-demo-controls>small { color:var(--r-muted); font-size:11px; line-height:18px; }
 .navigation-summary {
   touch-action: pan-x;
 }

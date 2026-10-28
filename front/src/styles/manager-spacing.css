@@ -1,6 +1,6 @@
 /* Manager app layout tokens. Map controls, header icons and status badges keep their own sizes. */
 #app :is(.manager-app-shell,.restored-facility-detail) {
-  --manager-page-space:16px;
+  --manager-page-space:12px;
   --manager-card-space:16px;
   --manager-gap-small:8px;
   --manager-gap:12px;
@@ -239,6 +239,15 @@
 #app .manager-app-shell .manager-mypage-devices>summary { display:flex; align-items:center; gap:12px; padding:14px 16px; min-height:52px; box-sizing:border-box; font-size:13px; list-style:none; cursor:pointer; }
 #app .manager-app-shell .manager-mypage-devices>summary::-webkit-details-marker { display:none; }
 #app .manager-app-shell .manager-mypage-devices>summary>span { margin-left:auto; color:var(--r-muted); }
+#app .manager-app-shell .manager-account-page :is(.manager-profile-chevron,.app-more-menu>a>span,.manager-mypage-devices>summary>span,.account-menu-chevron) {
+  display:inline-flex; align-items:center; justify-content:center; flex:0 0 16px;
+  width:16px; height:16px; margin-left:auto; padding:0; font-size:0; line-height:1;
+  color:var(--r-muted); font-weight:400;
+}
+#app .manager-app-shell .manager-account-page :is(.manager-profile-chevron,.app-more-menu>a>span,.manager-mypage-devices>summary>span,.account-menu-chevron)::before {
+  content:''; display:block; box-sizing:border-box; width:7px; height:7px;
+  border-top:1.5px solid currentColor; border-right:1.5px solid currentColor; transform:rotate(45deg);
+}
 #app .manager-app-shell .manager-mypage-devices .manager-push-devices { border:0; margin:0; border-top:1px solid var(--r-line); border-radius:0; }
 #app .manager-app-shell .manager-account-page .account-actions { padding:0; margin:0; border:0!important; border-radius:0!important; background:transparent!important; box-shadow:none!important; }
 #app .manager-app-shell .manager-account-page .account-actions>h2 { margin:20px 0 8px; font-size:12px; font-weight:500; color:var(--r-muted); }
@@ -246,7 +255,7 @@
 #app .manager-app-shell .manager-account-page .account-actions>div>button { display:flex; align-items:center; justify-content:space-between; width:100%; min-height:52px; margin:0; padding:12px 16px; border:0; border-radius:0; background:var(--r-surface); color:var(--r-ink); font-size:13px; font-weight:400; }
 #app .manager-app-shell .manager-account-page .account-actions>div>button { justify-content:flex-start; gap:12px; min-height:54px; }
 #app .manager-app-shell .manager-account-page .account-actions>div>button>.ui-icon { width:18px; height:18px; color:var(--r-accent); flex:none; }
-#app .manager-app-shell .manager-account-page .account-actions .account-menu-chevron { margin-left:auto; color:var(--r-muted); font-size:20px; }
+#app .manager-app-shell .manager-account-page .account-actions .account-menu-chevron { margin-left:auto; color:var(--r-muted); font-size:0; }
 #app .manager-app-shell .manager-account-page .account-actions>div>button+button { border-top:1px solid var(--r-line); }
 #app .manager-app-shell .manager-mypage-logout { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; min-height:44px; margin:20px 0 8px; border:1px solid var(--r-line); border-radius:10px; background:var(--r-surface); color:var(--r-ink); font:inherit; font-size:13px; }
 #app .manager-app-shell .pm-sensor-table-card .service-table-wrap { border:0; background:transparent; overflow:visible; }

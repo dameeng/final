@@ -280,11 +280,6 @@ body:has(.public-chat-dialog[open]) {
   background:var(--r-surface); color:var(--r-accent); font-size:14px; font-weight:650; line-height:20px;
   white-space:nowrap; box-shadow:0 2px 6px #17365710; pointer-events:none;
 }
-@media (hover:hover) and (prefers-reduced-motion:no-preference) {
-  #app #public-chat-launcher:is(:hover,:focus-visible):not(.is-dragging):not(.is-reacting) .chat-launcher-mascot {
-    animation:chat-mascot-greeting 1100ms ease-in-out infinite;
-  }
-}
 #app #public-chat-launcher .chat-mascot-reaction {
   position:absolute; bottom:calc(100% + 6px); right:0; width:max-content; max-width:220px;
   padding:9px 12px; border:1px solid var(--r-line); border-radius:12px 12px 3px 12px;
@@ -318,3 +313,18 @@ body:has(.public-chat-dialog[open]) {
 #app .customer-app-editorial .public-chat-dialog .public-chat-form { flex:0 0 auto; padding:12px 0 0; margin:0; }
 #app .customer-app-editorial .public-chat-dialog .public-chat-compose { grid-template-columns:minmax(0,1fr) auto; gap:8px; }
 #app .customer-app-editorial .public-chat-dialog .public-chat-compose button { padding:10px 12px; font-size:13px; }
+#app #public-chat-launcher .chat-mascot-mark { position:absolute; top:9px; right:1px; color:var(--r-accent); font-size:22px; line-height:1; pointer-events:none; text-shadow:0 1px 3px var(--r-surface); }
+#app #public-chat-launcher[data-reaction=cuddle] .chat-mascot-mark { color:#d45d88; }
+@media(prefers-reduced-motion:no-preference) {
+  #app #public-chat-launcher .chat-mascot-mark { animation:chat-reaction-sparkle 700ms ease-in-out infinite alternate; }
+}
+@keyframes chat-reaction-sparkle { from {transform:translateY(2px) rotate(-8deg);opacity:.65;} to {transform:translateY(-4px) rotate(8deg);opacity:1;} }
+#app #public-chat-launcher .chat-mascot-reaction.is-idle { right:24px; min-width:34px; padding:4px 8px; text-align:center; font-size:18px; line-height:22px; color:var(--r-muted); }
+@media(prefers-reduced-motion:no-preference) {
+  #app #public-chat-launcher.is-walking .chat-launcher-mascot { animation:ru-walking-steps 480ms ease-in-out infinite; }
+}
+#app #public-chat-launcher.is-walking { --ru-facing:1; }
+#app #public-chat-launcher.is-walking.faces-left { --ru-facing:-1; }
+#app #public-chat-launcher.is-walking .chat-launcher-mascot { transform:scaleX(var(--ru-facing)); }
+#app #public-chat-launcher[data-expression=sulk] .chat-launcher-mascot { animation:none; }
+@keyframes ru-walking-steps { 0%,100%{transform:scaleX(var(--ru-facing)) translateY(0) rotate(-4deg);} 25%{transform:scaleX(var(--ru-facing)) translateY(-4px);} 50%{transform:scaleX(var(--ru-facing)) translateY(0) rotate(4deg);} 75%{transform:scaleX(var(--ru-facing)) translateY(-4px);} }

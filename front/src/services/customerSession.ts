@@ -1,5 +1,6 @@
 import { useApp } from '../stores/app'
 import { detachPushToken } from './devicePush'
+import { queueCustomerGuide } from './customerOnboarding'
 // Cookie credentials and the observed first-phase endpoints are preserved.
 export async function customerRequest(path: string, body?: unknown) {
   const response = await fetch(path, {
@@ -20,6 +21,7 @@ export async function loginCustomer(loginId: string, password: string) {
   localStorage.setItem('routel-session-kind', 'customer')
   useApp().authVersion++
   useApp().account = { id: String(data.data.id), name: data.data.name || loginId, role: 'customer' }
+  queueCustomerGuide(loginId,String(data.data.id))
 }
 export async function restoreCustomer() {
   const app = useApp(),

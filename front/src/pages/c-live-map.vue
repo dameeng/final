@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import AppPagination from '../components/AppPagination.vue'
 import RiskLevelBadge from '../components/RiskLevelBadge.vue'
 import { matchesKoreanSearch } from '../utils/korean-search'
 import { useRiskChartClock } from '../composables/useRiskChartClock'
@@ -479,7 +478,7 @@ function positionAppMapPopup() {
   root.classList.toggle('admin-map-popup-compact', root.clientHeight < 360)
   const rect = root.getBoundingClientRect()
   let top = 8
-  for (const element of root.querySelectorAll<HTMLElement>('.admin-map-search,.map-overlay-toolbar')) {
+  for (const element of root.querySelectorAll<HTMLElement>('.admin-map-search,.map-overlay-toolbar,.app-map-search,.mtop')) {
     if (element.getClientRects().length) top = Math.max(top, element.getBoundingClientRect().bottom - rect.top + 8)
   }
   const bottom = root.clientHeight - 12
@@ -786,14 +785,29 @@ const unclassified = computed(() => facilities.value.filter((f) => !f.regionId).
 const page = ref(1),
   adaptivePageSize = ref(5)
 const pageSize = computed(() => (props.manager ? 10 : appMap.value ? 5 : adaptivePageSize.value))
-const listRows = computed(() =>
-  !props.manager && clusterFacilityIds.value.length
+const listRows = computed(() => {
+  const rows = !props.manager && clusterFacilityIds.value.length
     ? filtered.value.filter((f) => clusterFacilityIds.value.includes(f.id))
-    : filtered.value,
-)
+    : filtered.value
+  if (props.manager) return rows
+  const priority: Record<string, number> = {
+    통제: 7, 심각: 6, 위험: 5, 경계: 5, 경고: 4, 주의: 4, 관심: 3, 정상: 2, 안전: 2,
+  }
+  return [...rows].sort((a, b) =>
+    (priority[b.status] ?? 0) - (priority[a.status] ?? 0) ||
+    (b.riskScore ?? -1) - (a.riskScore ?? -1) ||
+    a.name.localeCompare(b.name, 'ko'),
+  )
+})
 const pages = computed(() => Math.max(1, Math.ceil(listRows.value.length / pageSize.value)))
+const collapsedListSummary = computed(() => {
+  const blocked=listRows.value.filter(row=>row.status==='통제').length
+  const danger=listRows.value.filter(row=>row.status!=='통제'&&riskGroup(row.status)==='DANGER').length
+  const caution=listRows.value.filter(row=>riskGroup(row.status)==='WARNING').length
+  return `통제 ${blocked}곳 · 위험 ${danger}곳 · 주의 ${caution}곳`
+})
 const shown = computed(() =>
-  listRows.value.slice((page.value - 1) * pageSize.value, page.value * pageSize.value),
+  appMap.value ? listRows.value : listRows.value.slice((page.value - 1) * pageSize.value, page.value * pageSize.value),
 )
 let listObserver: ResizeObserver | undefined,
   listElement: HTMLElement | null = null
@@ -1044,7 +1058,7 @@ async function selectFacility(f: Facility) {
   dismissedPopupId = ''
   closeClusterPopup()
   if (props.manager) managerPanelExpanded.value = true
-  if (appMap.value) sheetOpen.value = true
+  if (appMap.value) sheetOpen.value = appDetail.value
   if (appMap.value) {
     sessionStorage.setItem('routel-app-facility', f.id)
     if (appDetail.value) expanded.value = true
@@ -1277,7 +1291,7 @@ function openSelectedPopup() {
     p.textContent = detailError.value
     content.append(p)
   }
-  if (adminAppMap.value) showAppMapPopup(content, item.marker.getPosition?.() || new maps.LatLng(row.latitude, row.longitude), 'facility')
+  if (adminAppMap.value || appMap.value&&!appDetail.value) showAppMapPopup(content, item.marker.getPosition?.() || new maps.LatLng(row.latitude, row.longitude), 'facility')
   else {
     infoWindow.setContent(content)
     infoWindow.open(map, item.marker)
@@ -1996,7 +2010,7 @@ onBeforeUnmount(() => {
     <div v-if="mapError" class="map-error-note" role="status">{{mapError}}</div>
       </section>
    <aside
-        v-if="selected"
+        v-if="selected&&(!appMap||appDetail)"
         class="panel swapped-detail"
         aria-label="선택한 지하차도"
         @touchstart.passive="startListTouch"
@@ -2016,7 +2030,7 @@ onBeforeUnmount(() => {
           @lostpointercapture="endSheet"
           @click="toggleSheet"
           @wheel.prevent="sheetOpen=$event.deltaY>0"
-          >{{sheetOpen?'목록 접기':'목록 펼치기'}} · {{listRows.length}}곳</button
+          >{{sheetOpen?'목록 접기':'목록 펼치기'}} · {{listRows.length}}곳<small v-if="!sheetOpen" class="collapsed-list-summary">{{collapsedListSummary}}</small></button
         >
     <button type="button" class="btn back-to-list" @click="closeFacility">목록으로</button>
     <div ref="detailRegion" class="det" tabindex="-1" aria-live="polite">
@@ -2173,7 +2187,7 @@ onBeforeUnmount(() => {
           @lostpointercapture="endSheet"
           @click="toggleSheet"
           @wheel.prevent="sheetOpen=$event.deltaY>0"
-          >{{sheetOpen?'목록 접기':'목록 펼치기'}} · {{listRows.length}}곳</button
+          >{{sheetOpen?'목록 접기':'목록 펼치기'}} · {{listRows.length}}곳<small v-if="!sheetOpen" class="collapsed-list-summary">{{collapsedListSummary}}</small></button
         >
     <div class="ph"
           ><h2
@@ -2242,9 +2256,8 @@ onBeforeUnmount(() => {
             >조회 조건에 맞는 지하차도가 없습니다.</li
           ></ul
         >
-    <AppPagination v-if="appMap&&listRows.length" :page="page" :pages="pages" :disabled="loading" @change="changePage" />
     <nav
-          v-else-if="listRows.length"
+          v-if="!appMap&&listRows.length"
           class="customer-list-pagination"
           aria-label="지하차도 목록 페이지"
           ><div class="list-page-buttons"

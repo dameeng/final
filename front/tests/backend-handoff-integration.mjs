@@ -26,7 +26,7 @@ try {
   else if(path==='/api/pm/thresholds')data=method==='PUT'?[equipment]:{...data,items:deleted?[]:[equipment],totalItems:deleted?0:1}
   else if(path==='/api/pm/equipments'&&method==='POST')data={...equipment,equipId:16,name:'P-1-2'}
   else if(path==='/api/pm/equipments/15'&&method==='DELETE'){deleted=true;data=null}
-  else if(path==='/api/pm/reports/daily')data={date:'2026-10-28',generatedAt:'2026-10-28T12:00:00',summary:{levelCounts:{safe:4,caution:2,danger:1,noData:0},previousLevelCounts:{safe:3,caution:3,danger:1,noData:0},recommended:Array.from({length:7},(_,i)=>({...equipment,equipId:i+15,name:"P-1-"+(i+1)})),newEventCount:0,actionCount:0,openEventCount:0}}
+  else if(path==='/api/pm/reports/daily')data={date:'2026-10-28',generatedAt:'2026-10-28T12:00:00',summary:{byType:[{type:'CCTV',total:3,safe:2,caution:0,danger:1,noData:0},{type:'PUMP',total:4,safe:2,caution:2,danger:0,noData:0}],levelCounts:{safe:4,caution:2,danger:1,noData:0},previousLevelCounts:{safe:3,caution:3,danger:1,noData:0},recommended:Array.from({length:7},(_,i)=>({...equipment,equipId:i+15,name:"P-1-"+(i+1)})),newEventCount:0,actionCount:0,openEventCount:0}}
   else if(path==='/api/pm/reports/daily/pdf')return r.fulfill({contentType:'application/pdf',body:Buffer.from('%PDF-1.4\n%%EOF')})
   else if(path==='/api/shift-handovers/previous'||path==='/api/shift-handovers/preview')data=handover
   else if(path==='/api/shift-handovers'&&method==='POST')data={...handover,id:9,written:true,memo:body.memo}
@@ -137,6 +137,9 @@ try {
    await expect(page.locator('.pm-settings-list')).toHaveCount(0)
   } else {
    await expect(page.locator('.daily-web-section table')).toHaveCount(2)
+   await expect(page.locator('.daily-distribution-row')).toHaveCount(2)
+   const chartSegments=await page.locator('.daily-distribution-row').first().locator('.daily-distribution-track>span').evaluateAll(es=>es.map(el=>el.style.width))
+   assert.deepEqual(chartSegments,['50%','0%','25%','0%'],'Distribution chart uses actual counts against the same maximum')
    await expect(page.locator('.daily-section')).toHaveCount(0)
    for(const label of ['미수신 설비','처리 중인 점검','점검 기록','신규 점검 대기','점검 권장 설비']) {
     await page.getByRole('navigation',{name:'리포트 기록 구분'}).getByRole('button',{name:new RegExp(label)}).click()
@@ -159,8 +162,8 @@ try {
   assert(Math.abs(size.buttonRight-size.x-size.width)<2,'Header action aligns with content right edge')
   geometry.push(size)
  }
- assert.equal(geometry[1].width,1280,'Daily report keeps a readable maximum width')
- assert(geometry[1].x>geometry[0].x,'Daily report is centered within the wider workspace')
+ assert.equal(geometry[1].width,geometry[0].width,'Daily report shares the administrator workspace width')
+ assert.equal(geometry[1].x,geometry[0].x,'Daily report shares the administrator left alignment')
  assert.equal(geometry[0].titleTop,geometry[1].titleTop)
  const tokenPosts=calls.filter(c=>c.path==='/api/managers/me/device-tokens'&&c.method==='POST').length
  await page.evaluate(()=>window.dispatchEvent(new CustomEvent('routel:push-token',{detail:{token:'test-issued-token',platform:'APP'}})))

@@ -3,7 +3,7 @@ import { computed, inject, nextTick, onBeforeUnmount, ref, useAttrs, useId, watc
 import { workflowPageState } from '../utils/workflow-page-state'
 import { routerKey, routeLocationKey } from 'vue-router'
 defineOptions({ inheritAttrs:false })
-const props=withDefaults(defineProps<{pageMode?:boolean}>(),{pageMode:undefined})
+const props=withDefaults(defineProps<{pageMode?:boolean;hideBack?:boolean}>(),{pageMode:undefined,hideBack:false})
 const attrs=useAttrs(), emit=defineEmits<{close:[Event];cancel:[Event]}>()
 const router=inject(routerKey,null), route=inject(routeLocationKey,null)
 const pageMode=computed(()=>props.pageMode??/^\/(admin|customer)-app\//.test(route?.path||''))
@@ -92,7 +92,7 @@ defineExpose({showModal,close,get open(){return opened.value},getBoundingClientR
   <dialog v-if="!pageMode" ref="nativeDialog" v-bind="attrs" @close="nativeClosed" @cancel="emit('cancel',$event)" @pointerdown="backdropPress=nativeOutside($event)" @pointercancel="backdropPress=false" @click="backdropPress&&nativeOutside($event)&&requestClose();backdropPress=false"><slot /></dialog>
   <Teleport v-else-if="opened&&outlet" :to="outlet">
     <section ref="surface" v-bind="attrs" class="workflow-page" :data-workflow-owner="identity" role="region" tabindex="-1" @keydown.esc.stop.prevent="requestClose">
-      <div class="workflow-page-navigation"><button type="button" class="btn" @click="requestClose">‹ 뒤로</button></div>
+      <div v-if="!hideBack" class="workflow-page-navigation"><button type="button" class="btn" @click="requestClose">‹ 뒤로</button></div>
       <slot />
     </section>
   </Teleport>

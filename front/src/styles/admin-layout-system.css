@@ -203,7 +203,7 @@
   min-width:180px; text-align:center; font-variant-numeric:tabular-nums;
 }
 /* 관리자 앱 지하차도 목록: 작업 2열, 단계 4열, 선택 2열, 검색 3:1. */
-#app .manager-app-shell .app-restored-body:has(.restored-facility-filters) { padding:16px; }
+#app .manager-app-shell .app-restored-body:has(.restored-facility-filters) { padding:var(--manager-page-space,12px); }
 #app .manager-app-shell .app-service-content:has(.restored-facility-filters) { width:100%; min-width:0; box-sizing:border-box; }
 #app .manager-app-shell .service-workspace:has(.restored-facility-filters)>.service-heading { display:block; margin:0 0 12px; }
 #app .manager-app-shell .service-workspace:has(.restored-facility-filters)>.service-heading .service-actions { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:8px; width:100%; }

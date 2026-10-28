@@ -1,0 +1,65 @@
+/* All customer app screens share one header, including maps and account pages. */
+#app .app-map-sheet .mobile-sheet-handle .collapsed-list-summary {
+  display:block; margin-top:5px; color:var(--r-muted); font-size:11px; line-height:16px; font-weight:400;
+}
+#app .customer-mobile-header.ah {
+  position:sticky; top:0; z-index:20;
+  box-sizing:border-box; display:grid!important; grid-template-columns:40px minmax(0,1fr) 40px 56px;
+  align-items:center; gap:8px!important; height:64px!important; min-height:64px!important; max-height:64px;
+  flex:0 0 64px!important; padding:10px 16px!important; margin:0!important; width:100%;
+  border-bottom:1px solid var(--r-line); background:var(--r-surface); color:var(--r-ink);
+  font-family:var(--r-font)!important; font-size:18px; font-weight:700; line-height:24px;
+}
+#app .customer-mobile-header.ah>:first-child { margin:0!important; }
+#app .customer-mobile-header.ah .customer-header-title {
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); max-width:calc(100% - 240px);
+  display:block; min-width:0; margin:0; padding:0; font-family:var(--r-font)!important;
+  font-size:18px!important; font-weight:700!important; line-height:24px!important;
+  letter-spacing:-.02em; text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+#app .customer-mobile-header.ah :is(.customer-header-back,.customer-header-back-space,.customer-header-bell-space) {
+  display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px;
+  min-width:40px; padding:0; margin:0; border:0; background:transparent; color:inherit;
+}
+#app .customer-mobile-header.ah :is(.notification-bell,.customer-header-bell-space) { grid-column:3; margin:0; width:40px; min-width:0; }
+#app .customer-mobile-header.ah button.theme-toggle {
+  grid-column:4; width:56px!important; min-width:56px!important; max-width:56px!important;
+  height:40px!important; min-height:40px!important; max-height:40px!important;
+  margin:0!important; padding:0!important; border:0!important; border-radius:16px;
+  background:transparent!important; box-shadow:none!important;
+}
+#app .customer-mobile-header.ah button.theme-toggle:is(:hover,:active,:focus) { background:transparent!important; box-shadow:none!important; }
+@media(max-width:360px){#app .customer-mobile-header.ah .customer-header-title {font-size:16px!important;}}
+#app .legacy-live-map.mobile-app-map .app-map-sheet .lst {
+  flex:1 1 0; min-height:0; overflow-y:auto; overscroll-behavior:contain; touch-action:pan-y;
+}
+#app .mobile-app-map .admin-map-floating-popup { position:absolute; z-index:30; display:flex; flex-direction:column; overflow:hidden; max-width:none; margin:0; animation:none; }
+#app .mobile-app-map .admin-map-floating-popup>header { flex-shrink:0; }
+
+/* The composer belongs to the app's content area, above the bottom navigation. */
+#app .page-customer-app-7.mobile-page>.ph>.bd.navigation-body {
+  overflow:hidden; scrollbar-gutter:auto; padding:0;
+}
+#app .page-customer-app-7 .navigation-body>.navigation-summary {
+  box-sizing:border-box; width:100%; margin:0; min-height:0;
+  overflow-x:hidden; overflow-y:auto; scrollbar-gutter:auto;
+  padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));
+  background:var(--r-surface); border-bottom:0;
+}
+#app .page-customer-app-7 .navigation-summary::-webkit-scrollbar { width:4px; }
+#app .page-customer-app-7 .navigation-summary::-webkit-scrollbar-thumb { background:var(--r-line); border-radius:4px; }
+#app .customer-app-editorial .workflow-page-outlet:has(.public-chat-dialog) {
+  overflow:hidden!important; scrollbar-gutter:auto!important; padding:0!important; display:flex; flex-direction:column;
+}
+#app .customer-app-editorial .workflow-page-outlet .workflow-page-mount:has(.public-chat-dialog) { flex:1; min-height:0; height:100%; }
+#app .customer-app-editorial .workflow-page-outlet .workflow-page.public-chat-dialog { max-width:100%!important; overflow:hidden!important; }
+#app .customer-app-editorial .public-chat-dialog :is(.public-chat-header,.public-chat-description,.chat-messages) { margin-left:0; margin-right:0; padding-left:16px; padding-right:16px; box-sizing:border-box; }
+#app .customer-app-editorial .public-chat-dialog .public-chat-form {
+  width:100%; padding:14px 16px!important; margin:0!important; border:0!important; border-top:1px solid var(--r-line)!important;
+  border-radius:0!important; box-sizing:border-box; background:var(--r-surface); flex:0 0 auto;
+}
+#app .customer-app-editorial .public-chat-dialog .public-chat-compose { display:grid; grid-template-columns:minmax(0,1fr) 68px; gap:8px; }
+#app .customer-app-editorial .public-chat-dialog .public-chat-compose input { width:100%; min-width:0; height:48px; box-sizing:border-box; }
+#app .customer-app-editorial .public-chat-dialog .public-chat-compose button { width:68px; height:48px; padding:8px; box-sizing:border-box; }
+#app .customer-app-editorial .public-chat-form nav { gap:18px; padding-top:10px; }
+#app .customer-app-editorial .public-chat-privacy { margin-top:6px; font-size:10px; line-height:16px; }

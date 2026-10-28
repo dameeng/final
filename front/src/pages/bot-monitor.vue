@@ -24,7 +24,7 @@ async function load() {
       const data = await backend<Stats>('/api/assistant/admin/stats' + queryString({ days: days.value }))
       if (!disposed && request === version) stats.value = data
     } else {
-      const data = await backend<NonNullable<typeof logs.value>>('/api/assistant/admin/logs' + queryString({ page: page.value, q: query.value, result: result.value }))
+      const data = await backend<NonNullable<typeof logs.value>>('/api/assistant/admin/logs' + queryString({ page: page.value, size:route.path.startsWith('/admin-app/')?5:undefined, q: query.value, result: result.value }))
       if (!disposed && request === version) { logs.value = data; page.value = data.page }
     }
   } catch (e) { if (!disposed && request === version) error.value = (e as Error).message }
@@ -59,7 +59,7 @@ onBeforeUnmount(() => { disposed = true; version++; detailVersion++; clearInterv
   <BackendLayout>
     <section class="chat-monitor" :aria-busy="busy">
       
-      <header class="chat-monitor-heading service-heading"><h1>챗봇</h1><button type="button" :disabled="busy" @click="load">새로고침</button></header>
+      <header class="chat-monitor-heading service-heading"><h1><AdminPageIcon />챗봇</h1><button type="button" :disabled="busy" @click="load">새로고침</button></header>
       <nav class="chat-monitor-tabs" aria-label="챗봇 탭"><RouterLink to="/bot-logs" :aria-current="!statistics?'page':undefined">대화 로그</RouterLink><RouterLink to="/bot-stats" :aria-current="statistics?'page':undefined">통계</RouterLink></nav>
       <p v-if="error" role="alert" class="service-error">{{error}}</p>
       <p v-if="busy&&!stats&&!logs" role="status">대화 기록을 불러오는 중입니다…</p>

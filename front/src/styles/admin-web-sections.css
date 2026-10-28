@@ -1,0 +1,142 @@
+/* Final shared presentation for administrator web pages only. */
+#app .admin-interface.admin-shell :is(.service-heading,.page-head) h1,
+#app .admin-interface.admin-shell .account-service>h1 {
+  display:flex; align-items:center; flex-wrap:wrap; gap:10px;
+}
+#app .admin-interface.admin-shell .admin-page-icon {
+  display:inline-grid; place-items:center; flex:none;
+  width:32px; height:32px; border-radius:9px;
+  background:var(--r-selected); color:var(--r-accent); --ui-icon-size:18px;
+}
+#app .admin-interface.admin-shell .service-heading :is(.sub,p) {
+  max-width:760px; color:var(--r-muted); font-size:12px; line-height:20px;
+}
+#app .admin-interface.admin-shell .service-workspace>.service-filters {
+  background:var(--r-surface); align-items:flex-end;
+}
+#app .admin-interface.admin-shell .service-filters .service-form-fields {
+  display:contents;
+}
+#app .admin-interface.admin-shell .service-filters .service-form-fields>label {
+  flex:0 0 200px; width:200px; min-width:200px; max-width:200px; gap:8px;
+}
+#app .admin-interface.admin-shell .service-filters .service-form-fields>label :is(input,select) { width:100%; }
+#app .admin-interface.admin-shell .service-table :is(th,td)[data-field=id] {
+  width:76px; text-align:center; color:var(--r-muted); font-variant-numeric:tabular-nums;
+}
+#app .admin-interface.admin-shell .service-table :is(th,td)[data-field$=At] {
+  width:172px; white-space:nowrap; font-variant-numeric:tabular-nums;
+}
+#app .admin-interface.admin-shell .service-table :is(th,td).resource-action-column { width:180px; }
+#app .admin-interface.admin-shell .service-table .resource-action-column .service-actions {
+  display:flex; align-items:center; justify-content:flex-end; gap:8px; flex-wrap:wrap;
+}
+#app .admin-interface.admin-shell .service-table th.resource-action-column { text-align:right; }
+#app .admin-interface.admin-shell .service-table td[data-field=imagePath] img {
+  display:block; width:180px; height:64px; object-fit:contain; border-radius:6px; background:var(--r-soft);
+}
+#app .admin-interface.admin-shell .service-table td[data-field=name] { font-weight:500; }
+#app .admin-interface.admin-shell .service-table :is(input[type=checkbox],input[type=radio]) {
+  width:16px; height:16px; min-height:16px; margin:0; accent-color:var(--r-accent); vertical-align:middle;
+}
+#app .admin-interface.admin-shell .service-table tbody tr:focus-within { background:var(--r-selected); }
+#app .admin-interface.admin-shell .service-workspace>h2 {
+  margin:24px 0 12px; color:var(--r-ink); font-size:16px; font-weight:600; line-height:24px;
+}
+#app .admin-interface.admin-shell :is(.service-error,.service-message) {
+  padding:12px 16px; margin:0 0 16px; font-size:13px; line-height:22px; border-radius:10px;
+}
+#app .admin-interface.admin-shell .account-service>h1 { font-size:22px; line-height:32px; margin:0 0 16px; }
+#app .admin-interface.admin-shell .account-service .account-panel { margin-bottom:20px; }
+#app .admin-interface.admin-shell .account-service .account-summary {
+  grid-template-columns:120px minmax(0,1fr); gap:12px 20px; margin:16px 0;
+}
+#app .admin-interface.admin-shell .account-service .account-summary dt { color:var(--r-muted); font-size:12px; }
+#app .admin-interface.admin-shell .account-service .account-summary dd { margin:0; font-size:14px; overflow-wrap:anywhere; }
+#app .admin-interface.admin-shell .account-service .account-panel>button { min-height:40px; padding:8px 14px; border-radius:8px; }
+#app .admin-interface.admin-shell .chat-monitor-kpis { margin-bottom:24px; }
+#app .admin-interface.admin-shell .chat-monitor-kpis>article { display:flex; flex-direction:column; gap:6px; }
+#app .admin-interface.admin-shell .chat-monitor-kpis strong { margin:0; font-size:28px; line-height:34px; }
+#app .admin-interface.admin-shell .chat-monitor-top li { gap:16px; padding:12px 0; line-height:20px; }
+#app .admin-interface.admin-shell .chat-monitor-note { margin:20px 0 0; font-size:12px; }
+#app .admin-interface.admin-shell .jurisdiction-phone-list { border-color:var(--r-line); border-radius:12px; }
+#app .admin-interface.admin-shell .jurisdiction-phone-list li { padding:16px 20px; gap:16px; border-color:var(--r-line); }
+#app .admin-interface.admin-shell .jurisdiction-phone-list a {
+  display:inline-flex; align-items:center; min-height:36px; padding:6px 12px;
+  border-radius:8px; background:var(--r-selected); color:var(--r-accent); font-size:13px; text-decoration:none;
+}
+#app .admin-interface.admin-shell .restored-facility-detail .service-heading h1 { gap:10px; }
+#app .admin-interface.admin-shell .pm-detail .pm-section-heading { gap:12px; }
+#app .admin-interface.admin-shell .pm-detail .card { border-radius:12px; }
+#app .admin-interface.admin-shell .pm-detail .pm-grid { gap:20px; }
+#app .admin-interface.admin-shell .pm-detail .pm-section-heading h2 { font-size:15px; font-weight:600; line-height:24px; }
+@media(max-width:1100px) {
+  #app .admin-interface.admin-shell .service-table :is(th,td).resource-action-column { width:150px; }
+}
+#app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters) label:not(:has(input[type=checkbox])) {
+  width:200px; min-width:200px; max-width:200px; flex:0 0 200px;
+}
+#app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters) label:not(:has(input[type=checkbox])) :is(input,select) { width:100%; height:44px; min-height:44px; box-sizing:border-box; }
+#app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters)>button {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:88px; min-width:88px; height:44px; min-height:44px; padding:0 14px; box-sizing:border-box;
+}
+#app .admin-interface.admin-shell .pm-admin-tools .service-filters label { width:200px; min-width:200px; max-width:200px; }
+#app .admin-interface.admin-shell .pm-admin-tools.pm-daily-live .service-filters label { width:auto; max-width:none; flex-basis:auto; }
+#app .admin-interface.admin-shell .pm-admin-tools.pm-daily-live .service-filters input { width:200px; }
+#app .admin-interface.admin-shell .pm-history-live .pm-date { width:200px; height:44px; }
+#app .admin-interface.admin-shell .pm-history-live .pm-select select { width:200px; min-width:200px; height:44px; }
+@media(max-width:700px) {
+  #app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters) label:not(:has(input[type=checkbox])),
+  #app .admin-interface.admin-shell .service-filters .service-form-fields>label { flex:1 1 180px; width:auto; min-width:0; max-width:none; }
+}
+#app .admin-interface.admin-shell :is(.pm-equipment-live,.pm-queue-live) .pm-table :is(th,td) { text-align:center; vertical-align:middle; }
+#app .admin-interface.admin-shell :is(.pm-equipment-live,.pm-queue-live) .pm-table .pm-cell-content { text-align:center; }
+#app .admin-interface.admin-shell :is(.pm-equipment-live,.pm-queue-live) .pm-table td[data-label="위험 점수 / 상태"] .pm-cell-content {
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+#app .admin-interface.admin-shell :is(.pm-equipment-live,.pm-queue-live) .pm-table td[data-label="최근 24시간"] .pm-cell-content {
+  display:flex; align-items:center; justify-content:center;
+}
+#app .admin-interface.admin-shell :is(.pm-equipment-live,.pm-queue-live) .pm-table .pm-cell-summary { margin-inline:auto; }
+#app .admin-interface.admin-shell .pm-equipment-live .pm-table { table-layout:fixed; width:100%; min-width:1100px; }
+#app .admin-interface.admin-shell .pm-equipment-live .pm-table th:nth-child(1) { width:9%; }
+#app .admin-interface.admin-shell .pm-equipment-live .pm-table th:nth-child(2) { width:7%; }
+#app .admin-interface.admin-shell .pm-equipment-live .pm-table th:nth-child(3) { width:13%; }
+#app .admin-interface.admin-shell .pm-equipment-live .pm-table th:nth-child(4) { width:12%; }
+#app .admin-interface.admin-shell .pm-equipment-live .pm-table th:nth-child(5) { width:8%; }
+#app .admin-interface.admin-shell .pm-equipment-live .pm-table th:nth-child(6) { width:10%; }
+#app .admin-interface.admin-shell .pm-equipment-live .pm-table th:nth-child(7) { width:19%; }
+#app .admin-interface.admin-shell .pm-equipment-live .pm-table th:nth-child(8) { width:14%; }
+#app .admin-interface.admin-shell .pm-equipment-live .pm-table th:nth-child(9) { width:8%; }
+#app .admin-interface.admin-shell .daily-distribution-layout { display:grid; grid-template-columns:minmax(300px,.9fr) minmax(0,1.4fr); gap:20px; align-items:stretch; }
+#app .admin-interface.admin-shell .daily-distribution-layout>.service-table-wrap { display:grid; margin:0; }
+#app .admin-interface.admin-shell .daily-distribution-layout .daily-type-table { height:100%; }
+#app .admin-interface.admin-shell .daily-distribution-layout .daily-type-table thead { height:40px; }
+#app .admin-interface.admin-shell .daily-distribution-chart { margin:0; padding:20px; min-width:0; border:1px solid var(--r-line); border-radius:12px; background:var(--r-surface); }
+.daily-distribution-chart figcaption { display:flex; align-items:center; justify-content:space-between; gap:12px; color:var(--r-ink); font-size:14px; font-weight:600; }
+.daily-distribution-chart figcaption>span { color:var(--r-muted); font-size:11px; font-weight:400; }
+.daily-chart-legend { display:flex; flex-wrap:wrap; gap:12px; margin:12px 0 18px; color:var(--r-muted); font-size:11px; }
+.daily-chart-legend>span { display:inline-flex; align-items:center; gap:5px; }
+.daily-chart-legend i { width:8px; height:8px; border-radius:2px; }
+.daily-distribution-row+.daily-distribution-row { margin-top:14px; }
+.daily-chart-label { display:flex; justify-content:space-between; gap:12px; margin-bottom:6px; font-size:12px; line-height:18px; }
+.daily-chart-label strong { font-weight:500; color:var(--r-ink); }
+.daily-chart-label>span { color:var(--r-muted); font-variant-numeric:tabular-nums; }
+.daily-distribution-track { display:flex; height:10px; overflow:hidden; border-radius:4px; background:var(--r-soft); }
+.daily-distribution-track>span { flex:none; height:100%; }
+:is(.daily-chart-legend,.daily-distribution-track) .is-safe { background:#42a98a; }
+:is(.daily-chart-legend,.daily-distribution-track) .is-caution { background:#dfa83d; }
+:is(.daily-chart-legend,.daily-distribution-track) .is-danger { background:#d6687e; }
+:is(.daily-chart-legend,.daily-distribution-track) .is-noData { background:#8c9bad; }
+.daily-chart-empty { color:var(--r-muted); font-size:12px; margin:24px 0 0; }
+@media(max-width:1200px) { #app .admin-interface.admin-shell .daily-distribution-layout { grid-template-columns:minmax(0,1fr); } }
+#app .admin-interface.admin-shell .service-heading.record-page-heading { flex-direction:row; align-items:center; }
+#app .admin-interface.admin-shell .service-heading.record-page-heading>.service-actions { width:auto; margin-left:auto; justify-content:flex-end; }
+#app .admin-interface.admin-shell .record-page-heading>.service-actions>.heading-navigation { margin-left:0; }
+#app .admin-interface.admin-shell .record-page-heading>.service-actions>.resource-refresh { margin-left:0; }
+#app .admin-interface.admin-shell .record-empty-state { display:flex; align-items:center; flex-wrap:wrap; gap:16px; padding:24px; border:1px solid var(--r-line); border-radius:12px; background:var(--r-surface); }
+.record-empty-icon { display:grid; place-items:center; flex:none; width:42px; height:42px; border-radius:12px; background:var(--r-selected); color:var(--r-accent); --ui-icon-size:20px; }
+#app .admin-interface.admin-shell .record-empty-state h2 { margin:0 0 6px; font-size:15px; font-weight:600; }
+#app .admin-interface.admin-shell .record-empty-state p { margin:0; color:var(--r-muted); font-size:12px; line-height:20px; }
+#app .admin-interface.admin-shell .record-empty-state>button { margin-left:auto; min-height:40px; padding:8px 14px; border:1px solid var(--r-line); border-radius:8px; background:var(--r-soft); color:var(--r-ink); font:inherit; font-size:13px; cursor:pointer; }

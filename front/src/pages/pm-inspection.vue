@@ -81,7 +81,7 @@ onBeforeUnmount(() => { controller?.abort(); clearPdf() })
 <template>
   <BackendLayout>
     <section class="service-workspace pm-inspection-page">
-      <div class="service-heading"><h1>점검 확인</h1></div>
+      <div class="service-heading"><h1><AdminPageIcon />점검 확인</h1></div>
       <p v-if="!id" role="status">확인할 설비를 선택해 주세요.</p>
       <p v-if="error" class="service-error" role="alert">{{error}}</p>
       <p v-if="loading&&!equipment" role="status">점검 정보를 불러오는 중입니다.</p>

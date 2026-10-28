@@ -37,6 +37,7 @@ import CustomerFooter from './components/CustomerFooter.vue'
 import MyPageLayout from './components/MyPageLayout.vue'
 import CustomerPageLayout from './components/CustomerPageLayout.vue'
 import PublicChatbot from './components/PublicChatbot.vue'
+import CustomerRuGuide from './components/CustomerRuGuide.vue'
 import { mobileInteractions } from './runtime/mobileInteractions'
 import { useApp } from './stores/app'
 useBackendStream()
@@ -193,5 +194,6 @@ function unmounted(vnode: VNode) {
     <AdminAppNav v-if="managerApp&&route.path!=='/admin-app/menu'" />
     <CustomerFooter v-if="customer" />
     <PublicChatbot v-if="customer||route.path.startsWith('/customer-app/')" />
+    <CustomerRuGuide />
   </div>
 </template>

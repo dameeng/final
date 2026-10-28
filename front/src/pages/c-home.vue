@@ -58,7 +58,14 @@ const visionRoadmap = [
     </section>
 
     <section class="home-brand" aria-labelledby="home-brand-title">
-      <div class="home-brand-copy"><h2 id="home-brand-title">당신의 길에,<br />안심을 더하다.</h2><p>다시는 ‘아무도 몰랐다’는 말이 없도록.<br />위험의 변화를 살피고, 필요한 안내를 전하겠습니다.</p><RouterLink to="/info/company">ROUTEL 알아보기 <span aria-hidden="true">↗</span></RouterLink></div>
+      <div class="home-brand-copy"><h2 id="home-brand-title">당신의 길에,<br />안심을 더하다.</h2><p>다시는 ‘아무도 몰랐다’는 말이 없도록.<br />위험의 변화를 살피고, 필요한 안내를 전하겠습니다.</p>
+        <ol class="home-brand-steps" aria-label="안전한 이동을 준비하는 과정">
+          <li><span class="home-brand-step-icon" aria-hidden="true"><UiIcon name="map" /></span><div><strong>지나갈 길을 확인하고</strong><p>지도에서 지하차도의 상태를 살펴보세요.</p></div></li>
+          <li><span class="home-brand-step-icon" aria-hidden="true"><UiIcon name="bell" /></span><div><strong>필요한 안내를 받아</strong><p>통제와 위험 알림을 확인하세요.</p></div></li>
+          <li><span class="home-brand-step-icon" aria-hidden="true"><UiIcon name="route" /></span><div><strong>더 안전한 이동으로</strong><p>통제된 구간을 피해 이동을 준비하세요.</p></div></li>
+        </ol>
+        <RouterLink to="/info/company">ROUTEL 알아보기 <span aria-hidden="true">↗</span></RouterLink>
+      </div>
       <div class="home-brand-art" aria-hidden="true">
         <svg viewBox="0 0 480 260" fill="none">
           <path :d="brandRoadPath" stroke="var(--road-edge)" stroke-width="42"/>

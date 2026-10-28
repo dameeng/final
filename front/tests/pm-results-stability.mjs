@@ -15,7 +15,7 @@ try {
     else if (path === '/api/customers/me') data = null
     else if (path === '/api/pm/engine-status') data = { status: 'OK', lastReceivedAt: '2026-10-27T12:38:00', sensorStale: 0 }
     else if (/^\/api\/pm\/(equipments|events|actions)$/.test(path)) {
-      const count = url.searchParams.get('type') === 'PUMP' ? 0 : url.searchParams.get('type') === 'CCTV' ? 1 : 10
+      const count = url.searchParams.get('level')==='CAUTION'||url.searchParams.get('type') === 'PUMP' ? 0 : url.searchParams.get('level')==='DANGER'||url.searchParams.get('type') === 'CCTV' ? 1 : 10
       data = { items: Array.from({ length: count }, (_, i) => ({
         equipId: i + 1, eventId: i + 1, actionId: i + 1, name: 'C-' + (i + 1), type: 'CCTV',
         underpassName: '초량지하차도', score: 82, currentScore:34, level: 'DANGER', eventLevel: 'DANGER',
@@ -34,7 +34,7 @@ try {
       const box = document.querySelector(selector).getBoundingClientRect()
       return { x: box.x, y: box.y, width: box.width, height: box.height }
     }
-    return { scroll: scrollY, heading: rect('.service-heading'), filter: rect('.pm-filters,.pm-filter-card'), results: rect('.pm-results-viewport'), pager: rect('.pm-pager') }
+    return { scroll: scrollY, heading: rect('.service-heading'), filter: rect('.pm-filters,.pm-filter-card,.pm-equipment-live .pm-kpis'), results: rect('.pm-results-viewport'), pager: rect('.pm-pager') }
   })
   for (const path of ['/pm-equipment', '/pm-queue', '/pm-history']) {
     await page.goto(base + path)
@@ -53,7 +53,11 @@ try {
     }
     const type = page.locator('.pm-type select,.pm-filter-card .pm-select select').first()
     for (const [value, count] of [['CCTV', 1], ['PUMP', 0], ['', 10]]) {
-      await type.selectOption(value)
+      if(path==='/pm-equipment') {
+        await expect(page.locator('.pm-filters')).toHaveCount(0)
+        const label=value==='CCTV'?'위험':value==='PUMP'?'주의':'전체 장비'
+        await page.locator('.pm-kpis').getByRole('button',{name:new RegExp('^'+label)}).click()
+      } else await type.selectOption(value)
       await expect(viewport).toHaveAttribute('aria-busy', 'true')
       await checkGeometry(path + ' stable while loading')
       await expect(viewport).toHaveAttribute('aria-busy', 'false')

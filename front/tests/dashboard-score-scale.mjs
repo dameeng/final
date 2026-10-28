@@ -15,11 +15,15 @@ try {
   if(path==='/api/managers/me') data={id:1,name:'관리자',role:'REGIONAL_ADMIN',regions:[]}
   else if(path==='/api/customers/me') data=null
   else if(path==='/api/regions'||path.includes('/dashboard/timeline')||path.includes('/dashboard/risk-margin'))data=[]
-  else if(path==='/api/pm/equipments')data={...data,totalItems:5,items:[100,100,86.9,73,72].map((score,i)=>({equipId:i+1,name:'C-'+(i+1),type:'CCTV',underpassName:'초량지하차도',level:'DANGER',score}))}
+  else if(path==='/api/pm/events')data={...data,totalItems:6,items:[100,100,86.9,73,72,101].map((score,i)=>({equipId:i+1,name:'C-'+(i+1),type:'CCTV',underpassName:'초량지하차도',level:'DANGER',score:50,currentScore:score,status:i===5?'RESOLVED':i%2?'IN_PROGRESS':'CHECK_NEEDED'})).reverse()}
   return route.fulfill({json:{success:true,data}})
  })
  await page.goto(`http://127.0.0.1:${server.httpServer.address().port}/admin-dashboard`)
  await expect(page.locator('.fixed-top5 [role=meter]')).toHaveCount(5)
+ await expect(page.locator('.fixed-top5 h2')).toHaveText('예지보전 Top5')
+ await expect(page.locator('.fixed-top5 .wg-head a')).toHaveAttribute('href','/pm-queue')
+ await expect(page.locator('.fixed-top5 .sc').first()).toContainText('100.0')
+ await expect(page.locator('.fixed-top5')).not.toContainText('C-6')
  for(const width of [1440,900,390]) {
   await page.setViewportSize({width,height:1000})
   for(const theme of ['light','dark']) {

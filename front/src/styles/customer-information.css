@@ -97,7 +97,7 @@
 #app .page-c-company .routel-company-mascot { display: grid; grid-template-columns: 160px minmax(0,1fr); align-items: center; gap: 32px; margin-bottom: 12px; padding-top: 10px; }
 #app .page-c-company .routel-company-mascot-mark { display: flex; flex-direction: column; align-items: center; padding: 20px; color: var(--r-accent); background: var(--r-selected); border-radius: 24px; }
 #app .page-c-company .routel-company-mascot-mark svg { width: 100%; max-width: 120px; height: auto; }
-#app .page-c-company .routel-company-mascot-mark span { font-size: 13px; font-weight: 750; letter-spacing: .22em; }
+#app .page-c-company .routel-company-mascot-mark>.mascot-name { font-size: 13px; font-weight: 750; letter-spacing: .22em; }
 #app .page-c-company .routel-company-mascot h2 { font-size: 23px; }
 #app .page-c-company .routel-company-mascot p { margin-bottom: 12px; font-size: 14px; }
 #app .page-c-company .routel-company-mascot p:last-child { margin-bottom: 0; }
@@ -165,7 +165,7 @@
   #app .page-c-company .routel-company-direction { padding: 26px 24px; font-size: 14px; }
   #app .page-c-company .routel-company-mascot { grid-template-columns: minmax(0,1fr); gap: 20px; }
   #app .page-c-company .routel-company-mascot-mark { width: 88px; padding: 12px; border-radius: 18px; }
-  #app .page-c-company .routel-company-mascot-mark span { font-size: 10px; }
+  #app .page-c-company .routel-company-mascot-mark>.mascot-name { font-size: 10px; }
   #app .page-c-company .routel-company-mascot h2 { font-size: 21px; }
   #app .page-c-vision .vision-roadmap-note { margin-bottom: 24px; padding: 13px 14px; font-size: 12px; }
   #app .page-c-vision .information-roadmap { gap: 24px; }

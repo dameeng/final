@@ -1,15 +1,27 @@
 #app button.theme-toggle {
+  --control-hover-bg: transparent;
+  --control-selected-hover-bg: transparent;
   --ui-control-size: 56px;
   width: 56px;
   min-width: 56px;
   max-width: 56px;
   flex: 0 0 56px;
+  height: 40px;
+  min-height: 40px;
+  max-height: 40px;
   padding: 0;
   border: 0!important;
   border-radius: 20px;
   background: transparent!important;
   box-shadow: none;
+  -webkit-tap-highlight-color: transparent;
 }
+#app button.theme-toggle:is(:hover,:active,:focus) {
+  background: transparent!important;
+  box-shadow: none!important;
+}
+#app button.theme-toggle:focus:not(:focus-visible) { outline: none; }
+#app button.theme-toggle:focus-visible { outline:2px solid var(--r-focus,#3678db); outline-offset:2px; }
 .theme-switch-visual {
   position: relative;
   display: inline-flex;

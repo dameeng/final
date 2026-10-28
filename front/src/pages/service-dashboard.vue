@@ -11,7 +11,7 @@ import LiveMap from './c-live-map.vue'
 import DashboardEditor from '../components/DashboardEditor.vue'
 import DashboardShortcuts from '../components/DashboardShortcuts.vue'
 import { PM_TYPES, PM_LEVELS, isPmChange } from '../utils/pm-labels'
-import { backend } from '../services/backend'
+import { backend, type PageData } from '../services/backend'
 import { valueLabels } from '../data/backendResources'
 import { displayDate } from '../utils/display-date'
 import '../styles/admin-dashboard.css'
@@ -42,6 +42,25 @@ const summary = ref<Record<string, number> | null>(null),
   controller = new AbortController()
 type MaintenanceRow = { equipId:number; name:string; underpassName:string; type:string; score:number|null; level:string|null; roadStatus?:string|null }
 const maintenanceTop = ref<MaintenanceRow[]>([])
+async function loadMaintenanceTop(): Promise<MaintenanceRow[]> {
+  type Inspection = MaintenanceRow & {currentScore?:number|null;currentLevel?:string|null;status:string}
+  const rows:Inspection[]=[]
+  let page=1,totalPages=1
+  do {
+    const result=await backend<PageData<Inspection>>(`/api/pm/events?page=${page}&size=100`,{signal:controller.signal})
+    rows.push(...(result.items||[]))
+    totalPages=result.totalPages||1
+    page++
+  } while(page<=totalPages&&!controller.signal.aborted)
+  const unique=new Map<number,MaintenanceRow>()
+  for(const row of rows) {
+    if(!['CHECK_NEEDED','IN_PROGRESS'].includes(row.status))continue
+    const equipment={...row,score:row.currentScore??row.score,level:row.currentLevel??row.level}
+    const previous=unique.get(row.equipId)
+    if(!previous||(equipment.score??-1)>(previous.score??-1))unique.set(row.equipId,equipment)
+  }
+  return [...unique.values()].sort((a,b)=>(b.score??-1)-(a.score??-1)||a.equipId-b.equipId).slice(0,5)
+}
 const eventKey = (event: Record<string, any>) => String(event.id ?? JSON.stringify([event.createdAt, event.underpassId, event.underpassName, event.eventType, event.reason]))
 const isNewEvent = useNewItemGlow(() => events.value, eventKey)
 const eventPage = ref(1)
@@ -86,7 +105,7 @@ async function load(requested?: unknown) {
   error.value = ''
   const results = await Promise.allSettled(
     parts.map((key) =>
-      backend(key === 3 ? '/api/pm/equipments?page=1&size=5' : '/api/dashboard/' + dashboardPaths[key], { signal: controller.signal }),
+      key === 3 ? loadMaintenanceTop() : backend('/api/dashboard/' + dashboardPaths[key], { signal: controller.signal }),
     ),
   )
   if (controller.signal.aborted) return
@@ -96,7 +115,7 @@ async function load(requested?: unknown) {
       if (key === 0) summary.value = result.value
       else if (key === 1) events.value = Array.isArray(result.value) ? result.value : []
       else if (key === 2) margins.value = Array.isArray(result.value) ? result.value : []
-      else maintenanceTop.value = (result.value?.items || []).slice(0,5)
+      else maintenanceTop.value = result.value
     } else error.value = result.reason.message
   })
   loading.value = false
@@ -149,7 +168,7 @@ onBeforeUnmount(() => {
   <BackendLayout class="page-admin-dashboard" :class="{'water-dashboard':!route.path.startsWith('/admin-app/')}"
     ><section class="restored-dashboard service-workspace"
       ><div class="page-head service-heading"
-        ><h1>종합 현황</h1
+        ><h1><AdminPageIcon />종합 현황</h1
         ><div class="dashboard-head-actions"
           ><DashboardEditor :grid="dashboardGrid" :margins="margins"
           /><button class="btn sm" :disabled="loading" @click="load">새로고침</button></div
@@ -221,8 +240,8 @@ onBeforeUnmount(() => {
               ><section class="card wg widget-original-content" aria-label="예지보전 Top5"
                 ><div class="wg-head"
                   ><h2>예지보전 Top5</h2
-                  ><RouterLink to="/pm-equipment">전체 보기</RouterLink></div
-                ><p v-if="!maintenanceTop.length">표시할 예지보전 설비가 없습니다.</p
+                  ><RouterLink :to="appLink('/pm-queue','/admin-app/screen-11')">전체 보기</RouterLink></div
+                ><p v-if="!maintenanceTop.length">점검 대기 중인 설비가 없습니다.</p
                 ><ol class="rank"
                   ><li v-for="(equipment,index) in maintenanceTop" :key="equipment.equipId" :style="{'--risk-fill':riskFill(equipment.score)}"
                     ><span class="n">{{index+1}}</span

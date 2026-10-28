@@ -39,13 +39,14 @@ type Equipment = {
 type Engine = { status: string; lastReceivedAt: string | null; equipmentTotal: number; sensorStale: number }
 
 const route = useRoute()
-const PAGE_SIZE = 10
+const PAGE_SIZE = useRoute().path.startsWith('/admin-app/') ? 5 : 10
 const router = useRouter(),
   level = ref(''),
   type = ref(route.query.type === 'ROAD' ? 'ROAD' : ''),
   page = ref(1),
   list = ref<PageData<Equipment>>(),
   counts = ref<Record<string, number>>({}),
+  equipmentTotal = ref<number | null>(null),
   openEvents = ref<number | null>(null),
   engine = ref<Engine>(),
   loading = ref(false),
@@ -81,6 +82,7 @@ async function load() {
       ),
       get<PageData<unknown>>('/api/pm/events?size=1'),
       get<Engine>('/api/pm/engine-status'),
+      get<PageData<Equipment>>('/api/pm/equipments?size=1'),
     ])
     if (current.signal.aborted) return
     if (rows.status === 'rejected') throw rows.reason
@@ -94,6 +96,8 @@ async function load() {
     const ev = rest[3], en = rest[4]
     openEvents.value = ev?.status === 'fulfilled' ? (ev.value as PageData<unknown>).totalItems : null
     if (en?.status === 'fulfilled') engine.value = en.value as Engine
+    const total=rest[5]
+    equipmentTotal.value=total?.status==='fulfilled'?(total.value as PageData<Equipment>).totalItems:null
   } catch (e) {
     if (!current.signal.aborted) error.value = (e as Error).message
   } finally {
@@ -141,7 +145,7 @@ function act(row: Equipment) {
       
       <div class="page-head service-heading">
         <div>
-          <h1>{{adminPageTitle('/pm-equipment')}}</h1>
+          <h1><AdminPageIcon />{{adminPageTitle('/pm-equipment')}}</h1>
         </div>
         <div class="pm-head-actions">
           <span class="pm-engine" :class="'pm-engine--'+engineLabel[1]" role="status">
@@ -156,6 +160,9 @@ function act(row: Equipment) {
       </div>
 
       <div class="pm-kpis">
+        <button v-if="!route.path.startsWith('/admin-app/')" type="button" class="card pm-kpi pm-kpi--all" :class="{'is-current':!level&&!type}" :aria-pressed="!level&&!type" @click="level='';type=''">
+          <span>전체 장비</span><strong>{{equipmentTotal??'—'}}</strong>
+        </button>
         <button
           v-for="[value,label] in levelTabs.slice(1)"
           :key="value"
@@ -172,18 +179,7 @@ function act(row: Equipment) {
         </RouterLink>
       </div>
 
-      <div class="pm-filters">
-        <nav class="tabs" aria-label="단계">
-          <button
-            v-for="[value,label] in levelTabs"
-            :key="value"
-            type="button"
-            :class="{'is-current':level===value,on:level===value}" :aria-pressed="level===value"
-            @click="level=value"
-          >
-            {{label}}
-          </button>
-        </nav>
+      <div v-if="route.path.startsWith('/admin-app/')" class="pm-filters">
         <label class="pm-type">
           <select v-model="type" aria-label="종류">
             <option v-for="[value,label] in typeTabs" :key="value" :value="value">{{label}}</option>

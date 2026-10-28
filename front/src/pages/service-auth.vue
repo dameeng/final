@@ -9,6 +9,7 @@ import ServiceFields from '../components/ServiceFields.vue'
 import { backend, queryString } from '../services/backend'
 import { loginManager } from '../services/managerSession'
 import { loginCustomer } from '../services/customerSession'
+import { markCustomerSignup } from '../services/customerOnboarding'
 import { useApp } from '../stores/app'
 import { loginDestination } from '../services/access'
 import PostcodeSearch from '../components/PostcodeSearch.vue'
@@ -369,6 +370,7 @@ async function submit() {
         : Object.fromEntries(signupFields.map((field) => [field.key, values[field.key] || null]))
       await backend(base.value + '/signup', { method: 'POST', body })
       if (!manager.value) {
+        markCustomerSignup(String(values.loginId))
         clearTimers()
         await router.replace(authLink('login'))
         return

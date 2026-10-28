@@ -301,6 +301,29 @@
   color: #aeb8c2;
 }
 
+/* 관리자 앱 지도의 교통 시설·지도 조작 버튼도 테마 표면색을 사용합니다. */
+:root[data-theme=dark] #app .admin-app-map :is(.traffic-layer-switches button,.kakao-map-controls button) {
+  background:var(--r-surface,#182e43)!important;
+  color:var(--r-ink,#e3edf5)!important;
+  border-color:var(--r-line,#35536d)!important;
+  box-shadow:none;
+}
+:root[data-theme=dark] #app .admin-app-map .kakao-map-controls {
+  background:var(--r-surface,#182e43)!important;
+  border-color:var(--r-line,#35536d)!important;
+}
+:root[data-theme=dark] #app .admin-app-map .traffic-layer-switches button[aria-pressed=true] {
+  background:var(--r-selected,#244b6d)!important;
+  color:var(--r-accent,#87c1ff)!important;
+  border-color:var(--r-accent,#87c1ff)!important;
+}
+:root[data-theme=dark] #app .admin-app-map :is(.traffic-layer-switches button,.kakao-map-controls button):hover {
+  background:var(--r-selected,#244b6d)!important;
+}
+:root[data-theme=dark] #app .admin-app-map :is(.traffic-layer-switches button,.kakao-map-controls button):focus-visible {
+  outline:2px solid var(--r-accent,#87c1ff); outline-offset:2px;
+}
+:root[data-theme=dark] #app .admin-app-map .kakao-map-controls button:disabled { opacity:.45; }
 /* 고객 모바일 지도: 검색·범례·하단 도구를 같은 표면색으로 통일합니다. */
 :root[data-theme=dark] .mobile-app-map {
   --map-control-bg: #252f38;

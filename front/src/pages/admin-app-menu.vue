@@ -20,7 +20,7 @@ function close() {
     <nav aria-label="관리자 앱 페이지 목록">
       <section v-for="group in adminAppMenuGroups" :key="group.title">
         <h2>{{group.title}}</h2>
-        <RouterLink v-for="[label,path] in group.links" :key="path" :to="path!" :aria-current="previous.split('?')[0]===path?'page':undefined">{{label}}<PmPendingBadge v-if="path==='/admin-app/screen-11'" /><span aria-hidden="true">›</span></RouterLink>
+        <RouterLink v-for="[label,path] in group.links" :key="path" :to="path!" :aria-current="previous.split('?')[0]===path?'page':undefined"><span class="menu-item-label">{{label}}<PmPendingBadge v-if="path==='/admin-app/screen-11'" /></span><span class="menu-item-chevron" aria-hidden="true">›</span></RouterLink>
       </section>
     </nav>
   </main>
@@ -36,4 +36,7 @@ a { display:flex; align-items:center; justify-content:space-between; gap:12px; m
 a[aria-current=page] { background:#e8f0f8; color:#173d62; }
 :global(:root[data-theme=dark]) a[aria-current=page] { background:#30465c; color:#edf1f5; }
 a:hover { background:var(--soft,#edf3f9); }
+.menu-item-label { display:inline-flex; align-items:center; gap:8px; min-width:0; }
+.menu-item-label :deep(.pm-pending-badge) { flex:none; min-width:22px; height:22px; box-sizing:border-box; padding:2px 6px; margin:0; line-height:18px; font-variant-numeric:tabular-nums; }
+.menu-item-chevron { flex:none; margin-left:auto; }
 </style>
