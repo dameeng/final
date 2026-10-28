@@ -1,4 +1,14 @@
 /* Shared dark tokens also cover mobile account pages and API-backed layouts. */
+:root[data-theme=dark] #app .admin-app-map .legend-filter-button {
+  --control-hover-bg:#294567; --control-selected-hover-bg:#355777; --control-hover-ink:#e6eef8;
+  background:transparent!important; color:#d7e6f5!important; border-color:transparent;
+}
+:root[data-theme=dark] #app .admin-app-map .legend-filter-button[aria-pressed=true] {
+  background:#294567!important; color:#e6eef8!important; border-color:#7abaff; opacity:1;
+}
+:root[data-theme=dark] #app .admin-app-map .legend-filter-button:is(:hover,:focus-visible) {
+  background:#355777!important; color:#e6eef8!important;
+}
 /* 알림 팝업은 body로 Teleport되므로 .wire-page 밖에서도 적용합니다. */
 :root[data-theme=dark] .customer-notification-popup .notification-popup-body .unread a,
 :root[data-theme=dark] .customer-notification-center .notification-center-list .unread .notification-center-item {

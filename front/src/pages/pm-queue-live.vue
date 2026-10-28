@@ -8,7 +8,7 @@ const appPath = (path: string) => managerAppPath(path, route.path)
 //  GET /api/pm/actions?startDate=오늘  오늘 점검 기록 수
 // 처리(점검 시작·기록 추가·점검 종료)는 PmActionModal 이 한다.
 // SSE pm-update(지금 점수) / data-changed(pm-event·pm-action) 가 오면 다시 조회한다.
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import BackendLayout from '../components/BackendLayout.vue'
 import RiskLevelBadge from '../components/RiskLevelBadge.vue'
@@ -46,6 +46,16 @@ const router = useRouter(),
   error = ref(''),
   modal = ref<InstanceType<typeof PmActionModal>>()
 let controller: AbortController | undefined
+function guideAction(event:Event){
+  const detail=(event as CustomEvent).detail
+  if(!document.querySelector('.manager-ru-guide[open]'))return
+  if(detail?.mode==='close'){modal.value?.close();return}
+  if(!['start','note','resolve'].includes(detail?.mode))return
+  const rows=(list.value?.items||[]).filter(row=>row.type!=='ROAD'&&!PM_CLOSED_STATUS.includes(row.status))
+  const row=rows.find(row=>row.status===(detail.mode==='start'?'CHECK_NEEDED':'IN_PROGRESS'))||(detail.mode==='start'?undefined:rows[0])
+  if(row){modal.value?.open(row,detail.mode);detail.opened?.()}
+}
+onMounted(()=>window.addEventListener('routel-manager-guide-action',guideAction))
 
 // status '' = 처리 중(확인 필요 + 점검 중). 서버가 status 를 빼면 이 둘만 준다
 const tabs = [
@@ -105,6 +115,7 @@ watch([status, type], () => {
 })
 watch(page, () => void load(), { immediate: true })
 onBeforeUnmount(() => {
+  window.removeEventListener('routel-manager-guide-action',guideAction)
   clearTimeout(refreshTimer)
   controller?.abort()
 })

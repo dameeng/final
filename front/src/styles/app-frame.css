@@ -52,3 +52,23 @@
 }
 #app .service-app-layout.app-auth .login-form .auth-buttons button[type=submit] { width:100%; }
 #app .service-app-layout.app-auth .auth-service:has(.login-form) .auth-links { justify-content:center; flex-wrap:wrap; gap:12px; }
+
+/* Existing underpass photography fades in below the sign-in card. */
+#app .service-app-layout.app-manager.app-auth:has(.login-form)>.app-restored-body {
+  position:relative; isolation:isolate;
+  background:
+    linear-gradient(to bottom,#f1f6fc 0%,#f1f6fcfa 20%,#f1f6fce8 40%,#f1f6fcbf 57%,#f1f6fc88 74%,#f1f6fc9c 90%,#f1f6fccc 100%),
+    linear-gradient(to right,#f1f6fc45,transparent 25%,transparent 75%,#f1f6fc45),
+    url('/brand/routel-coastal-underpass.png') center bottom / auto 100% no-repeat,
+    #f1f6fc;
+}
+#app .service-app-layout.app-manager.app-auth .auth-service:has(.login-form) {
+  box-shadow:0 12px 36px #214d7d0d;
+}
+:root[data-theme=dark] #app .service-app-layout.app-manager.app-auth:has(.login-form)>.app-restored-body {
+  background:
+    linear-gradient(to bottom,#101e2e 0%,#101e2efa 20%,#101e2ee8 40%,#101e2ed4 57%,#101e2eb0 74%,#101e2ebf 90%,#101e2ee0 100%),
+    linear-gradient(to right,#101e2e55,transparent 25%,transparent 75%,#101e2e55),
+    url('/brand/routel-coastal-underpass.png') center bottom / auto 100% no-repeat,
+    #101e2e;
+}

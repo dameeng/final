@@ -48,5 +48,16 @@ try {
     await page.getByRole('button',{name:'3페이지',exact:true}).click()
     await expect(page.locator(selector)).toHaveCount(2)
   }
-  console.log('PASS five admin app lists: five rows per page, numbered navigation, last page remainder')
+  for(const width of [320,1440]) {
+    await page.setViewportSize({width,height:900})
+    await page.goto(base+'/admin-app/pm-settings')
+    await page.locator('.pm-settings-list>li').first().getByRole('button',{name:'설비 삭제'}).click()
+    const dialog=page.locator('.pm-delete-app-dialog')
+    await expect(dialog).toBeVisible()
+    const box=await dialog.boundingBox(),frame=await page.locator('.manager-app-shell').boundingBox()
+    assert(box.x>=frame.x&&box.x+box.width<=frame.x+frame.width,'Delete confirmation stays within the app frame')
+    await dialog.getByRole('button',{name:'취소',exact:true}).click()
+    await expect(dialog).not.toBeVisible()
+  }
+  console.log('PASS five admin app lists, numbered navigation and app-sized delete confirmation')
 } finally {await browser.close();await server.close()}
