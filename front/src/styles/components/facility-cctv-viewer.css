@@ -46,9 +46,17 @@
   padding: 10px 12px;
   border: 1px solid var(--line,#c9ced6);
   border-radius: 8px;
-  background: var(--surface,#fff);
-  color: inherit;
+  background: var(--r-surface,#fff);
+  color: var(--r-ink,#172e49);
+  color-scheme: light;
   font: inherit;
+}
+.facility-camera-select option {
+  background-color: var(--r-surface,#fff);
+  color: var(--r-ink,#172e49);
+}
+:global(:root[data-theme=dark]) .facility-camera-select select {
+  color-scheme: dark;
 }
 .facility-cctv-viewer h2 {
   margin: 0;

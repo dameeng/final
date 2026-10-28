@@ -1,0 +1,399 @@
+/* Desktop administrator workspaces: shared rhythm, without changing app layouts
+   or the geometry of maps, media players and charts. */
+#app .admin-interface.admin-shell {
+  --admin-section-gap:24px;
+  --admin-card-padding:20px;
+  --admin-row-gap:12px;
+  --admin-title-bottom-gap:16px;
+  font-size:14px;
+  line-height:1.6;
+}
+#app .admin-interface.admin-shell :is(.page-head,.service-heading,.profile-title) {
+  align-items:center;
+  gap:12px 24px;
+  margin-bottom:16px;
+}
+#app .admin-interface.admin-shell :is(.page-head,.service-heading,.profile-title) h1 {
+  font-size:22px;
+  line-height:32px;
+  font-weight:700;
+  letter-spacing:-.03em;
+}
+#app .admin-interface.admin-shell :is(.service-workspace,.pm-admin-tools,.chat-monitor) {
+  min-width:0;
+}
+/* Filters have their own surface; labels and controls share a baseline. */
+#app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters,.manager-notification-filters) {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:flex-end;
+  gap:16px;
+  padding:20px;
+  margin:0 0 24px;
+  border:1px solid var(--r-line);
+  border-radius:12px;
+  background:var(--r-soft);
+}
+#app .admin-interface.admin-shell .pm-admin-tools .service-filters { gap:16px; margin-bottom:24px; }
+#app .admin-interface.admin-shell .pm-admin-tools .service-table :is(th,td) { padding:14px 16px; }
+#app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters,.manager-notification-filters) label {
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  min-width:140px;
+  max-width:280px;
+  font-size:12px;
+  font-weight:500;
+  color:var(--r-muted);
+}
+#app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters,.manager-notification-filters,.service-form-fields)
+  :is(input,select,textarea):not([type=checkbox]):not([type=radio]):not([type=range]) {
+  min-width:0;
+  min-height:44px;
+  padding:10px 12px;
+  border:1px solid var(--r-line);
+  border-radius:8px;
+  background:var(--r-surface);
+  color:var(--r-ink);
+  font:inherit;
+  font-size:13px;
+  line-height:22px;
+}
+#app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters) input[type=checkbox] {
+  width:16px;
+  min-height:16px;
+  accent-color:var(--r-accent);
+}
+#app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters) button {
+  min-height:44px;
+  padding:10px 16px;
+  border-radius:8px;
+  font-size:13px;
+  line-height:22px;
+}
+#app .admin-interface.admin-shell :is(.service-result-count,.service-readonly) {
+  margin:16px 0 12px;
+  color:var(--r-muted);
+  font-size:12px;
+}
+/* Tables remain tables; the action column uses compact, consistent controls. */
+#app .admin-interface.admin-shell :is(.service-table-wrap,.chat-monitor-table) {
+  min-width:0;
+  border:1px solid var(--r-line);
+  border-radius:12px;
+  background:var(--r-surface);
+  overflow-x:auto;
+}
+#app .admin-interface.admin-shell :is(.service-table,.chat-monitor-table table) {
+  width:100%;
+  border-collapse:collapse;
+  font-size:13px;
+  font-variant-numeric:tabular-nums;
+}
+#app .admin-interface.admin-shell :is(.service-table,.chat-monitor-table table) :is(th,td) {
+  padding:14px 16px;
+  line-height:20px;
+  text-align:left;
+  vertical-align:middle;
+  border-bottom:1px solid var(--r-line);
+}
+#app .admin-interface.admin-shell :is(.service-table,.chat-monitor-table table) th {
+  background:var(--r-soft);
+  color:var(--r-ink);
+  font-size:12px;
+  font-weight:600;
+  white-space:nowrap;
+}
+#app .admin-interface.admin-shell :is(.service-table,.chat-monitor-table table) tbody tr:last-child td { border-bottom:0; }
+#app .admin-interface.admin-shell :is(.service-table,.chat-monitor-table table) :is(button,a.btn) {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:36px;
+  padding:7px 12px;
+  border-radius:8px;
+  font-size:12px;
+  line-height:20px;
+  white-space:nowrap;
+}
+#app .admin-interface.admin-shell :is(.row-actions,.service-row-actions) {
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:8px;
+}
+#app .admin-interface.admin-shell :is(.service-pagination,.event-pagination,.pm-pager,.chat-monitor-pagination) {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  margin:20px 0 0;
+  padding:0;
+}
+#app .admin-interface.admin-shell :is(.service-pagination,.event-pagination,.pm-pager,.chat-monitor-pagination) button {
+  min-height:36px;
+  padding:7px 14px;
+  border-radius:8px;
+  font-size:12px;
+  line-height:20px;
+}
+/* Content cards share surfaces and spacing, but retain their own columns. */
+#app .admin-interface.admin-shell :is(.chat-monitor-card,.chat-monitor-kpis>article,.account-panel,.profile-form,.profile-summary) {
+  padding:20px;
+  border:1px solid var(--r-line);
+  border-radius:12px;
+  background:var(--r-surface);
+  box-shadow:none;
+}
+#app .admin-interface.admin-shell :is(.chat-monitor-card,.account-panel,.profile-form) h2 {
+  margin:0 0 16px;
+  font-size:15px;
+  line-height:24px;
+  font-weight:600;
+}
+#app .admin-interface.admin-shell :is(.chat-monitor-split,.chat-monitor-kpis,.profile-columns,.underpass-split) { gap:24px; }
+#app .admin-interface.admin-shell :is(.service-tabs,.notice-category-tabs,.notification-category-tabs,.chat-monitor-tabs,.chat-monitor-period) {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+  margin:0 0 20px;
+}
+#app .admin-interface.admin-shell :is(.chat-monitor-tabs,.chat-monitor-period)>:is(a,button) {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:44px;
+  padding:10px 16px;
+  border:1px solid var(--r-line);
+  border-radius:8px;
+  font-size:13px;
+  line-height:22px;
+  text-decoration:none;
+}
+#app .admin-interface.admin-shell .my-underpass-list { padding:20px; border-radius:12px; }
+#app .admin-interface.admin-shell .my-underpass-list button { text-align:left; }
+#app .admin-interface.admin-shell .underpass-workspace .underpass-split {
+  height:auto;
+  max-height:none;
+  align-items:start;
+}
+#app .admin-interface.admin-shell .underpass-workspace :is(.my-underpass-list,.underpass-split-main) {
+  height:auto;
+  max-height:none;
+  overflow:visible;
+  align-self:start;
+}
+#app .admin-interface.admin-shell .underpass-workspace .my-underpass-list ul {
+  flex:none;
+  max-height:none;
+  overflow:visible;
+  scrollbar-gutter:auto;
+}
+#app .admin-interface.admin-shell .underpass-workspace .underpass-split-main .underpass-vms {
+  flex:0 0 auto;
+  height:auto;
+  min-height:360px;
+}
+#app .admin-interface.admin-shell .underpass-workspace .underpass-split-main :is(.vms-side,.vms-main) {
+  overflow-y:visible;
+}
+#app .admin-interface.admin-shell :is(.service-table,.chat-monitor-table) td[colspan] {
+  padding:32px 20px;
+  color:var(--r-muted);
+  text-align:center;
+}
+#app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters,.service-table,.chat-monitor-table)
+  :is(button,a,input,select,textarea):focus-visible {
+  outline:2px solid var(--r-focus);
+  outline-offset:2px;
+}
+@media(max-width:1000px) {
+  #app .admin-interface.admin-shell { --admin-page-padding:20px; }
+  #app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters,.manager-notification-filters) { padding:16px; gap:12px; }
+  #app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters,.manager-notification-filters) label { flex:1 1 160px; max-width:none; }
+}
+/* Display message presets: keep category and message close enough to scan. */
+#app .admin-interface.admin-shell :is([data-resource=presets],[data-resource=reasons]) .service-filters { justify-content:flex-start; }
+#app .admin-interface.admin-shell :is([data-resource=presets],[data-resource=reasons]) .service-filters>button[type=submit] { margin-left:0; }
+#app .admin-interface.admin-shell :is([data-resource=presets],[data-resource=reasons]) .service-table { table-layout:fixed; }
+#app .admin-interface.admin-shell :is([data-resource=presets],[data-resource=reasons]) .service-table :is(th,td):first-child { width:80px; text-align:center; color:var(--r-muted); }
+#app .admin-interface.admin-shell :is([data-resource=presets],[data-resource=reasons]) .service-table :is(th,td):nth-child(2) { width:140px; }
+#app .admin-interface.admin-shell :is([data-resource=presets],[data-resource=reasons]) .service-table td { padding-top:18px; padding-bottom:18px; }
+#app .admin-interface.admin-shell :is([data-resource=presets],[data-resource=reasons]) .service-table td:nth-child(3) { font-size:14px; line-height:24px; word-break:keep-all; overflow-wrap:anywhere; }
+#app .admin-interface.admin-shell .preset-category-badge { display:inline-flex; align-items:center; justify-content:center; min-width:48px; padding:4px 10px; border-radius:6px; background:var(--r-selected); color:var(--r-brand); font-size:12px; font-weight:600; line-height:20px; white-space:nowrap; }
+#app .admin-interface.admin-shell .preset-category-badge[data-category=SAFE] { background:#e1f3eb; color:#14745b; }
+#app .admin-interface.admin-shell .preset-category-badge[data-category=WATCH] { background:#ecebfa; color:#655ca0; }
+#app .admin-interface.admin-shell .preset-category-badge[data-category=CAUTION] { background:#fff1d6; color:#92620e; }
+#app .admin-interface.admin-shell .preset-category-badge[data-category=BLOCK] { background:#fce5e9; color:#ac354a; }
+:root[data-theme=dark] #app .admin-interface.admin-shell .preset-category-badge[data-category=SAFE] { background:#203e36; color:#a1e2c6; }
+:root[data-theme=dark] #app .admin-interface.admin-shell .preset-category-badge[data-category=WATCH] { background:#30344e; color:#c7c9ff; }
+:root[data-theme=dark] #app .admin-interface.admin-shell .preset-category-badge[data-category=CAUTION] { background:#403722; color:#f3d28a; }
+:root[data-theme=dark] #app .admin-interface.admin-shell .preset-category-badge[data-category=BLOCK] { background:#452d39; color:#ffb5c5; }
+.preset-category-filter { display:flex; align-items:center; flex-wrap:wrap; gap:12px 20px; padding:16px 20px; margin-bottom:24px; border:1px solid var(--r-line); border-radius:12px; background:var(--r-surface); }
+.preset-filter-title { color:var(--r-muted); font-size:12px; font-weight:600; }
+.preset-category-filter nav { display:flex; flex-wrap:wrap; gap:8px; }
+#app .admin-interface.admin-shell .preset-category-filter button { min-width:72px; min-height:40px; padding:8px 16px; border:1px solid var(--r-line); border-radius:8px; background:var(--r-soft); color:var(--r-ink); font:inherit; font-size:13px; line-height:22px; cursor:pointer; }
+#app .admin-interface.admin-shell .preset-category-filter button[aria-pressed=true] { background:var(--r-selected); border-color:var(--r-accent); color:var(--r-accent); font-weight:600; box-shadow:inset 0 -2px var(--r-accent); }
+.preset-category-filter button:focus-visible { outline:2px solid var(--r-focus); outline-offset:2px; }
+/* Underpass management keeps its table while sharing the workspace rhythm. */
+#app .admin-interface.admin-shell [data-resource=facilities] .restored-facility-filters {
+  display:flex; flex-wrap:wrap; align-items:center; gap:12px;
+  padding:20px; margin:0 0 20px; border:1px solid var(--r-line);
+  border-radius:12px; background:var(--r-surface);
+}
+#app .admin-interface.admin-shell [data-resource=facilities] .restored-facility-filters>.chips {
+  display:flex; flex-basis:100%; order:1; gap:8px; margin:4px 0 0;
+}
+#app .admin-interface.admin-shell [data-resource=facilities] .restored-facility-filters :is(select,input,button) {
+  min-height:44px; height:44px; border-radius:8px; font-size:13px;
+}
+#app .admin-interface.admin-shell [data-resource=facilities] .restored-facility-filters select { min-width:160px; padding:10px 12px; }
+#app .admin-interface.admin-shell [data-resource=facilities] .restored-facility-filters .chips button { min-width:72px; padding:10px 16px; }
+#app .admin-interface.admin-shell [data-resource=facilities] .restored-facility-filters>button[type=submit] { min-width:80px; padding:10px 16px; }
+#app .admin-interface.admin-shell .restored-facilities .tbl-wrap {
+  max-width:100%; overflow-x:auto; border:1px solid var(--r-line); border-radius:12px; background:var(--r-surface);
+}
+#app .admin-interface.admin-shell .restored-facilities .tbl { width:100%; min-width:960px; table-layout:fixed; border:0; border-collapse:collapse; }
+#app .admin-interface.admin-shell .restored-facilities .tbl :is(th,td) { padding:14px 16px; vertical-align:middle; line-height:22px; border-bottom:1px solid var(--r-line); font-size:13px; }
+#app .admin-interface.admin-shell .restored-facilities .tbl th { font-size:12px; font-weight:600; white-space:nowrap; }
+#app .admin-interface.admin-shell .restored-facilities .tbl :is(th,td):first-child { width:22%; }
+#app .admin-interface.admin-shell .restored-facilities .tbl :is(th,td):nth-child(2) { width:16%; }
+#app .admin-interface.admin-shell .restored-facilities .tbl :is(th,td):last-child { width:180px; }
+#app .admin-interface.admin-shell .restored-facilities .tbl tbody tr:last-child td { border-bottom:0; }
+#app .admin-interface.admin-shell .restored-facilities .row-open { padding:0; color:var(--r-ink); font-size:14px; font-weight:600; text-decoration:none; text-align:left; }
+#app .admin-interface.admin-shell .restored-facilities .row-open:hover { color:var(--r-accent); text-decoration:underline; }
+#app .admin-interface.admin-shell .restored-facilities :is(.badge,.stat.ack) { display:inline-flex; align-items:center; justify-content:center; padding:3px 9px; border:0; border-radius:6px; font-size:12px; line-height:20px; }
+#app .admin-interface.admin-shell .restored-facilities .stat.ack { background:var(--admin-alert-surface); color:var(--admin-alert-ink); }
+#app .admin-interface.admin-shell .restored-facilities td:nth-child(2) strong { margin-left:8px; font-size:14px; font-weight:600; }
+#app .admin-interface.admin-shell .restored-facilities td>.row { display:flex; align-items:center; justify-content:flex-end; flex-wrap:nowrap; gap:8px; }
+#app .admin-interface.admin-shell .restored-facilities .row>.btn { display:inline-flex; align-items:center; justify-content:center; min-height:36px; margin:0; padding:7px 12px; border-radius:8px; font-size:12px; line-height:20px; white-space:nowrap; }
+#app .admin-interface.admin-shell .restored-facilities>p.sub { margin:12px 0 0; font-size:12px; color:var(--r-muted); }
+/* Inspection history: separate period and equipment conditions into clear rows. */
+#app .admin-interface.admin-shell .pm-history-live .pm-filter-card {
+  display:grid; gap:16px; padding:20px; margin:0 0 24px;
+  border:1px solid var(--r-line); border-radius:12px; background:var(--r-surface);
+}
+#app .admin-interface.admin-shell .pm-history-live .pm-filter-row { gap:12px; margin:0; align-items:center; }
+#app .admin-interface.admin-shell .pm-history-live .pm-filter-row+.pm-filter-row { padding-top:16px; border-top:1px solid var(--r-line); }
+#app .admin-interface.admin-shell .pm-history-live .pm-filter-label { min-width:28px; font-size:12px; color:var(--r-muted); }
+#app .admin-interface.admin-shell .pm-history-live .pm-range { gap:8px; }
+#app .admin-interface.admin-shell .pm-history-live .pm-range .is-current { outline:none; background:var(--r-selected); color:var(--r-accent); border-color:var(--r-accent); box-shadow:inset 0 -2px var(--r-accent); }
+#app .admin-interface.admin-shell .pm-history-live .pm-select { gap:12px; }
+#app .admin-interface.admin-shell .pm-history-live .pm-select select { min-width:160px; }
+#app .admin-interface.admin-shell .pm-history-live .pm-filter-row>button:last-child { margin-left:auto; }
+#app .admin-interface.admin-shell .pm-history-live .pm-summary { margin:0 0 12px; font-size:12px; color:var(--r-muted); }
+#app .admin-interface.admin-shell .pm-history-live .pm-table { min-width:1040px; table-layout:fixed; }
+#app .admin-interface.admin-shell .pm-history-live .pm-table :is(th,td):nth-child(1) { width:110px; }
+#app .admin-interface.admin-shell .pm-history-live .pm-table :is(th,td):nth-child(2) { width:170px; }
+#app .admin-interface.admin-shell .pm-history-live .pm-table :is(th,td):nth-child(3) { width:120px; }
+#app .admin-interface.admin-shell .pm-history-live .pm-table :is(th,td):nth-child(6) { width:90px; }
+#app .admin-interface.admin-shell .pm-history-live .pm-table :is(th,td):nth-child(7) { width:280px; }
+#app .admin-interface.admin-shell .pm-history-live .pm-type-tag { display:block; margin:3px 0 0; color:var(--r-muted); font-size:11px; }
+#app .admin-interface.admin-shell .pm-history-live .pm-name { font-size:13px; font-weight:600; text-decoration:none; }
+#app .admin-interface.admin-shell .pm-history-live .pm-scores { display:flex; align-items:center; flex-wrap:wrap; gap:8px; font-variant-numeric:tabular-nums; }
+#app .admin-interface.admin-shell .pm-history-live .pm-note { margin-top:20px; color:var(--r-muted); font-size:12px; line-height:1.8; }
+/* Equipment thresholds: compact editing beside the selected row count. */
+#app .admin-interface.admin-shell .pm-settings-live .threshold-form {
+  display:flex; align-items:flex-end; flex-wrap:wrap; gap:16px;
+  padding:20px; margin:0 0 20px;
+}
+#app .admin-interface.admin-shell .pm-settings-live .threshold-form h2 {
+  flex:0 0 100%; margin:0; padding:0 0 12px; border-bottom:1px solid var(--r-line); font-size:15px; font-weight:600; line-height:24px;
+}
+#app .admin-interface.admin-shell .pm-settings-live .threshold-form label { gap:8px; color:var(--r-muted); font-size:12px; }
+#app .admin-interface.admin-shell .pm-settings-live .threshold-form input { width:160px; }
+#app .admin-interface.admin-shell .pm-settings-live .threshold-form>button { margin-left:0; min-width:100px; }
+#app .admin-interface.admin-shell .pm-settings-live .pm-settings-table { table-layout:fixed; min-width:900px; }
+#app .admin-interface.admin-shell .pm-settings-live .pm-settings-table :is(th,td) { padding:12px 14px; line-height:20px; }
+#app .admin-interface.admin-shell .pm-settings-live .pm-settings-table td>a { font-weight:600; text-decoration:none; }
+#app .admin-interface.admin-shell .pm-settings-live .pm-settings-table tr:has(input:checked) td { background:var(--r-selected); }
+/* Daily report: keep labels with their values and align comparable counts. */
+#app .admin-interface.admin-shell .pm-daily-live .service-filters { background:var(--r-surface); }
+#app .admin-interface.admin-shell .pm-daily-live .service-filters>button { margin-left:0; min-width:80px; }
+#app .admin-interface.admin-shell .pm-daily-live>p { margin:0 0 16px; color:var(--r-muted); font-size:12px; }
+#app .admin-interface.admin-shell .pm-daily-live .daily-levels { gap:16px; margin:0 0 24px; }
+#app .admin-interface.admin-shell .pm-daily-live .daily-levels>section {
+  display:grid; grid-template-columns:1fr; gap:6px; padding:18px 20px; align-content:start;
+}
+#app .admin-interface.admin-shell .pm-daily-live .daily-levels h2 { margin:0; color:var(--r-muted); font-size:13px; font-weight:500; }
+#app .admin-interface.admin-shell .pm-daily-live .daily-levels strong { grid-column:auto; grid-row:auto; font-size:30px; font-weight:650; line-height:36px; font-variant-numeric:tabular-nums; }
+#app .admin-interface.admin-shell .pm-daily-live .daily-levels small { font-size:11px; }
+#app .admin-interface.admin-shell .pm-daily-live .daily-web-section>header { margin-bottom:12px; }
+#app .admin-interface.admin-shell .pm-daily-live .daily-web-section h2 { font-size:16px; line-height:24px; }
+#app .admin-interface.admin-shell .pm-daily-live .daily-type-table { table-layout:fixed; }
+#app .admin-interface.admin-shell .pm-daily-live .daily-type-table :is(th,td):first-child { width:24%; font-weight:600; }
+#app .admin-interface.admin-shell .pm-daily-live .daily-type-table :is(th,td):not(:first-child) { text-align:center; }
+#app .admin-interface.admin-shell .pm-daily-live .daily-type-table td[data-count] { font-size:14px; font-weight:600; font-variant-numeric:tabular-nums; }
+#app .admin-interface.admin-shell .pm-daily-live .daily-type-table td[data-count="0"] { color:var(--r-muted); font-weight:400; }
+#app .admin-interface.admin-shell .pm-daily-live .daily-web-section .pm-table-empty { padding:24px 20px; }
+#app .admin-interface.admin-shell .pm-settings-live .pm-settings-table { min-width:900px; }
+#app .admin-interface.admin-shell .pm-settings-live .pm-settings-table :is(th,td):nth-child(1) { width:48px; text-align:center; }
+#app .admin-interface.admin-shell .pm-settings-live .pm-settings-table :is(th,td):nth-child(2) { width:16%; }
+#app .admin-interface.admin-shell .pm-settings-live .pm-settings-table :is(th,td):nth-child(3) { width:19%; }
+#app .admin-interface.admin-shell .pm-settings-live .pm-settings-table :is(th,td):nth-child(4) { width:30%; }
+#app .admin-interface.admin-shell .pm-settings-live .pm-settings-table :is(th,td):nth-child(5) { width:21%; }
+#app .admin-interface.admin-shell .pm-settings-live .pm-settings-table :is(th,td):nth-child(6) { width:110px; text-align:right; }
+.settings-equipment-type,.settings-updated-at { display:block; margin-top:4px; color:var(--r-muted); font-size:12px; line-height:18px; }
+.settings-thresholds { display:flex; align-items:center; flex-wrap:wrap; gap:12px 20px; }
+.settings-thresholds>span { display:inline-flex; align-items:center; gap:8px; white-space:nowrap; }
+.settings-thresholds b { font-size:14px; font-weight:600; font-variant-numeric:tabular-nums; }
+#app .admin-interface.admin-shell .pm-admin-tools.pm-settings-live .threshold-form h2 { flex:0 0 auto; min-width:220px; margin:0 8px 0 0; padding:0; border:0; align-self:center; }
+#app .admin-interface.admin-shell .pm-admin-tools.pm-settings-live .threshold-form { background:var(--r-surface); gap:16px; }
+@media(max-width:1100px) {
+  #app .admin-interface.admin-shell .pm-admin-tools.pm-settings-live .threshold-form h2 { flex-basis:100%; margin:0; }
+}
+#app .admin-interface.admin-shell .pm-admin-tools.pm-daily-live .service-filters { padding:12px 16px; margin-bottom:16px; align-items:center; }
+#app .admin-interface.admin-shell .pm-admin-tools.pm-daily-live .service-filters label { flex-direction:row; align-items:center; min-width:0; gap:12px; }
+#app .admin-interface.admin-shell .pm-admin-tools.pm-daily-live .service-filters input { width:170px; }
+#app .admin-interface.admin-shell .pm-daily-live .daily-generated-at { margin-left:auto; color:var(--r-muted); font-size:11px; }
+#app .admin-interface.admin-shell .pm-admin-tools.pm-daily-live .daily-levels { gap:12px; margin-bottom:20px; }
+#app .admin-interface.admin-shell .pm-admin-tools.pm-daily-live .daily-levels>section { display:flex; align-items:center; gap:12px; padding:14px 18px; min-height:72px; }
+#app .admin-interface.admin-shell .pm-admin-tools.pm-daily-live .daily-levels strong { font-size:26px; line-height:32px; }
+#app .admin-interface.admin-shell .pm-admin-tools.pm-daily-live .daily-levels small { margin-left:auto; }
+#app .admin-interface.admin-shell .pm-daily-live .daily-record-tabs { display:flex; flex-wrap:wrap; gap:8px; padding:0; margin:4px 0 16px; }
+#app .admin-interface.admin-shell .pm-daily-live .daily-record-tabs button { display:inline-flex; align-items:center; gap:10px; min-height:44px; padding:8px 14px; border:1px solid var(--r-line); border-radius:8px; background:var(--r-surface); color:var(--r-ink); font:inherit; font-size:13px; cursor:pointer; }
+#app .admin-interface.admin-shell .pm-daily-live .daily-record-tabs button>span { min-width:20px; padding:1px 5px; border-radius:5px; background:var(--r-soft); color:var(--r-muted); font-size:11px; text-align:center; }
+#app .admin-interface.admin-shell .pm-daily-live .daily-record-tabs button[aria-pressed=true] { border-color:var(--r-accent); color:var(--r-accent); background:var(--r-selected); box-shadow:inset 0 -2px var(--r-accent); }
+#app .admin-interface.admin-shell .pm-daily-live .daily-record-tabs button:focus-visible { outline:2px solid var(--r-focus); outline-offset:2px; }
+#app .admin-interface.admin-shell .pm-admin-tools.pm-daily-live .daily-type-table :is(th,td) { padding:10px 16px; }
+#app .admin-interface.admin-shell .pm-history-live .pm-table :is(th,td):nth-child(4) { width:160px; }
+/* Daily status colors match the administrator badges in light and dark modes. */
+#app .admin-interface.admin-shell .pm-daily-live {
+  --daily-safe-ink:#1b7f5c; --daily-safe-fill:#e1f3ea;
+  --daily-caution-ink:#965000; --daily-caution-fill:#fff1d6;
+  --daily-danger-ink:#a32446; --daily-danger-fill:#fde3e9;
+  --daily-muted-ink:#526175; --daily-muted-fill:#edf0f4;
+}
+:root[data-theme=dark] #app .admin-interface.admin-shell .pm-daily-live {
+  --daily-safe-ink:#a1e2c6; --daily-safe-fill:#203e36;
+  --daily-caution-ink:#f3d28a; --daily-caution-fill:#403722;
+  --daily-danger-ink:#ffb5c5; --daily-danger-fill:#452d39;
+  --daily-muted-ink:#bfd1e3; --daily-muted-fill:#293c4c;
+}
+#app .admin-interface.admin-shell .pm-admin-tools.pm-daily-live .daily-levels h2 { padding:3px 8px; border-radius:4px; font-size:12px; line-height:18px; }
+#app .admin-interface.admin-shell .pm-daily-live .daily-level-safe h2 { background:var(--daily-safe-fill); color:var(--daily-safe-ink); }
+#app .admin-interface.admin-shell .pm-daily-live .daily-level-caution h2 { background:var(--daily-caution-fill); color:var(--daily-caution-ink); }
+#app .admin-interface.admin-shell .pm-daily-live .daily-level-danger h2 { background:var(--daily-danger-fill); color:var(--daily-danger-ink); }
+#app .admin-interface.admin-shell .pm-daily-live .daily-level-noData h2 { background:var(--daily-muted-fill); color:var(--daily-muted-ink); }
+#app .admin-interface.admin-shell .pm-daily-live .daily-level-safe strong { color:var(--daily-safe-ink); }
+#app .admin-interface.admin-shell .pm-daily-live .daily-level-caution strong { color:var(--daily-caution-ink); }
+#app .admin-interface.admin-shell .pm-daily-live .daily-level-danger strong { color:var(--daily-danger-ink); }
+#app .admin-interface.admin-shell .pm-daily-live .daily-type-table td:nth-child(3)[data-count]:not([data-count="0"]) { color:var(--daily-safe-ink); }
+#app .admin-interface.admin-shell .pm-daily-live .daily-type-table td:nth-child(4)[data-count]:not([data-count="0"]) { color:var(--daily-caution-ink); }
+#app .admin-interface.admin-shell .pm-daily-live .daily-type-table td:nth-child(5)[data-count]:not([data-count="0"]) { color:var(--daily-danger-ink); }
+#app .admin-interface.admin-shell .pm-daily-live .daily-type-table td:nth-child(6)[data-count]:not([data-count="0"]) { color:var(--daily-muted-ink); background:color-mix(in srgb,var(--daily-muted-fill) 65%,var(--r-surface)); }
+#app .admin-interface.admin-shell .pm-admin-tools.pm-daily-live { max-width:1280px; margin:0 auto; }
+#app .admin-interface.admin-shell .pm-admin-tools.pm-daily-live .daily-levels>section { padding:12px 16px; min-height:64px; gap:10px; }
+#app .admin-interface.admin-shell .pm-admin-tools.pm-daily-live .daily-levels strong { font-size:24px; }
+#app .admin-interface.admin-shell .pm-admin-tools.pm-daily-live .daily-web-grid .service-table :is(th,td) { padding:10px 14px; }
+#app .admin-interface.admin-shell .pm-admin-tools.pm-daily-live .daily-record-tabs button { min-height:40px; padding:6px 12px; }
+/* Existing links cover the two summary cards, including their counts. */
+#app .admin-interface .restored-dashboard :is(.fixed-verify,.fixed-health) .widget-original-content,
+#app .admin-interface .personal-widget:is(.dashboard-widget--review,.dashboard-widget--alerts):not(:has(.widget-resize-handle)) { position:relative; }
+#app .admin-interface .restored-dashboard :is(.fixed-verify,.fixed-health) .wg-head a::after,
+#app .admin-interface .personal-widget:is(.dashboard-widget--review,.dashboard-widget--alerts):not(:has(.widget-resize-handle)) a::after {
+  content:''; position:absolute; inset:0; z-index:1; border-radius:12px; cursor:pointer;
+}
+#app .admin-interface .restored-dashboard :is(.fixed-verify,.fixed-health) .wg-head a:focus-visible::after,
+#app .admin-interface .personal-widget:is(.dashboard-widget--review,.dashboard-widget--alerts) a:focus-visible::after { outline:2px solid var(--r-focus); outline-offset:-2px; }

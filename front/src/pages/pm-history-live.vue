@@ -12,6 +12,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import BackendLayout from '../components/BackendLayout.vue'
 import RiskLevelBadge from '../components/RiskLevelBadge.vue'
+import PmActionKindBadge from '../components/PmActionKindBadge.vue'
 import PmEquipmentCards from '../components/PmEquipmentCards.vue'
 import { backend, queryString, type PageData } from '../services/backend'
 import { useBackendEvents } from '../composables/useBackendEvents'
@@ -26,6 +27,8 @@ type Action = {
   type: string
   underpassName: string
   content: string
+  kind?: string | null
+  kindLabel?: string | null
   managerName: string | null
   createdAt: string
   eventLevel: string | null
@@ -167,7 +170,7 @@ function resetFilters() {
       <div class="page-head service-heading">
         <div>
           <h1>{{adminPageTitle('/pm-history')}}</h1>
-          <div class="sub">점검 대기에서 남긴 조치 기록 · 점검 전 점수와 점검 뒤 첫 점수를 비교해요</div>
+          <div class="sub">점검 시작부터 기록 추가·종료까지 확인할 수 있어요.</div>
         </div>
         <div class="pm-head-actions">
           <RouterLink class="btn" :to="appPath('/pm-queue')">점검 대기 →</RouterLink>
@@ -236,17 +239,18 @@ function resetFilters() {
       <div v-else-if="list?.items.length" class="service-table-wrap">
         <table class="service-table pm-table">
           <thead>
-            <tr><th>일시</th><th>설비</th><th>지하차도</th><th>조치 내용</th><th>등록자</th><th>점검 전 → 후</th></tr>
+            <tr><th>이력 구분</th><th>기록 시각</th><th>설비</th><th>지하차도</th><th>조치 내용</th><th>등록자</th><th>점검 전 → 후</th></tr>
           </thead>
           <tbody>
             <tr v-for="row in list.items" :key="row.actionId">
+              <td data-label="이력 구분"><PmActionKindBadge :kind="row.kind" :label="row.kindLabel" /></td>
               <td data-label="일시" class="pm-nowrap"><div class="pm-cell-content">{{displayDate(row.createdAt)}}</div></td>
               <td data-label="설비" class="pm-nowrap"><div class="pm-cell-content">
                 <RouterLink class="pm-name" :to="{path:appPath('/pm-equipment-detail'),query:{id:String(row.equipId)}}">{{row.name}}</RouterLink>
                 <small class="pm-type-tag">{{pmLabel(PM_TYPES,row.type)}}</small>
               </div></td>
               <td data-label="지하차도" class="pm-nowrap"><div class="pm-cell-content">{{row.underpassName}}</div></td>
-              <td data-label="조치 내용" class="pm-content" :title="row.content"><div class="pm-cell-content"><div class="pm-cell-summary">{{row.content}}</div></div></td>
+              <td data-label="조치 내용" class="pm-content" :title="row.content"><div class="pm-cell-content"><div class="pm-cell-summary">{{row.content||'내용 없음'}}</div></div></td>
               <td data-label="등록자" class="pm-nowrap"><div class="pm-cell-content">{{row.managerName||'—'}}</div></td>
               <td data-label="점검 전 → 후" class="pm-nowrap"><div class="pm-cell-content">
                 <span class="pm-scores">

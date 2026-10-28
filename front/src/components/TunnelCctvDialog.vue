@@ -2,10 +2,10 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import TrafficVideo from './TrafficVideo.vue'
-import { asPage, backend } from '../services/backend'
+import { getTunnelCameras, getTunnelCameraStream, seoulTunnelSource } from '../services/seoulTunnelCctv'
 
 const props = defineProps<{ facilityName?: string; underpassId?: string | number }>()
-const facilityTitle = computed(()=>props.facilityName || '지하차도')
+const facilityTitle = computed(() => `${props.facilityName || '초량지하차도'} 내부`)
 type FacilityCamera = {id:string;name:string;direction?:string;streamUrl?:string;underpassId?:string|number}
 const route = useRoute()
 const appMode = computed(() => /^\/(admin|customer)-app\//.test(route.path))
@@ -34,11 +34,7 @@ async function loadList() {
   loading.value = true
   error.value = ''
   try {
-    if (!props.underpassId) throw new Error('지하차도 정보를 확인할 수 없습니다. 목록에서 시설을 다시 선택해 주세요.')
-    const result = await backend('/api/underpasses/'+encodeURIComponent(props.underpassId)+'/cameras', {signal:request.signal})
-    const rows = asPage<Record<string,any>>(result).items
-      .filter(row=>row.underpassId==null || String(row.underpassId)===String(props.underpassId))
-      .map(row=>({...row,id:String(row.id),name:row.name || `CCTV #${row.id}`}))
+    const rows = (await getTunnelCameras(request.signal)).map(row=>({...row,name:`CCTV ${row.id}`}))
     if (listRequest !== request || !opened.value) return
     cameras.value = rows
     names.value = Object.fromEntries(rows.map(row=>[row.id,row.name]))
@@ -53,15 +49,32 @@ async function loadList() {
     if (listRequest === request) loading.value = false
   }
 }
-function loadStream() {
+async function loadStream() {
   videoRequest?.abort()
   stream.value = undefined
   if (!selected.value || !opened.value) return
+  const request = new AbortController()
+  videoRequest = request
+  const cameraId = selected.value
+  const timeout = setTimeout(()=>request.abort(),15000)
+  videoLoading.value = true
   streamFailed.value = false
   error.value = ''
-  stream.value = cameras.value.find(camera=>camera.id===selected.value)
-  playbackVersion.value++
+  try {
+    const result = await getTunnelCameraStream(cameraId, request.signal)
+    if (videoRequest!==request || !opened.value || selected.value!==cameraId) return
+    stream.value = result
+    names.value[cameraId] = result.name
+    playbackVersion.value++
+  } catch(cause) {
+    if(videoRequest!==request || !opened.value) return
+    error.value = request.signal.aborted ? '영상 연결이 지연되고 있습니다. 다시 연결해 주세요.' : cause instanceof Error ? cause.message : '영상을 연결하지 못했습니다.'
+  } finally {
+    clearTimeout(timeout)
+    if(videoRequest===request) videoLoading.value=false
+  }
 }
+
 watch(selected, loadStream)
 async function open() {
   if (opened.value) return
@@ -100,10 +113,10 @@ onBeforeUnmount(release)
   <Teleport to="body">
     <WorkflowPage ref="dialog" class="tunnel-cctv-modal" :class="{'tunnel-cctv-modal--app':appMode}" :style="appBounds" :aria-label="facilityTitle+' CCTV'" @close="release" @cancel="release">
       <header>
-        <div><p class="tunnel-cctv-eyebrow">시설 CCTV</p><h2>{{facilityTitle}} CCTV</h2></div>
+        <div><p class="tunnel-cctv-eyebrow">내부 CCTV</p><h2>{{facilityTitle}} CCTV</h2></div>
         <button class="tunnel-cctv-close" type="button" aria-label="내부 CCTV 창 닫기" @click="close">닫기</button>
       </header>
-      <p class="tunnel-cctv-source-note">{{facilityTitle}}에 등록된 CCTV 영상입니다.</p>
+      <p class="tunnel-cctv-source-note">신월여의지하도로의 공개 내부 CCTV 영상입니다. 선택한 {{props.facilityName||'시설'}}의 실제 영상이 아닌 내부 영상 참고용입니다. <a :href="seoulTunnelSource" target="_blank" rel="noopener noreferrer">공식 제공처 ↗</a></p>
       <div v-if="opened" class="tunnel-cctv-content">
         <p v-if="loading" role="status">CCTV 목록을 불러오는 중입니다.</p>
         <label v-if="cameras.length" class="tunnel-cctv-select">CCTV 선택 <small>{{cameras.length}}대</small>

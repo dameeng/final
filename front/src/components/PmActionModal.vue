@@ -54,7 +54,7 @@ async function submit() {
     else
       await backend(`/api/pm/events/${id}/status`, {
         method: 'PATCH',
-        body: { status: mode.value === 'start' ? 'IN_PROGRESS' : endStatus.value, content: text || undefined },
+        body: { status: mode.value === 'start' ? 'IN_PROGRESS' : endStatus.value, content: text || (mode.value === 'start' ? '점검을 시작했습니다.' : undefined) },
       })
     dialog.value?.close()
     emit('done')

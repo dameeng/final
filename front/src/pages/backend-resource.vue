@@ -262,6 +262,15 @@ const pageTitle = computed(() =>
       ? '자주 묻는 질문 (FAQ)'
       : resource.value.title,
 )
+function presetMessage(row: Record<string, any>) {
+  const content = String(row.content ?? '')
+  const label = resource.value.filters?.[0]?.options?.find(([value]) => value === row.category)?.[1]
+  if (!label || !content.startsWith(label)) return content
+  const remainder = content.slice(label.length)
+  return /^\s*[—–\-:：|·]\s*/.test(remainder)
+    ? remainder.replace(/^\s*[—–\-:：|·]\s*/, '') || content
+    : content
+}
 function displayField(key: string, value: any) {
   if (key === 'earlyBlock' && typeof value === 'boolean') return value ? '대상' : '대상 아님'
   if (['phone', 'emergency'].includes(key)) return formatPhone(value) || '—'
@@ -1072,7 +1081,8 @@ defineExpose({ open, load })
     <section
       v-else-if="resource"
       class="service-workspace"
-      :class="{'restored-admin-workspace':restored,'resource-operations-only':props.operationsOnly,'underpass-workspace':underpassSplit}"
+      :data-resource="resourceId"
+      :class="{'restored-admin-workspace':restored,'resource-operations-only':props.operationsOnly,'underpass-workspace':underpassSplit,'camera-config-workspace':underpassSplit&&resourceId==='cameras'}"
     >
       <RouterLink
         v-if="!customer&&resourceId==='faqs'&&alertLogReturn.path"
@@ -1186,6 +1196,12 @@ defineExpose({ open, load })
         <label>분류<select v-model="filters.category" @change="search"><option value="">전체 알림</option><option v-for="[value,label] in resource.filters?.[0]?.options||[]" :key="value" :value="value">{{label}}</option></select></label>
         <label class="manager-unread-filter"><input v-model="filters.unreadOnly" type="checkbox" @change="search" />안 읽은 알림만</label>
       </form>
+      <div v-else-if="['presets','reasons'].includes(resourceId)&&!appPage" class="preset-category-filter">
+        <span class="preset-filter-title">{{resourceId==='reasons'?'통제 유형':'문구 분류'}}</span>
+        <nav :aria-label="resourceId==='reasons'?'통제 사유 유형':'전광판 문구 분류'">
+          <button v-for="[value,label] in [['','전체'],...(resource.filters?.[0]?.options||[])]" :key="value" type="button" :aria-pressed="String(filters[resourceId==='reasons'?'type':'category']||'')===value" @click="filters[resourceId==='reasons'?'type':'category']=value;search()">{{label}}</button>
+        </nav>
+      </div>
       <form
         v-else-if="!underpassSplit&&(resource.parents?.length||resource.filters?.length)"
         class="service-filters filters"
@@ -1284,7 +1300,9 @@ defineExpose({ open, load })
                 :class="{'notification-arrival-glow':notificationGlow.has(resourceId==='manager-notifications'?'notification':resourceId==='notices'?'notice':resourceId==='inquiries'?'inquiry':'',row.id)}"
               >
                 <td v-for="[key,label] in visibleColumns" :key="key" :data-label="label">
-                  <template v-if="resourceId==='notices'&&key==='title'">
+                  <span v-if="resourceId==='presets'&&key==='category'||resourceId==='reasons'&&key==='type'" class="preset-category-badge" :data-category="row[key]">{{displayField(key,row[key])}}</span>
+                  <template v-else-if="resourceId==='presets'&&key==='content'">{{presetMessage(row)}}</template>
+                  <template v-else-if="resourceId==='notices'&&key==='title'">
                     <button
                       type="button"
                       class="notice-title-button"

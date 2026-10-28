@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
 import RiskLevelBadge from './RiskLevelBadge.vue'
+import PmActionKindBadge from './PmActionKindBadge.vue'
 import { managerAppPath } from '../utils/manager-app-path'
 import { PM_TYPES, PM_EVENT_STATUS, pmLabel } from '../utils/pm-labels'
 defineProps<{ items: Record<string, any>[]; inspection?: boolean }>()
@@ -21,6 +22,7 @@ const score = (row: Record<string, any>) => {
       <span class="pm-equipment-card-copy">
         <span class="pm-equipment-card-facility" :title="row.underpassName">{{row.underpassName||'지하차도 미상'}}</span>
         <span class="pm-equipment-card-device"><strong>{{row.name||'설비 '+row.equipId}}</strong><span>· {{pmLabel(PM_TYPES,row.type)}}</span></span>
+        <span v-if="row.actionId" class="pm-equipment-card-action"><PmActionKindBadge :kind="row.kind" :label="row.kindLabel" /><span>{{row.content}}</span></span>
       </span>
       <span v-if="inspection" class="pm-equipment-card-risk">
         <span class="pm-inspection-state" :class="'pm-inspection-state--'+String(row.status||'unknown').toLowerCase()">{{pmLabel(PM_EVENT_STATUS,row.status,'—')}}</span>
@@ -38,6 +40,8 @@ const score = (row: Record<string, any>) => {
 </template>
 <style scoped>
 .pm-equipment-cards { display:grid; grid-template-columns:minmax(0,1fr); gap:10px; }
+.pm-equipment-card-action{display:flex;align-items:center;gap:8px;margin-top:6px;min-width:0;font-size:12px;}
+.pm-equipment-card-action>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .pm-equipment-card { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:88px; padding:14px 16px; box-sizing:border-box; border:1px solid var(--r-line,#dce7f2); border-radius:12px; background:var(--r-surface,#fff); color:var(--r-ink,#172e49); text-decoration:none; }
 .pm-equipment-card-copy { flex:1; min-width:0; }
 .pm-equipment-card-risk { display:flex; flex-direction:column; align-items:flex-end; gap:5px; flex:0 0 auto; }

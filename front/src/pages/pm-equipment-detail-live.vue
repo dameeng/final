@@ -422,6 +422,7 @@ watch([data,trends],async()=>{
           </section>
           <section class="card pm-score-history">
             <div class="pm-section-heading"><h2>위험 점수 추이</h2><span class="pm-period">최근 7일</span></div>
+            <div v-if="scoreChart.path" class="pm-score-threshold-legend" aria-label="위험 점수 단계 기준"><span><i class="caution"></i>주의 {{data.cautionMin}}</span><span><i class="danger"></i>위험 {{data.dangerMin}}</span></div>
             <svg v-if="scoreChart.path" class="pm-chart" :viewBox="`0 0 ${CW} ${CH}`" role="img" aria-label="최근 7일 위험 점수 추이">
               <rect :x="PL" :y="PT" :width="PW" :height="scoreChart.y(data.dangerMin)-PT" class="zone-danger" />
               <rect :x="PL" :y="scoreChart.y(data.dangerMin)" :width="PW" :height="scoreChart.y(data.cautionMin)-scoreChart.y(data.dangerMin)" class="zone-caution" />
@@ -435,8 +436,6 @@ watch([data,trends],async()=>{
               <line :x1="PL" :x2="PL+PW" :y1="PT+PH" :y2="PT+PH" class="axis" />
               <path :d="scoreChart.max" class="line-max" />
               <path :d="scoreChart.path" class="line-main" />
-              <text :x="PL+PW-4" :y="PT+14" text-anchor="end" class="lbl-danger">위험 {{data.dangerMin}}</text>
-              <text :x="PL+PW-4" :y="scoreChart.y(data.dangerMin)+14" text-anchor="end" class="lbl-caution">주의 {{data.cautionMin}}</text>
               <template v-if="scoreChart.last">
                 <circle :cx="scoreChart.last.x" :cy="scoreChart.last.y" r="4" class="dot-main" />
               </template>

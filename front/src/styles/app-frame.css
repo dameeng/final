@@ -28,3 +28,27 @@
 #app :is(.service-mobile,.manager-app-shell,.customer-app-editorial) :is(.app-service-content,.service-workspace) { min-width:0; max-width:100%; box-sizing:border-box; }
 .service-app-layout .service-heading.app-resource-heading:not(:has(button,a)) { display:none; }
 
+#app .service-app-layout.app-auth:has(.login-form)>.app-restored-body {
+  display:flex;
+  flex-direction:column;
+  padding:24px 20px;
+  overflow-y:auto;
+  scrollbar-gutter:auto;
+}
+#app .service-app-layout.app-auth:has(.login-form)>.app-restored-body>:first-child {
+  flex:0 0 auto;
+  width:100%;
+  min-height:0;
+  margin-block:auto;
+}
+#app .service-app-layout.app-auth .auth-service:has(.login-form) {
+  width:100%;
+  max-width:380px;
+  margin:0 auto;
+  padding:24px;
+  border:1px solid var(--r-line,var(--line));
+  border-radius:12px;
+  background:var(--r-surface,var(--surface));
+}
+#app .service-app-layout.app-auth .login-form .auth-buttons button[type=submit] { width:100%; }
+#app .service-app-layout.app-auth .auth-service:has(.login-form) .auth-links { justify-content:center; flex-wrap:wrap; gap:12px; }

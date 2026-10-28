@@ -136,8 +136,17 @@ try {
    await expect(page.locator('.pm-settings-table')).toBeVisible()
    await expect(page.locator('.pm-settings-list')).toHaveCount(0)
   } else {
-   await expect(page.locator('.daily-web-section table')).toHaveCount(6)
+   await expect(page.locator('.daily-web-section table')).toHaveCount(2)
    await expect(page.locator('.daily-section')).toHaveCount(0)
+   for(const label of ['미수신 설비','처리 중인 점검','점검 기록','신규 점검 대기','점검 권장 설비']) {
+    await page.getByRole('navigation',{name:'리포트 기록 구분'}).getByRole('button',{name:new RegExp(label)}).click()
+    await expect(page.locator('.daily-web-grid h2')).toHaveText(label)
+    await expect(page.locator('.daily-web-grid table')).toHaveCount(1)
+   }
+   await expect(page.locator('.daily-web-grid tbody tr')).toHaveCount(5)
+   await page.getByRole('navigation',{name:'리포트 기록 페이지'}).getByRole('button',{name:'다음'}).click()
+   await expect(page.locator('.daily-web-grid tbody tr')).toHaveCount(2)
+   await expect(page.locator('.daily-web-grid')).toContainText('P-1-6')
    const groups=await page.locator('.daily-web-grid').evaluate(el=>({width:el.getBoundingClientRect().width,boxes:[...el.children].map(child=>{const r=child.getBoundingClientRect();return {left:r.left,top:r.top,bottom:r.bottom,width:r.width}})}))
    assert(groups.boxes.every(box=>Math.abs(box.width-groups.width)<1),'Daily report tables use full width')
    assert(groups.boxes.every((box,i)=>i===0||Math.abs(box.top-groups.boxes[i-1].bottom-24)<1),'Report sections have consistent 24px spacing')
@@ -150,8 +159,8 @@ try {
   assert(Math.abs(size.buttonRight-size.x-size.width)<2,'Header action aligns with content right edge')
   geometry.push(size)
  }
- assert.equal(geometry[0].width,geometry[1].width)
- assert.equal(geometry[0].x,geometry[1].x)
+ assert.equal(geometry[1].width,1280,'Daily report keeps a readable maximum width')
+ assert(geometry[1].x>geometry[0].x,'Daily report is centered within the wider workspace')
  assert.equal(geometry[0].titleTop,geometry[1].titleTop)
  const tokenPosts=calls.filter(c=>c.path==='/api/managers/me/device-tokens'&&c.method==='POST').length
  await page.evaluate(()=>window.dispatchEvent(new CustomEvent('routel:push-token',{detail:{token:'test-issued-token',platform:'APP'}})))

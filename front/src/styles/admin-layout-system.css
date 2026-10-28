@@ -110,6 +110,19 @@
 #app .admin-interface.admin-shell .pm-engine { display:inline-block; width:280px; max-width:100%; box-sizing:border-box; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 #app .admin-interface.admin-shell :is(.service-table,.tbl) { font-variant-numeric:tabular-nums; }
 /* 결과 개수나 조회 상태에 따라 페이지 전체 높이가 줄지 않게 한다. */
+#app .admin-interface.admin-shell .camera-config-workspace .underpass-split { height:auto; max-height:none; align-items:start; }
+#app .admin-interface.admin-shell .camera-config-workspace .underpass-split-main { height:auto; max-height:none; overflow:visible; }
+#app .admin-interface.admin-shell .camera-config-workspace .my-underpass-list { height:auto; max-height:none; overflow:visible; align-self:start; }
+#app .admin-interface.admin-shell .camera-config-workspace .my-underpass-list ul { max-height:none; overflow:visible; }
+#app .admin-interface.admin-shell .camera-config-workspace .configuration-camera-grid { grid-template-columns:minmax(0,1fr); gap:12px; }
+#app .admin-interface.admin-shell .camera-config-workspace .configuration-camera-card { display:grid; grid-template-columns:220px minmax(0,1fr) auto; align-items:center; gap:20px; padding:16px 20px; }
+#app .admin-interface.admin-shell .camera-config-workspace .configuration-camera-card dl { margin:0; }
+#app .admin-interface.admin-shell .camera-config-workspace .configuration-camera-card dl>div { margin:6px 0; }
+#app .admin-interface.admin-shell .camera-config-workspace .configuration-camera-card footer { padding:0; border:0; justify-content:flex-end; }
+@media(max-width:1200px) {
+  #app .admin-interface.admin-shell .camera-config-workspace .configuration-camera-card { grid-template-columns:minmax(0,1fr); gap:12px; }
+  #app .admin-interface.admin-shell .camera-config-workspace .configuration-camera-card footer { justify-content:flex-start; }
+}
 #app .admin-interface.admin-shell .pm-admin-tools {
   width:100%; max-width:none; min-width:0; margin:0; padding:0; box-sizing:border-box;
 }
