@@ -194,6 +194,11 @@
 }
 
 /* PM tools follow the same app forms, actions and section hierarchy. */
+#app .manager-app-shell .pm-detail .pm-sensor-tabs { display:grid; grid-template-columns:repeat(var(--sensor-tab-columns,4),minmax(0,1fr)); width:100%; box-sizing:border-box; gap:6px; padding:4px; }
+#app .manager-app-shell .pm-detail .pm-sensor-tabs>button { display:flex; align-items:center; justify-content:center; width:100%; min-width:0; height:40px; min-height:40px; padding:6px 4px; white-space:nowrap; font-size:12px; line-height:18px; }
+#app .manager-app-shell .pm-detail .pm-sensor-tabs.pm-sensor-tabs-five { grid-template-columns:repeat(6,minmax(0,1fr)); }
+#app .manager-app-shell .pm-detail .pm-sensor-tabs-five>button { grid-column:span 2; }
+#app .manager-app-shell .pm-detail .pm-sensor-tabs-five>button:nth-child(n+4) { grid-column:span 3; }
 :root[data-theme=dark] #app .manager-app-shell .admin-map-search { background:var(--r-surface)!important; color:var(--r-ink); border:1px solid var(--r-line); }
 :root[data-theme=dark] #app .manager-app-shell .admin-map-search input {
   background:transparent!important; background-color:transparent!important; color:var(--r-ink)!important;

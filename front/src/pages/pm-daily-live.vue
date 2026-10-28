@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import AppPagination from '../components/AppPagination.vue'
+import PmDailyTables from '../components/PmDailyTables.vue'
 import { RouterLink, useRoute } from 'vue-router'
 import BackendLayout from '../components/BackendLayout.vue'
 import { backend, downloadPdf, queryString } from '../services/backend'
@@ -51,8 +52,8 @@ onBeforeUnmount(()=>{controller?.abort();clearTimeout(timer)})
     <form class="service-filters" @submit.prevent="load"><label>조회 날짜<input v-model="date" type="date" required /></label><button :disabled="loading">조회</button></form>
     <p v-if="loading" role="status">리포트를 불러오는 중입니다.</p><p v-if="error" role="alert">{{error}}</p>
     <template v-if="report"><p>집계 시각 · {{displayDate(report.generatedAt)}}</p><div class="daily-levels"><section v-for="[key,label] in levelSummaries" :key="key" :class="'daily-level-'+key"><h2>{{label}}</h2><strong>{{summary.levelCounts?.[key!]??0}}</strong><small>이전 {{summary.previousLevelCounts?.[key!]??0}}개</small></section></div>
-    <section class="daily-section"><h2>종류별 현황</h2><p v-for="item in summary.byType" :key="item.type">{{PM_TYPES[item.type]||item.type}} · 전체 {{item.total}} / 안전 {{item.safe}} / 주의 {{item.caution}} / 위험 {{item.danger}} / 미수신 {{item.noData}}</p><p>최초 수신 대기 · {{summary.neverReceived??0}}개</p></section>
-    <section v-for="[key,label] in groups" :key="key" class="daily-section"><h2>{{label}} <small>{{key==='newEvents'?summary.newEventCount:key==='openEvents'?summary.openEventCount:key==='actions'?summary.actionCount:summary[key]?.length??0}}건</small></h2><ul><li v-for="(row,index) in groupRows(key)" :key="row.eventId||row.actionId||row.equipId||index"><RouterLink v-if="row.equipId" :to="{path:managerAppPath('/pm-equipment-detail',route.path),query:{id:String(row.equipId)}}">{{row.name||row.code||'설비 '+row.equipId}}</RouterLink><strong v-else>{{row.name||'기록'}}</strong><span>{{row.underpassName}} · {{PM_TRIGGERS[row.triggerType]||PM_EVENT_STATUS[row.status]||PM_LEVELS[row.level]||row.content||''}}</span></li></ul><AppPagination v-if="appView&&(summary[key]?.length||0)>3" :page="groupPage(key)" :pages="Math.ceil(summary[key].length/3)" @change="groupPages[key]=$event" /><p v-if="!summary[key]?.length">해당 기록이 없습니다.</p></section></template>
+    <PmDailyTables v-if="!appView" :summary="summary" /><template v-else><section class="daily-section"><h2>종류별 현황</h2><p v-for="item in summary.byType" :key="item.type">{{PM_TYPES[item.type]||item.type}} · 전체 {{item.total}} / 안전 {{item.safe}} / 주의 {{item.caution}} / 위험 {{item.danger}} / 미수신 {{item.noData}}</p><p>최초 수신 대기 · {{summary.neverReceived??0}}개</p></section>
+    <section v-for="[key,label] in groups" :key="key" class="daily-section"><h2>{{label}} <small>{{key==='newEvents'?summary.newEventCount:key==='openEvents'?summary.openEventCount:key==='actions'?summary.actionCount:summary[key]?.length??0}}건</small></h2><ul><li v-for="(row,index) in groupRows(key)" :key="row.eventId||row.actionId||row.equipId||index"><RouterLink v-if="row.equipId" :to="{path:managerAppPath('/pm-equipment-detail',route.path),query:{id:String(row.equipId)}}">{{row.name||row.code||'설비 '+row.equipId}}</RouterLink><strong v-else>{{row.name||'기록'}}</strong><span>{{row.underpassName}} · {{PM_TRIGGERS[row.triggerType]||PM_EVENT_STATUS[row.status]||PM_LEVELS[row.level]||row.content||''}}</span></li></ul><AppPagination v-if="appView&&(summary[key]?.length||0)>3" :page="groupPage(key)" :pages="Math.ceil(summary[key].length/3)" @change="groupPages[key]=$event" /><p v-if="!summary[key]?.length">해당 기록이 없습니다.</p></section></template></template>
   </main></BackendLayout>
 </template>
 <style scoped>

@@ -70,6 +70,20 @@ let controller: AbortController | undefined, trendController: AbortController | 
 
 const eq = computed(() => data.value?.equipment || {})
 const extra = computed(() => data.value?.detail?.extra || {})
+const waterComparison = computed(() => eq.value.type === 'WATER_LEVEL')
+const comparisonSensors = computed<Record<string, any>[]>(() => {
+  if (!waterComparison.value) return Array.isArray(extra.value.sensors) ? extra.value.sensors : []
+  return (data.value?.detail?.features || []).map(feature => {
+    const value = feature.value, normal = feature.normal
+    const known = typeof value === 'number' && Number.isFinite(value) && normal &&
+      typeof normal.low === 'number' && typeof normal.high === 'number'
+    return { '항목':feature.key, '센서':feature.label, '현재':value, '평소':normal?.median,
+      '벗어난정도':typeof value === 'number' && typeof normal?.median === 'number' ? value-normal.median : null,
+      '상태':!known?'기준 없음':value<normal.low||value>normal.high?'평소 범위 벗어남':'정상', unit:feature.unit }
+  })
+})
+const comparisonValueLabel = computed(() => eq.value.type === 'DISPLAY' ? '24시간 평균' : '분석 시 값')
+function comparisonUnit(sensor: Record<string, any>) { return sensor.unit ?? PM_SENSOR_UNITS[sensor['항목']] ?? '' }
 const sensorColumns = computed(() => PM_SENSOR_COLUMNS[eq.value.type] || [])
 const sensorSnapshot = computed(() => data.value?.currentSensors)
 const sensorCurrentRows = computed(() => sensorColumns.value.map(([key, label]) => ({
@@ -81,7 +95,10 @@ const features = computed(() =>
 // 전광판은 본체 온도만 그리면 하루 온도 변화에 묻혀서, 본체·외기 온도를 한 그래프에 겹쳐 보여준다
 const tabs = computed<[string, string][]>(() => {
   const cols = PM_SENSOR_COLUMNS[eq.value.type] || []
-  if (eq.value.type === 'CCTV') return cols.map(([key, label]) => [key, key === 'video_receive_rate' ? '수신율' : key === 'packet_loss_rate' ? '손실률' : label])
+  if (eq.value.type === 'CCTV') {
+    const labels: Record<string,string> = {video_receive_rate:'수신율',response_time_ms:'응답',packet_loss_rate:'손실률',image_blur_score:'흐림'}
+    return cols.map(([key,label]) => [key,labels[key]||label])
+  }
   if (eq.value.type !== 'DISPLAY') return cols
   return [['temperature_c', '온도 비교'], ...cols.filter(([c]) => c !== 'temperature_c' && c !== 'ambient_c')]
 })
@@ -463,16 +480,19 @@ watch([data,trends],async()=>{
           </dl>
         </section>
 
-        <section v-if="extra.sensors?.length" class="card pm-sensor-table-card">
-          <div class="pm-section-heading"><h2>최근 분석 센서 비교</h2><span class="pm-period">{{extra.sensors.length}}개 센서</span></div>
+        <section v-if="comparisonSensors.length||waterComparison" class="card pm-sensor-table-card">
+          <div class="pm-section-heading"><h2>{{waterComparison?'최근 분석 지표 비교':'최근 분석 센서 비교'}}</h2><span class="pm-period">{{comparisonSensors.length}}개 {{waterComparison?'지표':'센서'}}</span></div>
           <p class="pm-muted small">{{displayDate(data?.scoredAt)}} 분석 기준 · 최신 측정값은 위의 센서 현재값에서 확인하세요.</p>
-          <div class="service-table-wrap">
+          <p v-if="waterComparison" class="pm-muted small">수위 변화 지표를 모델의 평소 범위와 비교합니다. 실제 수위와는 단위가 다를 수 있습니다.</p>
+          <p v-if="waterComparison&&!comparisonSensors.length" class="pm-muted small">아직 비교할 분석 지표가 없습니다. 수위 분석 결과가 수신되면 표시됩니다.</p>
+          <p v-if="eq.type==='DISPLAY'" class="pm-muted small">최근 24시간 평균과 평소 기준을 비교합니다.</p>
+          <div v-if="comparisonSensors.length" class="service-table-wrap">
             <table class="service-table">
-              <thead><tr><th>센서</th><th>지금</th><th>평소</th><th>벗어난 정도</th><th>상태</th></tr></thead>
+              <thead><tr><th>{{waterComparison?'분석 지표':'센서'}}</th><th>{{comparisonValueLabel}}</th><th>평소</th><th>{{waterComparison?'평소와 차이':'벗어난 정도'}}</th><th>상태</th></tr></thead>
               <tbody>
-                <tr v-for="s in extra.sensors" :key="s['항목']">
-                  <td data-label="센서">{{s['센서']}}</td><td data-label="분석 시 값">{{num(s['현재'])}}</td><td data-label="평소">{{num(s['평소'])}}</td>
-                  <td data-label="벗어난 정도">{{num(s['벗어난정도'],2)}}</td>
+                <tr v-for="s in comparisonSensors" :key="s['항목']">
+                  <td data-label="센서">{{s['센서']}}</td><td :data-label="comparisonValueLabel"><span>{{num(s['현재'])}}<small v-if="s['현재']!=null"> {{comparisonUnit(s)}}</small></span></td><td data-label="평소"><span>{{num(s['평소'])}}<small v-if="s['평소']!=null"> {{comparisonUnit(s)}}</small></span></td>
+                  <td :data-label="waterComparison?'평소와 차이':'벗어난 정도'">{{num(s['벗어난정도'],2)}}</td>
                   <td data-label="상태"><span class="pm-chip" :class="{'pm-chip--open':s['상태']!=='정상'}">{{s['상태']}}</span></td>
                 </tr>
               </tbody>
@@ -482,7 +502,7 @@ watch([data,trends],async()=>{
 
         <section class="card pm-sensor-card" :aria-busy="trendLoading">
           <div class="pm-section-heading"><div><p class="pm-eyebrow">SENSOR TREND</p><h2>원인 센서 추이</h2><p class="pm-muted small">최근 7일 · 1시간 평균값과 평소 범위 비교</p></div><span class="pm-period">최근 7일</span></div>
-          <nav class="tabs pm-sensor-tabs" aria-label="센서">
+          <nav class="tabs pm-sensor-tabs" :class="{'pm-sensor-tabs-five':tabs.length===5}" aria-label="센서" :style="{'--sensor-tab-columns':tabs.length<=4?tabs.length:3}">
             <button v-for="[value,label] in tabs" :key="value" type="button" :class="{'is-current':column===value}" :aria-pressed="column===value" @click="column=value">{{label}}</button>
           </nav>
           <p v-if="trendError" role="alert" class="service-error">{{trendError}}</p>

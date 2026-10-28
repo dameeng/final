@@ -154,6 +154,7 @@ public class PmIngestServiceImpl implements PmIngestService {
             int n = scoreRepository.insertIgnoreDuplicate(eq.getEquipId(), score, it.getPredictedAt(), level.getDbValue(),
                     toJson(it.getReasons() == null ? List.of() : it.getReasons()), toJson(it.getDetail()), it.getModelVersion());
             if (n == 0) {
+                supplementComparisonSensors(it);
                 duplicated++;
                 continue;
             }
@@ -212,6 +213,13 @@ public class PmIngestServiceImpl implements PmIngestService {
             }
         }
         return new PmScoreIngestResponse(items.size(), saved, duplicated, unknown, created, raised);
+    }
+
+    void supplementComparisonSensors(PmScoreIngestItem item) {
+        var sensors = item.getDetail() == null ? null : item.getDetail().path("extra").path("sensors");
+        if (sensors != null && sensors.isArray() && !sensors.isEmpty()) {
+            scoreRepository.supplementSensors(item.getEquipId(), item.getPredictedAt(), toJson(sensors));
+        }
     }
 
     /**

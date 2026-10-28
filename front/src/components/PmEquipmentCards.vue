@@ -22,7 +22,11 @@ const score = (row: Record<string, any>) => {
         <span class="pm-equipment-card-facility" :title="row.underpassName">{{row.underpassName||'지하차도 미상'}}</span>
         <span class="pm-equipment-card-device"><strong>{{row.name||'설비 '+row.equipId}}</strong><span>· {{pmLabel(PM_TYPES,row.type)}}</span></span>
       </span>
-      <span v-if="inspection" class="pm-inspection-state" :class="'pm-inspection-state--'+String(row.status||'unknown').toLowerCase()">{{pmLabel(PM_EVENT_STATUS,row.status,'—')}}</span>
+      <span v-if="inspection" class="pm-equipment-card-risk">
+        <span class="pm-inspection-state" :class="'pm-inspection-state--'+String(row.status||'unknown').toLowerCase()">{{pmLabel(PM_EVENT_STATUS,row.status,'—')}}</span>
+        <strong v-if="score(row)!==null" class="pm-equipment-card-score" :aria-label="(row.currentScore!=null?'현재 위험 점수 ':'발생 당시 위험 점수 ')+score(row)+'점'"><small>{{row.currentScore!=null?'현재':'발생'}}</small> {{score(row)}}<small>점</small></strong>
+        <small v-else class="pm-equipment-card-no-score">점수 미수신</small>
+      </span>
       <span v-else class="pm-equipment-card-risk">
         <RiskLevelBadge v-if="level(row)" :value="level(row)" />
         <span v-else class="pm-equipment-card-unknown" aria-label="위험 단계 미확인">—</span>

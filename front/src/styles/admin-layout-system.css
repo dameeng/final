@@ -113,6 +113,30 @@
 #app .admin-interface.admin-shell .pm-admin-tools {
   width:100%; max-width:none; min-width:0; margin:0; padding:0; box-sizing:border-box;
 }
+#app .admin-interface.admin-shell .pm-admin-tools .service-table-wrap { border:1px solid var(--r-line); border-radius:10px; overflow-x:auto; margin:0 0 16px; }
+#app .admin-interface.admin-shell .pm-admin-tools .service-table { width:100%; border-collapse:collapse; background:var(--r-surface); font-size:13px; }
+#app .admin-interface.admin-shell .pm-admin-tools .service-table :is(th,td) { padding:12px 14px; border-bottom:1px solid var(--r-line); text-align:left; line-height:20px; }
+#app .admin-interface.admin-shell .pm-admin-tools .service-table th { background:var(--r-soft); font-size:12px; font-weight:600; white-space:nowrap; }
+#app .admin-interface.admin-shell .pm-admin-tools .service-table tbody tr:last-child td { border-bottom:0; }
+#app .admin-interface.admin-shell .pm-admin-tools .service-table button { min-height:36px; padding:6px 12px; border:1px solid var(--r-line); border-radius:8px; background:var(--r-surface); color:var(--admin-alert-ink,#b84455); font:inherit; font-size:12px; white-space:nowrap; }
+#app .admin-interface.admin-shell .pm-admin-tools .service-table input[type=checkbox] { width:16px; height:16px; accent-color:var(--r-accent); }
+#app .admin-interface.admin-shell .pm-admin-tools .pm-table-empty { padding:24px; text-align:center; color:var(--r-muted); }
+#app .admin-interface.admin-shell .pm-admin-tools .daily-web-section { min-width:0; margin:0 0 20px; }
+#app .admin-interface.admin-shell .pm-admin-tools .daily-web-section>header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 10px; }
+#app .admin-interface.admin-shell .pm-admin-tools .daily-web-section h2 { margin:0; font-size:15px; font-weight:600; }
+#app .admin-interface.admin-shell .pm-admin-tools .daily-web-section>header>span { color:var(--r-muted); font-size:12px; }
+#app .admin-interface.admin-shell .pm-admin-tools .daily-web-grid { display:flex; flex-direction:column; gap:24px; }
+#app .admin-interface.admin-shell .pm-admin-tools .daily-web-grid>.daily-web-section { width:100%; margin:0; }
+#app .admin-interface.admin-shell .pm-admin-tools .daily-web-grid .service-table-wrap { margin:0; }
+#app .admin-interface.admin-shell .pm-admin-tools .daily-web-grid .service-table { table-layout:fixed; }
+#app .admin-interface.admin-shell .pm-admin-tools .daily-web-grid .service-table :is(th,td):nth-child(1) { width:16%; }
+#app .admin-interface.admin-shell .pm-admin-tools .daily-web-grid .service-table :is(th,td):nth-child(2) { width:24%; }
+#app .admin-interface.admin-shell .pm-admin-tools .daily-web-grid .service-table :is(th,td):nth-child(3) { width:36%; overflow-wrap:anywhere; }
+#app .admin-interface.admin-shell .pm-admin-tools .daily-web-grid .service-table :is(th,td):nth-child(4) { width:24%; }
+#app .admin-interface.admin-shell .pm-admin-tools .daily-web-grid .service-table td[colspan] { width:auto; }
+#app .admin-interface.admin-shell .pm-admin-tools .daily-levels>section { display:grid; grid-template-columns:1fr auto; gap:4px 16px; align-items:center; padding:16px 20px; }
+#app .admin-interface.admin-shell .pm-admin-tools .daily-levels h2 { margin:0; color:var(--r-muted); font-size:12px; }
+#app .admin-interface.admin-shell .pm-admin-tools .daily-levels strong { grid-row:1/3; grid-column:2; font-size:28px; }
 #app .admin-interface.admin-shell .pm-admin-tools :is(.pm-settings-card,.daily-section,.daily-levels>section) {
   box-sizing:border-box; padding:20px; border:1px solid var(--r-line); border-radius:12px; background:var(--r-surface);
 }
@@ -156,13 +180,13 @@
 #app .admin-interface :is(.pm-equipment-live,.pm-queue-live) .pm-filters .tabs button { min-width:88px; width:88px; flex:0 0 88px; padding-inline:8px; }
 #app .admin-interface .pm-queue-live .pm-filters .tabs button { min-width:112px; width:112px; flex-basis:112px; }
 #app .admin-interface .pm-results-viewport .pm-actions { display:inline-flex; flex-wrap:nowrap; gap:6px; }
-#app .admin-interface :is(.pm-equipment-live,.pm-queue-live,.pm-history-live) .pm-pager {
+#app .admin-interface :is(.pm-equipment-live,.pm-queue-live,.pm-history-live,.pm-settings-live) .pm-pager {
   display:flex; align-items:center; justify-content:center; min-height:44px; margin:12px 0;
 }
-#app .admin-interface :is(.pm-equipment-live,.pm-queue-live,.pm-history-live) .pm-pager button {
+#app .admin-interface :is(.pm-equipment-live,.pm-queue-live,.pm-history-live,.pm-settings-live) .pm-pager button {
   min-width:64px; height:36px; box-sizing:border-box;
 }
-#app .admin-interface :is(.pm-equipment-live,.pm-queue-live,.pm-history-live) .pm-pager>span {
+#app .admin-interface :is(.pm-equipment-live,.pm-queue-live,.pm-history-live,.pm-settings-live) .pm-pager>span {
   min-width:180px; text-align:center; font-variant-numeric:tabular-nums;
 }
 /* 관리자 앱 지하차도 목록: 작업 2열, 단계 4열, 선택 2열, 검색 3:1. */
@@ -222,7 +246,7 @@
 #app .manager-app-shell .pm-type select { flex:1; min-width:0; max-width:100%; }
 #app .manager-app-shell .pm-select { flex:1 1 100%; min-width:0; max-width:100%; flex-wrap:wrap; }
 #app .manager-app-shell .pm-filter-row input[type=date] { flex:1 1 120px; }
-#app .manager-app-shell :is(.pm-equipment-live,.pm-queue-live,.pm-history-live) .pm-pager { display:grid; grid-template-columns:56px minmax(0,1fr) 56px; gap:8px; width:100%; min-width:0; }
-#app .manager-app-shell :is(.pm-equipment-live,.pm-queue-live,.pm-history-live) .pm-pager>span { min-width:0; overflow-wrap:break-word; line-height:20px; }
-#app .manager-app-shell :is(.pm-equipment-live,.pm-queue-live,.pm-history-live) .pm-pager>button { width:56px; min-width:0; padding:0 6px; }
+#app .manager-app-shell :is(.pm-equipment-live,.pm-queue-live,.pm-history-live,.pm-settings-live) .pm-pager { display:grid; grid-template-columns:56px minmax(0,1fr) 56px; gap:8px; width:100%; min-width:0; }
+#app .manager-app-shell :is(.pm-equipment-live,.pm-queue-live,.pm-history-live,.pm-settings-live) .pm-pager>span { min-width:0; overflow-wrap:break-word; line-height:20px; }
+#app .manager-app-shell :is(.pm-equipment-live,.pm-queue-live,.pm-history-live,.pm-settings-live) .pm-pager>button { width:56px; min-width:0; padding:0 6px; }
 

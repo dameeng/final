@@ -49,14 +49,14 @@ const promoPaused = ref(false)
 const steps = computed(() =>
   platform.value === 'android'
     ? [
-        'Google Play 설치 링크가 열리면 ROUTEL 앱을 설치해 주세요.',
-        '앱을 실행하고 회원 정보를 입력해 주세요.',
-        '필요한 알림을 설정하고 지하차도 정보를 확인하세요.',
+        'Google Play에서 ROUTEL 설치',
+        '앱 실행 후 로그인 또는 회원가입',
+        '알림 설정 후 지하차도 현황 확인',
       ]
     : [
-        'App Store 설치 링크가 열리면 ROUTEL 앱을 설치해 주세요.',
-        '앱을 실행하고 회원 정보를 입력해 주세요.',
-        '알림 수신을 설정하고 지하차도 통제 안내를 확인하세요.',
+        'App Store에서 ROUTEL 설치',
+        '앱 실행 후 로그인 또는 회원가입',
+        '알림 설정 후 지하차도 현황 확인',
       ],
 )
 </script>
