@@ -140,6 +140,9 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
     private final int defaultWeeks;
     private final int defaultNormalWeeks;
     private final int pumpWeeks;
+    // false 면 예전처럼 실시간 값은 DANGER 버튼을 누른 설비만 이상. (직접 만든 인스턴스는 false, 스프링은 기본 true 를 주입)
+    @Value("${puf.pm.sensor-stub.persist-abnormal:true}")
+    private boolean persistAbnormal = false;
 
     public PmSensorBackfillServiceImpl(DbClock dbClock,
             @Value("${puf.pm.backfill.weeks:14}") int defaultWeeks,
@@ -259,7 +262,10 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
                     SELECT e.id, e.rk, g.t,
                            CASE WHEN EXISTS (SELECT 1 FROM pm_stub_mode m WHERE m.equip_id=e.id
                                AND m.mode='DANGER' AND g.t>=m.changed_at)
-                               THEN CAST(:ampD AS double precision) ELSE 0.0 END AS s
+                               THEN CAST(:ampD AS double precision)
+                                WHEN EXISTS (SELECT 1 FROM pm_stub_mode m WHERE m.equip_id=e.id)
+                               THEN 0.0
+                                ELSE {BASE} END AS s
                       FROM eq e
                      CROSS JOIN LATERAL generate_series(
                          GREATEST(COALESCE(
@@ -268,10 +274,14 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
                              e.until_at - make_interval(secs => e.step * (:maxSamples - 1))),
                          e.until_at, make_interval(secs => e.step)) AS g(t)
                     """.replace("{TABLE}", spec.table());
+            // 모든 이름 파라미터가 SQL 안에 한 번씩은 나오게 한다 (안 나오는 파라미터를 설정하면 하이버네이트가 예외를 낸다)
+            String unused = " + 0.0 * (CAST(:ampC AS double precision) + CAST(:ampS AS double precision))";
+            times = times.replace("{BASE}", "(" + (persistAbnormal ? liveBaseSeverity(spec) : "0.0") + unused + ")");
             String sql = spec.insertSql().replace("+ 1.0 * {N} AS a", "+ 1.0 * "+LIVE_NOISE+" AS a").replace("{SEV}", times).replace("{N}", liveNoise(spec.type()));
             int added = em.createNativeQuery(sql)
                     .setParameter("type", spec.type().name()).setParameter("now", now)
-                    .setParameter("ampD", spec.ampDanger())
+                    .setParameter("ampD", spec.ampDanger()).setParameter("ampC", spec.ampCaution())
+                    .setParameter("ampS", spec.ampSpike())
                     .setParameter("maxSamples", maxSamples).executeUpdate();
             total += added;
             // 새 설비 또는 기존 메타데이터가 비어 있는 설비의 시작 시각을 기록한다.
@@ -285,6 +295,27 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
             }
         }
         return total;
+    }
+
+    /**
+     * 실시간 값의 평소 이상 정도 (DANGER 버튼을 누른 적 없는 설비). 과거 백필의 설비별 시나리오와 이어지게 번호(rk)로 정한다.
+     *   rk%4==1 계속 위험 / 2 계속 주의 / 0 가끔 한 번씩 튀었다 돌아옴 / 3 계속 정상.
+     * 수위계는 천천히 오르는 값을 모델이 평소로 받아들이므로 "계속"이 아니라 8시간마다 2시간 동안 올랐다가 내려오는 식으로 한다.
+     * 조치 완료(NORMAL 버튼)를 누른 설비는 pm_stub_mode 행이 생겨서 이 값 대신 0 이 된다.
+     */
+    private static String liveBaseSeverity(Spec spec) {
+        String hourOfDay = "EXTRACT(EPOCH FROM g.t) / 3600.0";
+        if (spec.type() == PmEquipmentType.WATER_LEVEL) {
+            String ph = "MOD(CAST(" + hourOfDay + " + e.rk * 1.7 AS numeric), 8.0)";
+            return "CASE MOD(e.rk, 4) WHEN 1 THEN CAST(:ampD AS double precision) WHEN 2 THEN CAST(:ampC AS double precision) ELSE 0.0 END"
+                    + " * CASE WHEN MOD(e.rk, 4) IN (1, 2) AND " + ph + " < 2 THEN CAST(" + ph + " / 2.0 AS double precision) ELSE 0.0 END";
+        }
+        double spikeHours = spec.spikeLenSec() / 3600.0;
+        String ph = "MOD(CAST(" + hourOfDay + " + e.rk * 5 AS numeric), 30.0)";
+        return "CASE MOD(e.rk, 4) WHEN 1 THEN CAST(:ampD AS double precision) WHEN 2 THEN CAST(:ampC AS double precision)"
+                + " WHEN 0 THEN CASE WHEN " + ph + " < " + spikeHours + " THEN CAST(:ampS AS double precision)"
+                + " * sin(pi() * CAST(" + ph + " AS double precision) / " + spikeHours + ") ELSE 0.0 END"
+                + " ELSE 0.0 END";
     }
 
     private static final String RANKED = """
