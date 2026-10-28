@@ -5,6 +5,7 @@ import { backend } from '../services/backend'
 import { useApp } from '../stores/app'
 import ChatAnswer from './ChatAnswer.vue'
 import mascotIcon from '../assets/mascot/routel-ru-transparent.png'
+import mascotReactionIcon from '../assets/mascot/routel-ru-reaction.png'
 import '../styles/public-chatbot.css'
 const app = useApp(),
   dialog = ref<HTMLDialogElement>(),
@@ -15,6 +16,36 @@ const route = useRoute(),
   panelWidth = ref(560),
   messageList = ref<HTMLOListElement>()
 const appMode=computed(()=>route.path.startsWith('/customer-app/'))
+const mascotReaction = ref('')
+let reactionTimer: ReturnType<typeof setTimeout> | undefined
+let reactionAnimation: Animation | undefined
+let pokeCount = 0
+let lastPokeAt = 0
+let pokeIntensity = 0
+function reactMascot(beingDragged = false, direction = 1) {
+  clearTimeout(reactionTimer)
+  const now = performance.now()
+  if (!beingDragged) {
+    pokeIntensity = now - lastPokeAt < 700 ? Math.min(5, pokeIntensity + 1) : 0
+    lastPokeAt = now
+  }
+  mascotReaction.value = beingDragged ? '으앗, 천천히 옮겨 주세요!' : ['앗! 살살 눌러 주세요~', '어지러워요~', '루가 깜짝 놀랐어요!'][pokeCount++ % 3]!
+  reactionAnimation?.cancel()
+  const image = launcher.value?.querySelector('img')
+  if (image && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const sway = (beingDragged ? 14 : 8 + pokeIntensity * 2) * direction
+    reactionAnimation = image.animate([
+      {transform:'translate(0,0) rotate(0) scale(1)'},
+      {transform:`translate(${-sway}px,2px) rotate(${-sway*1.6}deg) scale(1.08,.9)`,offset:.15},
+      {transform:`translate(${sway}px,-3px) rotate(${sway*1.5}deg) scale(.95,1.07)`,offset:.32},
+      {transform:`translate(${-sway*.7}px,0) rotate(${-sway}deg)`,offset:.5},
+      {transform:`translate(${sway*.5}px,0) rotate(${sway*.7}deg)`,offset:.68},
+      {transform:`translate(${-sway*.2}px,0) rotate(${-sway*.3}deg)`,offset:.84},
+      {transform:'translate(0,0) rotate(0) scale(1)'},
+    ], {duration:800,easing:'ease-out'})
+  }
+  reactionTimer = setTimeout(() => { mascotReaction.value = '' }, 1800)
+}
 const appPanelLeft=ref(0)
 let returnFocus:HTMLElement|undefined
 const popular = ref<{ id: number; question: string }[]>([]),
@@ -41,6 +72,8 @@ function saveHistory() {
   } catch { /* Storage may be unavailable; the current conversation still stays in memory. */ }
 }
 onMounted(() => {
+  const reactionImage = new Image()
+  reactionImage.src = mascotReactionIcon
   try {
     const stored = JSON.parse(sessionStorage.getItem(historyKey) || 'null')
     if (stored?.owner === owner() && Array.isArray(stored.messages)) {
@@ -64,7 +97,7 @@ function cancelAnswer() {
 }
 const position = ref<{ x: number; y: number }>(),
   dragging = ref(false)
-let drag: { id: number; x: number; y: number; left: number; top: number } | undefined,
+let drag: { id: number; x: number; y: number; left: number; top: number; lastX:number; lastReactionAt:number } | undefined,
   suppressClick = false
 function place(x: number, y: number) {
   const rect = launcher.value?.getBoundingClientRect()
@@ -78,7 +111,9 @@ function startDrag(event: PointerEvent) {
   if (!event.isPrimary || event.button !== 0) return
   const rect = launcher.value!.getBoundingClientRect()
   suppressClick = false
-  drag = { id: event.pointerId, x: event.clientX, y: event.clientY, left: rect.left, top: rect.top }
+  drag = { id: event.pointerId, x: event.clientX, y: event.clientY, left: rect.left, top: rect.top, lastX:event.clientX, lastReactionAt:0 }
+  const caption = launcher.value?.querySelector('.chat-launcher-caption')?.getBoundingClientRect()
+  if (caption && event.clientY < caption.top) reactMascot()
   launcher.value!.setPointerCapture(event.pointerId)
 }
 function moveDrag(event: PointerEvent) {
@@ -86,6 +121,12 @@ function moveDrag(event: PointerEvent) {
   const dx = event.clientX - drag.x,
     dy = event.clientY - drag.y
   if (!dragging.value && Math.hypot(dx, dy) < 6) return
+  const horizontalStep = event.clientX - drag.lastX
+  if (!dragging.value || performance.now() - drag.lastReactionAt > 90) {
+    reactMascot(true, horizontalStep < 0 ? -1 : 1)
+    drag.lastReactionAt = performance.now()
+  }
+  drag.lastX = event.clientX
   dragging.value = true
   suppressClick = true
   place(drag.left + dx, drag.top + dy)
@@ -94,9 +135,13 @@ function endDrag() {
   drag = undefined
   dragging.value = false
 }
-function launch() {
+function launch(event: MouseEvent) {
   if (suppressClick) {
     suppressClick = false
+    return
+  }
+  const caption = launcher.value?.querySelector('.chat-launcher-caption')?.getBoundingClientRect()
+  if (event.detail > 0 && caption && event.clientY < caption.top) {
     return
   }
   void open()
@@ -210,6 +255,8 @@ watch(
   },
 )
 onBeforeUnmount(() => {
+  clearTimeout(reactionTimer)
+  reactionAnimation?.cancel()
   window.removeEventListener('routel-public-chat-open',openFromAccount)
   cancelAnswer()
   window.removeEventListener('resize', fitPanel)
@@ -268,8 +315,8 @@ async function send() {
     type="button"
     aria-label="챗봇 문의"
     aria-haspopup="dialog"
-    title="마스코트 루에게 문의하기 · 끌어서 위치 이동 · 방향키로 이동"
-    :class="{'is-dragging':dragging}"
+    title="루를 눌러 놀아 주세요 · 챗봇 문의 글자를 누르면 상담 · 끌어서 이동"
+    :class="{'is-dragging':dragging,'is-reacting':!!mascotReaction}"
     :style="position?{position:'fixed',left:position.x+'px',top:position.y+'px',right:'auto',bottom:'auto',margin:'0'}:undefined"
     @pointerdown="startDrag"
     @pointermove="moveDrag"
@@ -278,7 +325,7 @@ async function send() {
     @lostpointercapture="endDrag"
     @keydown="moveWithKey"
     @click="launch"
-  ><img class="chat-launcher-mascot" :src="mascotIcon" width="84" height="84" alt="" draggable="false" aria-hidden="true" /><span class="chat-launcher-caption">챗봇 문의</span></button>
+  ><span v-if="mascotReaction" class="chat-mascot-reaction" role="status">{{mascotReaction}}</span><img class="chat-launcher-mascot" :src="mascotReaction?mascotReactionIcon:mascotIcon" width="84" height="84" alt="" draggable="false" aria-hidden="true" /><span class="chat-launcher-caption">챗봇 문의</span></button>
   <WorkflowPage
     ref="dialog"
     class="drawer-dialog public-chat-dialog"

@@ -29,7 +29,7 @@ const riskClass = (value: string) =>
             <th>통과 중 차량</th>
             <th>판별 대기</th>
             <th>지역</th>
-            <th></th>
+            <th>작업</th>
           </tr>
         </thead>
         <tbody>

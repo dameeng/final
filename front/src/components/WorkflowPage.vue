@@ -18,6 +18,7 @@ function findHost() {
   const local=anchor.value?.closest<HTMLElement>('.app-restored-body,.backend-main,.customer-page-body,.app-service-content,.bd')
   if(local) return local
   return document.querySelector<HTMLElement>('.app-restored-body')
+    || document.querySelector<HTMLElement>('.mobile-page>.ph>.bd')
     || document.querySelector<HTMLElement>('.backend-main')
     || document.querySelector<HTMLElement>('.mypage-body')
     || document.querySelector<HTMLElement>('.customer-page-body')

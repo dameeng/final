@@ -162,6 +162,7 @@ function act(row: Equipment) {
           type="button"
           class="card pm-kpi"
           :class="['pm-kpi--'+value.toLowerCase(),{'is-current':level===value}]"
+          :aria-pressed="level===value"
           @click="level=level===value?'':value"
         >
           <span>{{label}}</span><strong>{{counts[value]??'—'}}</strong>

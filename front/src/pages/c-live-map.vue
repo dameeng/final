@@ -353,6 +353,12 @@ function closeFacility() {
   forecastError.value = ''
   infoWindow?.close()
 }
+function clearManagerSelection() {
+  closeClusterPopup()
+  clusterFacilityIds.value = []
+  closeFacility()
+  managerPanelExpanded.value = true
+}
 const chartNow = useRiskChartClock()
 const riskSeries = computed(() =>
   riskChartSeries(riskHistory.value, riskForecast.value, 20, 260, 110, 100, {
@@ -2314,6 +2320,7 @@ onBeforeUnmount(() => {
         ></ul><TrafficMapLayers :map="trafficMap" :maps="trafficMaps" :app="appMap||adminAppMap" /></div>
       <p v-if="mapError" class="manager-sdk-error" role="status">{{mapError}}</p>
 <ManagerMapPanel
+        v-if="selected||clusterRows.length"
         v-model:expanded="managerPanelExpanded"
         :dashboard-visual="props.dashboardVisual"
         :facility="selected"
@@ -2333,7 +2340,7 @@ onBeforeUnmount(() => {
         :forecast-error="forecastError"
         :can-control="ownsFacility(selected)"
         @select="selectManagerRow"
-        @clear="closeFacility"
+        @clear="clearManagerSelection"
         @control="managerControl"
       />
 <div class="kakao-map-controls manager-map-controls" aria-label="지도 조작"

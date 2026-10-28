@@ -22,6 +22,16 @@ try {
   assert(Math.abs(after.x - before.x) > 100)
   assert.equal(await dialog.evaluate((el) => el.open), false, 'drag must not open chat')
   await button.click()
+  assert.equal(await dialog.evaluate((el) => el.open), false, 'touching mascot reacts without opening chat')
+  assert(await button.locator('.chat-mascot-reaction').textContent(), 'mascot responds with a speech bubble')
+  assert.match(await button.locator('img').getAttribute('src'),/routel-ru-reaction/,'reaction changes the mascot face')
+  const firstReaction=await button.locator('.chat-mascot-reaction').textContent()
+  await button.click()
+  assert.notEqual(await button.locator('.chat-mascot-reaction').textContent(),firstReaction,'repeated clicks respond immediately')
+  const mascotAnimation=await button.locator('img').evaluate(el=>el.getAnimations().length)
+  assert(mascotAnimation>0,'mascot shakes on touch')
+  const caption=await button.locator('.chat-launcher-caption').boundingBox()
+  await page.mouse.click(caption.x+caption.width/2,caption.y+caption.height/2)
   assert.equal(await dialog.evaluate((el) => el.open), true)
   await page.getByRole('button', { name: '챗봇 닫기' }).click()
   await button.focus()
@@ -38,7 +48,8 @@ try {
   assert(
     small.x >= 0 && small.y >= 0 && small.x + small.width <= 390 && small.y + small.height <= 500,
   )
-  await button.click()
+  await button.focus()
+  await page.keyboard.press('Enter')
   assert.equal(await dialog.evaluate((el) => el.open), true)
   console.log('PASS drag, click suppression, click to open, keyboard movement and resize bounds')
 } finally {

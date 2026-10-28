@@ -40,6 +40,7 @@ import './styles/interaction-states.css'
 import './styles/app-design-system.css'
 import './styles/manager-spacing.css'
 import './styles/dark-chart-glow.css'
+import './styles/admin-web-workspace.css'
 createApp(App)
   .component('PasswordInput', PasswordInput)
   .component('UiIcon', UiIcon)

@@ -128,3 +128,8 @@
   .pm-detail .pm-sensor-table-card .service-table { min-width:0; }
   .pm-detail .pm-sensor-table-card td { padding:6px 0; text-align:left!important; }
 }
+.pm-score-threshold-legend { display:flex; justify-content:flex-end; flex-wrap:wrap; gap:8px 16px; margin:0 0 8px; color:var(--r-muted); font-size:12px; line-height:20px; }
+.pm-score-threshold-legend span { display:inline-flex; align-items:center; gap:6px; white-space:nowrap; }
+.pm-score-threshold-legend i { width:10px; height:10px; border-radius:3px; }
+.pm-score-threshold-legend .caution { background:#e5ad47; }
+.pm-score-threshold-legend .danger { background:#d66a79; }

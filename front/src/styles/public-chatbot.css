@@ -276,14 +276,20 @@ body:has(.public-chat-dialog[open]) {
   transform-origin:50% 85%;
 }
 #app #public-chat-launcher .chat-launcher-caption {
-  display:block; padding:4px 10px; border:1px solid var(--r-line); border-radius:999px;
-  background:var(--r-surface); color:var(--r-accent); font-size:11px; font-weight:650; line-height:16px;
+  display:block; padding:6px 12px; border:1px solid var(--r-line); border-radius:999px;
+  background:var(--r-surface); color:var(--r-accent); font-size:14px; font-weight:650; line-height:20px;
   white-space:nowrap; box-shadow:0 2px 6px #17365710; pointer-events:none;
 }
 @media (hover:hover) and (prefers-reduced-motion:no-preference) {
-  #app #public-chat-launcher:is(:hover,:focus-visible):not(.is-dragging) .chat-launcher-mascot {
+  #app #public-chat-launcher:is(:hover,:focus-visible):not(.is-dragging):not(.is-reacting) .chat-launcher-mascot {
     animation:chat-mascot-greeting 1100ms ease-in-out infinite;
   }
+}
+#app #public-chat-launcher .chat-mascot-reaction {
+  position:absolute; bottom:calc(100% + 6px); right:0; width:max-content; max-width:220px;
+  padding:9px 12px; border:1px solid var(--r-line); border-radius:12px 12px 3px 12px;
+  background:var(--r-surface); color:var(--r-ink); box-shadow:0 4px 16px #17365718;
+  font-size:12px; font-weight:500; line-height:18px; pointer-events:none;
 }
 @keyframes chat-mascot-greeting {
   0%,100% { transform:translateY(0) rotate(0); }
@@ -297,3 +303,18 @@ body:has(.public-chat-dialog[open]) {
 @media (prefers-reduced-motion:reduce) {
   #app #public-chat-launcher .chat-launcher-mascot { transition:none; }
 }
+#app .customer-app-editorial .workflow-page-mount:has(.public-chat-dialog) { height:100%; }
+#app .customer-app-editorial .workflow-page-outlet .workflow-page-mount>.workflow-page.public-chat-dialog {
+  display:flex!important; flex-direction:column; width:100%!important; max-width:100%!important;
+  height:100%!important; min-height:0!important; overflow:hidden!important;
+}
+#app .customer-app-editorial .public-chat-dialog .workflow-page-navigation { display:none; }
+#app .customer-app-editorial .public-chat-header { padding:12px 0; gap:12px; flex-shrink:0; }
+#app .customer-app-editorial .public-chat-header small { display:none; }
+#app .customer-app-editorial .public-chat-header h2 { font-size:18px; }
+#app .customer-app-editorial .public-chat-description { padding:10px 0; font-size:12px; line-height:1.6; flex-shrink:0; }
+#app .customer-app-editorial .public-chat-dialog .chat-messages { flex:1 1 0; overflow-y:auto; padding:8px 0 16px; gap:12px; }
+#app .customer-app-editorial .public-chat-dialog .public-chat-welcome { width:100%; max-width:100%; padding:14px; }
+#app .customer-app-editorial .public-chat-dialog .public-chat-form { flex:0 0 auto; padding:12px 0 0; margin:0; }
+#app .customer-app-editorial .public-chat-dialog .public-chat-compose { grid-template-columns:minmax(0,1fr) auto; gap:8px; }
+#app .customer-app-editorial .public-chat-dialog .public-chat-compose button { padding:10px 12px; font-size:13px; }
