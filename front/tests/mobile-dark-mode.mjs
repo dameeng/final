@@ -68,6 +68,17 @@ try {
     })
   })
   assert(contrast.every(ratio => ratio >= 4.5), `Badge contrast: ${contrast}`)
+  await page.evaluate(()=>{
+    const root=document.createElement('div');root.id='app'
+    root.innerHTML='<section class="admin-app-map"><div class="traffic-layer-switches"><button aria-pressed="false">CCTV</button><button aria-pressed="true">VMS</button></div><div class="kakao-map-controls"><button>전체 보기</button><button>+</button><button disabled>−</button></div></section>'
+    document.body.append(root)
+  })
+  const adminButtons=await page.locator('#app .admin-app-map button').evaluateAll(items=>items.map(el=>{
+    const style=getComputedStyle(el);return {background:style.backgroundColor,color:style.color,opacity:style.opacity}
+  }))
+  assert(adminButtons.every(button=>button.background!=='rgb(255, 255, 255)'&&button.background!=='rgba(0, 0, 0, 0)'), 'Administrator map buttons use opaque dark surfaces')
+  assert.notEqual(adminButtons[0].background,adminButtons[1].background,'Selected traffic layer is distinct')
+  assert(Number(adminButtons.at(-1).opacity)<1,'Disabled map control is distinct')
   await page.screenshot({ path: 'test-results/mobile-dark-components.png', fullPage: true })
   await page.evaluate(() => { document.documentElement.dataset.theme = 'light' })
   assert.equal(await background('.risk-level-badge--safe'), 'rgb(225, 243, 234)')

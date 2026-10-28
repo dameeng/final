@@ -160,7 +160,7 @@ function control() {
       
       <div class="page-head service-heading">
         <div>
-          <h1>
+          <h1><AdminPageIcon />
             {{facility?.name||'지하차도 상세'}} <RiskLevelBadge v-if="facility" :value="facility.currentRiskLevel" />
           </h1>
           <div class="sub">{{facility?.roadAddress}}</div>

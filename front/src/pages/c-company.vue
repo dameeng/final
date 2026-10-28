@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import UiIcon from '../components/UiIcon.vue'
-import MascotVideo from '../components/MascotVideo.vue'
+import InteractiveRu from '../components/InteractiveRu.vue'
 import '../styles/customer-information.css'
 const principles = [
   {
@@ -106,10 +106,7 @@ const principles = [
       <p class="routel-company-direction-copy">ROUTEL은 이용자가 이동 전 상황을 살펴보고 안전한 이동을 준비할 수 있도록, 정보의 연결과 전달 방식을 꾸준히 다듬어가겠습니다.</p>
     </section>
     <section class="routel-company-mascot" aria-labelledby="company-mascot-title">
-      <div class="routel-company-mascot-mark" aria-hidden="true">
-        <MascotVideo src="/brand/routel-ru-welcome-clean-v2.webm" poster="/brand/routel-ru-welcome-clean-v2-poster.png" />
-        <span>ROU</span>
-      </div>
+      <InteractiveRu class="routel-company-mascot-mark" />
       <div class="routel-company-mascot-copy">
         <h2 id="company-mascot-title">ROUTEL의 작은 안전 안내자, 루</h2>
         <p>루는 ROUTEL의 앞부분인 ‘ROU’에서 이름을 따온 마스코트입니다. 짧고 친근한 이름처럼, 누구나 편하게 도로 안전 정보를 만날 수 있도록 곁에서 안내합니다.</p>

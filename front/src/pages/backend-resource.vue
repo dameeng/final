@@ -144,7 +144,7 @@ async function review(row: Record<string, any>, number: string) {
 }
 const publicNotices = computed(() => customer.value && resourceId.value === 'notices')
 const managerNotificationList = computed(() => resourceId.value === 'manager-notifications')
-const pageSize = computed(() => route.path.startsWith('/admin-app/') ? (managerNotificationList.value ? 5 : appFacilityList.value ? 8 : 20) : route.path.startsWith('/customer-app/') ? 20 : 10)
+const pageSize = computed(() => route.path.startsWith('/admin-app/') ? 5 : route.path.startsWith('/customer-app/') ? 20 : 10)
 async function markManagerNotificationRead(row: Record<string, any>) {
   if (saving.value || row.read) return
   saving.value = true
@@ -217,6 +217,7 @@ async function loadCollection(signal: AbortSignal) {
     items = [...first.items]
   for (let current = 2; current <= first.totalPages; current++)
     items.push(...(await fetchPage(current)).items)
+  if(resourceId.value==='cars') return {items,page:1,size:items.length,totalItems:items.length,totalPages:1}
   if(!signal.aborted&&(facilityList.value||appFacilityList.value)) facilitySearchRows.value=[...items]
   if ((facilityList.value || appFacilityList.value) && filters.keyword) {
     const matched = items.filter(row => matchesKoreanSearch([row.name,row.regionName,row.roadAddress].filter(Boolean).join(' '),filters.keyword))
@@ -481,7 +482,7 @@ async function load() {
     if (filters.startDate && filters.endDate && filters.startDate > filters.endDate)
       throw new Error('시작일은 종료일보다 늦을 수 없습니다.')
     const result =
-      ['notices', 'faqs'].includes(resourceId.value) || managerNotificationList.value || facilityList.value || appFacilityList.value
+      ['notices', 'faqs', 'cars'].includes(resourceId.value) || managerNotificationList.value || facilityList.value || appFacilityList.value
         ? await loadCollection(abort.signal)
         : await backend(
             path(resource.value.path) + queryString({ ...filters, page: page.value, size: pageSize.value }),
@@ -820,6 +821,13 @@ function navigatePage(next: number) {
   page.value = next
   void load()
 }
+function resetRecordFilters() {
+  for(const field of resource.value.filters||[]) {
+    if(field.key==='reviewStatus'&&resourceId.value==='reviews')continue
+    filters[field.key]=field.type==='checkbox'?false:''
+  }
+  search()
+}
 const labels = computed(() =>
   Object.fromEntries([
     ...resource.value.columns,
@@ -896,9 +904,9 @@ watch(
     for (const field of resource.value.filters || [])
       filters[field.key] =
         field.type === 'checkbox' ? route.query[field.key] === 'true' : route.query[field.key] || ''
-    // 차량 기록은 담당 지역이 여러 곳이어도 첫 담당 지역으로 바로 조회한다.
+    // 담당 지역이 하나일 때만 자동 선택한다. 여러 곳이면 담당 지역 전체를 조회한다.
     if (app.account?.role === 'REGIONAL_ADMIN' && app.account.regions?.length &&
-        (app.account.regions.length === 1 || ['ocr', 'reviews', 'transits'].includes(resourceId.value)) &&
+        app.account.regions.length === 1 &&
         resource.value.filters?.some(field => field.key === 'regionId') &&
         route.query.regionId == null && route.query.underpassId == null && !(resourceId.value === 'ocr' && route.query.id))
       filters.regionId = String(app.account.regions[0]!.id)
@@ -1092,7 +1100,7 @@ defineExpose({ open, load })
       <!-- 제목과 같은 글자를 위에 한 번 더 쓰지 않는다 (고객 서비스 묶음 이름만 표시) -->
       
       <div class="service-heading page-head" :class="{'app-resource-heading':appPage&&!props.embedded,'review-page-heading':resourceId==='reviews','record-page-heading':!appPage&&!props.embedded&&['ocr','reviews','transits'].includes(resourceId)}">
-        <component :is="props.embedded?'h2':'h1'">{{pageTitle}}</component>
+        <component :is="props.embedded?'h2':'h1'"><AdminPageIcon v-if="!props.embedded&&!appPage" />{{pageTitle}}</component>
         <div class="service-actions">
           <RouterLink v-if="resourceId==='ocr'&&!appPage" class="btn" :to="resourceLink('reviews')">번호판 판별 대기</RouterLink>
           <nav v-if="!customer&&!appPage&&!props.embedded&&shortcuts.length" class="heading-navigation" aria-label="관련 업무 바로가기">
@@ -1242,7 +1250,32 @@ defineExpose({ open, load })
       <p v-else-if="loading" role="status">불러오는 중입니다.</p>
       <template v-else>
         <p v-if="!underpassSplit" class="service-result-count" role="status">총 {{data.totalItems}}건</p>
-        <AdminAppFacilityRows v-if="appFacilityList" :items="facilityRows" />
+        <section v-if="!appPage&&!data.items.length&&['ocr','reviews','transits'].includes(resourceId)" class="record-empty-state" role="status">
+          <span class="record-empty-icon" aria-hidden="true"><UiIcon :name="resourceId==='reviews'?'eye':'camera'" /></span>
+          <div><h2>{{resourceId==='reviews'&&filters.reviewStatus==='PENDING'?'조건에 맞는 판별 대기가 없습니다':'조건에 맞는 기록이 없습니다'}}</h2><p>담당 지역·지하차도·조회 기간을 확인하거나 검색 조건을 초기화해 주세요.</p></div>
+          <button type="button" @click="resetRecordFilters">검색 조건 초기화</button>
+        </section>
+        <section v-else-if="resourceId==='cars'" class="customer-car-overview">
+          <div class="customer-car-guide"><span aria-hidden="true"><UiIcon name="bell" /></span><p>등록한 차량의 안전 알림을 받을 수 있어요.<br /><small>차량 번호가 정확한지 확인해 주세요.</small></p></div>
+          <ul class="customer-car-list" aria-label="등록 차량 목록">
+            <li v-for="row in data.items" :key="row.id">
+              <div class="customer-car-identity"><span class="customer-car-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m5 9 2-5h10l2 5M4 9h16v9H4zM7 18v3m10-3v3M7 13h2m6 0h2M4 9 2 8m18 1 2-1" stroke-linecap="round" stroke-linejoin="round" /></svg></span><div><small>등록 차량</small><strong>{{row.carNum}}</strong></div></div>
+              <div class="customer-car-footer"><time :datetime="row.createdAt">{{displayDate(row.createdAt,false)}} 등록</time><div><button v-if="canEditRow(row)" type="button" :aria-label="row.carNum+' 수정'" @click="open('edit',row)">수정</button><button v-if="resource.remove&&canWrite" type="button" class="customer-car-delete" :aria-label="row.carNum+' 삭제'" @click="open('remove',row)">삭제</button></div></div>
+            </li>
+          </ul>
+          <p v-if="!data.items.length" class="customer-car-empty">등록된 차량이 없습니다.<br />차량을 등록하고 안전 알림을 받아 보세요.</p>
+        </section>
+        <section v-else-if="resourceId==='my-inquiries'" class="customer-inquiry-overview">
+          <div class="customer-inquiry-guide"><UiIcon name="chat" /><div><strong>궁금한 점을 남겨 주세요</strong><p>보내신 문의와 답변을 여기에서 확인할 수 있어요.</p></div></div>
+          <ul class="customer-inquiry-list" aria-label="내 문의 목록">
+            <li v-for="row in data.items" :key="row.id">
+              <button type="button" class="customer-inquiry-open" :aria-label="row.title+' 상세 보기'" @click="open('detail',row)"><span class="customer-inquiry-meta"><span class="customer-inquiry-status" :class="{'is-done':['ANSWERED','RESOLVED','CLOSED','COMPLETED'].includes(String(row.status))}">{{displayField('status',row.status)}}</span><time :datetime="row.createdAt">{{displayDate(row.createdAt,false)}}</time></span><span class="customer-inquiry-title"><strong>{{row.title}}</strong><span aria-hidden="true">›</span></span><p v-if="row.content">{{row.content}}</p><small>문의 내용과 답변 확인</small></button>
+              <div v-if="canEditRow(row)||resource.remove&&canWrite" class="customer-inquiry-actions"><button v-if="canEditRow(row)" type="button" :aria-label="row.title+' 수정'" @click="open('edit',row)">수정</button><button v-if="resource.remove&&canWrite" type="button" :aria-label="row.title+' 삭제'" @click="open('remove',row)">삭제</button></div>
+            </li>
+          </ul>
+          <p v-if="!data.items.length" class="customer-car-empty">아직 남긴 문의가 없습니다.<br />문의 등록을 눌러 궁금한 내용을 남겨 주세요.</p>
+        </section>
+        <AdminAppFacilityRows v-else-if="appFacilityList" :items="facilityRows" />
         <FacilityConfiguration v-else-if="underpassSplit&&(resourceId==='thresholds'||resourceId==='cameras')" :kind="resourceId as 'thresholds'|'cameras'" :facility-id="String(parents.underpassId)" :facility-name="splitUnderpassName" :rows="data.items" :total="data.totalItems" :can-write="!!canWrite" @action="(kind,row)=>open(kind,row)" />
         <ul v-else-if="managerNotificationList" class="manager-notification-cards" aria-label="관리자 알림 목록">
           <li v-for="row in data.items" :key="row.id" :class="{'is-unread':!row.read}">
@@ -1289,8 +1322,8 @@ defineExpose({ open, load })
           <table class="service-table">
             <thead>
               <tr>
-                <th v-for="[key,label] in visibleColumns" :key="key">{{label}}</th>
-                <th v-if="hasRowActions">상세·처리</th>
+                <th v-for="[key,label] in visibleColumns" :key="key" :data-field="key">{{label}}</th>
+                <th v-if="hasRowActions" class="resource-action-column">상세·처리</th>
               </tr>
             </thead>
             <tbody>
@@ -1299,7 +1332,7 @@ defineExpose({ open, load })
                 :key="row.id||index"
                 :class="{'notification-arrival-glow':notificationGlow.has(resourceId==='manager-notifications'?'notification':resourceId==='notices'?'notice':resourceId==='inquiries'?'inquiry':'',row.id)}"
               >
-                <td v-for="[key,label] in visibleColumns" :key="key" :data-label="label">
+                <td v-for="[key,label] in visibleColumns" :key="key" :data-label="label" :data-field="key">
                   <span v-if="resourceId==='presets'&&key==='category'||resourceId==='reasons'&&key==='type'" class="preset-category-badge" :data-category="row[key]">{{displayField(key,row[key])}}</span>
                   <template v-else-if="resourceId==='presets'&&key==='content'">{{presetMessage(row)}}</template>
                   <template v-else-if="resourceId==='notices'&&key==='title'">
@@ -1343,7 +1376,7 @@ defineExpose({ open, load })
                     {{key==='imagePath'?'이미지 없음':displayField(key,row[key])}}
                   </template>
                 </td>
-                <td v-if="hasRowActions">
+                <td v-if="hasRowActions" class="resource-action-column">
                   <div class="service-actions">
                     <button v-if="resourceId==='transits'&&row.status==='REMAINING'&&canWrite" type="button" @click="remainingTransfer?.open(row)">소방 이관 PDF</button>
                     <button
@@ -1375,8 +1408,8 @@ defineExpose({ open, load })
           </table>
         </div>
         <!-- 지하차도별 화면은 한 페이지가 대부분이라, 표 아래 끝을 왼쪽 목록 끝과 맞추려고 한 페이지면 숨긴다 -->
-        <AppPagination v-if="appPage" :page="page" :pages="data.totalPages" :disabled="loading" @change="navigatePage" />
-        <div v-else-if="!underpassSplit||data.totalPages>1" class="service-pagination">
+        <AppPagination v-if="appPage&&resourceId!=='cars'&&(resourceId!=='my-inquiries'||data.totalPages>1)" :page="page" :pages="data.totalPages" :disabled="loading" @change="navigatePage" />
+        <div v-else-if="resourceId!=='cars'&&(resourceId!=='my-inquiries'||data.totalPages>1)&&data.items.length&&(!underpassSplit||data.totalPages>1)" class="service-pagination">
           <button :disabled="page<=1" @click="navigatePage(page-1)">이전</button>
           <span>{{page}} / {{Math.max(1,data.totalPages)}} 페이지</span>
           <button :disabled="page>=data.totalPages" @click="navigatePage(page+1)">다음</button>
@@ -1532,3 +1565,41 @@ defineExpose({ open, load })
 <style scoped src="../styles/pages/backend-resource-5.css"></style>
 
 <style scoped src="../styles/pages/backend-resource-6.css"></style>
+<style scoped>
+.customer-car-guide{display:flex;align-items:center;gap:12px;padding:14px 16px;margin-bottom:16px;border-radius:10px;background:var(--r-selected);color:var(--r-ink);}
+.customer-car-guide>span{color:var(--r-accent);flex:none;--ui-icon-size:20px;}
+.customer-car-guide p{margin:0;font-size:13px;line-height:22px;word-break:keep-all;}
+.customer-car-guide small{font-size:12px;color:var(--r-muted);}
+.customer-car-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px;padding:0;margin:0;list-style:none;}
+.customer-car-list>li{padding:18px 16px;border:1px solid var(--r-line);border-radius:12px;background:var(--r-surface);}
+.customer-car-identity{display:flex;align-items:center;gap:14px;margin-bottom:18px;}
+.customer-car-symbol{display:grid;place-items:center;width:44px;height:44px;border-radius:12px;background:var(--r-soft);color:var(--r-accent);flex:none;}
+.customer-car-symbol svg{width:26px;height:26px;}
+.customer-car-identity small{display:block;margin-bottom:4px;color:var(--r-muted);font-size:11px;}
+.customer-car-identity strong{display:block;color:var(--r-ink);font-size:21px;line-height:28px;font-weight:650;letter-spacing:.02em;}
+.customer-car-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.customer-car-footer time{font-size:12px;color:var(--r-muted);}
+.customer-car-footer>div{display:flex;gap:6px;}
+.customer-car-footer button{min-height:36px;padding:6px 10px;border:1px solid var(--r-line);border-radius:8px;background:var(--r-surface);color:var(--r-ink);font-size:12px;}
+.customer-car-footer button.customer-car-delete{color:var(--status-danger-ink,#a32446);}
+.customer-car-empty{text-align:center;padding:24px 12px;font-size:13px;line-height:24px;color:var(--r-muted);}
+.customer-inquiry-guide{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:16px;border-radius:12px;background:var(--r-selected);color:var(--r-ink);}
+.customer-inquiry-guide>.ui-icon{flex:none;color:var(--r-accent);width:24px;height:24px;}
+.customer-inquiry-guide strong{font-size:14px;line-height:22px;}
+.customer-inquiry-guide p{margin:4px 0 0;font-size:12px;line-height:20px;color:var(--r-muted);word-break:keep-all;}
+.customer-inquiry-list{display:grid;gap:12px;list-style:none;padding:0;margin:0;}
+.customer-inquiry-list>li{border:1px solid var(--r-line);border-radius:12px;background:var(--r-surface);overflow:hidden;}
+.customer-inquiry-open{display:block;width:100%;padding:18px 16px;border:0;border-radius:0;background:transparent;color:var(--r-ink);text-align:left;font:inherit;cursor:pointer;}
+.customer-inquiry-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;}
+.customer-inquiry-meta time{font-size:12px;color:var(--r-muted);}
+.customer-inquiry-status{padding:3px 8px;border-radius:5px;background:var(--status-caution-bg,#fff1d6);color:var(--status-caution-ink,#965000);font-size:12px;line-height:18px;}
+.customer-inquiry-status.is-done{background:var(--status-safe-bg,#e1f3ea);color:var(--status-safe-ink,#1b7f5c);}
+.customer-inquiry-title{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.customer-inquiry-title strong{font-size:17px;line-height:26px;font-weight:650;overflow-wrap:anywhere;}
+.customer-inquiry-title>.ui-icon{width:18px;height:18px;flex:none;color:var(--r-muted);}
+.customer-inquiry-open p{overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin:8px 0 0;font-size:13px;line-height:22px;color:var(--r-muted);}
+.customer-inquiry-open>small{display:block;margin-top:12px;font-size:12px;color:var(--r-accent);}
+.customer-inquiry-actions{display:flex;justify-content:flex-end;gap:8px;padding:0 16px 14px;}
+.customer-inquiry-actions button{min-height:34px;padding:5px 12px;border:1px solid var(--r-line);border-radius:8px;background:var(--r-surface);color:var(--r-muted);font-size:12px;}
+.customer-inquiry-open:focus-visible{outline:2px solid var(--r-accent);outline-offset:-3px;}
+</style>

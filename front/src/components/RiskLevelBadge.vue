@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 const props = defineProps<{ value?: unknown }>()
 const levels: Record<string, [string, string]> = {
+  BLOCKED: ['통제', 'severe'],
   SAFE: ['안전', 'safe'],
   NORMAL: ['안전', 'safe'],
   WATCH: ['관심', 'watch'],

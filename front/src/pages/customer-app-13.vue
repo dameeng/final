@@ -4,6 +4,7 @@ import { RouterLink, useRouter } from 'vue-router'
 import { useApp } from '../stores/app'
 import { logoutCustomer } from '../services/customerSession'
 import CustomerAppPage from '../components/CustomerAppPage.vue'
+import {openCustomerGuide} from '../services/customerOnboarding'
 const app = useApp(),
   router = useRouter(),
   error = ref(''),
@@ -48,6 +49,7 @@ async function signout() {
       <button type="button" class="app-account-chat" @click="openChat">
         <span class="app-menu-icon"><UiIcon name="chat" /></span><strong class="app-menu-label">AI 도우미</strong><span class="app-menu-chevron" aria-hidden="true">›</span>
       </button>
+      <button v-if="member" type="button" class="app-account-chat" @click="openCustomerGuide"><span class="app-menu-icon"><UiIcon name="map" /></span><strong class="app-menu-label">루와 사용법 보기</strong><span class="app-menu-chevron" aria-hidden="true">›</span></button>
       </div></section>
       <section class="app-account-group"><h2>계정 관리</h2><div class="app-account-menu-card">
       <RouterLink class="btn" v-for="item in menus" :key="item.section" :to="target(item.section)" :class="{'app-menu-withdraw':item.section==='withdraw'}">

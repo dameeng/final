@@ -31,7 +31,7 @@
 #app .service-app-layout.app-auth:has(.login-form)>.app-restored-body {
   display:flex;
   flex-direction:column;
-  padding:24px 20px;
+  padding:clamp(24px,6vh,56px) 20px 24px;
   overflow-y:auto;
   scrollbar-gutter:auto;
 }
@@ -39,7 +39,7 @@
   flex:0 0 auto;
   width:100%;
   min-height:0;
-  margin-block:auto;
+  margin-block:0;
 }
 #app .service-app-layout.app-auth .auth-service:has(.login-form) {
   width:100%;

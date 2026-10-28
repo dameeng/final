@@ -37,7 +37,7 @@ type Action = {
 }
 type Equipment = { equipId: number; name: string; type: string; underpassName: string }
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = useRoute().path.startsWith('/admin-app/') ? 5 : 20
 const route = useRoute(),
   router = useRouter(),
   startDate = ref(dayOffset(-6)),
@@ -169,7 +169,7 @@ function resetFilters() {
       
       <div class="page-head service-heading">
         <div>
-          <h1>{{adminPageTitle('/pm-history')}}</h1>
+          <h1><AdminPageIcon />{{adminPageTitle('/pm-history')}}</h1>
           <div class="sub">점검 시작부터 기록 추가·종료까지 확인할 수 있어요.</div>
         </div>
         <div class="pm-head-actions">

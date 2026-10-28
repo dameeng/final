@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import {openCustomerGuide} from '../services/customerOnboarding'
 import AdminPageDirectory from '../components/AdminPageDirectory.vue'
+import CustomerProfileSummary from '../components/CustomerProfileSummary.vue'
 import ServiceResource from './backend-resource.vue'
 import FeedbackToast from '../components/FeedbackToast.vue'
 import AccountActions from '../components/AccountActions.vue'
@@ -45,6 +47,7 @@ function cancelEdit() {
   editing.value = false
 }
 const managerApp = computed(() => route.path.startsWith('/admin-app/'))
+const customerWeb = computed(() => !manager.value && !route.path.startsWith('/customer-app/'))
 const controller = new AbortController()
 const mobileCombined = computed(() => /^\/customer-app\/account\/(profile|emergency|cars)$/.test(route.path))
 const combined = computed(() => !manager.value && (route.path === '/my-home' || mobileCombined.value))
@@ -170,8 +173,8 @@ onBeforeUnmount(() => controller.abort())
 <template>
   <component :is="manager?BackendLayout:'div'"
     ><section class="service-workspace account-service" :class="{'manager-account-page':managerApp}"
-      ><h1>{{pageTitle}}</h1
-      ><FeedbackToast :message="message" /><p v-if="loading" role="status"
+      ><h1><AdminPageIcon />{{pageTitle}}</h1
+      ><button v-if="customerWeb&&profile.id" type="button" class="customer-guide-replay" @click="openCustomerGuide"><UiIcon name="help" />루와 사용법 보기</button><FeedbackToast :message="message" /><p v-if="loading" role="status"
         >정보를 불러오는 중입니다.</p
       ><p v-if="error" class="service-error" role="alert"
         >{{error}} <RouterLink :to="manager?'/admin-login':'/login'">로그인</RouterLink></p
@@ -184,7 +187,7 @@ onBeforeUnmount(() => controller.abort())
           :id="!manager?'account-settings':undefined"
           class="account-panel"
           ><summary v-if="managerApp" class="manager-profile-summary"><UiIcon name="user" /><span><strong>내 정보 관리</strong></span><span class="manager-profile-chevron" aria-hidden="true">›</span></summary><h2 v-if="pageTitle!=='내 정보'">내 정보</h2
-          ><p>{{profile.name}} · {{profile.loginId}}</p
+          ><p v-if="!customerWeb||editing">{{profile.name}} · {{profile.loginId}}</p
           ><template v-if="manager"
             ><p
               >담당 지역: {{profile.regions?.map((region:any)=>region.name).join(' · ')||'미지정'}}</p
@@ -192,14 +195,14 @@ onBeforeUnmount(() => controller.abort())
               >근무조: {{profile.shift?.name||'미지정'}} {{profile.shift?.startTime||''}}–{{profile.shift?.endTime||''}}</p
             ><small>이름·담당 지역·근무조는 지정된 관리자 권한으로 변경됩니다.</small></template
           ><template v-if="!editing"
-            ><dl class="account-summary"
+            ><CustomerProfileSummary v-if="customerWeb" :profile="profile" @edit="editing=true" /><dl v-else class="account-summary"
               ><template v-for="field in fields" :key="field.key"
                 ><dt>{{field.label}}</dt
                 ><dd
                   >{{['phone','emergency'].includes(field.key)?formatPhone(profile[field.key])||'미등록':profile[field.key]||'미등록'}}</dd
                 ></template
               ></dl
-            ><button type="button" @click="editing=true">수정</button></template
+            ><button v-if="!customerWeb" type="button" @click="editing=true">수정</button></template
           ><form v-if="editing" @submit.prevent="save"
             ><ServiceFields
               :fields="fields"

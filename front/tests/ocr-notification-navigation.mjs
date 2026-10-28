@@ -30,7 +30,7 @@ try {
   })
   const base = `http://127.0.0.1:${server.httpServer.address().port}`
   await page.goto(base+'/admin-data/ocr')
-  await expect(page.getByLabel('담당 지역',{exact:true})).toHaveValue('1')
+  await expect(page.getByLabel('담당 지역',{exact:true})).toHaveValue('')
   await page.getByLabel('지하차도',{exact:true}).selectOption('7')
   await expect(page.getByLabel('담당 지역',{exact:true})).toHaveValue('3')
   await expect(page.getByLabel('담당 지역',{exact:true}).locator('option')).toHaveText(['전체','중구','동구'])
@@ -69,12 +69,12 @@ try {
       const title = el.querySelector('h1').getBoundingClientRect()
       return [...el.querySelectorAll('.heading-navigation a')].map(link => {
         const rect = link.getBoundingClientRect()
-        return {height:rect.height,top:rect.top,titleBottom:title.bottom,left:rect.left,titleLeft:title.left}
+        return {height:rect.height,top:rect.top,titleCenter:title.top+title.height/2,left:rect.left,titleLeft:title.left}
       })
     })
-    assert(geometry.every(rect=>rect.height===44&&rect.top>=rect.titleBottom&&rect.left>=rect.titleLeft),'Record navigation sits below the title with standard 44px buttons: '+resource+' '+JSON.stringify(geometry))
+    assert(geometry.every(rect=>rect.height===44&&Math.abs(rect.top+22-rect.titleCenter)<2&&rect.left>rect.titleLeft),'Record navigation aligns beside the title with standard 44px buttons: '+resource+' '+JSON.stringify(geometry))
     const actionsLeft=await heading.locator('.service-actions').evaluate(el=>el.getBoundingClientRect().left)
-    assert(Math.abs(actionsLeft-geometry[0].titleLeft)<2,'Record action group aligns left')
+    assert(actionsLeft>geometry[0].titleLeft,'Record action group aligns on the right')
   }
   for (const prefix of ['/admin-data/ocr','/admin-app/ocr']) {
     queries.length = 0

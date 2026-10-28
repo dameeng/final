@@ -1,4 +1,13 @@
 export const uiIconPaths = {
+  dashboard: 'M3 3h7v7H3ZM14 3h7v7h-7ZM3 14h7v7H3ZM14 14h7v7h-7Z',
+  camera: 'M3 5h13v10H3ZM16 8l5-3v10l-5-3M9 15v5M5 20h8',
+  settings: 'M4 6h16M4 12h16M4 18h16M8 3v6M16 9v6M10 15v6',
+  tool: 'M14 6a5 5 0 0 0-6 6L3 17a3 3 0 0 0 4 4l5-5a5 5 0 0 0 6-6l-3 3-4-4Z',
+  chart: 'M4 3v17h17M8 15l4-5 4 3 5-7',
+  history: 'M3 11a9 9 0 1 1 2 7M3 4v7h7M12 7v6l4 2',
+  refresh: 'M20 8a8 8 0 0 0-14-3L3 8M3 3v5h5M4 16a8 8 0 0 0 14 3l3-3M21 21v-5h-5',
+  map: 'M3 5l6-3 6 3 6-3v17l-6 3-6-3-6 3ZM9 2v17M15 5v17',
+  route: 'M5 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM19 21a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM5 7v5h14v5M15 8l4 4-4 4',
   bell: 'M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4M12 2V1',
   menu: 'M4 6h16M4 12h16M4 18h16',
   back: 'M15 5l-7 7 7 7',

@@ -337,7 +337,7 @@ watch([data,trends],async()=>{
       <div class="page-head service-heading">
         <div>
           
-          <h1>{{eq.name||'설비 상세'}} <RiskLevelBadge v-if="eq.level" :value="eq.level" /></h1>
+          <h1><AdminPageIcon />{{eq.name||'설비 상세'}} <RiskLevelBadge v-if="eq.level" :value="eq.level" /></h1>
           <div class="sub">{{pmLabel(PM_TYPES,eq.type,'')}}<template v-if="eq.underpassName"> · {{eq.underpassName}}</template></div>
         </div>
         <div class="pm-detail-actions">

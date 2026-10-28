@@ -16,7 +16,7 @@ try {
     else if(path==='/api/regions') data=[{id:1,name:'중구'},{id:3,name:'동구'},{id:4,name:'남구'}]
     else if(path==='/api/underpasses') {
       facilityQueries.push(Object.fromEntries(url.searchParams))
-      data={...data,items:url.searchParams.get('scope')==='MINE'?[{id:7,name:'담당 지하차도'}]:[{id:7,name:'담당 지하차도'},{id:8,name:'담당 외 지하차도'}]}
+      data={...data,items:url.searchParams.get('scope')==='MINE'?[{id:7,name:'담당 지하차도',regionId:3}]:[{id:7,name:'담당 지하차도',regionId:3},{id:8,name:'담당 외 지하차도',regionId:1}]}
     }
     if(path==='/api/plate-logs'||path==='/api/underpasses/transits') queries.push(Object.fromEntries(url.searchParams))
     return route.fulfill({json:{success:true,data}})
@@ -27,9 +27,9 @@ try {
     facilityQueries.length=0
     await page.goto(base+path)
     const select=page.locator('select').filter({has:page.locator('option[value="3"]')}).first()
-    await expect(select).toHaveValue('3')
+    await expect(select).toHaveValue('')
     await expect.poll(()=>queries.length).toBeGreaterThan(0)
-    assert.equal(queries[0].regionId,'3','First request uses assigned region, not all regions')
+    assert(!queries[0].regionId,'Multiple assigned regions are included without forcing the first region')
     await expect(page.locator('option[value="7"]')).toHaveCount(1)
     await expect(page.locator('option[value="8"]')).toHaveCount(0)
     assert(facilityQueries.length>0&&facilityQueries.every(query=>query.scope==='MINE'),'Only assigned underpasses are requested')

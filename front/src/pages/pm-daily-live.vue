@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import AppPagination from '../components/AppPagination.vue'
 import PmDailyTables from '../components/PmDailyTables.vue'
+import PmDailyMobileChart from '../components/PmDailyMobileChart.vue'
 import { RouterLink, useRoute } from 'vue-router'
 import BackendLayout from '../components/BackendLayout.vue'
 import { backend, downloadPdf, queryString } from '../services/backend'
@@ -15,10 +16,10 @@ const groupPages = reactive<Record<string, number>>({})
 function groupRows(key: string) {
   const rows = summary.value[key] || []
   if (!appView.value) return rows
-  const page = Math.min(groupPages[key] || 1, Math.max(1, Math.ceil(rows.length / 3)))
-  return rows.slice((page - 1) * 3, page * 3)
+  const page = Math.min(groupPages[key] || 1, Math.max(1, Math.ceil(rows.length / 5)))
+  return rows.slice((page - 1) * 5, page * 5)
 }
-function groupPage(key: string) { return Math.min(groupPages[key] || 1, Math.max(1, Math.ceil((summary.value[key]?.length || 0) / 3))) }
+function groupPage(key: string) { return Math.min(groupPages[key] || 1, Math.max(1, Math.ceil((summary.value[key]?.length || 0) / 5))) }
 const date = ref(new Intl.DateTimeFormat('en-CA', { timeZone:'Asia/Seoul', year:'numeric', month:'2-digit', day:'2-digit' }).format(new Date()))
 const report = ref<Record<string,any>>(), loading = ref(false), downloading = ref(false), error = ref('')
 const summary = computed(() => report.value?.summary || {})
@@ -48,12 +49,12 @@ watch(date,load,{immediate:true})
 onBeforeUnmount(()=>{controller?.abort();clearTimeout(timer)})
 </script>
 <template>
-  <BackendLayout><main class="service-workspace pm-admin-tools pm-daily-live"><div class="service-heading"><h1>예지보전 데일리 리포트</h1><div class="service-actions"><button type="button" :disabled="loading||downloading||!report" @click="pdf">{{downloading?'PDF 생성 중…':'PDF 다운로드'}}</button></div></div>
+  <BackendLayout><main class="service-workspace pm-admin-tools pm-daily-live"><div class="service-heading"><h1><AdminPageIcon />예지보전 데일리 리포트</h1><div class="service-actions"><button type="button" :disabled="loading||downloading||!report" @click="pdf">{{downloading?'PDF 생성 중…':'PDF 다운로드'}}</button></div></div>
     <form class="service-filters" @submit.prevent="load"><label>조회 날짜<input v-model="date" type="date" required /></label><button :disabled="loading">조회</button><small v-if="report&&!appView" class="daily-generated-at">집계 {{displayDate(report.generatedAt)}}</small></form>
     <p v-if="loading" role="status">리포트를 불러오는 중입니다.</p><p v-if="error" role="alert">{{error}}</p>
     <template v-if="report"><p v-if="appView">집계 시각 · {{displayDate(report.generatedAt)}}</p><div class="daily-levels"><section v-for="[key,label] in levelSummaries" :key="key" :class="'daily-level-'+key"><h2>{{label}}</h2><strong>{{summary.levelCounts?.[key!]??0}}</strong><small>이전 {{summary.previousLevelCounts?.[key!]??0}}개</small></section></div>
-    <PmDailyTables v-if="!appView" :summary="summary" /><template v-else><section class="daily-section"><h2>종류별 현황</h2><p v-for="item in summary.byType" :key="item.type">{{PM_TYPES[item.type]||item.type}} · 전체 {{item.total}} / 안전 {{item.safe}} / 주의 {{item.caution}} / 위험 {{item.danger}} / 미수신 {{item.noData}}</p><p>최초 수신 대기 · {{summary.neverReceived??0}}개</p></section>
-    <section v-for="[key,label] in groups" :key="key" class="daily-section"><h2>{{label}} <small>{{key==='newEvents'?summary.newEventCount:key==='openEvents'?summary.openEventCount:key==='actions'?summary.actionCount:summary[key]?.length??0}}건</small></h2><ul><li v-for="(row,index) in groupRows(key)" :key="row.eventId||row.actionId||row.equipId||index"><RouterLink v-if="row.equipId" :to="{path:managerAppPath('/pm-equipment-detail',route.path),query:{id:String(row.equipId)}}">{{row.name||row.code||'설비 '+row.equipId}}</RouterLink><strong v-else>{{row.name||'기록'}}</strong><span>{{row.underpassName}} · {{PM_TRIGGERS[row.triggerType]||PM_EVENT_STATUS[row.status]||PM_LEVELS[row.level]||row.content||''}}</span></li></ul><AppPagination v-if="appView&&(summary[key]?.length||0)>3" :page="groupPage(key)" :pages="Math.ceil(summary[key].length/3)" @change="groupPages[key]=$event" /><p v-if="!summary[key]?.length">해당 기록이 없습니다.</p></section></template></template>
+    <PmDailyTables v-if="!appView" :summary="summary" /><template v-else><PmDailyMobileChart :summary="summary" />
+    <section v-for="[key,label] in groups" :key="key" class="daily-section"><h2>{{label}} <small>{{key==='newEvents'?summary.newEventCount:key==='openEvents'?summary.openEventCount:key==='actions'?summary.actionCount:summary[key]?.length??0}}건</small></h2><ul><li v-for="(row,index) in groupRows(key)" :key="row.eventId||row.actionId||row.equipId||index"><RouterLink v-if="row.equipId" :to="{path:managerAppPath('/pm-equipment-detail',route.path),query:{id:String(row.equipId)}}">{{row.name||row.code||'설비 '+row.equipId}}</RouterLink><strong v-else>{{row.name||'기록'}}</strong><span>{{row.underpassName}} · {{PM_TRIGGERS[row.triggerType]||PM_EVENT_STATUS[row.status]||PM_LEVELS[row.level]||row.content||''}}</span></li></ul><AppPagination v-if="appView&&(summary[key]?.length||0)>5" :page="groupPage(key)" :pages="Math.ceil(summary[key].length/5)" @change="groupPages[key]=$event" /><p v-if="!summary[key]?.length">해당 기록이 없습니다.</p></section></template></template>
   </main></BackendLayout>
 </template>
 <style scoped>

@@ -3,7 +3,7 @@
 #app .home-premium :is(h1,h2,h3,p,figure,ol) { margin:0; }
 #app .home-premium section { margin:0 0 64px; }
 #app .home-premium .home-hero { position:relative; isolation:isolate; background:transparent; border:0; border-radius:24px; overflow:hidden; box-shadow:none; }
-#app .home-premium .home-hero>.home-hero-background { position:absolute; inset:0; z-index:0; display:block; width:100%; height:100%; object-fit:cover; object-position:right center; opacity:.82; mask-image:linear-gradient(90deg,transparent 28%,#000 88%),linear-gradient(0deg,transparent,#000 18%,#000 82%,transparent); mask-composite:intersect; pointer-events:none; }
+#app .home-premium .home-hero>.home-hero-background { position:absolute; inset:0; z-index:0; display:block; width:100%; height:100%; object-fit:cover; object-position:right center; opacity:.82; mask-image:linear-gradient(90deg,transparent 28%,#000 68%,#000 83%,transparent 100%),linear-gradient(0deg,transparent,#000 18%,#000 82%,transparent); mask-composite:intersect; pointer-events:none; }
 #app .home-premium .home-hero-copy { position:relative; z-index:1; width:56%; max-width:760px; margin:0; padding:56px; min-width:0; text-align:left; }
 #app .home-hero .home-hero-eyebrow,#app .home-hero .home-actions { justify-content:flex-start; }
 #app .home-premium .home-hero-eyebrow { display:flex; align-items:center; gap:10px; color:var(--r-accent); font-size:12px; font-weight:600; letter-spacing:.03em; line-height:1.7; }
@@ -118,7 +118,7 @@
   #app .home-premium section { margin-bottom:40px; }
   #app .home-premium .home-hero { border-radius:18px; }
   #app .home-premium .home-hero-copy { width:100%; padding:30px 24px; }
-  #app .home-premium .home-hero>.home-hero-background { opacity:.22; mask-image:linear-gradient(90deg,transparent,#000),linear-gradient(0deg,transparent,#000 20%,#000 80%,transparent); }
+  #app .home-premium .home-hero>.home-hero-background { opacity:.22; mask-image:linear-gradient(90deg,transparent,#000 65%,#000 83%,transparent),linear-gradient(0deg,transparent,#000 20%,#000 80%,transparent); }
   :root[data-theme=dark] #app .home-premium .home-hero>.home-hero-background { opacity:.18; }
   #app .home-premium .home-hero h1 { margin:24px 0; gap:8px; font-size:36px; }
   #app .home-premium .home-hero-lead { font-size:17px; }
@@ -324,7 +324,7 @@ html:has(.home-premium) {
 @media(min-width:701px) {
   #app .home-premium .home-brand { align-items:start; align-content:center; }
   #app .home-premium .home-brand-copy { align-self:start; padding-top:0; }
-  #app .home-premium .home-brand-art { align-self:start; margin-top:120px; }
+  #app .home-premium .home-brand-art { align-self:start; margin-top:72px; }
 }
 /* A light travels through the four milestones in order. */
 #app .home-premium .home-roadmap>li::before {
@@ -358,3 +358,10 @@ html:has(.home-premium) {
   #app .home-premium .home-roadmap>li:not(:last-child)::after { background-image:none; }
   #app .home-premium .home-roadmap>li:first-child::before { background:var(--r-accent); }
 }
+#app .home-brand-steps { display:grid; gap:18px; list-style:none; padding:0; margin:26px 0 0; max-width:420px; }
+#app .home-brand-steps li { display:flex; align-items:center; gap:14px; }
+#app .home-brand-step-icon { display:grid; place-items:center; flex:none; width:38px; height:38px; border-radius:50%; background:var(--r-selected); color:var(--r-accent); --ui-icon-size:18px; }
+#app .home-brand-steps strong { display:block; color:var(--r-ink); font-size:14px; font-weight:600; line-height:22px; }
+#app .home-brand-steps p { margin:2px 0 0; color:var(--r-muted); font-size:12px; line-height:20px; }
+#app .home-premium .home-brand { column-gap:48px; }
+@media(max-width:700px) { #app .home-brand-steps { gap:14px; margin-top:22px; } #app .home-brand-art { margin-top:20px; } }

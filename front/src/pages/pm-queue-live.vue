@@ -34,7 +34,7 @@ type PmEvent = {
   currentLevel: string | null
 }
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = useRoute().path.startsWith('/admin-app/') ? 5 : 20
 const route = useRoute()
 const router = useRouter(),
   status = ref(''),
@@ -137,7 +137,7 @@ function act(row: PmEvent, mode: 'start' | 'note' | 'resolve') {
       
       <div class="page-head service-heading">
         <div>
-          <h1>{{adminPageTitle('/pm-queue')}}</h1>
+          <h1><AdminPageIcon />{{adminPageTitle('/pm-queue')}}</h1>
           <div class="sub">위험진입 · 급상승 · 미수신으로 생긴 점검 대상</div>
         </div>
         <div class="pm-head-actions">

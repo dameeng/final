@@ -93,6 +93,7 @@ async function withdraw() {
     </div>
     <p v-if="error&&!dialog?.open" role="alert">{{error}}</p>
     <WorkflowPage
+      hide-back
       ref="dialog"
       class="account-withdraw"
       @click="($event.target===dialog)&&!busy&&dialog?.close()"
@@ -115,7 +116,7 @@ async function withdraw() {
       </form>
     </WorkflowPage>
     <p v-if="message" role="status">{{message}}</p>
-    <WorkflowPage ref="passwordDialog" class="account-withdraw" aria-labelledby="change-password-title">
+    <WorkflowPage hide-back ref="passwordDialog" class="account-withdraw" aria-labelledby="change-password-title">
       <form class="account-security-form" @submit.prevent="changePassword">
         <h2 id="change-password-title">비밀번호 변경</h2>
         <label>현재 비밀번호<PasswordInput

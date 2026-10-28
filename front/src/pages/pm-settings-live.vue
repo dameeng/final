@@ -26,7 +26,7 @@ async function load() {
   controller?.abort(); const current = new AbortController(); controller = current
   loading.value = true; error.value = ''; selected.value = []
   try {
-    const result = asPage<Record<string,any>>(await backend('/api/pm/thresholds'+queryString({page:page.value,size:10,type:type.value,underpassId:underpassId.value}),{signal:current.signal}))
+    const result = asPage<Record<string,any>>(await backend('/api/pm/thresholds'+queryString({page:page.value,size:appView.value?5:10,type:type.value,underpassId:underpassId.value}),{signal:current.signal}))
     if (!current.signal.aborted) { rows.value=result.items; totalItems.value=result.totalItems; pages.value=Math.max(1,result.totalPages); const target=rows.value.find(row=>String(row.equipId)===String(route.query.equipId)); if(target){selected.value=[target.equipId];caution.value=target.cautionMin;danger.value=target.dangerMin} if (page.value>pages.value) {page.value=pages.value;void load()} }
   } catch (e) { if (!current.signal.aborted) error.value=(e as Error).message }
   finally { if (!current.signal.aborted) loading.value=false }
@@ -79,7 +79,7 @@ void initialize();void load()
 onBeforeUnmount(()=>{controller?.abort();lookup.abort();optionRequest?.abort();clearTimeout(timer);confirm.value?.close()})
 </script>
 <template>
-  <BackendLayout><main class="service-workspace pm-admin-tools pm-settings-live"><div class="service-heading"><h1>예지보전 설비·기준 설정</h1><div class="service-actions"><button type="button" :disabled="saving" @click="showCreate=!showCreate">설비 등록</button></div></div>
+  <BackendLayout><main class="service-workspace pm-admin-tools pm-settings-live"><div class="service-heading"><h1><AdminPageIcon />예지보전 설비·기준 설정</h1><div class="service-actions"><button type="button" :disabled="saving" @click="showCreate=!showCreate">설비 등록</button></div></div>
     <p v-if="error" role="alert">{{error}}</p><p v-if="message" role="status">{{message}}</p>
     <form v-if="showCreate" class="pm-settings-card" @submit.prevent="register"><h2>설비 등록</h2><label>지하차도<select aria-label="등록 지하차도" v-model="create.underpassId" required :disabled="saving"><option value="">선택</option><option v-for="facility in facilities" :key="facility.id" :value="String(facility.id)">{{facility.name}}</option></select></label><label>설비 종류<select aria-label="등록 설비 종류" v-model="create.type" :disabled="saving"><option v-for="key in ['CCTV','DISPLAY','PUMP','WATER_LEVEL']" :key="key" :value="key">{{PM_TYPES[key]}}</option></select></label>
     <label v-if="create.type==='CCTV'">연결 카메라<select v-model="create.camId" :disabled="saving"><option value="">연결하지 않음</option><option v-for="cam in cameras" :key="cam.id" :value="String(cam.id)">{{cam.name||cam.direction||'카메라 '+cam.id}}</option></select></label><label v-if="create.type==='DISPLAY'">연결 전광판<select v-model="create.itsVmsId" :disabled="saving"><option value="">연결하지 않음</option><option v-for="item in vms" :key="item.id" :value="String(item.id)">{{item.name||item.id}}</option></select></label><label>설치일<input v-model="create.installedAt" type="date" :disabled="saving" /></label><button :disabled="saving">등록</button></form>
