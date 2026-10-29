@@ -252,7 +252,7 @@ public class DemoStubScheduler {
 
     // 수위계 흉내: 시나리오 중에는 곡선대로, 평소에는 0 근처
     private void waterStub(Long uid, boolean active, double t, boolean due) {
-        var sample=waterProfile.sample(uid,due,active?state.waterAt(t):0);
+        var sample=waterProfile.sample(uid,due,active?state.waterAt(t):0,active);
         if(sample.isEmpty())return;
         double level=sample.getAsDouble();
         Map<String, Object> body = new LinkedHashMap<>();
