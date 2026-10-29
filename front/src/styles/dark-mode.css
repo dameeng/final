@@ -94,6 +94,13 @@
   background-color: #30465c!important;
   color: #edf1f5!important;
 }
+/* 시설 CCTV 카메라 버튼은 고른 카메라가 한눈에 보이도록 강조색을 유지 */
+:root[data-theme=dark] .wire-page .facility-camera-buttons>button { background-color: var(--r-surface,#172c42); border-color: var(--r-line,#304d68); color: var(--r-ink,#e8f2fc); }
+:root[data-theme=dark] .wire-page .facility-camera-buttons>button[aria-pressed=true] {
+  background-color: var(--r-accent,#7abaff)!important;
+  border-color: var(--r-accent,#7abaff);
+  color: var(--r-surface,#172c42)!important;
+}
 :root[data-theme=dark] .wire-page :is(.link,.auth-text-button,.cluster-facility-row,.theme-toggle) {
   color: var(--ink,#edf1f5);
 }
