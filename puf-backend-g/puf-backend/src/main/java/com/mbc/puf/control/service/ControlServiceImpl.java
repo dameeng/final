@@ -327,7 +327,7 @@ public class ControlServiceImpl implements ControlService {
             LocalDateTime now = transfer.getCreatedAt() != null ? transfer.getCreatedAt() : LocalDateTime.now();
             byte[] pdf = pdfGenerator.generatePolicePdf(notice);
             UnderpassDetailResponse detail = UnderpassServiceImpl.toDetail(underpassRepository.findByIdAndDeletedFalse(underpassId).orElseThrow());
-            String filename = String.format("경찰이관_%s_%s_%s.pdf", action, notice.underpassName(), FILE_DT.format(now));
+            String filename = String.format("이관문서_%s_%s_%s.pdf", action, notice.underpassName(), FILE_DT.format(now));
             return new PdfResult(filename, pdf, detail);
         } catch (RuntimeException e) {
             log.error("[control] {} 처리는 끝났지만 PDF 생성 실패 (underpassId={}, transferId={})", action, underpassId, transfer.getId(), e);
@@ -438,7 +438,7 @@ public class ControlServiceImpl implements ControlService {
             pdf = pdfGenerator.generatePolicePdf(applySnapshot(
                     buildNotice(underpass, event, blockEvent, transfer.getManagerId(), transfer.getMemo()),
                     transfer.getSnapshot()));
-            filename = String.format("%s이관_%s_%s_%s.pdf", transfer.getAgency() == TransferAgency.FIRE ? "소방" : "경찰", eventTypeLabel, underpass.getName(), FILE_DT.format(transferAt));
+            filename = String.format("%s_%s_%s_%s.pdf", transfer.getAgency() == TransferAgency.FIRE ? "소방이관" : "이관문서", eventTypeLabel, underpass.getName(), FILE_DT.format(transferAt));
         } else {
             List<String> carNums = ctrlTransferCarRepository.findByCtrlTransferId(transferId)
                     .stream().map(CtrlTransferCar::getCarNum).collect(Collectors.toList());
