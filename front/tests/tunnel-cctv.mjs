@@ -53,8 +53,8 @@ try {
     if (!process.env.TUNNEL_QA_FIXTURE) {
       if (path.startsWith('/fac-detail')) await page.getByRole('link', { name: '시설 CCTV 보기', exact: true }).click()
       await page.locator('.facility-cctv-viewer').waitFor()
-      assert.equal(await page.locator('.facility-camera-select select').inputValue(), '61', 'the original facility CCTV stays separate')
-      assert.equal(await page.locator('.facility-camera-select option').count(), 1, 'cameras belonging to another facility cannot be selected')
+      assert.equal(await page.locator('.facility-camera-buttons [aria-pressed=true]').getAttribute('data-camera-id'), '61', 'the original facility CCTV stays separate')
+      assert.equal(await page.locator('.facility-camera-buttons button').count(), 1, 'cameras belonging to another facility cannot be selected')
     }
   }
 

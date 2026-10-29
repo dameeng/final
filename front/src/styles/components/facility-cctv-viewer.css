@@ -40,24 +40,31 @@
   gap: 8px;
   font-size: 14px;
 }
-.facility-camera-select select {
-  width: 100%;
-  min-height: 44px;
-  padding: 10px 12px;
-  border: 1px solid var(--line,#c9ced6);
+.facility-camera-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.facility-camera-buttons button {
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid var(--r-line,#c9ced6);
   border-radius: 8px;
   background: var(--r-surface,#fff);
   color: var(--r-ink,#172e49);
-  color-scheme: light;
   font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
 }
-.facility-camera-select option {
-  background-color: var(--r-surface,#fff);
-  color: var(--r-ink,#172e49);
+.facility-camera-buttons button:hover { border-color: var(--r-accent,#225f9b); }
+.facility-camera-buttons button[aria-pressed=true] {
+  border-color: var(--r-accent,#225f9b);
+  background: var(--r-accent,#225f9b);
+  color: var(--r-surface,#fff);
 }
-:global(:root[data-theme=dark]) .facility-camera-select select {
-  color-scheme: dark;
-}
+.facility-camera-buttons button:focus-visible { outline: 2px solid var(--r-accent,#225f9b); outline-offset: 2px; }
 .facility-cctv-viewer h2 {
   margin: 0;
   font-size: 16px;

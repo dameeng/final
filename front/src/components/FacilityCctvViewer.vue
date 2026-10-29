@@ -169,12 +169,16 @@ const app = computed(() => route.path.startsWith('/admin-app/'))
   <div class="facility-cctv-layout" :class="{'compact-cctv':compact,'app-cctv-records':app}">
   <section class="facility-cctv-viewer" aria-label="시설 CCTV">
     <template v-if="current">
-      <label class="facility-camera-select">CCTV 선택<select v-model="selected">
-          <option v-for="camera in availableCameras" :key="camera.id" :value="String(camera.id)">
+      <!-- 브라우저 기본 선택 목록은 실시간 영상과 함께 펼치면 글자가 안 그려지는 경우가 있어 버튼으로 고른다 -->
+      <div class="facility-camera-select">
+        <span id="facility-camera-select-label">CCTV 선택</span>
+        <div class="facility-camera-buttons" role="group" aria-labelledby="facility-camera-select-label">
+          <button v-for="camera in availableCameras" :key="camera.id" type="button" :data-camera-id="camera.id"
+            :aria-pressed="String(camera.id) === selected" @click="selected = String(camera.id)">
             {{label(camera)}}
-          </option>
-        </select>
-      </label>
+          </button>
+        </div>
+      </div>
       <h2>{{label(current)}}</h2>
       <div class="facility-recognition-controls">
         <div class="recognition-buttons">
