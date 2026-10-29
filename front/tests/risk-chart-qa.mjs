@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { createServer } from 'vite'
 const server = await createServer({ configLoader: 'runner', server: { middlewareMode: true } })
 try {
-  const { riskChartSeries } = await server.ssrLoadModule('/src/utils/risk-chart.ts')
+  const { riskChartSeries, riskSplitChart } = await server.ssrLoadModule('/src/utils/risk-chart.ts')
   const history = [
     { predictedAt: '2026-10-21T12:00:00', riskScore: 10 },
     { predictedAt: '2026-10-21T11:00:00', riskScore: 8 },
@@ -126,8 +126,34 @@ try {
     [0, 100, 400],
     'daily aggregate time gaps stay proportional',
   )
+  // 시설 상세: 최근 1시간 관측(1분 평균) | 지금 | 3시간 예측 (구간마다 시간 눈금이 다르다)
+  const now = Date.parse('2026-10-21T12:00:00+09:00')
+  const at = (ms) => new Date(now + ms).toISOString()
+  const split = riskSplitChart(
+    [
+      { predictedAt: at(-2 * 3600000), riskScore: 99 },
+      { predictedAt: at(-30 * 60000 - 20000), riskScore: 10 },
+      { predictedAt: at(-30 * 60000 - 10000), riskScore: 20 },
+      { predictedAt: at(-10000), riskScore: 60 },
+      { predictedAt: at(0), riskScore: null },
+    ],
+    [
+      { targetAt: at(-3600000), riskScore: 1 },
+      { targetAt: at(3600000), riskScore: 70 },
+      { targetAt: at(4 * 3600000), riskScore: 90 },
+    ],
+    { left: 0, right: 100, top: 0, bottom: 100, now },
+  )
+  assert.equal(split.mid, 65, 'now line splits observed and forecast areas')
+  assert.equal(split.observedPath.split(/[ML]/).filter(Boolean).length, 2, 'older than 1h dropped, same minute averaged')
+  assert.ok(split.observedPath.includes(',85.0'), 'scores 10 and 20 in one minute average to 15')
+  assert.equal(split.latest.score, 60, 'latest observation ends at now')
+  assert.deepEqual(split.forecastPoints.map((p) => p.score), [70], 'only forecasts after now within 3h')
+  assert.ok(Math.abs(split.forecastPoints[0].x - (65 + 35 / 3)) < 1e-9, 'forecast uses its own 3h time scale')
+  assert.equal(split.ticks.find((t) => t.now)?.label, '12:00', 'now tick shows current Korean time')
+  assert.equal(riskSplitChart([], [], { left: 0, right: 100, top: 0, bottom: 100, now }).empty, true)
   console.log(
-    'PASS risk chart: chronological order, duplicate timestamps, Korean timezone, near-term horizon, no backward forecast, exact scores and visible single point',
+    'PASS risk chart: chronological order, duplicate timestamps, Korean timezone, near-term horizon, no backward forecast, exact scores and visible single point, split observed/forecast chart',
   )
 } finally {
   await server.close()

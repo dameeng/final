@@ -10,7 +10,7 @@ import FacilityMaintenancePanel from '../components/FacilityMaintenancePanel.vue
 import UnderpassVmsPanel from '../components/UnderpassVmsPanel.vue'
 import TunnelCctvDialog from '../components/TunnelCctvDialog.vue'
 import { riskGroup } from '../services/backendCatalog'
-import { riskChartSeries } from '../utils/risk-chart'
+import { riskSplitChart } from '../utils/risk-chart'
 import { useBackendEvents } from '../composables/useBackendEvents'
 import { patchFacility, facilityEvents, appendRiskHistory } from '../services/streamUpdates'
 import { ownsFacility } from '../services/facilityAccess'
@@ -23,6 +23,7 @@ const facility = ref<Record<string, any>>(),
   history = ref<any[]>([]),
   forecast = ref<any[]>([]),
   forecastError = ref(''),
+  thresholds = ref<{ level: string; riskScoreMin: number }[]>([]),
   cameras = ref<any[]>([]),
   cameraError = ref(''),
   error = ref(''),
@@ -63,6 +64,7 @@ async function load() {
     cameras.value = []
     history.value = []
     forecast.value = []
+    thresholds.value = []
   }
   try {
     facility.value = await backend('/api/underpasses/' + encodeURIComponent(id.value), {
@@ -70,7 +72,8 @@ async function load() {
     })
     const results = await Promise.allSettled([
       backend(
-        '/api/underpasses/' + encodeURIComponent(id.value) + '/risk-scores?hours=6&limit=100',
+        // 10초마다 쌓이므로 최근 1시간(약 360건)을 받아 그래프에서 1분 평균으로 그린다
+        '/api/underpasses/' + encodeURIComponent(id.value) + '/risk-scores?hours=1&limit=500',
         { signal: current.signal },
       ),
       backend('/api/underpasses/' + encodeURIComponent(id.value) + '/cameras', {
@@ -79,9 +82,14 @@ async function load() {
       backend('/api/underpasses/' + encodeURIComponent(id.value) + '/risk-forecast', {
         signal: current.signal,
       }),
+      backend('/api/underpasses/' + encodeURIComponent(id.value) + '/thresholds', {
+        signal: current.signal,
+      }),
     ])
     if (current.signal.aborted) return
     if (results[0]?.status === 'fulfilled') history.value = asPage<any>(results[0].value).items
+    // 기준값은 그래프 눈금용이라 못 받아도 0·50·100 눈금으로 그린다
+    thresholds.value = results[3]?.status === 'fulfilled' ? asPage<any>(results[3].value).items : []
     if (results[1]?.status === 'fulfilled') cameras.value = asPage<any>(results[1].value).items
     else {
       cameras.value = []
@@ -106,7 +114,7 @@ useBackendEvents((event) => {
   if (facilityEvents.includes(name)) {
     if (facility.value) facility.value = patchFacility(facility.value, event)
     if (name === 'risk-update' && String(data.underpassId) === id.value)
-      history.value = appendRiskHistory(history.value, data)
+      history.value = appendRiskHistory(history.value, data, 500)
     return
   }
   if (name === 'data-changed' && data.resource === 'risk-forecast') {
@@ -142,9 +150,13 @@ onBeforeUnmount(() => {
 })
 const chartNow = useRiskChartClock()
 const series = computed(() =>
-  riskChartSeries(history.value, forecast.value, 30, 610, 180, 150, { now: chartNow.value }),
+  riskSplitChart(history.value, forecast.value, { left: 44, right: 650, top: 24, bottom: 186, now: chartNow.value }),
 )
-const points = computed(() => series.value.observed)
+// 세로 눈금: 0·100 + 이 시설의 단계 기준값 (못 받으면 50)
+const scoreTicks = computed(() => {
+  const mins = thresholds.value.map((t) => Number(t.riskScoreMin)).filter((v) => v > 0 && v < 100)
+  return [...new Set([0, ...(mins.length ? mins : [50]), 100])].sort((a, b) => a - b)
+})
 function control() {
   if (facility.value && ownsFacility(facility.value))
     void operations.value?.open(
@@ -231,64 +243,51 @@ function control() {
               </button>
             </section>
             <section class="card">
-              <h2>위험 점수 추이 · 관측 및 예측</h2>
+              <h2>위험 점수 추이 · 최근 1시간 관측 | 3시간 예측</h2>
+              <p v-if="series.latest" class="sub">지금 <b>{{series.latest.score.toFixed(1)}}점</b> <RiskLevelBadge v-if="facility" :value="facility.currentRiskLevel" /></p>
               <svg
-                v-if="points||series.forecast"
+                v-if="!series.empty"
                 class="restored-risk-chart"
-                viewBox="0 0 670 210"
+                viewBox="0 0 670 230"
                 role="img"
-                aria-label="관측된 위험 점수 추이"
+                aria-label="최근 1시간 관측과 앞으로 3시간 예측 위험 점수"
               >
-                <path d="M30 20V180H640" fill="none" stroke="#8a93a0" />
-                <line
-                  v-if="series.boundary!==null"
-                  :x1="series.boundary"
-                  :x2="series.boundary"
-                  y1="30"
-                  y2="180"
-                  stroke="#c9ced6"
-                  stroke-dasharray="3 4"
-                />
+                <g v-for="score in scoreTicks" :key="'s'+score">
+                  <line x1="44" x2="650" :y1="series.y(score)" :y2="series.y(score)" stroke="currentColor" stroke-opacity=".18" />
+                  <text x="38" :y="series.y(score)+4" text-anchor="end" font-size="11" fill="currentColor">{{score}}</text>
+                </g>
+                <line :x1="series.mid" :x2="series.mid" y1="18" y2="186" stroke="currentColor" />
+                <text :x="series.mid" y="13" text-anchor="middle" font-size="11" fill="currentColor">지금</text>
                 <text
                   v-for="tick in series.ticks"
                   :key="tick.x"
                   :x="tick.x"
-                  y="200"
+                  y="204"
                   text-anchor="middle"
                   font-size="12"
+                  :font-weight="tick.now?700:400"
                   fill="currentColor"
-                >
-                  {{tick.label}}
-                </text>
-                <circle
-                  v-if="series.lastObserved"
-                  :cx="series.lastObserved.x"
-                  :cy="series.lastObserved.y"
-                  r="4"
-                  fill="#2b5c8a"
-                />
-                <path
-                  v-if="series.carryPath"
-                  :d="series.carryPath"
-                  fill="none"
-                  stroke="#2b5c8a"
-                  stroke-opacity=".5"
-                  stroke-width="2"
-                  stroke-dasharray="2 3"
-                />
+                >{{tick.now?'지금 '+tick.label:tick.label}}</text>
+                <text :x="(44+series.mid)/2" y="224" text-anchor="middle" font-size="11" fill="currentColor">최근 1시간 관측 · 1분 평균</text>
+                <text :x="(series.mid+650)/2" y="224" text-anchor="middle" font-size="11" fill="currentColor">앞으로 3시간 예측</text>
                 <path :d="series.observedPath" fill="none" stroke="#2b5c8a" stroke-width="3" />
                 <path
                   v-if="series.forecastPath"
                   :d="series.forecastPath"
                   fill="none"
                   stroke="#2b5c8a"
-                  stroke-width="3"
+                  stroke-width="2.5"
+                  stroke-opacity=".7"
                   stroke-dasharray="8 5"
                 />
+                <g v-for="p in series.forecastPoints" :key="'f'+p.x">
+                  <circle :cx="p.x" :cy="p.y" r="3" fill="#2b5c8a" fill-opacity=".7" />
+                  <text :x="p.x" :y="p.y-8" text-anchor="middle" font-size="11" fill="currentColor">{{Math.round(p.score)}}</text>
+                </g>
+                <circle v-if="series.latest" :cx="series.latest.x" :cy="series.latest.y" r="5" fill="#2b5c8a" />
               </svg>
               <p v-else>조회된 위험도 관측 기록이 없습니다.</p>
-              <p v-if="series.forecast">실선: 관측 · 점선: 향후 3시간 예측</p>
-              <p v-if="series.carryPath" class="sub">엷은 점선: 최근 관측값을 현재까지 유지 (추가 관측 아님)</p>
+              <p v-if="!series.empty" class="sub">실선: 최근 1시간 관측 · 점선: 향후 3시간 예측 (가운데 선이 지금)</p>
               <p v-if="forecastError">{{forecastError}}</p>
             </section>
             <section class="card facility-information-card">

@@ -14,6 +14,19 @@
   display:flex; flex-flow:row nowrap; align-items:center; justify-content:center; gap:8px; margin:0;
 }
 #app .admin-interface.admin-shell .service-workspace[data-resource=transits] .resource-action-column button { flex:none; min-height:36px; white-space:nowrap; }
+/* 카메라(영상·상세·수정·삭제), 관리자(담당 지역·근무조 변경·탈퇴), 공지(상세·수정·삭제), 문의(상세·답변) 버튼을 한 줄로
+   (180px 칸에서는 세로로 쌓여 행이 높아진다) */
+#app .admin-interface.admin-shell .service-workspace[data-resource=cameras] .service-table :is(th,td).resource-action-column { width:340px; }
+#app .admin-interface.admin-shell .service-workspace[data-resource=managers] .service-table :is(th,td).resource-action-column { width:330px; }
+#app .admin-interface.admin-shell .service-workspace[data-resource=notices] .service-table :is(th,td).resource-action-column { width:240px; }
+#app .admin-interface.admin-shell .service-workspace[data-resource=inquiries] .service-table :is(th,td).resource-action-column { width:280px; }
+#app .admin-interface.admin-shell .service-workspace:is([data-resource=cameras],[data-resource=managers],[data-resource=notices],[data-resource=inquiries]) .resource-action-column .service-actions { flex-wrap:nowrap; }
+#app .admin-interface.admin-shell .service-workspace:is([data-resource=cameras],[data-resource=managers],[data-resource=notices],[data-resource=inquiries]) .resource-action-column button { flex:none; min-height:36px; white-space:nowrap; }
+/* 문의 답변 창: 입력칸 위에 고객이 보낸 문의 원문 */
+#app .inquiry-original { margin:0 0 16px; padding:14px 16px; border:1px solid var(--r-line,#dce7f2); border-radius:10px; background:var(--r-soft,#f5f8fc); }
+#app .inquiry-original-meta { margin:0 0 4px; font-size:12px; color:var(--r-muted,#5f6f80); }
+#app .inquiry-original h3 { margin:0 0 8px; font-size:15px; font-weight:600; line-height:22px; color:var(--r-ink,#172e49); }
+#app .inquiry-original-body { margin:0; max-height:220px; overflow:auto; font-size:13px; line-height:1.7; white-space:pre-wrap; overflow-wrap:anywhere; color:var(--r-ink,#172e49); }
 #app .admin-interface.admin-shell :is(.service-heading,.page-head) h1,
 #app .admin-interface.admin-shell .account-service>h1 {
   display:flex; align-items:center; flex-wrap:wrap; gap:10px;

@@ -263,7 +263,7 @@ export const backendResources: Record<string, Resource> = {
     path: '/api/plate-logs',
     columns: [
       ['underpassName', '시설'],
-      ['cameraId', '카메라 번호'],
+      ['cameraId', '카메라'],
       ['detectedNum', '인식 번호'],
       ['imagePath', '인식 이미지'],
       ['correctedNum', '정정 번호'],
@@ -484,7 +484,6 @@ export const backendResources: Record<string, Resource> = {
       ['phone', '연락처'],
       ['email', '이메일'],
       ['carNums', '등록 차량'],
-      ['withdrawn', '탈퇴 여부'],
     ],
     filters: [
       text('keyword', '통합 검색'),
@@ -497,16 +496,18 @@ export const backendResources: Record<string, Resource> = {
     title: adminResourceTitles.alerts!,
     path: '/api/alert-logs',
     columns: [
-      ['underpassId', '시설 번호'],
+      ['underpassName', '지하차도'],
+      ['customerName', '고객'],
       ['carNum', '차량 번호'],
       ['alertType', '알림 종류'],
+      ['pushStatus', '발송 결과'],
       ['sentAt', '발송 시각'],
     ],
     filters: [
       region,
       facility,
       text('carNum', '차량 번호'),
-      num('customerId', '고객 번호'),
+      text('customerName', '고객 이름'),
       select('alertType', '알림 종류', [
         ['PREDICTIVE', '위험 예측'],
         ['FINAL', '최종 인식'],

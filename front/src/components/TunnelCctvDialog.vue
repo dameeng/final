@@ -2,7 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import TrafficVideo from './TrafficVideo.vue'
-import { getTunnelCameras, getTunnelCameraStream, seoulTunnelSource } from '../services/seoulTunnelCctv'
+import { getTunnelCameras, getTunnelCameraStream } from '../services/seoulTunnelCctv'
 
 const props = defineProps<{ facilityName?: string; underpassId?: string | number }>()
 const facilityTitle = computed(() => `${props.facilityName || '초량지하차도'} 내부`)
@@ -116,7 +116,6 @@ onBeforeUnmount(release)
         <div><p class="tunnel-cctv-eyebrow">내부 CCTV</p><h2>{{facilityTitle}} CCTV</h2></div>
         <button class="tunnel-cctv-close" type="button" aria-label="내부 CCTV 창 닫기" @click="close">닫기</button>
       </header>
-      <p class="tunnel-cctv-source-note">신월여의지하도로의 공개 내부 CCTV 영상입니다. 선택한 {{props.facilityName||'시설'}}의 실제 영상이 아닌 내부 영상 참고용입니다. <a :href="seoulTunnelSource" target="_blank" rel="noopener noreferrer">공식 제공처 ↗</a></p>
       <div v-if="opened" class="tunnel-cctv-content">
         <p v-if="loading" role="status">CCTV 목록을 불러오는 중입니다.</p>
         <label v-if="cameras.length" class="tunnel-cctv-select">CCTV 선택 <small>{{cameras.length}}대</small>

@@ -5,6 +5,7 @@ import { useRoute } from 'vue-router'
 import TrafficVideo from './TrafficVideo.vue'
 import FacilityOcrLog from './FacilityOcrLog.vue'
 import { valueLabels } from '../data/backendResources'
+import { DEMO_CAMERA_NAMES } from '../utils/camera-names'
 import { useBackendEvents } from '../composables/useBackendEvents'
 const props = defineProps<{ cameras: Record<string, any>[]; underpassId: string; facilityName?: string; compact?: boolean }>()
 const route = useRoute(),
@@ -158,10 +159,8 @@ watch(
   },
   { immediate: true },
 )
-// 초량지하차도 시연용 번호판 카메라 이름 (DB camera 테이블에 이름 칸이 없어서 번호로 정함. seed_all_v8.sql 9-1 참고)
-const demoCameraNames: Record<string, string> = { '226': 'APPROACH', '227': 'ROI', '228': '입구', '229': '출구', '230': '노면·싱크홀' }
 function label(camera: Record<string, any>) {
-  return `${camera.name || demoCameraNames[String(camera.id)] || valueLabels[camera.cameraRole] || camera.cameraRole || 'CCTV'} · ${camera.id}`
+  return `${camera.name || DEMO_CAMERA_NAMES[String(camera.id)] || valueLabels[camera.cameraRole] || camera.cameraRole || 'CCTV'} · ${camera.id}`
 }
 const app = computed(() => route.path.startsWith('/admin-app/'))
 </script>

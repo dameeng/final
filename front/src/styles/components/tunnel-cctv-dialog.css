@@ -10,7 +10,7 @@
 :global(#app .service-app-layout button.tunnel-cctv-trigger.tunnel-cctv-trigger--app:focus-visible) { outline: 2px solid var(--r-brand,#2167bb); outline-offset: 3px; }
 :global(#app .service-app-layout button.tunnel-cctv-trigger.tunnel-cctv-trigger--app:active) { background: var(--r-soft,#f1f5fb); }
 .tunnel-cctv-modal { width: min(720px, calc(100vw - 32px)); padding: 28px; overflow: auto; }
-.tunnel-cctv-modal>header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--r-line,#dbe3ed); }
+.tunnel-cctv-modal>header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding-bottom: 20px; border-bottom: none; }
 .tunnel-cctv-eyebrow { margin: 0 0 6px; color: var(--r-brand,#2167bb); font-size: 12px; font-weight: 700; }
 .tunnel-cctv-modal h2 { margin: 0; font-size: 22px; }
 .tunnel-cctv-modal button,.tunnel-cctv-modal footer a { display: inline-flex; align-items: center; justify-content: center; min-height: 42px; padding: 10px 14px; border: 1px solid var(--r-line,#dbe3ed); border-radius: 9px; background: var(--r-surface,#fff); color: var(--r-ink,#172d48); font: inherit; text-decoration: none; }

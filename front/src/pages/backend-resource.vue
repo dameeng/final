@@ -11,6 +11,7 @@ import { notificationTarget } from '../utils/notification-target'
 const notificationGlow = useNotificationGlow()
 import RiskLevelBadge from '../components/RiskLevelBadge.vue'
 import { formatPhone } from '../utils/phone'
+import { cameraLabel } from '../utils/camera-names'
 import { dateParts, displayDate } from '../utils/display-date'
 import { riskGroup, matchesRisk, boardCategoryLabel } from '../services/backendCatalog'
 import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
@@ -276,6 +277,9 @@ function presetMessage(row: Record<string, any>) {
 function displayField(key: string, value: any) {
   if (key === 'earlyBlock' && typeof value === 'boolean') return value ? '대상' : '대상 아님'
   if (['phone', 'emergency'].includes(key)) return formatPhone(value) || '—'
+  if (resourceId.value === 'alerts' && key === 'pushStatus')
+    return ({ SUCCESS: '받음', FAIL: '발송 실패', PENDING: '발송 중', NO_PUSH: '기기 없음' } as Record<string, string>)[value] || display(value)
+  if (resourceId.value === 'ocr' && key === 'cameraId') return cameraLabel(value)
   return resourceId.value === 'notices' && key === 'important'
     ? value
       ? '중요 공지'
@@ -542,6 +546,12 @@ function canEditRow(row: Record<string, any>) {
     (resourceId.value !== 'my-inquiries' || row.status === 'PENDING') &&
     (resourceId.value !== 'facilities' || ownsFacility(row))
   )
+}
+// 행마다 보일 처리 버튼. 문의는 대기면 답변 등록만, 답변 완료면 수정·삭제만
+function rowActions(row: Record<string, any>) {
+  const actions = resource.value.actions || []
+  if (resourceId.value !== 'inquiries') return actions
+  return actions.filter((act) => (row.status === 'PENDING' ? act.method === 'POST' : act.method !== 'POST'))
 }
 function actionEnabled(row: Record<string, any>) {
   return resourceId.value === 'facilities'
@@ -1421,7 +1431,7 @@ defineExpose({ open, load })
                     <button v-if="canEditRow(row)" @click="open('edit',row)">수정</button>
                     <button v-if="resource.remove&&canWrite" @click="open('remove',row)">삭제</button>
                     <button
-                      v-for="act in canWrite?resource.actions||[]:[]"
+                      v-for="act in canWrite?rowActions(row):[]"
                       :key="act.label"
                       :disabled="!actionEnabled(row)"
                       @click="open('action',row,act)"
@@ -1546,7 +1556,7 @@ defineExpose({ open, load })
             <button v-if="resource.remove" class="danger" type="button" @click="open('remove',detail)">삭제</button>
             <RouterLink v-if="facilityList" :to="'/admin-data/cameras?underpassId='+detail.id">{{adminResourceTitles.cameras}}</RouterLink>
             <button
-              v-for="act in resource.actions||[]"
+              v-for="act in rowActions(detail)"
               :key="act.label"
               type="button"
               :disabled="!actionEnabled(detail)"
@@ -1560,6 +1570,12 @@ defineExpose({ open, load })
             <p v-if="resourceId==='facilities'&&mode==='action'&&/\/(block|release)$/.test(action?.path||'')" class="service-message">경찰과 소방의 통제 안내 기록을 함께 만듭니다. 잔류차량 전달서는 차량 확인 후 ‘잔류차량 소방 이관’에서 별도로 작성하세요.</p>
             <p v-if="mode==='remove'">선택한 항목을 삭제하시겠습니까?</p>
             <p v-else-if="mode==='action'&&!formFields.length">선택한 항목에 대해 {{action?.label}} 작업을 진행하시겠습니까?</p>
+            <!-- 답변 등록·수정·삭제 창에서 고객이 보낸 문의를 보면서 처리한다 (open()이 불러온 상세 응답) -->
+            <section v-if="resourceId==='inquiries'&amp;&amp;mode==='action'" class="inquiry-original" aria-label="문의 내용">
+              <p class="inquiry-original-meta">{{detail.customerName||'고객'}} · {{display(detail.createdAt)}}</p>
+              <h3>{{detail.title||'제목 없음'}}</h3>
+              <p class="inquiry-original-body">{{detail.content||'문의 내용을 불러오지 못했습니다.'}}</p>
+            </section>
             <div v-if="resourceId==='customers'&amp;&amp;mode==='edit'" class="service-message">
               <p>목록에는 기존 주소·비상 연락처가 제공되지 않습니다. 저장하면 해당 항목도 입력한 값으로 교체됩니다.</p>
               <label>
