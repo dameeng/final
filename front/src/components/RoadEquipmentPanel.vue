@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { backend } from '../services/backend'
 import { displayDate } from '../utils/display-date'
+import { useBackendEvents } from '../composables/useBackendEvents'
 
 type Result = {
   id: number; eventId: number | null; cameraId: number | null; detected: boolean; confidence: number | null
@@ -34,7 +35,14 @@ async function load() {
 }
 watch(() => props.equipId, () => { detail.value = undefined; selected.value = null; content.value = ''; void load() }, { immediate: true })
 watch(() => props.refreshKey, () => void load())
-onBeforeUnmount(() => controller?.abort())
+// 이 설비의 싱크홀 분석 결과(상태·사진·판정·이력)가 새로 들어오면 다시 조회한다
+let sinkholeTimer: ReturnType<typeof setTimeout> | undefined
+useBackendEvents(({ name, data }) => {
+  if (name !== 'connected' && !(name === 'sinkhole-update' && String(data?.equipId) === String(props.equipId))) return
+  clearTimeout(sinkholeTimer)
+  sinkholeTimer = setTimeout(() => void load(), 300)
+})
+onBeforeUnmount(() => { clearTimeout(sinkholeTimer); controller?.abort() })
 async function review(verdict: string) {
   if (!current.value?.eventId || busy.value) return
   const equipmentId = props.equipId

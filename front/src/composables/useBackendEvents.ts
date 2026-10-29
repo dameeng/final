@@ -2,7 +2,7 @@
 import { onBeforeUnmount, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useApp } from '../stores/app'
-import { backend } from '../services/backend'
+import { useManagerNotifications } from '../stores/managerNotifications'
 
 export type BackendEvent = { name: string; data: Record<string, any> }
 
@@ -21,6 +21,11 @@ const eventNames = [
   'notification-new',
   'data-changed',
   'pm-update',
+  'sinkhole-update',
+  'analysis-state-change',
+  'pm-engine-status',
+  'manager-assignment-change',
+  'notification-read-change',
 ]
 
 // SSE 진단 로그 활성화 여부.
@@ -38,6 +43,7 @@ const readyStateName = (value: number) =>
 export function useBackendStream() {
   const app = useApp()
   const route = useRoute()
+  const managerNotifications = useManagerNotifications()
 
   let stream: EventSource | undefined
   let connectionId = 0
@@ -192,26 +198,15 @@ export function useBackendStream() {
         })
       }
 
-      let countVersion = 0
-
       // 관리자 미읽음 알림 개수 갱신
+      // 요청은 알림 store 한 곳에서 모아 보내서, 여러 곳에서 동시에 불러도 한 번만 나간다.
       const refreshManagerUnread = async () => {
         if (app.account?.role !== 'REGIONAL_ADMIN') return
 
-        const version = ++countVersion
+        const failure = await managerNotifications.refresh()
 
-        try {
-          const result = await backend(
-            '/api/managers/me/notifications/unread-count',
-          )
-
-          if (stream === source && version === countVersion) {
-            app.unread = Math.max(
-              0,
-              Number(result?.total) || 0,
-            )
-          }
-        } catch (error) {
+        if (failure && stream === source) {
+          const error = failure
           debug('unread-count request failed', {
             connectionId: id,
             errorType:

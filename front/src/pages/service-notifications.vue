@@ -34,6 +34,11 @@ useBackendEvents(({ name, data }) => {
     void refresh()
     return
   }
+  // 다른 탭·기기에서 읽은 알림 반영 (건수는 App 에서, 목록은 여기서 다시 조회)
+  if (name === 'notification-read-change') {
+    void load()
+    return
+  }
   if (name !== 'notification-new') return
   notifications.ingest(data)
   if (category.value && category.value !== data.category) return

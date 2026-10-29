@@ -6,6 +6,7 @@ const appPath = (path: string) => managerAppPath(path, route.path)
 // 예지보전 점검 대기 (/pm-queue). 예전 목업(pm-queue.vue + data/pm-queue.json)을 대신한다.
 //  GET /api/pm/events?status=&type=   점검 대상 (status 를 빼면 확인 필요·점검 중만)
 //  GET /api/pm/actions?startDate=오늘  오늘 점검 기록 수
+//  GET /api/pm/engine-status          미수신 건수(openNoDataEvents: 담당 지역 전체의 미처리 미수신 이벤트)
 // 처리(점검 시작·기록 추가·점검 종료)는 PmActionModal 이 한다.
 // SSE pm-update(지금 점수) / data-changed(pm-event·pm-action) 가 오면 다시 조회한다.
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
@@ -17,7 +18,7 @@ import PmActionModal from '../components/PmActionModal.vue'
 import { backend, queryString, type PageData } from '../services/backend'
 import { useBackendEvents } from '../composables/useBackendEvents'
 import { displayDate } from '../utils/display-date'
-import { PM_TYPES, PM_EVENT_STATUS, PM_TRIGGERS, PM_CLOSED_STATUS, pmLabel, isPmChange } from '../utils/pm-labels'
+import { PM_TYPES, PM_EVENT_STATUS, PM_TRIGGERS, PM_CLOSED_STATUS, pmLabel } from '../utils/pm-labels'
 
 type PmEvent = {
   eventId: number
@@ -70,31 +71,20 @@ function today() {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
-async function load() {
+// 목록(필터·페이지에 따라 달라짐)과 위쪽 건수(필터와 무관)를 따로 불러온다.
+let alive = true
+async function loadList() {
   controller?.abort()
   const current = new AbortController()
   controller = current
   loading.value = true
   error.value = ''
-  const get = <T,>(path: string) => backend<T>(path, { signal: current.signal })
-  const total = (r: PromiseSettledResult<PageData<unknown>>) => (r.status === 'fulfilled' ? r.value.totalItems : null)
   try {
-    const [rows, needed, working, actions, open] = await Promise.allSettled([
-      get<PageData<PmEvent>>('/api/pm/events' + queryString({ status: status.value, type: type.value, page: page.value, size: PAGE_SIZE })),
-      get<PageData<unknown>>('/api/pm/events?size=1&status=CHECK_NEEDED'),
-      get<PageData<unknown>>('/api/pm/events?size=1&status=IN_PROGRESS'),
-      get<PageData<unknown>>('/api/pm/actions' + queryString({ startDate: today(), endDate: today(), size: 1 })),
-      get<PageData<PmEvent>>('/api/pm/events?size=100'),
-    ])
-    if (current.signal.aborted) return
-    if (rows.status === 'rejected') throw rows.reason
-    list.value = rows.value
-    counts.value = {
-      CHECK_NEEDED: total(needed),
-      IN_PROGRESS: total(working),
-      todayActions: total(actions),
-      noData: open.status === 'fulfilled' ? open.value.items.filter((e) => e.triggerType === 'NO_DATA').length : null,
-    }
+    const rows = await backend<PageData<PmEvent>>(
+      '/api/pm/events' + queryString({ status: status.value, type: type.value, page: page.value, size: PAGE_SIZE }),
+      { signal: current.signal },
+    )
+    if (!current.signal.aborted) list.value = rows
   } catch (e) {
     if (!current.signal.aborted) error.value = (e as Error).message
   } finally {
@@ -102,20 +92,62 @@ async function load() {
   }
 }
 
-let refreshTimer: ReturnType<typeof setTimeout> | undefined
-useBackendEvents(({ name, data }) => {
-  if (name === 'connected' || isPmChange(name, data, ['pm-event', 'pm-action', 'pm-equipment'])) {
-    clearTimeout(refreshTimer)
-    refreshTimer = setTimeout(() => void load(), 300)
+let summaryVersion = 0
+async function loadSummary() {
+  const version = ++summaryVersion
+  const get = <T,>(path: string) => backend<T>(path)
+  const total = (r: PromiseSettledResult<PageData<unknown>>) => (r.status === 'fulfilled' ? r.value.totalItems : null)
+  const [needed, working, actions, engine] = await Promise.allSettled([
+    get<PageData<unknown>>('/api/pm/events?size=1&status=CHECK_NEEDED'),
+    get<PageData<unknown>>('/api/pm/events?size=1&status=IN_PROGRESS'),
+    get<PageData<unknown>>('/api/pm/actions' + queryString({ startDate: today(), endDate: today(), size: 1 })),
+    get<{ openNoDataEvents?: number }>('/api/pm/engine-status'),
+  ])
+  if (!alive || version !== summaryVersion) return
+  // 미수신 건수는 서버가 담당 지역 전체를 COUNT 한 값을 쓴다 (첫 100건 제한 없음).
+  // 조회에 실패하면 0건으로 두지 않고 '—' 로 표시한다.
+  const noData = engine.status === 'fulfilled' ? Number(engine.value?.openNoDataEvents) : NaN
+  counts.value = {
+    CHECK_NEEDED: total(needed),
+    IN_PROGRESS: total(working),
+    todayActions: total(actions),
+    noData: Number.isFinite(noData) ? noData : null,
   }
+}
+// 새로고침 버튼·점검 처리 후에는 둘 다 다시 부른다
+function load() {
+  void loadSummary()
+  return loadList()
+}
+
+let refreshTimer: ReturnType<typeof setTimeout> | undefined
+let wantList = false
+function refreshSoon(list: boolean) {
+  wantList = wantList || list
+  clearTimeout(refreshTimer)
+  refreshTimer = setTimeout(() => {
+    const reloadList = wantList
+    wantList = false
+    if (reloadList) void loadList()
+    void loadSummary()
+  }, 300)
+}
+useBackendEvents(({ name, data }) => {
+  if (name === 'connected' || name === 'pm-update' || name === 'sinkhole-update') refreshSoon(true)
+  else if (name === 'pm-engine-status') refreshSoon(false)   // 단계가 바뀌면 미수신 건수만 다시 확인
+  else if (name === 'data-changed' && ['pm-event', 'pm-action', 'pm-equipment'].includes(String(data?.resource)))
+    refreshSoon(true)
 })
+// 필터를 바꾸면 1쪽으로 돌아간다. 이미 1쪽이면 직접 조회하고, 아니면 page 감시가 조회한다 (중복 조회 방지)
 watch([status, type], () => {
-  page.value = 1
-  void load()
+  if (page.value !== 1) page.value = 1
+  else void loadList()
 })
-watch(page, () => void load(), { immediate: true })
+watch(page, () => void loadList(), { immediate: true })
+void loadSummary()
 onBeforeUnmount(() => {
   window.removeEventListener('routel-manager-guide-action',guideAction)
+  alive = false
   clearTimeout(refreshTimer)
   controller?.abort()
 })

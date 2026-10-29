@@ -41,6 +41,7 @@ import { ownsFacility } from '../services/facilityAccess'
 import { patchFacility, facilityEvents, plateQueueRow } from '../services/streamUpdates'
 import type { BackendEvent } from '../composables/useBackendEvents'
 import { useManagerNotifications } from '../stores/managerNotifications'
+import { cachedGet, clearLookupCache } from '../services/lookupCache'
 import { useBackendEvents } from '../composables/useBackendEvents'
 import { resourceTabs, resourceShortcuts } from '../data/resourceNavigation'
 import { alertLogReturn } from '../services/resourceNavigation'
@@ -405,6 +406,17 @@ function syncRecordRegion() {
   if (['ocr', 'reviews', 'transits'].includes(resourceId.value) && filters.underpassId)
     filters.regionId = recordFacilityRegions[String(filters.underpassId)] || ''
 }
+// 선택 목록 조회 실패는 빈 선택지만 남기지 않고 안내와 다시 시도 버튼을 보여 준다
+const lookupError = ref('')
+let lastLookup: { fields: Field[]; row?: Record<string, any> } | undefined
+function runLookup(fields: Field[], row?: Record<string, any>) {
+  lookupError.value = ''
+  lastLookup = { fields, row }
+  void lookup(fields, row)
+}
+function retryLookup() {
+  if (lastLookup) runLookup(lastLookup.fields, lastLookup.row)
+}
 async function lookup(fields: Field[], row?: Record<string, any>) {
   const scope = resourceId.value
   const lookupRoute = resourceRouteKey()
@@ -433,7 +445,7 @@ async function lookup(fields: Field[], row?: Record<string, any>) {
                 : `/api/underpasses/${row?.id || parents.underpassId}/cameras`
     if (field.source === 'cameras' && !row?.id && !parents.underpassId) continue
     try {
-      const result = await backend(url)
+      const result = await cachedGet(url)
       // 관리자 시설 목록의 지역 필터는 담당 지역만 (목록 자체가 scope=MINE 이라 다른 지역은 0건)
       const mine =
         field.source === 'regions' &&
@@ -468,8 +480,10 @@ async function lookup(fields: Field[], row?: Record<string, any>) {
           selectUnderpass(choices[field.key]![0]!.value)
         }
       }
-    } catch {
-      /* Main list retains its own request error. */
+    } catch (e) {
+      // 목록 자체의 오류는 목록이 따로 보여 주고, 여기서는 선택 목록 실패만 안내한다
+      if (alive && scope === resourceId.value)
+        lookupError.value = '선택 목록을 불러오지 못했습니다. ' + ((e as Error)?.message || '')
     }
   }
 }
@@ -635,7 +649,7 @@ async function open(kind: string, row?: Record<string, any>, itemAction?: Action
     // 전광판 새 페이지: 지하차도 상세 탭에서 열었으면 그 지하차도를 원인 지하차도로 미리 고른다
     if (kind === 'create' && resourceId.value === 'display' && !values.underpassId && route.query.underpassId)
       values.underpassId = String(route.query.underpassId)
-    void lookup(formFields.value, row)
+    runLookup(formFields.value, row)
     openDialog()
     if (publicNotices.value && kind === 'detail' && row) {
       markNoticeRead(row)
@@ -920,7 +934,7 @@ watch(
     }
     if (props.operationsOnly) return
     if (resourceId.value === 'reviews' && !filters.reviewStatus) filters.reviewStatus = 'PENDING'
-    void lookup([...(vmsSplit.value ? splitUnderpassFields : resource.value.parents || []), ...(resource.value.filters || [])])
+    runLookup([...(vmsSplit.value ? splitUnderpassFields : resource.value.parents || []), ...(resource.value.filters || [])])
     void load().then(() => {
       if (error.value) return
       if (!props.embedded && route.query.id && resourceId.value === 'ocr')
@@ -940,6 +954,16 @@ watch(
     })
   },
   { immediate: true },
+)
+// 담당 지역이 바뀌면(manager-assignment-change 후 내 정보가 갱신되면) 목록과 선택 목록을 다시 불러온다
+watch(
+  () => (app.account?.regions || []).map((region) => region.id).sort().join(','),
+  () => {
+    if (props.operationsOnly || !resource.value) return
+    clearLookupCache()
+    runLookup([...(vmsSplit.value ? splitUnderpassFields : resource.value.parents || []), ...(resource.value.filters || [])])
+    queueLiveRefresh()
+  },
 )
 let liveRefresh: ReturnType<typeof setTimeout> | undefined,
   liveRefreshPending = false
@@ -1053,6 +1077,11 @@ useBackendEvents((event) => {
       ...data.value.items.filter((row) => row.id !== payload.id),
     ].slice(0, pageSize.value)
     data.value.totalPages = Math.ceil(data.value.totalItems / pageSize.value)
+    return
+  }
+  // 다른 탭·기기에서 읽은 알림을 목록에 반영한다 (새 알림처럼 강조하지 않는다)
+  if (name === 'notification-read-change' && resourceId.value === 'manager-notifications') {
+    queueLiveRefresh()
     return
   }
   if (name === 'data-changed' && keys[resourceId.value] === payload.resource) {
@@ -1241,6 +1270,7 @@ defineExpose({ open, load })
       <p v-if="error" class="service-error" role="alert">
         {{error}} <RouterLink v-if="!app.account" :to="customer?'/login':'/admin-login'">로그인</RouterLink>
       </p>
+      <p v-if="lookupError" class="service-error" role="alert">{{lookupError}} <button type="button" @click="retryLookup">다시 시도</button></p>
       <p v-if="message" class="service-message" role="status">{{message}} <RouterLink v-if="resourceId==='facilities'&&selected?.id&&mode==='action'&&/\/(block|release)$/.test(action?.path||'')" :to="{path:'/admin-data/transfers',query:{underpassId:String(selected.id)}}">경찰·소방 문서 보기 →</RouterLink></p>
       <div v-if="underpassSplit&&!parents.underpassId" class="configuration-pick-facility"><span aria-hidden="true"><UiIcon name="location" /></span><h2>관리할 지하차도를 선택하세요</h2><p>왼쪽 내 지하차도 목록에서 시설을 선택하면<br />해당 시설의 {{splitTargets[resourceId]}} 등록 현황과 설정을 확인할 수 있습니다.</p></div>
       <UnderpassVmsPanel
@@ -1543,6 +1573,7 @@ defineExpose({ open, load })
             />
           </template>
           <p v-if="error" class="service-error" role="alert">{{error}}</p>
+          <p v-if="lookupError" class="service-error" role="alert">{{lookupError}} <button type="button" @click="retryLookup">다시 시도</button></p>
           <footer v-if="facilityList&&mode==='detail'&&detail.id" class="facility-drawer-footer">
             <RouterLink :to="{path:'/fac-detail',query:{id:String(detail.id)}}" @click="modal?.close()">상세보기</RouterLink>
           </footer>

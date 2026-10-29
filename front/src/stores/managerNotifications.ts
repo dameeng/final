@@ -20,7 +20,8 @@ export const useManagerNotifications = defineStore('manager-notifications', () =
     error.value = ''
     unread.value = 0
   }
-  async function refresh() {
+  // 미읽음 건수 조회. 실패하면 오류를 돌려준다(성공이면 undefined).
+  async function fetchCount(): Promise<unknown> {
     if (app.account?.role !== 'REGIONAL_ADMIN') {
       reset()
       return
@@ -33,9 +34,39 @@ export const useManagerNotifications = defineStore('manager-notifications', () =
         unread.value = Math.max(0, Number(data?.total) || 0)
         app.unread = unread.value
       }
-    } catch {
+    } catch (e) {
       /* The notification list shows actionable API errors. */
+      return e
     }
+  }
+  // 같은 순간에 여러 곳(SSE 연결, 헤더, 벨, 목록)에서 불러도 요청은 한 번만 보낸다.
+  // 조회 중에 다시 부르면 끝난 뒤에 딱 한 번 더 조회해서 마지막 숫자를 맞춘다.
+  let queued: Promise<unknown> | undefined,
+    running: Promise<unknown> | undefined,
+    rerun = false
+  function refresh(): Promise<unknown> {
+    if (queued) return queued
+    queued = Promise.resolve().then(() => {
+      queued = undefined
+      if (running) {
+        rerun = true
+        return running
+      }
+      running = (async () => {
+        let failure: unknown
+        try {
+          do {
+            rerun = false
+            failure = await fetchCount()
+          } while (rerun)
+        } finally {
+          running = undefined
+        }
+        return failure
+      })()
+      return running
+    })
+    return queued
   }
   async function refreshPreview() {
     if (app.account?.role !== 'REGIONAL_ADMIN') return
@@ -68,6 +99,27 @@ export const useManagerNotifications = defineStore('manager-notifications', () =
       ...recent.value.filter((item) => item.id !== data.id),
     ].slice(0, 5)
   }
+  // SSE notification-read-change: 다른 탭·기기에서 읽음 처리한 결과를 이 화면에 맞춘다.
+  // 새 알림이 아니므로 ingest 와 달리 목록 맨 위에 올리거나 강조하지 않는다.
+  function applyReadChange(data: Record<string, any>) {
+    if (app.account?.role !== 'REGIONAL_ADMIN') return
+    eventRevision++
+    if (data.all) {
+      recent.value.forEach((row) => {
+        if (!data.category || row.category === data.category) row.read = true
+      })
+    } else if (Number.isSafeInteger(data.id)) {
+      const row = recent.value.find((item) => item.id === data.id)
+      if (row) row.read = true
+    }
+    const total = Number(data.unread?.total)
+    if (data.unread && Number.isFinite(total)) {
+      unread.value = Math.max(0, total)
+      app.unread = unread.value
+    }
+    // 여러 탭의 응답 순서가 바뀔 수 있으니 최종 숫자는 REST 로 다시 확인한다
+    void refresh()
+  }
   async function read(id:number) {
     if(app.account?.role!=='REGIONAL_ADMIN')return
     const user=app.account.id
@@ -92,5 +144,5 @@ export const useManagerNotifications = defineStore('manager-notifications', () =
     recent.value.forEach(row => { row.read = true })
     await Promise.all([refresh(), refreshPreview()])
   }
-  return { unread, recent, loading, error, refresh, refreshPreview, ingest, reset, read, readAll }
+  return { unread, recent, loading, error, refresh, refreshPreview, ingest, applyReadChange, reset, read, readAll }
 })
