@@ -771,7 +771,7 @@ async function submit() {
       )
       emit('saved', confirmed)
     }
-    if (pdf) downloadPdf(result, `이관문서-${selected.value?.id || '시설'}.pdf`)
+    if (pdf) downloadPdf(result, `이관문서-${selected.value?.id || '시설'}.pdf`, true)
     if (resourceId.value === 'my-inquiries' && mode.value === 'create')
       sessionStorage.removeItem('routel-inquiry-draft')
     modal.value?.close()

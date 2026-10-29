@@ -55,7 +55,7 @@ async function create() {
     const pdf=await backend<Blob>('/api/control/underpasses/'+id+'/fire-transfer',{
       method:'POST',pdf:true,body:{eventId:facility.value!.currentBlockEventId,carNums:[...selected.value],memo:memo.value.trim()},
     })
-    downloadPdf(pdf,`소방이관-${facility.value!.name}.pdf`)
+    downloadPdf(pdf,`소방이관-${facility.value!.name}.pdf`,true)
     message.value='소방 이관 문서를 저장하고 PDF를 내려받았습니다.'
     await loadHistory(id)
   } catch(e) { error.value=(e as Error).message }
@@ -64,7 +64,7 @@ async function create() {
 async function download(row:Transfer) {
   if(downloading.value!=null)return
   downloading.value=row.id;error.value=''
-  try {downloadPdf(await backend<Blob>(`/api/control/transfers/${row.id}/pdf`,{pdf:true}),`소방이관-${row.id}.pdf`)}
+  try {downloadPdf(await backend<Blob>(`/api/control/transfers/${row.id}/pdf`,{pdf:true}),`소방이관-${row.id}.pdf`,true)}
   catch(e){error.value=(e as Error).message}
   finally{downloading.value=undefined}
 }
