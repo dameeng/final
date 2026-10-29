@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PUF 시연 컨트롤 (로컬)</title>
+<style>
+  :root{--bg:#f5f7fa;--card:#fff;--ink:#1f2937;--mut:#6b7280;--pri:#0f4c81;--line:#e5e9f0}
+  body{font-family:system-ui,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;margin:0;background:var(--bg);color:var(--ink)}
+  main{max-width:920px;margin:0 auto;padding:18px 16px 60px}
+  h1{font-size:20px;margin:0 0 6px} h2{font-size:15px;margin:0 0 10px} h3{font-size:15px;margin:0}
+  section,.card{background:var(--card);border-radius:12px;padding:14px 16px;margin:12px 0;box-shadow:0 1px 3px #0001}
+  .card{background:#f8fafc;box-shadow:none;padding:10px 12px;margin:8px 0}
+  button{border:0;border-radius:8px;padding:9px 13px;font-weight:700;cursor:pointer;background:var(--pri);color:#fff;margin:3px 5px 3px 0;font-size:13px}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button.gray{background:#6b7280} button.red{background:#c0392b}
+  button.L-SAFE{background:#2e9e5b;color:#fff} button.L-WATCH{background:#2f80ed;color:#fff} button.L-CAUTION{background:#e0a100;color:#fff}
+  button.L-ALERT{background:#e2692b;color:#fff} button.L-SEVERE{background:#c0392b;color:#fff}
+  button.L-SAFE.on,button.L-WATCH.on,button.L-CAUTION.on,button.L-ALERT.on,button.L-SEVERE.on{outline:3px solid #111}
+  input,select{padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;margin:3px 6px 3px 0;background:#fff;color:var(--ink)}
+  .row{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+  .row.line{border-bottom:1px solid var(--line);padding:6px 0}
+  .grow{flex:1 1 260px}
+  .badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:800;color:#fff;margin-right:6px}
+  .b-SAFE{background:#2e9e5b}.b-WATCH{background:#2f80ed}.b-CAUTION{background:#e0a100}.b-ALERT{background:#e2692b}.b-SEVERE{background:#c0392b}.b-BLOCKED{background:#111}.b-OFF{background:#6b7280}.b-ON{background:#2e9e5b}
+  .muted{color:var(--mut);font-size:13px} .stat{font-size:13px;color:var(--mut);margin:6px 0 8px} .err{color:#c0392b}
+  pre{background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto;font-size:12px;min-height:50px;white-space:pre-wrap}
+  .bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden}.bar>i{display:block;height:100%;width:0;background:var(--pri);transition:width .5s}
+  label.chk{display:inline-flex;align-items:center;margin-right:10px;font-size:14px} label.chk input{margin:0 4px 0 0}
+</style>
+</head>
+<body>
+<main>
+  <h1>PUF 시연 컨트롤 (로컬)</h1>
+  <p class="muted">로컬 시연용 조종 페이지입니다. 실제 침수 서버(8001)·OCR 서버(8000)·예지보전 서버(8002)가 돌고 있는 상태에서,
+    <b>위험 단계 고정 · 호우 시나리오 · OCR 시작/종료 · 예지보전 위험 stub</b>을 버튼으로 조작합니다. 시연자 컴퓨터에서만 여세요.
+    모든 조작은 <b>관리자(manager01) 로그인</b>이 필요합니다. <a href="/">고객 웹으로</a> · <a href="/admin-dashboard">관리자 대시보드로</a></p>
+
+  <section>
+    <h2>⓪ 계정 전환 (딸깍 로그인)</h2>
+    <p class="muted">시드 계정의 비밀번호는 아이디와 같습니다. 초량·북항·충장은 동구 담당 <b>manager01</b>입니다. 고객으로 로그인해 두면 앱/웹에서 알림을 받아볼 수 있습니다.</p>
+    <div class="row"><span class="muted">관리자</span>
+      <button data-login="managers:manager01">manager01 (동구·초량)</button><button data-login="managers:manager02">manager02</button><button data-login="managers:manager03">manager03 (사상구)</button>
+      <button data-login="managers:manager04">manager04</button><button data-login="managers:manager05">manager05</button></div>
+    <div class="row"><span class="muted">고객</span>
+      <button data-login="customers:customer01">customer01</button><button data-login="customers:customer02">customer02</button><button data-login="customers:customer03">customer03</button>
+      <button data-login="customers:customer04">customer04</button><button data-login="customers:customer05">customer05</button></div>
+    <div class="row"><select id="lkind"><option value="managers">관리자</option><option value="customers">고객</option></select>
+      <input id="lid" placeholder="아이디" style="width:120px"><input id="lpw" placeholder="비밀번호(기본=아이디)" style="width:160px">
+      <button id="loginBtn">로그인</button><button id="logoutBtn" class="gray">로그아웃</button></div>
+    <p class="stat">현재 계정: <b id="who">확인 중…</b></p>
+  </section>
+
+  <section>
+    <h2>① 지하차도 위험 5단계 (고정) — 관리자 로그인 필요</h2>
+    <p class="muted">버튼을 누르면 실제 침수모델·수위계처럼 <b>위험점수와 수위 값을 넣고</b> 그 단계로 <b>고정</b>합니다. 단계 판정 → 알림·전광판·내비 우회·자동 통제는 원래 로직이 그대로 합니다.
+      안전 5점 · 관심/주의는 점수 · <b>경계/심각은 수위(통제 수위 이상)</b> → 경계부터 자동 통제.</p>
+    <p class="muted">고정된 지하차도는 <b>실제 침수 서버 점수·예측, 호우 시나리오, 평상시 가짜 갱신이 덮어쓰지 않습니다.</b> 고정 값은 10초마다 다시 들어갑니다. 풀면 실제 침수 서버가 다시 이어받습니다.</p>
+    <div id="levels" class="muted">불러오는 중…</div>
+    <button id="releaseAll" class="gray">전체 고정 풀기</button>
+    <p class="muted">⚠ 자동 통제된 곳은 관리자 화면에서 <b>수동 해제</b>해야 풀립니다(수위가 통제 수위 미만이어야 가능 → 먼저 <b>안전</b> 버튼을 누르세요).</p>
+  </section>
+
+  <section>
+    <h2>② 호우 시나리오 (날씨 악화부터 자동 진행 · 실제 침수 서버가 계산)</h2>
+    <p class="muted">선택한 지역에 약 2분 50초(1배속) 동안 호우 → 위험도 상승 → 수위 급상승·자동 통제 → 회복 순서로 진행됩니다. 끝난 뒤 통제 해제는 직접 해야 합니다.
+      이미 통제된 지하차도는 통제가 새로 걸리지 않으니 시작 전에 해제하세요. 위 ①에서 <b>고정한 지하차도는 시나리오가 건드리지 않습니다.</b></p>
+    <div id="regions" class="muted">지역 불러오는 중…</div>
+    <div class="row">속도 <select id="speed"><option value="1">1배 (약 2분 50초)</option><option value="2">2배</option><option value="3">3배 (약 1분)</option></select>
+      <button id="rainStart">호우 시작</button><button id="rainStop" class="red">중지</button></div>
+    <div class="bar"><i id="bar"></i></div><p id="phase" class="muted">대기 중</p>
+  </section>
+
+  <section>
+    <h2>③ OCR 번호판 인식 (영상 처음부터 재생 + 인식 시작/종료)</h2>
+    <p class="muted">접근 알림·최종 알림·입구 기록·출구 기록을 보여줄 때마다 해당 카메라를 켰다 끕니다. 켤 때마다 영상 처음부터 번호판을 읽어 Spring에 보내고,
+      <b>영상은 한 번에 하나</b>만 돌아 다른 카메라는 자동으로 멈춥니다. OCR 서버(8000)가 켜져 있어야 합니다.</p>
+    <div id="cams" class="muted">카메라 불러오는 중…</div>
+    <div class="row">직접 카메라 ID <input id="cam" type="number" value="226" style="width:90px">
+      <button id="camStart">시작</button><button id="camStop" class="gray">종료</button></div>
+    <h3 style="margin-top:12px">도로(싱크홀) 영상 분석</h3>
+    <div class="row">카메라 ID <input id="sink" type="number" value="230" style="width:90px">
+      <button id="sinkStart">분석 시작</button><button id="sinkStop" class="gray">분석 종료</button><span id="sinkState" class="muted"></span></div>
+  </section>
+
+  <section>
+    <h2>④ 예지보전 설비 위험 stub (NORMAL / DANGER)</h2>
+    <p class="muted">설비 센서 stub의 모드를 바꾸면 예지보전 서버(8002)가 새 센서값으로 점수를 계산해 보냅니다. 누른 뒤 몇 초~수십 초 지나야 점수가 바뀝니다.
+      점검 조치완료(RESOLVED) 시 해당 설비는 자동으로 정상으로 돌아갑니다.</p>
+    <div class="row">지하차도 <select id="pmUp"></select><button id="pmReload" class="gray">설비 목록 불러오기</button></div>
+    <div id="pmEquipments" class="muted">설비 목록을 불러오세요.</div>
+  </section>
+
+  <section><h2>응답</h2><pre id="out">-</pre></section>
+</main>
+<script>
+const $ = (id) => document.getElementById(id), out = $('out')
+const LV = [['SAFE','안전'],['WATCH','관심'],['CAUTION','주의'],['ALERT','경계'],['SEVERE','심각']]
+const CAM_LABEL = { 226: '접근 알림', 227: '최종 알림', 228: '입구 기록', 229: '출구 기록' }
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+const show = (v) => (out.textContent = typeof v === 'string' ? v : JSON.stringify(v, null, 2))
+const list = (d) => (Array.isArray(d) ? d : (d && d.items) || [])
+
+// 응답 봉투({success,data,message})를 그대로 돌려준다. 실패하면 null
+async function api(method, url, body, quiet) {
+  try {
+    const r = await fetch(url, { method, credentials: 'include', cache: 'no-store', headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined })
+    const j = await r.json().catch(() => null)
+    if (r.status === 401 || r.status === 403) { if (!quiet) show('로그인(관리자)이 필요합니다. 위에서 manager01 로 로그인하세요. (' + r.status + ')'); return null }
+    if (!r.ok || (j && j.success === false)) { if (!quiet) show(r.status + ' ' + ((j && j.message) || '요청 실패')); return null }
+    if (!quiet) show(j ?? r.status)
+    return j || {}
+  } catch (e) { if (!quiet) show('요청 실패: ' + e.message); return null }
+}
+
+// ───────── ⓪ 계정
+async function who() {
+  for (const [k, n] of [['managers', '관리자'], ['customers', '고객']]) {
+    const j = await api('GET', '/api/' + k + '/me', null, true)
+    if (j && j.data) { $('who').textContent = n + ' · ' + (j.data.loginId || j.data.name || j.data.id || ''); return k }
+  }
+  $('who').textContent = '로그인 안 됨'; return null
+}
+async function doLogin(kind, loginId, password) {
+  if (!loginId) return
+  await api('POST', '/api/auth/logout', null, true)
+  const j = await api('POST', '/api/' + kind + '/login', { loginId, password: password || loginId }, true)
+  show(j ? loginId + ' 로그인 완료' : loginId + ' 로그인 실패 (아이디/비밀번호 확인)')
+  await who(); await loadAll()
+}
+document.addEventListener('click', (e) => { const b = e.target.closest('[data-login]'); if (b) { const [k, id] = b.dataset.login.split(':'); doLogin(k, id) } })
+$('loginBtn').onclick = () => doLogin($('lkind').value, $('lid').value.trim(), $('lpw').value)
+$('logoutBtn').onclick = async () => { await api('POST', '/api/auth/logout', null, true); await who(); rows = []; $('levels').textContent = '로그아웃됨 — 관리자로 로그인하세요'; $('cams').textContent = ''; $('pmEquipments').textContent = '' }
+
+// ───────── ① 위험 5단계
+let rows = []
+async function loadLevels(quiet) {
+  const j = await api('GET', '/api/demo/levels', null, quiet)
+  if (!j || !j.data) { if (!quiet) $('levels').textContent = '불러오지 못했습니다 (관리자 로그인 / puf.demo.enabled=true 확인)'; return }
+  rows = j.data; renderLevels()
+}
+function renderLevels() {
+  $('levels').innerHTML = rows.map((r) => `
+    <div class="card">
+      <div class="row"><h3>${esc(r.name)}</h3>
+        <span class="badge b-${esc(r.level)}">${esc(r.levelLabel)}</span>${r.status === 'BLOCKED' ? '<span class="badge b-BLOCKED">통제 중</span>' : '<span class="badge b-OFF">통행 가능</span>'}
+        ${r.pinnedLevel ? '<span class="badge b-ON">고정: ' + esc((LV.find((x) => x[0] === r.pinnedLevel) || [])[1]) + '</span>' : '<span class="muted">(고정 안 함 — 실제 침수 서버가 계산 중)</span>'}</div>
+      <div class="stat">위험점수 ${r.riskScore ?? '-'} · 수위 ${r.waterCm ?? '-'}cm · 통제 수위 ${r.blockCm}cm</div>
+      <div>${LV.map(([k, n]) => `<button class="L-${k} ${r.pinnedLevel === k ? 'on' : ''}" data-set="${r.underpassId}:${k}">${n}</button>`).join('')}
+        <button class="gray" data-rel="${r.underpassId}">고정 풀기</button>${r.status === 'BLOCKED' ? `<button class="L-SEVERE" data-unblock="${r.underpassId}">통제 해제</button>` : ''}</div>
+    </div>`).join('') || '<span class="muted">시연 대상 지하차도가 없습니다.</span>'
+}
+// 통제 해제: 응답이 PDF라서 JSON 파싱 없이 상태코드로 판단한다. 수위가 통제 기준 이상이면 409 (먼저 '안전' 등으로 낮출 것)
+async function unblock(id) {
+  try {
+    const r = await fetch('/api/control/underpasses/' + id + '/release', { method: 'POST', credentials: 'include', cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: '시연 통제 해제' }) })
+    if (r.ok) show('통제 해제 완료 (지하차도 ' + id + ')')
+    else { const j = await r.json().catch(() => null); show(r.status + ' ' + ((j && j.message) || '해제 실패') + (r.status === 409 ? '\n→ 위험단계가 경계/심각이면 먼저 안전·관심 등으로 낮춘 뒤 해제하세요.' : '')) }
+  } catch (e) { show('요청 실패: ' + e.message) }
+  await loadLevels(true)
+}
+document.addEventListener('click', async (e) => {
+  const t = e.target.closest('button'); if (!t) return
+  if (t.dataset.set) { const [id, level] = t.dataset.set.split(':'); const j = await api('POST', '/api/demo/levels', { underpassIds: [Number(id)], level }); if (j && j.data) { rows = j.data; renderLevels() } }
+  else if (t.dataset.unblock) { await unblock(Number(t.dataset.unblock)) }
+  else if (t.dataset.rel) { const j = await api('DELETE', '/api/demo/levels', { underpassIds: [Number(t.dataset.rel)] }); if (j && j.data) { rows = j.data; renderLevels() } }
+  else if (t.dataset.start) { await api('POST', '/api/cctv/plate/start?cameraId=' + t.dataset.start); loadPlate() }
+  else if (t.dataset.stop) { await api('POST', '/api/cctv/plate/stop?cameraId=' + t.dataset.stop); loadPlate() }
+  else if (t.dataset.pm) { const [id, mode] = t.dataset.pm.split(':'); await api('PUT', '/api/pm/equipments/' + id + '/stub-mode', { mode }); setTimeout(loadPm, 1500) }
+})
+$('releaseAll').onclick = async () => { const j = await api('DELETE', '/api/demo/levels', {}); if (j && j.data) { rows = j.data; renderLevels() } }
+
+// ───────── ② 호우 시나리오
+async function loadRegions() {
+  const j = await api('GET', '/api/regions', null, true)
+  const rs = list(j && j.data).filter((r) => r.name !== '미배정')
+  $('regions').innerHTML = rs.map((r) => `<label class="chk"><input type="checkbox" value="${r.id}" ${r.name === '동구' ? 'checked' : ''}>${esc(r.name)}</label>`).join('') || '지역 없음'
+}
+$('rainStart').onclick = async () => {
+  const ids = [...document.querySelectorAll('#regions input:checked')].map((i) => Number(i.value))
+  if (!ids.length) return show('지역을 하나 이상 고르세요.')
+  await api('POST', '/api/demo/scenarios/heavy-rain', { regionIds: ids, speed: Number($('speed').value) }); pollRain()
+}
+$('rainStop').onclick = async () => { await api('POST', '/api/demo/scenarios/stop'); pollRain() }
+async function pollRain() {
+  const j = await api('GET', '/api/demo/scenarios/current', null, true), d = j && j.data
+  if (d && d.running) { $('phase').textContent = d.phaseLabel + ' · ' + d.elapsedSec + ' / ' + d.totalSec + '초'; $('bar').style.width = Math.min(100, d.elapsedSec / d.totalSec * 100) + '%' }
+  else { $('phase').textContent = '대기 중'; $('bar').style.width = '0' }
+}
+
+// ───────── ③ OCR / 싱크홀
+let cams = [], plateMap = {}
+async function loadCams() {
+  cams = []
+  for (const r of rows) {
+    const j = await api('GET', '/api/underpasses/' + r.underpassId + '/cameras', null, true)
+    for (const c of list(j && j.data)) if (c.cameraRole === 'APPROACH_LPR' || c.cameraRole === 'FINAL_LPR') cams.push({ id: c.id, role: c.cameraRole, name: r.name })
+  }
+  renderCams()
+}
+async function loadPlate() {
+  const j = await api('GET', '/api/cctv/plate', null, true)
+  plateMap = {}
+  for (const c of ((j && j.data && j.data.cameras) || [])) plateMap[Number(c.cameraId)] = c
+  renderCams()
+}
+async function loadSink() {
+  const id = Number($('sink').value)
+  const s = await api('GET', '/api/cctv/analysis/state?cameraId=' + id, null, true)
+  const all = (s && s.data && s.data.cameras) || []
+  const sc = all.find((c) => Number(c.cameraId) === id) || all[0]
+  $('sinkState').textContent = sc ? (sc.running ? '분석 중' : (sc.state || '정지')) : ''
+}
+function renderCams() {
+  $('cams').innerHTML = cams.map((c) => {
+    const st = plateMap[c.id] || {}, on = !!st.running
+    return `<div class="card"><div class="row"><b>${esc(c.name)}</b>
+      <span>${esc(CAM_LABEL[c.id] || (c.role === 'APPROACH_LPR' ? '접근' : '최종'))} · 카메라 #${c.id}</span>
+      <span class="badge ${on ? 'b-ON' : 'b-OFF'}">${on ? '인식 중' : esc(st.state || '정지')}</span>
+      ${st.error ? '<span class="muted err">' + esc(st.error) + '</span>' : ''}
+      <button ${on ? 'disabled' : ''} data-start="${c.id}">시작</button><button class="gray" data-stop="${c.id}">종료</button></div></div>`
+  }).join('') || '<span class="muted">접근/최종 카메라가 없습니다.</span>'
+}
+$('camStart').onclick = async () => { await api('POST', '/api/cctv/plate/start?cameraId=' + Number($('cam').value)); loadPlate() }
+$('camStop').onclick = async () => { await api('POST', '/api/cctv/plate/stop?cameraId=' + Number($('cam').value)); loadPlate() }
+$('sinkStart').onclick = async () => { await api('POST', '/api/cctv/analysis/start?cameraId=' + Number($('sink').value)); loadSink() }
+$('sinkStop').onclick = async () => { await api('POST', '/api/cctv/analysis/stop?cameraId=' + Number($('sink').value)); loadSink() }
+
+// ───────── ④ 예지보전 stub
+function fillPmSelect() {
+  const sel = $('pmUp'), cur = sel.value
+  sel.innerHTML = rows.map((r) => `<option value="${r.underpassId}">${esc(r.name)}</option>`).join('')
+  if (cur) sel.value = cur
+}
+async function loadPm() {
+  const id = $('pmUp').value
+  if (!id) { $('pmEquipments').textContent = '시연 대상 지하차도가 없습니다.'; return }
+  const j = await api('GET', '/api/pm/equipments?size=100&underpassId=' + id, null, true)
+  const eq = list(j && j.data).filter((e) => e.type !== 'ROAD')
+  $('pmEquipments').innerHTML = eq.map((e) => `<div class="row line"><span class="grow"><b>${esc(e.name)}</b>
+      <span class="muted">(#${e.equipId}, ${esc(e.type)})</span> · ${e.score ?? '-'}점${e.level ? ' · ' + esc(e.level) : ''}</span>
+      <button class="red" data-pm="${e.equipId}:DANGER">위험으로</button><button class="gray" data-pm="${e.equipId}:NORMAL">정상으로</button></div>`).join('')
+    || '<span class="muted">설비가 없거나 관리자 로그인이 필요합니다.</span>'
+}
+$('pmReload').onclick = loadPm
+$('pmUp').onchange = loadPm
+
+// ───────── 시작 / 주기 갱신
+async function loadAll() {
+  await loadLevels(true); fillPmSelect()
+  await Promise.all([loadRegions(), pollRain(), loadCams(), loadPlate(), loadSink(), loadPm()])
+}
+who().then(loadAll)
+// 응답이 늦어도 요청이 쌓이지 않게, 앞 갱신이 끝난 뒤에만 다음 갱신을 한다
+let busy = false, tick = 0
+setInterval(async () => {
+  if (busy) return
+  busy = true
+  try { await Promise.all([loadLevels(true), pollRain(), loadPlate(), tick++ % 3 === 0 ? loadSink() : null]) } finally { busy = false }
+}, 3000)
+</script>
+</body>
+</html>

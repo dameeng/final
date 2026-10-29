@@ -1,5 +1,7 @@
 -- 통합본 실행 순서: 1.puf_db_schema.sql → 2.seed_general.sql → 3.seed_its.sql → 4.seed_pm.sql
 -- v11: manager06(강현우)을 manager01과 같은 지역의 직전 야간조 근무자로 추가. 기존 ID 유지.
+-- v12: 영상에 나오는 모든 차량이 접근/진입 직전 알림을 받도록 customer14~19(+차량 18대) 추가, 09무0867→09부0867 정정,
+--      알림 샘플·FAQ·공지를 현재 알림 정책/문구에 맞춤. 기존 ID 유지(고객 1번 차량은 그대로).
 -- 개발 DB 초기 구축용. 1번은 public 스키마와 기존 데이터를 삭제한다. 기존 운영 DB에 적용하지 말 것.
 -- 네 파일을 순서대로 1회 실행하면 원본 시드의 ID/생성 순서를 유지한다. 시드는 반복 실행용이 아니다.
 
@@ -108,7 +110,8 @@ CROSS JOIN manager previous
 WHERE previous.login_id = 'manager06';
 
 -- =====================================================================
--- 6. customer — 고객 13명 (login_id = customer01~13, pw = login_id). 차량을 고객당 3대씩 맞추느라 11~13 추가
+-- 6. customer — 고객 19명 (login_id = customer01~19, pw = login_id). 차량을 고객당 3대씩 맞추느라 11~13 추가,
+--    영상에 나오는 차량 전부를 등록하느라 14~19 추가
 -- =====================================================================
 INSERT INTO customer (login_id, password, name, birth, email, phone, zipcode, road_addr, detail_addr, emergency, is_withdrawn, created_at) VALUES
 ('customer01', '$2b$10$f7pNPQHzg6AvUlBaBfvUeuWGv6A9c8TA6LR8ZAYlZLCi04h2LnnXi', '이하은', '1995-04-12', 'haeun@example.com',   '01020010001', '48058', '부산 해운대구 해운대로 570',      '1201호', '01090010001', FALSE, NOW() - INTERVAL '60 days'),
@@ -123,21 +126,30 @@ INSERT INTO customer (login_id, password, name, birth, email, phone, zipcode, ro
 ('customer10', '$2b$10$u45mUGuoLrd2qkzKSipX.u7/y0ZmpVKO0MarPJ79K5KeDcmv75ieW', '한유찬', '1985-07-08', 'yuchan@example.com',  '01020010010', '48311', '부산 사상구 사상로 310',          '1502호', '01090010010', FALSE, NOW() - INTERVAL '15 days'),
 ('customer11', '$2b$10$pgy.q4F6zL9b8mI9GO/dIOaYdp9dTvPffDD/Clv9yFEqlYTwu9p5a', '오다인', '1991-02-18', 'dain@example.com',   '01020010011', '48513', '부산 남구 못골로 21',            '404호',  '01090010011', FALSE, NOW() - INTERVAL '12 days'),
 ('customer12', '$2b$10$HdY.JTiaLtPxssXcAGkam.eealu/uflbH9Em50mDnGUcDZveT7bRO', '서재원', '1989-10-03', 'jaewon@example.com',  '01020010012', '47030', '부산 사하구 다대로 105',          '1102호', NULL,            FALSE, NOW() - INTERVAL '10 days'),
-('customer13', '$2b$10$wR4QWBNaQrG4FTvdIhOA.OxCczipzAhpGbYwsltSUNwvSS348pwR6', '노채원', '1994-06-27', NULL,                  '01020010013', '46218', '부산 금정구 부산대학로 63',      NULL,     '01090010013', FALSE, NOW() - INTERVAL '8 days');
+('customer13', '$2b$10$wR4QWBNaQrG4FTvdIhOA.OxCczipzAhpGbYwsltSUNwvSS348pwR6', '노채원', '1994-06-27', NULL,                  '01020010013', '46218', '부산 금정구 부산대학로 63',      NULL,     '01090010013', FALSE, NOW() - INTERVAL '8 days'),
+('customer14', '$2b$10$/G2CQksXwoJo0fbrPURcZu3vzi5jA8RrNX.x8ion4rrfmJX8aWMBi', '문채린', '1992-03-21', 'chaerin@example.com', '01020010014', '48400', '부산 남구 수영로 309', '1203호', '01090010014', FALSE, NOW() - INTERVAL '7 days'),
+('customer15', '$2b$10$vKQvcDvJJOpvtLTOAHm7su17pDdIwh4PVjnTSXp49QG/PoPnNokQa', '배건우', '1987-11-02', NULL, '01020010015', '46500', '부산 사하구 하신번영로 170', '305호', NULL, FALSE, NOW() - INTERVAL '6 days'),
+('customer16', '$2b$10$KsRtUYD9eKS.ljSrTJwqM.JmqzwoSMaEiFxIGz1J8htOktyioAJii', '송유나', '1995-07-19', 'yuna@example.com', '01020010016', '47200', '부산 연제구 중앙대로 1115', '1001호', '01090010016', FALSE, NOW() - INTERVAL '5 days'),
+('customer17', '$2b$10$z2HBoRKvxzmchmCxsAmQLeCS.t0V0dk5uvPR6t2XqLa1VGxd.6eHC', '임도현', '1990-01-26', NULL, '01020010017', '48100', '부산 해운대구 센텀중앙로 78', '2204호', '01090010017', FALSE, NOW() - INTERVAL '4 days'),
+('customer18', '$2b$10$N5vlWq3Z4NPYoImjLY1Ohunl5Tg9BVw2kIByHWkL5SUQ36PhiPo7O', '권나연', '1999-05-08', 'nayeon@example.com', '01020010018', '46700', '부산 강서구 명지국제3로 55', '802호', NULL, FALSE, NOW() - INTERVAL '3 days'),
+('customer19', '$2b$10$f1kUOKGoSKUlXo4I2cNNneXUJwOQH262ZpCc9ik.2Eh85AN5CcNZa', '유태민', '1986-12-14', NULL, '01020010019', '48900', '부산 동구 중앙대로 206', NULL, '01090010019', FALSE, NOW() - INTERVAL '2 days');
 
 -- =====================================================================
--- 7. car — 고객 등록 차량: 고객당 정확히 3대 (13명 × 3 = 39대)
+-- 7. car — 고객 등록 차량: 고객당 정확히 3대 (19명 × 3 = 57대)
 --    · 시연용 번호 = AI 서버 roi.mp4 에 나오는 번호 (ocr_server/자동차영상/번호판_목록.txt, test/결과 영상 기준)
 --      Spring 은 번호가 정확히 같아야 매칭하므로 OCR 이 한글을 다르게 읽는 번호는 둘 다 같은 고객에게 등록
 --    · customer01: 실행할 때마다 같은 번호로 읽힌 차(12고1252/19저0362/117머1687) -> 로그인해서 알림 확인용
 --    · customer07: 50주3712/50수3712 (둘 중 하나로 읽힘), customer10: 52로0979/52모0979 (입구/출구 영상, 둘 중 하나로 읽힘)
 --      입구·출구 영상 차량도 APPROACH_LPR/FINAL_LPR 이라 알림이 나가요
+--    · v12: 영상(226~229)에 인식되는 모든 차량을 등록해 접근 알림·진입 직전 알림이 전부 나가게 함 (customer14~19).
+--      47우9587/47루9587 은 OCR 이 둘 중 하나로 읽는 같은 차라 customer19 에 둘 다 등록. 고객 1번 차량은 변경 없음
+--      일부러 한 글자 틀리게 읽힌 번호(09모0867, 19서0362, 285수8596 등)는 미등록으로 두어 번호판 판별 대기(/verify) 시연에 씀
 --    · 나머지는 시연용 번호 2개 + 일반 더미 번호 1개 (customer11~13 은 일반 더미 번호만)
 -- =====================================================================
 INSERT INTO car (customer_id, car_num) VALUES
 (1, '12고1252'), (1, '19저0362'), (1, '117머1687'),
 (2, '821루4545'), (2, '50마2269'), (2, '23나5012'),
-(3, '285수8896'), (3, '09무0867'), (3, '67다8834'),
+(3, '285수8896'), (3, '09부0867'), (3, '67다8834'),
 (4, '33보6383'), (4, '127보7725'), (4, '45라1156'),
 (5, '51소3396'), (5, '386부6716'), (5, '78마6623'),
 (6, '04다5872'), (6, '204로1201'), (6, '56바4490'),
@@ -147,7 +159,13 @@ INSERT INTO car (customer_id, car_num) VALUES
 (10, '259가8906'), (10, '52로0979'), (10, '52모0979'),
 (11, '51허3927'), (11, '12가7841'), (11, '34가2019'),
 (12, '89사7712'), (12, '17카9923'), (12, '91아3345'),
-(13, '73타2278'), (13, '38라6241'), (13, '72바1394');
+(13, '73타2278'), (13, '38라6241'), (13, '72바1394'),
+(14, '276러5277'), (14, '205허6828'), (14, '825부3082'),
+(15, '85주8505'), (15, '898러1929'), (15, '22무5744'),
+(16, '60우7674'), (16, '222하5778'), (16, '83루0811'),
+(17, '86누1347'), (17, '55두6346'), (17, '200라3005'),
+(18, '85노1795'), (18, '207거8189'), (18, '48어0101'),
+(19, '47우9587'), (19, '47루9587'), (19, '36거4172');
 
 -- =====================================================================
 -- 8. underpass — 부산 지하차도 45개소 (busan_underpass_master 엑셀 기준)
@@ -295,19 +313,19 @@ INSERT INTO display_preset (category, content) VALUES
 -- =====================================================================
 INSERT INTO faq (category, sort_order, question, answer, manager_id, view_count) VALUES
 ('NOTIFICATION', 1, '지하차도 침수 위험 알림은 어떻게 받나요?',
- '회원가입 후 차량을 등록하시면, 해당 차량이 지하차도 부근에서 감지될 때 자동으로 알림을 받으실 수 있습니다. 웹푸시 또는 문자(SMS)로 발송됩니다.',
+ '회원가입 후 내 차량 번호를 등록해 두시면 됩니다. 등록한 차량이 지하차도 앞 접근 카메라에 인식될 때 지하차도가 통제 중이거나 위험 단계가 관심 이상이면 "접근 알림"이, 통제 중인 지하차도의 진입 직전 카메라에 인식되면 "진입 직전 알림"이 문자(SMS)와 앱·웹 푸시로 발송됩니다. 알림에는 지하차도 이름, 차량 번호, 인식된 위치(진입까지 거리)와 통제 사유가 함께 표시됩니다.',
  1, 128),
 ('VEHICLE', 2, '차량 등록은 몇 대까지 가능한가요?',
- '등록 대수 제한은 없습니다. 가족 공유 차량의 경우, 같은 번호판을 여러 회원이 각각 등록할 수 있습니다.',
+ '한 계정에 최대 3대까지 등록할 수 있습니다. 가족 공유 차량처럼 같은 번호판을 여러 회원이 각각 등록하는 것은 가능하며, 등록한 회원 모두에게 알림이 발송됩니다.',
  1, 74),
 ('USAGE', 3, '지하차도가 통제되면 언제 해제되나요?',
- '수위가 안전 기준 이하로 내려가고, 관리자가 현장을 확인한 후 해제됩니다. 해제 시 알림을 다시 발송해 드립니다.',
+ '수위가 통제 기준 아래로 내려간 것을 관리자가 확인한 뒤 해제합니다. 수위가 기준 이상이면 해제할 수 없습니다. 통제와 해제 상태는 지도와 지하차도 목록에 바로 반영되고, 현장 전광판에도 함께 표출됩니다.',
  5, 96),
 ('USAGE', 4, '위험도 점수는 어떻게 산출되나요?',
- 'AI 모델이 현재 강수량, 누적 강수량, 지하차도 구조(높이/길이/폭), 인근 하천 거리, 과거 침수 이력 등을 종합하여 0~100점으로 산출합니다.',
+ 'AI 모델이 현재 강수량, 누적 강수량, 예보, 지하차도 구조(높이/길이/폭), 인근 하천·바다와의 거리, 과거 침수 이력 등을 종합해 0~100점으로 산출합니다. 위험 단계는 안전·관심·주의·경계·심각 5단계이며, 점수와 실시간 수위 중 더 높은 쪽으로 정해집니다. 수위가 통제 기준에 닿으면 경계 단계가 되어 자동으로 통제되고, 기준보다 15cm 더 오르면 심각 단계가 됩니다. 통제 기준은 지하차도마다 다릅니다.',
  2, 83),
 ('ETC', 5, '예지보전이 뭔가요?',
- 'CCTV, 전광판, 배수펌프 등 시설물의 고장을 사전에 예측하는 시스템입니다. 센서 데이터를 분석하여 점검이 필요한 설비를 미리 알려줍니다.',
+ 'CCTV, 전광판, 배수펌프, 수위센서 같은 시설물과 노면(싱크홀 의심)의 이상을 미리 찾아내는 시스템입니다. 센서 데이터를 분석해 점검이 필요한 설비를 관리자에게 먼저 알려줍니다.',
  4, 41);
 
 -- =====================================================================
@@ -315,13 +333,13 @@ INSERT INTO faq (category, sort_order, question, answer, manager_id, view_count)
 -- =====================================================================
 INSERT INTO notice (category, title, content, is_important, send_push, manager_id, view_count) VALUES
 ('INFO', 'PUF 시스템 오픈 안내',
- '부산광역시 지하차도 침수 예방 시스템(PUF)이 정식 오픈되었습니다. 차량을 등록하시면 위험 알림을 받으실 수 있습니다.',
+ '부산광역시 지하차도 침수 예방 시스템(PUF)이 정식 오픈되었습니다. 내 차량 번호를 등록하시면 지하차도에 접근하거나 진입하기 직전일 때, 통제 중이거나 위험 단계가 높은 경우 문자와 푸시 알림으로 안내해 드립니다.',
  TRUE, FALSE, 1, 312),
 ('URGENT', '태풍 대비 사전 안내',
- '기상청 예보에 따라 이번 주말 태풍 영향이 예상됩니다. 지하차도 이용 시 각별히 주의해 주시기 바랍니다.',
+ '기상청 예보에 따라 이번 주말 태풍 영향이 예상됩니다. 수위가 통제 기준에 닿은 지하차도는 자동으로 통제되오니, 전광판과 앱의 통제 안내를 확인하시고 우회도로를 이용해 주시기 바랍니다.',
  TRUE, TRUE, 2, 487),
 ('MAINTENANCE', '시스템 정기 점검 안내',
- '10월 25일(금) 02:00~06:00 시스템 정기 점검이 예정되어 있습니다. 해당 시간 동안 서비스 이용이 제한될 수 있습니다.',
+ '11월 6일(금) 02:00~06:00 시스템 정기 점검이 예정되어 있습니다. 해당 시간 동안 서비스 이용이 제한될 수 있습니다. 점검 중에도 통제 중인 지하차도의 전광판 안내는 유지됩니다.',
  FALSE, FALSE, 1, 156);
 
 -- =====================================================================
@@ -367,7 +385,13 @@ INSERT INTO device_token (customer_id, token, platform) VALUES
 (8, 'web_token_customer08_001', 'WEB'),
 (8, 'app_token_customer08_001', 'APP'),
 (9, 'web_token_customer09_001', 'WEB'),
-(10, 'app_token_customer10_001', 'APP');
+(10, 'app_token_customer10_001', 'APP'),
+(14, 'web_token_customer14_001', 'WEB'),
+(15, 'app_token_customer15_001', 'APP'),
+(16, 'web_token_customer16_001', 'WEB'),
+(17, 'app_token_customer17_001', 'APP'),
+(18, 'web_token_customer18_001', 'WEB'),
+(19, 'app_token_customer19_001', 'APP');
 
 -- =====================================================================
 -- 완료 — ID 배치 요약
@@ -376,8 +400,8 @@ INSERT INTO device_token (customer_id, token, platform) VALUES
 -- employee:     1~16
 -- shift:        1=주간, 2=오후, 3=야간
 -- manager:      1~6 (login/pw: manager01~06. 6=강현우, 야간조, manager01과 동일 지역)
--- customer:     1~13 (login: customer01~13)
--- car:          1~39 (고객당 3대. 시연용 번호 23대 + 일반 더미 16대)
+-- customer:     1~19 (login: customer01~19)
+-- car:          1~57 (고객당 3대. 영상 인식 번호 전부 + 일반 더미 번호)
 -- underpass:    1~45 (1=초량지하차도, 이후 엑셀 순서: 금호(강서구)=2 → … → 해운대구)
 -- camera:       226 접근 APPROACH_LPR(roi), 227 roi FINAL_LPR, 228 입구 FINAL_LPR, 229 출구 FINAL_LPR (초량지하차도, id 1) — 나머지 카메라(CCTV)는 3.seed_its 가 230번부터 추가
 -- threshold:    1~135 (지하차도당 3단계)
@@ -386,22 +410,30 @@ INSERT INTO device_token (customer_id, token, platform) VALUES
 -- display_preset: 1~5 (SAFE/WATCH/CAUTION/BLOCK/RELEASE)
 -- faq:          1~5
 -- notice:       1~3
--- device_token: 1~12
+-- device_token: 1~18
 
 -- =====================================================================
 -- 99. 알림 센터 샘플 (고객 알림 3분류 / 관리자 알림 4분류 모두 1건 이상)
 --     실제 운영에서는 서비스 코드가 자동으로 만들고, 이 행들은 화면 확인용 샘플이다.
 -- =====================================================================
-INSERT INTO customer_notification (customer_id, category, title, body, ref_type, ref_id, is_read) VALUES
-(1, 'RISK',    '지하차도 접근 알림',  '등록하신 차량이 위험 지하차도에 접근 중입니다.', 'ALERT',   NULL, FALSE),
-(1, 'NOTICE',  '새 공지',             'PUF 시스템 오픈 안내',                           'NOTICE',  1,    FALSE),
-(1, 'NOTICE',  '[긴급] 새 공지',      '태풍 대비 사전 안내',                            'NOTICE',  2,    TRUE),
-(1, 'INQUIRY', '문의 답변 등록',      '문의하신 내용에 답변이 등록되었습니다.',         'INQUIRY', NULL, FALSE);
+-- 고객 샘플은 실제 알림이 만들어내는 제목/본문 형식과 같게 둔다 (고객 1번: 12고1252 · 19저0362 · 117머1687)
+--   접근/진입 직전 알림: 본문 = 지하차도 · 차량번호 · 인식 카메라 #id (진입 N m 전) [· 사유: ...]
+--   공지: 제목 "새 공지" / "[긴급] 새 공지", 본문 = 공지 제목   문의: 제목 "내 문의에 답변이 등록되었습니다", 본문 = 문의 제목
+INSERT INTO customer_notification (customer_id, category, title, body, ref_type, ref_id, is_read, created_at) VALUES
+(1, 'RISK',    '지하차도 접근 알림',               '초량지하차도 · 12고1252 · 인식 카메라 #226 (진입 200m 전) · 사유: 집중호우로 인한 수위 상승',  'ALERT',   NULL, FALSE, NOW() - INTERVAL '10 minutes'),
+(1, 'RISK',    '지하차도 진입 직전 알림',          '초량지하차도 · 19저0362 · 인식 카메라 #227 (진입 50m 전) · 사유: 집중호우로 인한 수위 상승',   'ALERT',   NULL, FALSE, NOW() - INTERVAL '2 hours'),
+(1, 'RISK',    '지하차도 접근 알림',               '초량지하차도 · 117머1687 · 인식 카메라 #226 (진입 200m 전)',                                  'ALERT',   NULL, TRUE,  NOW() - INTERVAL '1 day'),
+(1, 'NOTICE',  '새 공지',                          'PUF 시스템 오픈 안내',                                                                         'NOTICE',  1,    FALSE, NOW() - INTERVAL '3 days'),
+(1, 'NOTICE',  '[긴급] 새 공지',                   '태풍 대비 사전 안내',                                                                          'NOTICE',  2,    TRUE,  NOW() - INTERVAL '2 days'),
+(1, 'INQUIRY', '내 문의에 답변이 등록되었습니다',  '차량 번호를 잘못 등록했어요',                                                                  'INQUIRY', NULL, FALSE, NOW() - INTERVAL '5 hours');
 
-INSERT INTO manager_notification (category, region_id, title, body, ref_type, ref_id) VALUES
-('RISK',      NULL, '위험도 상승',        '위험 단계로 올라간 지하차도가 있습니다.',       'UNDERPASS', NULL),
-('EQUIPMENT', NULL, '설비 점검 필요',      '점검이 필요한 설비가 있습니다. (예지보전)',     'EQUIPMENT', NULL),
-('TASK',      NULL, '번호판 수동 판별 필요', '수동 판별이 필요한 번호판이 있습니다.',        'PLATE_LOG', NULL),
-('SYSTEM',    NULL, '데이터 수신 지연',    '위험도 데이터 수신이 지연되고 있습니다.',       NULL,        NULL);
+-- 관리자 샘플도 실제 제목/본문 형식과 같게 둔다 (초량지하차도 = 동구, region id 4)
+INSERT INTO manager_notification (category, region_id, title, body, ref_type, ref_id, is_urgent, created_at) VALUES
+('RISK',      4, '위험 단계 상승',          '초량지하차도 · 주의 → 경계 · 수위 5cm',                                                     'UNDERPASS', 1,    FALSE, NOW() - INTERVAL '15 minutes'),
+('RISK',      4, '지하차도 자동 통제 시작', '초량지하차도 · 사유: 수위 5cm · 통제 기준 5cm 도달 (자동 통제)',                             'UNDERPASS', 1,    TRUE,  NOW() - INTERVAL '14 minutes'),
+('EQUIPMENT', 4, '설비 위험 진입',          '초량지하차도 · 배수펌프 P-1-1 · 위험 단계 (82점)',                                          'PM_EVENT',  NULL, TRUE,  NOW() - INTERVAL '1 hour'),
+('TASK',      4, '번호판 수동 판별 필요',   '초량지하차도 · 09모0867',                                                                   'PLATE_LOG', NULL, FALSE, NOW() - INTERVAL '30 minutes'),
+('TASK',      NULL, '새 1:1 문의',          '차량 번호를 잘못 등록했어요',                                                               'INQUIRY',   NULL, FALSE, NOW() - INTERVAL '6 hours'),
+('SYSTEM',    NULL, '데이터 수신 지연',     '위험도 데이터 수신이 지연되고 있습니다.',                                                   NULL,        NULL, FALSE, NOW() - INTERVAL '3 hours');
 
 COMMIT;

@@ -28,6 +28,11 @@ public class DemoWaterProfile {
         this.maxRisePerStep=Math.max(0.1,maxRisePerStep);
         this.calmMaxCm=Math.max(0,calmMaxCm);
     }
+    /** 시연 위험단계 고정(DemoLevelService)이 수위를 직접 넣을 때 기억값을 맞춘다. 고정을 풀면 여기서부터 10초에 2cm씩 내려간다 */
+    public void sync(Long id,double waterCm) {
+        levels.put(id,waterCm);
+        scoreLevels.put(id,waterCm);
+    }
     /** active=true 면 호우 시나리오 중. 시나리오가 아닐 때는 점수가 아무리 높아도 수위가 calmMaxCm 을 넘지 않게 한다(평상시 자동 통제 방지) */
     public OptionalDouble sample(Long id,boolean due,double scenarioWater,boolean active) {
         var u=underpasses.findByIdAndDeletedFalse(id).orElse(null);

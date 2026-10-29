@@ -1,17 +1,20 @@
 package com.mbc.puf.internal.controller;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.mbc.puf.common.response.ApiResponse;
+import com.mbc.puf.demo.DemoLevelService;
 import com.mbc.puf.internal.dto.PlateLogCreateRequest;
 import com.mbc.puf.internal.dto.PlateLogResponse;
 import com.mbc.puf.internal.dto.RiskScoreCreateRequest;
@@ -36,15 +39,29 @@ public class InternalController {
 
     private final InternalIngestService internalIngestService;
 
-    public InternalController(InternalIngestService internalIngestService) {
+    // 시연(puf.demo.enabled=true)일 때만 있는 빈. 운영에서는 null 이라 아래 확인이 항상 통과한다
+    private final ObjectProvider<DemoLevelService> demoLevels;
+
+    public InternalController(InternalIngestService internalIngestService, ObjectProvider<DemoLevelService> demoLevels) {
         this.internalIngestService = internalIngestService;
+        this.demoLevels = demoLevels;
+    }
+
+    // 시연 위험단계로 고정된 지하차도에 진짜 침수 서버가 보낸 점수·예측은 무시한다 (고정값을 보내는 쪽은 X-Demo-Pin 헤더가 있다)
+    private boolean ignoredByDemoPin(Long underpassId, String demoPin) {
+        DemoLevelService levels = demoLevels.getIfAvailable();
+        return levels != null && demoPin == null && levels.isPinned(underpassId);
     }
 
     // 위험도 예측 결과 수신
     @Operation(summary = "위험점수 수신 (침수모델)", description = "점수를 저장하고 임계치와 수위로 단계를 판정한다. 단계가 바뀌면 이벤트·관리자 알림·SSE 가 나간다(201).")
     @PostMapping("/risk-scores")
     public ResponseEntity<ApiResponse<RiskScoreResponse>> receiveRiskScore(
-            @Valid @RequestBody RiskScoreCreateRequest request) {
+            @Valid @RequestBody RiskScoreCreateRequest request,
+            @RequestHeader(value = "X-Demo-Pin", required = false) String demoPin) {
+        if (ignoredByDemoPin(request.getUnderpassId(), demoPin)) {
+            return ResponseEntity.ok(ApiResponse.ok("시연 위험단계 고정 중이라 이 점수는 저장하지 않았습니다.", null));
+        }
         RiskScoreResponse response = internalIngestService.receiveRiskScore(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(response));
     }
@@ -53,7 +70,11 @@ public class InternalController {
     @Operation(summary = "위험점수 예측 수신 (침수모델)", description = "한 지하차도의 앞으로 몇 시간치 예측을 보낸다. 같은 시점은 덮어쓰고 지난 시점은 지운다(201). 프런트의 예측 그래프가 읽는다.")
     @PostMapping("/risk-forecasts")
     public ResponseEntity<ApiResponse<com.mbc.puf.internal.dto.RiskForecastIngestResponse>> receiveRiskForecast(
-            @Valid @RequestBody com.mbc.puf.internal.dto.RiskForecastCreateRequest request) {
+            @Valid @RequestBody com.mbc.puf.internal.dto.RiskForecastCreateRequest request,
+            @RequestHeader(value = "X-Demo-Pin", required = false) String demoPin) {
+        if (ignoredByDemoPin(request.getUnderpassId(), demoPin)) {
+            return ResponseEntity.ok(ApiResponse.ok("시연 위험단계 고정 중이라 이 예측은 저장하지 않았습니다.", null));
+        }
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(internalIngestService.receiveRiskForecast(request)));
     }
 
@@ -83,4 +104,4 @@ public class InternalController {
     public ApiResponse<Void> health() {
         return ApiResponse.ok("OK", null);
     }
-}
+}

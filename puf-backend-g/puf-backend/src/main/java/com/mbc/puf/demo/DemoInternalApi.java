@@ -55,18 +55,36 @@ public class DemoInternalApi {
     }
 
     public void postRiskScore(Map<String, Object> body) {
-        post("/api/internal/risk-scores", body);
+        post("/api/internal/risk-scores", body, false);
     }
 
     public void postRiskForecast(Map<String, Object> body) {
-        post("/api/internal/risk-forecasts", body);
+        post("/api/internal/risk-forecasts", body, false);
     }
 
     public void postWaterLevel(Map<String, Object> body) {
-        post("/api/internal/water-levels", body);
+        post("/api/internal/water-levels", body, false);
     }
 
-    private void post(String path, Map<String, Object> body) {
-        client().post().uri(path).header("Content-Type", "application/json").body(body).retrieve().toBodilessEntity();
+    // pin=true: 시연 위험단계 고정(DemoLevelService)이 보내는 값. X-Demo-Pin 헤더가 있어야 InternalController 가
+    // 고정된 지하차도의 점수·예측을 받아들인다 (진짜 침수 서버가 보내는 값은 이 헤더가 없어 무시된다)
+    public void postRiskScore(Map<String, Object> body, boolean pin) {
+        post("/api/internal/risk-scores", body, pin);
+    }
+
+    public void postRiskForecast(Map<String, Object> body, boolean pin) {
+        post("/api/internal/risk-forecasts", body, pin);
+    }
+
+    public void postWaterLevel(Map<String, Object> body, boolean pin) {
+        post("/api/internal/water-levels", body, pin);
+    }
+
+    private void post(String path, Map<String, Object> body, boolean pin) {
+        var request = client().post().uri(path).header("Content-Type", "application/json");
+        if (pin) {
+            request = request.header("X-Demo-Pin", "1");
+        }
+        request.body(body).retrieve().toBodilessEntity();
     }
 }

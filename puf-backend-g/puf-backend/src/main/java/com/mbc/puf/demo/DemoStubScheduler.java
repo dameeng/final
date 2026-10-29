@@ -53,6 +53,7 @@ public class DemoStubScheduler {
     private final WeatherCollectService weatherCollect;
     private final DbClock dbClock;
     private final StreamPublisher streamPublisher;
+    private final DemoLevelService levels;      // 위험 5단계 고정 (고정된 지하차도는 아래 가짜 갱신에서 뺀다)
 
     // 시나리오 밖(평상시) 지역의 갱신 주기. application.properties 의 puf.demo.calm-*-minutes 로 조절한다
     private final int calmScoreEvery;
@@ -70,7 +71,7 @@ public class DemoStubScheduler {
 
     public DemoStubScheduler(DemoScenarioState state, DemoScenarioService scenarioService, DemoInternalApi api,
                              KmaClient kmaClient, WeatherCollectService weatherCollect, DbClock dbClock,
-                             StreamPublisher streamPublisher,
+                             StreamPublisher streamPublisher, DemoLevelService levels,
                              @Value("${puf.demo.calm-score-minutes:5}") int calmScoreMinutes,
                              @Value("${puf.demo.calm-water-minutes:5}") int calmWaterMinutes,
                              @Value("${puf.demo.calm-forecast-minutes:10}") int calmForecastMinutes,
@@ -85,6 +86,7 @@ public class DemoStubScheduler {
         this.weatherCollect = weatherCollect;
         this.dbClock = dbClock;
         this.streamPublisher = streamPublisher;
+        this.levels = levels;
         this.calmScoreEvery = ticks(calmScoreMinutes);
         this.calmWaterEvery = ticks(calmWaterMinutes);
         this.calmForecastEvery = ticks(calmForecastMinutes);
@@ -132,6 +134,9 @@ public class DemoStubScheduler {
             calmForecast = true;
         }
 
+        // ---- 0) 위험 5단계로 고정된 지하차도: 고정값을 다시 넣는다 (아래 가짜 갱신·호우 시나리오는 이 지하차도를 건드리지 않는다) ----
+        levels.refreshPinned();
+
         DemoScenarioState.Run r = state.current();
         List<WeatherArea> areas = weatherCollect.allAreas();
         List<Long> allUnderpasses = scenarioService.allUnderpassIds();
@@ -153,6 +158,9 @@ public class DemoStubScheduler {
         // ---- 2) 침수모델 + 3) 수위계 ----
         double t = state.scenarioSec();
         for (Long uid : allUnderpasses) {
+            if (levels.isPinned(uid)) {
+                continue;   // 시연 위험단계 고정 중: 점수·수위·예측을 덮어쓰지 않는다
+            }
             boolean active = r != null && state.isUnderpassActive(uid);
             try {
                 if (modelStubEnabled && (active || calmScore)) {
@@ -270,4 +278,4 @@ public class DemoStubScheduler {
     private static BigDecimal dec(double v, int scale) {
         return BigDecimal.valueOf(v).setScale(scale, RoundingMode.HALF_UP);
     }
-}
+}
