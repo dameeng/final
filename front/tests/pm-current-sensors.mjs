@@ -35,7 +35,8 @@ try {
   for (const width of [320, 390, 1440]) {
     await page.setViewportSize({ width, height: 844 })
     for (type of Object.keys(columns)) {
-      missing = false; value = 12.345
+      // 펌프는 화면에서 실제 단위로 환산된다 (진동 원본 평균 979.7705 -> 2.5 mm/s)
+      missing = false; value = type === 'PUMP' ? 979.7705 : 12.345
       const path = width === 1440 ? '/pm-equipment-detail?id=15' : '/admin-app/screen-10?id=15'
       await page.goto(base + path)
       const sensors = page.getByRole('region', { name: '센서 현재값', exact: true })
@@ -44,7 +45,8 @@ try {
       const graph=page.locator('.pm-sensor-card .pm-chart-scroll')
       await expect(graph).toBeVisible()
       await expect.poll(()=>graph.evaluate(el=>Math.abs(el.scrollWidth-el.clientWidth-el.scrollLeft))).toBeLessThan(2)
-      await expect(sensors.locator('strong').first()).toHaveText('12.345')
+      await expect(sensors.locator('strong').first()).toHaveText(type === 'PUMP' ? '2.5' : '12.345')
+      if (type === 'PUMP') await expect(sensors).toContainText('mm/s')
       await expect(sensors).toContainText('2026.10.28 12:10')
       if (columns[type].length > 1) await expect(sensors.locator('strong').nth(1)).toHaveText('0')
       if (columns[type].length > 2) await expect(sensors.locator('.pm-current-sensor').nth(2)).toContainText('미수신')

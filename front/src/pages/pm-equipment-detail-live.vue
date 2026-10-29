@@ -20,7 +20,7 @@ import { displayDate } from '../utils/display-date'
 import { riskTimestamp } from '../utils/risk-chart'
 import {
   PM_TYPES, PM_EVENT_STATUS, PM_TRIGGERS, PM_CAUSES, PM_SENSOR_COLUMNS, PM_FEATURE_COLUMN, PM_SENSOR_UNITS,
-  pmLabel, isPmChange,
+  PM_SENSOR_CONVERTED_NOTE, pmLabel, isPmChange, pmSensorDisplay, pmSensorValue,
 } from '../utils/pm-labels'
 
 type Feature = {
@@ -72,7 +72,11 @@ const eq = computed(() => data.value?.equipment || {})
 const extra = computed(() => data.value?.detail?.extra || {})
 const waterComparison = computed(() => eq.value.type === 'WATER_LEVEL')
 const comparisonSensors = computed<Record<string, any>[]>(() => {
-  if (!waterComparison.value) return Array.isArray(extra.value.sensors) ? extra.value.sensors : []
+  if (!waterComparison.value) {
+    const rows: Record<string, any>[] = Array.isArray(extra.value.sensors) ? extra.value.sensors : []
+    // 펌프는 현재·평소를 실제 단위로 환산 (벗어난 정도는 그대로)
+    return rows.map((s) => ({ ...s, '현재': pmSensorDisplay(s['항목'], s['현재']), '평소': pmSensorDisplay(s['항목'], s['평소']) }))
+  }
   return (data.value?.detail?.features || []).map(feature => {
     const value = feature.value, normal = feature.normal
     const known = typeof value === 'number' && Number.isFinite(value) && normal &&
@@ -87,7 +91,7 @@ function comparisonUnit(sensor: Record<string, any>) { return sensor.unit ?? PM_
 const sensorColumns = computed(() => PM_SENSOR_COLUMNS[eq.value.type] || [])
 const sensorSnapshot = computed(() => data.value?.currentSensors)
 const sensorCurrentRows = computed(() => sensorColumns.value.map(([key, label]) => ({
-  key, label, unit: PM_SENSOR_UNITS[key] || '', value: sensorSnapshot.value?.values[key] ?? null,
+  key, label, unit: PM_SENSOR_UNITS[key] || '', value: pmSensorDisplay(key, sensorSnapshot.value?.values[key]),
 })))
 const features = computed(() =>
   [...(data.value?.detail?.features || [])].sort((a, b) => b.contribution - a.contribution),
@@ -250,10 +254,11 @@ const scoreChart = computed(() => {
 
 // ---- 원인 센서 그래프 (자동 눈금, 평소 범위 띠) ----
 const trendChart = computed(() => {
-  const series = trends.value.map((tr) => tr.points.map((p) => ({ t: riskTimestamp(p.at), v: Number(p.value) })).filter((p) => Number.isFinite(p.t) && Number.isFinite(p.v)))
+  const series = trends.value.map((tr) => tr.points.map((p) => ({ t: riskTimestamp(p.at), v: pmSensorValue(tr.column, Number(p.value)) })).filter((p) => Number.isFinite(p.t) && Number.isFinite(p.v)))
   const all = series.flat()
   if (!all.length) return null
-  const band = trends.value.length === 1 ? trends.value[0]!.band : null
+  const raw = trends.value.length === 1 ? trends.value[0]! : null
+  const band = raw?.band ? { low: pmSensorValue(raw.column, raw.band.low), high: pmSensorValue(raw.column, raw.band.high) } : null
   const vals = all.map((p) => p.v).concat(band ? [band.low, band.high] : [])
   const axis = niceAxis(Math.min(...vals), Math.max(...vals))
   const t0 = Math.min(...all.map((p) => p.t)), t1 = Math.max(...all.map((p) => p.t))
@@ -472,6 +477,7 @@ watch([data,trends],async()=>{
           <div class="pm-section-heading"><h2>센서 현재값</h2><span class="pm-period">{{sensorColumns.length}}개 센서</span></div>
           <p class="pm-muted small" v-if="sensorSnapshot?.recordedAt">최근 측정 · {{displayDate(sensorSnapshot.recordedAt)}}</p>
           <p class="pm-muted small" v-else>아직 수신된 센서 측정값이 없습니다.</p>
+          <p v-if="eq.type==='PUMP'" class="pm-muted small">{{PM_SENSOR_CONVERTED_NOTE}}</p>
           <dl class="pm-current-sensor-grid">
             <div v-for="sensor in sensorCurrentRows" :key="sensor.key" class="pm-current-sensor" :data-sensor="sensor.key">
               <dt>{{sensor.label}}</dt>

@@ -83,7 +83,7 @@ export const PM_FEATURE_COLUMN: Record<string, string> = {
   press_level: 'pressure',
   temp_trend: 'temperature',
 }
-// 센서 컬럼 단위 (그래프 눈금·값 표시용). 펌프 센서는 원본 단위가 정해져 있지 않아 비워 둔다
+// 센서 컬럼 단위 (그래프 눈금·값 표시용). 펌프 센서 단위는 아래 PUMP_DISPLAY 로 환산한 값의 단위
 export const PM_SENSOR_UNITS: Record<string, string> = {
   video_receive_rate: '%',
   response_time_ms: 'ms',
@@ -95,6 +95,37 @@ export const PM_SENSOR_UNITS: Record<string, string> = {
   error_count: '건',
   bad_pixel_pct: '%',
   level_m: 'm',
+  vibration: 'mm/s',
+  pressure: 'bar',
+  temperature: '℃',
+  current: 'A',
+  flow: 'm³/min',
+  rpm: 'rpm',
+}
+// 배수펌프 센서는 원본(공개 데이터 sensor_XX)에 이름·단위가 없어서, 화면에서만 일반적인 배수펌프 범위로 환산한다.
+// 표시값 = 실제 평소 + (원본 - 원본 평균) / 원본 흔들림 x 실제 흔들림. 평소보다 몇 배 벗어났는지는 그대로라
+// 위험 점수·'평소 범위 벗어남' 판정과 어긋나지 않는다. 원본 평균·흔들림은 pm_sensor_pump 전체 기준 (2026-10-29)
+const PUMP_DISPLAY: Record<string, { mu: number; sd: number; real: number; realSd: number; digits: number }> = {
+  vibration: { mu: 979.7705, sd: 7.624, real: 2.5, realSd: 0.25, digits: 2 },
+  pressure: { mu: 1012.9383, sd: 14.166, real: 2.5, realSd: 0.1, digits: 2 },
+  temperature: { mu: 2.5048, sd: 0.0159, real: 45, realSd: 1, digits: 1 },
+  current: { mu: 1.1036, sd: 0.3237, real: 30, realSd: 2, digits: 1 },
+  flow: { mu: 36.1994, sd: 1.7999, real: 10, realSd: 0.5, digits: 1 },
+  rpm: { mu: 37.9986, sd: 2.9988, real: 1750, realSd: 30, digits: 0 },
+}
+export const PM_SENSOR_CONVERTED_NOTE = '배수펌프 센서는 원본 데이터에 단위가 없어 일반적인 배수펌프 범위로 환산해 보여 줍니다.'
+
+// 화면에 그릴 센서 값 (그래프용, 반올림 안 함). 펌프 센서가 아니면 그대로. 환산 결과가 0 아래면 0
+export function pmSensorValue(column: string, value: number) {
+  const c = PUMP_DISPLAY[column]
+  if (!c || !Number.isFinite(value)) return value
+  return Math.max(0, c.real + ((value - c.mu) / c.sd) * c.realSd)
+}
+// 화면에 글자로 보일 센서 값 (센서별 자릿수로 반올림)
+export function pmSensorDisplay(column: string, value: number | null | undefined) {
+  if (value == null) return null
+  const v = pmSensorValue(column, Number(value)), c = PUMP_DISPLAY[column]
+  return c && Number.isFinite(v) ? +v.toFixed(c.digits) : v
 }
 // 점검 상태가 끝난 것인지 (끝난 이벤트는 다시 열 수 없다)
 export const PM_CLOSED_STATUS = ['RESOLVED', 'ETC']
