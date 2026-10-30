@@ -1,6 +1,7 @@
 package com.mbc.puf.common.pdf;
 
 import java.time.LocalDateTime;
+import com.mbc.puf.common.enums.RiskLevel;
 
 /**
  * 도로 통제 정보 전달서(PDF)에 들어갈 내용. 값이 없으면 null 로 두면 "-" 로 표시한다.
@@ -28,5 +29,14 @@ public record ControlNoticeData(
         Double riskScore, Double rainfallMm, String displayText,
         String managerName, String managerRegion, String shiftLabel,
         LocalDateTime blockAt, String blockReason, String blockReasonNote,
-        String memo) {
+        String memo, RiskLevel riskLevel, LocalDateTime riskAssessedAt) {
+    /** Compatibility for callers without a recorded historical assessment. */
+    public ControlNoticeData(String underpassName, String address, boolean blockEvent,
+            LocalDateTime eventAt, String reason, String reasonNote, Double riskScore, Double rainfallMm,
+            String displayText, String managerName, String managerRegion, String shiftLabel,
+            LocalDateTime blockAt, String blockReason, String blockReasonNote, String memo) {
+        this(underpassName, address, blockEvent, eventAt, reason, reasonNote, riskScore, rainfallMm,
+                displayText, managerName, managerRegion, shiftLabel, blockAt, blockReason, blockReasonNote,
+                memo, null, null);
+    }
 }

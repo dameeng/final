@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import DisasterReportPreview from '../components/DisasterReportPreview.vue'
 import { adminPageTitle } from '../data/adminTitles'
 import AdminSidebarLinks from '../components/AdminSidebarLinks.vue'
 import MenuIcon from '../components/MenuIcon.vue'
@@ -140,7 +141,7 @@ onBeforeUnmount(() => dispose?.())
     </aside>
 
 <main class="page">
-      
+
 <div class="page-head">
         <h1>{{adminPageTitle('/handover-pdf')}}</h1>
         <div class="row">
@@ -148,44 +149,8 @@ onBeforeUnmount(() => dispose?.())
           <button class="btn primary">경찰·소방 전달 (PDF 저장)</button>
         </div>
       </div>
-<div class="doc">
-        <h1>도로 통제 정보 전달서</h1>
-        <div class="sub inl-91a87015f4">발송 대상: ○○경찰서 교통과 · ○○소방서 </div>
-<table>
-          <tbody>
-            <tr>
-              <th>시설</th>
-              <td>초량1지하차도 (부산 · 상세 주소 확인 필요)</td>
-            </tr>
-            <tr>
-              <th>구분</th>
-              <td>
-                <span class="stamp">통제 시작</span> 2026.10.13 10:37</td>
-            </tr>
-            <tr>
-              <th>사유</th>
-              <td>침수 위험 (위험도 76.4점 · 강우 18.0mm)</td>
-            </tr>
-            <tr>
-              <th>통제 방식</th>
-              <td>입구 차단 · 전광판 “입구 통제 중 · 우회 바랍니다”</td>
-            </tr>
-            <tr>
-              <th>담당자</th>
-              <td>홍○○ (1조 06~14)</td>
-            </tr>
-            <tr>
-              <th>해제 정보</th>
-              <td>미해제 (해제 시 같은 형식으로 사유와 함께 전달)</td>
-            </tr>
-            <tr>
-              <th>첨부</th>
-              <td>위험도 추이 그래프 · CCTV 스냅샷(번호판 제외 구간)</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-<p class="sub inl-be1e377213">통제·해제 사유를 입력하면 이 문서가 자동으로 채워져요. 사건 보고서(PDF) 자동 작성의 첫 단계 안이에요.</p>
+<DisasterReportPreview />
+<p class="sub inl-be1e377213">위 문서는 양식 미리보기입니다. 실제 통제·해제 PDF에는 해당 이벤트의 저장된 정보가 반영됩니다.</p>
     </main>
   </div>
 </template>

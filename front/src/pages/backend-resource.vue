@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import DisasterReportPreview from '../components/DisasterReportPreview.vue'
 import ListResultCount from '../components/ListResultCount.vue'
 import ResourceOverview from '../components/ResourceOverview.vue'
 import { resourceTableLayout } from '../utils/resource-table-layout'
@@ -1168,6 +1169,10 @@ defineExpose({ open, load })
           </button>
         </div>
       </div>
+      <details v-if="resourceId==='transfers'" :open="route.path==='/handover-pdf'" class="transfer-report-preview">
+        <summary>재난상황 전파 보고서 양식 미리보기</summary>
+        <DisasterReportPreview />
+      </details>
       <nav v-if="!customer&&!appPage&&!props.embedded&&relatedIds.length>1" class="service-tabs tabs page-selection-tabs" aria-label="업무 구분">
         <RouterLink v-for="id in relatedIds" :key="id" class="btn" :to="resourceLink(id)" :aria-current="resourceId===id?'page':undefined">{{backendResources[id]?.title}}</RouterLink>
       </nav>

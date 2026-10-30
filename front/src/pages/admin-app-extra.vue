@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import DisasterReportPreview from '../components/DisasterReportPreview.vue'
 import { adminPageTitle } from '../data/adminTitles'
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
@@ -63,22 +64,7 @@ const rows = computed(() => history.H.filter((row) => row.join(' ').includes(que
           <JurisdictionContactList />
         </template>
         <template v-else>
-          <p class="sub">구성 예시 · 실제 통제 문서가 아닙니다.</p>
-          <article class="card">
-            <h2>도로 통제 정보 전달서</h2>
-            <dl>
-              <dt>시설</dt>
-              <dd>초량1지하차도</dd>
-              <dt>구분</dt>
-              <dd>통제 시작</dd>
-              <dt>사유</dt>
-              <dd>침수 위험</dd>
-              <dt>통제 방식</dt>
-              <dd>입구 차단 · 전광판 우회 안내</dd>
-              <dt>담당 지역</dt>
-              <dd>{{admin.region}}</dd>
-            </dl>
-          </article>
+          <DisasterReportPreview :manager-region="admin.region" />
           <button type="button" class="btn" @click="printDocument">문서 인쇄 · PDF 저장</button>
         </template>
       </main>

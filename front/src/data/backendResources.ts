@@ -342,6 +342,7 @@ export const backendResources: Record<string, Resource> = {
     columns: [
       ['agency', '이관 기관'],
       ['documentType', '문서 종류'],
+      ['riskAssessment', '발생 당시 AI 위험단계'],
       ['managerName', '처리자'],
       ['carNums', '차량 번호'],
       ['memo', '전달 내용'],
