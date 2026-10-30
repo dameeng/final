@@ -36,8 +36,8 @@ import tools.jackson.databind.JsonNode;
  * 단계 판정(RiskPolicy) → 이벤트·알림·전광판·자동 통제·내비 우회·접근/최종 알림 판단은 원래 로직이 그대로 한다.
  *
  *   안전 : 점수 5,  수위 0
- *   관심 : 점수 = 관심 하한 + 2,  수위 0
- *   주의 : 점수 = 주의 하한 + 2,  수위 0
+ *   관심 : 점수 = 관심 하한 + 2,  수위 1.9cm   (지하차도와 관계없이 같은 값. 가장 낮은 통제 수위 5cm 기준)
+ *   주의 : 점수 = 주의 하한 + 2,  수위 3.6cm   (같음)
  *   경계 : 점수 = 주의 구간,  수위 = 통제 수위 + 0.5   → 자동 통제까지 일어난다
  *   심각 : 점수 = 주의 구간,  수위 = 통제 수위 + 심각 추가분 + 0.5
  *
@@ -67,6 +67,8 @@ public class DemoLevelService {
     private final JdbcTemplate jdbc;
     private final List<String> targetNames;
     private final BigDecimal severeExtraCm;
+    private final BigDecimal waterMarginCm;
+    private final BigDecimal lowestBlockCm;     // 관심·주의 수위를 정하는 기준: 가장 낮은 통제 수위(조기 차단 5cm)
 
     private final Map<Long, Pin> pins = new ConcurrentHashMap<>();
     private int refreshCount = 0;
@@ -75,7 +77,9 @@ public class DemoLevelService {
                             RiskPolicy policy, DemoInternalApi api, DemoWaterProfile waterProfile, DbClock dbClock,
                             JdbcTemplate jdbc,
                             @Value("${puf.demo.level-target-names:초량지하차도,북항지하차도,충장지하차도}") String targets,
-                            @Value("${puf.risk.water.severe-extra-cm:15}") BigDecimal severeExtraCm) {
+                            @Value("${puf.risk.water.severe-extra-cm:15}") BigDecimal severeExtraCm,
+                            @Value("${puf.risk.hysteresis.water-cm:1}") BigDecimal waterMarginCm,
+                            @Value("${puf.risk.water.early-block-cm:5}") BigDecimal lowestBlockCm) {
         this.underpassRepository = underpassRepository;
         this.thresholdRepository = thresholdRepository;
         this.policy = policy;
@@ -85,6 +89,8 @@ public class DemoLevelService {
         this.jdbc = jdbc;
         this.targetNames = Arrays.stream(targets.split(",")).map(String::trim).filter(x -> !x.isEmpty()).toList();
         this.severeExtraCm = severeExtraCm;
+        this.waterMarginCm = waterMarginCm;
+        this.lowestBlockCm = lowestBlockCm;
     }
 
     /** 스케줄러·InternalController 가 묻는다: 이 지하차도는 시연 단계로 고정돼 있는가 */
@@ -198,8 +204,14 @@ public class DemoLevelService {
         BigDecimal water = BigDecimal.ZERO;
         switch (level) {
             case SAFE -> score = BigDecimal.valueOf(5);
-            case WATCH -> score = minOf(thresholds, RiskLevel.WATCH).add(BigDecimal.valueOf(2));
-            case CAUTION -> score = minOf(thresholds, RiskLevel.CAUTION).add(BigDecimal.valueOf(2));
+            case WATCH -> {
+                score = minOf(thresholds, RiskLevel.WATCH).add(BigDecimal.valueOf(2));
+                water = watchWater(lowestBlockCm);
+            }
+            case CAUTION -> {
+                score = minOf(thresholds, RiskLevel.CAUTION).add(BigDecimal.valueOf(2));
+                water = cautionWater(lowestBlockCm);
+            }
             case ALERT -> {
                 score = minOf(thresholds, RiskLevel.CAUTION).add(BigDecimal.valueOf(2));
                 water = block.add(BigDecimal.valueOf(0.5));
@@ -211,6 +223,31 @@ public class DemoLevelService {
             default -> throw new BusinessException(HttpStatus.BAD_REQUEST, "알 수 없는 단계");
         }
         return new Pin(level, score.setScale(2, RoundingMode.HALF_UP), water.setScale(1, RoundingMode.HALF_UP));
+    }
+
+    // 관심·주의에서도 수위를 같이 올린다 (점수만 오르고 수위가 0 이면 어색해서).
+    // 지하차도마다 통제 수위(5cm/15cm)가 달라도 시연에서는 수위를 똑같이 보이게, 가장 낮은 통제 수위(5cm) 기준 값을 모두에게 쓴다.
+    //   5cm 기준 수위 구간: 관심 = 1.67cm 이상, 주의 = 3.33cm 이상, 경계 = 5cm 이상
+    // (통제 수위 15cm 지하차도는 이 수위만으로는 단계가 안 오르지만, 최종 단계 = 점수 단계와 수위 단계 중 높은 쪽이라 점수가 단계를 지켜준다)
+    // 구간 위쪽 끝에서 (히스테리시스 수위 여유값 + 흔들림 0.3 + 0.1) 만큼 띄운다. 그래야
+    //   1) 경계·심각에서 관심·주의 버튼으로 내릴 때 "수위 + 여유값" 때문에 경계가 안 풀리는 일이 없고
+    //   2) 10초마다 ±0.3 흔들려도 한 단계 위로 올라가거나 자동 통제가 걸리지 않는다.
+    // (최종 단계 = 점수 단계와 수위 단계 중 높은 쪽이라, 수위가 구간 아래쪽으로 살짝 흔들려도 점수가 단계를 지켜준다)
+    private BigDecimal watchWater(BigDecimal block) {
+        BigDecimal upper = twoThirds(block).subtract(waterMarginCm).subtract(BigDecimal.valueOf(0.4));
+        return block.divide(BigDecimal.valueOf(2), 2, RoundingMode.DOWN).min(upper).max(BigDecimal.ZERO)
+                .setScale(1, RoundingMode.DOWN);
+    }
+
+    private BigDecimal cautionWater(BigDecimal block) {
+        BigDecimal upper = block.subtract(waterMarginCm).subtract(BigDecimal.valueOf(0.4));
+        BigDecimal mid = block.multiply(BigDecimal.valueOf(5)).divide(BigDecimal.valueOf(6), 2, RoundingMode.DOWN);
+        return mid.min(upper).max(BigDecimal.ZERO).setScale(1, RoundingMode.DOWN);
+    }
+
+    // RiskPolicy.waterLevel 이 쓰는 주의 구간 시작값과 같은 계산
+    private static BigDecimal twoThirds(BigDecimal block) {
+        return block.multiply(BigDecimal.valueOf(2)).divide(BigDecimal.valueOf(3), 2, RoundingMode.HALF_UP);
     }
 
     private static BigDecimal minOf(List<Threshold> thresholds, RiskLevel level) {
