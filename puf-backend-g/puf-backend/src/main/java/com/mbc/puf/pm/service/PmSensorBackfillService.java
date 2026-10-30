@@ -7,8 +7,8 @@ import com.mbc.puf.pm.dto.PmSensorBackfillResponse;
 
 /**
  * 센서 과거 데이터 채우기 (시연·개발용). 예지보전 설비마다 endAt 에서 weeks 주 전부터 센서 주기대로 값을 만든다.
- * 앞 normalWeeks 주는 정상 값만, 그 뒤부터 설비마다 정해진 이상 시나리오가 들어간다
- * (설비 종류별 번호 순서대로 위험 악화 → 주의 악화 → 정상 유지 → 일시적 튐 반복).
+ * 과거 데이터는 전부 정상 값이다 (이상은 DANGER 모드를 켠 설비에만, 켠 시점부터 실시간 stub 이 넣는다).
+ * normalWeeks 는 API 모양을 바꾸지 않으려고 남겨 두었고 만드는 값에는 영향이 없다.
  */
 public interface PmSensorBackfillService {
 

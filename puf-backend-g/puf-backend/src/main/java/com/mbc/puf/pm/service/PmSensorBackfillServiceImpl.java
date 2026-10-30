@@ -1,6 +1,5 @@
 package com.mbc.puf.pm.service;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -20,114 +19,147 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
 /**
- * 센서 과거 데이터를 DB 안에서 generate_series 로 한 번에 만든다 (행마다 자바를 거치지 않아 빠르다).
+ * 센서 데이터 생성기 (과거 백필 + 실시간 stub + 모드 전환 즉시 생성). 값은 DB 안에서 SQL 로 한 번에 만든다.
  *
- * 값의 평소 범위는 예지보전 모델 폴더의 샘플 데이터(CCTV·펌프)와 팀원 모델 기준값(전광판)에서 가져왔다.
- *   펌프  진동 980±2 / 압력 1013±14 / 온도 2.5 / 전류 1.1 / 유량 36 / 회전수 38   (이상: 진동·압력·온도·유량·회전수 하락, 전류 상승)
- *   CCTV  수신률 99% / 응답 49ms / 손실 0.18% / 흐림 6.6                          (이상: 수신률 하락, 응답·손실·흐림 상승)
- *   전광판 본체-외기 6.5℃ / 리플 0.028V / 응답 43ms / 오류 시간당 약 0.1건 / 불량화소 0.015%
- *          (이상 원인 4가지: 열 / 전원 / 통신 / 화면 — 설비 번호 순서대로)
- *   수위  0.30m 기준 하루 주기 ±0.02 + 잡음            (이상: 서서히 올라가는 드리프트 + 잡음 증가)
+ * [원칙] 평소(정상)에는 센서값이 평소 범위 안에서만 움직이고, 예지보전 점수(건강 점수)도 거의 일정하다.
+ *        이상은 "DANGER 모드"를 켠 설비에만, 켠 시점부터 들어간다. 과거 백필에는 이상을 넣지 않는다.
+ *        (예전에는 설비 번호별로 위험·주의·튐 시나리오를 미리 심어서, 평소에도 점수가 계속 요동쳤다)
  *
- * 설비 종류별 번호(rk, id 순)에 따라 시나리오가 정해진다:  rk%4==1 위험까지 악화 / 2 주의까지 악화 / 3 계속 정상 / 0 끝 3일 전에 한 번 튀었다 복구.
- * 악화는 끝 시각에 가까울수록 커지는 곡선이고 시작 시점은 종류마다 다르다(펌프 36시간 전, CCTV·전광판 6일 전, 수위 2시간 전).
- * 종류별 악화 크기(위험·주의·튐)는 예지보전 서버의 실제 모델 점수로 보정한 값이다(2026-10-24, 시드를 바꿔 3번씩 점수를 낸 중앙값):
- *   위험 → 끝에서 78~86점 / 주의 → 끝에서 50~55점 / 튐 → 최고 60점 안팎 / 정상 → 40점 아래.
- *   수위계 모델은 천천히 오르는 값을 평소로 받아들여 점수가 잘 안 오르고 최근에 바뀐 값에만 반응해서, 수위의 위험은 끝 2시간 안의 급변으로 만든다.
- *   펌프 모델은 이상이 조금만 생겨도 72~75점으로 거의 바로 포화한다(모델이 낼 수 있는 최고 점수에 가까움).
- *   모델을 다시 학습하거나 센서 값을 바꾸면 상수를 다시 맞춰야 한다.
+ * [정상값] 센서 하나의 값 = 평소 중심값 + 천천히 움직이는 성분(부하·열·날씨, 시각으로 정해지는 값) + 작은 측정 잡음.
+ *   - 천천히 움직이는 성분은 (설비, 센서, 시각)만으로 정해지는 값이라 백필과 실시간이 끊김 없이 이어지고, 서버를 껐다 켜도 같은 곡선이다.
+ *   - 같은 설비의 센서들은 같은 "부하" 성분을 함께 따라간다 (펌프: 회전수·유량·전류가 같이 오르내리고, 압력은 반대로, 진동은 조금).
+ *   - 전류·전압(리플)처럼 운전 조건이 정하는 값은 변동 폭을 아주 작게, 진동·온도는 상대적으로 크게 둔다.
+ *   중심값은 예지보전 모델이 학습한 평소 값(baseline)에 맞췄다:
+ *   펌프  진동 980 / 압력 1005 / 온도 2.505 / 전류 1.1 / 유량 36.3 / 회전수 38.3
+ *   CCTV  수신률 99.1% / 응답 48.7ms(저녁에 조금 느려짐) / 손실 0.165% / 흐림 6.5(밤에 조금 높음)
+ *   전광판 본체-외기 6.5℃ (외기는 하루 주기 + 날씨 변화) / 리플 0.028V / 응답 43ms / 오류 시간당 약 0.08건 / 불량화소 0.015%
+ *   수위계 0.30m 기준 하루 주기 ±0.02 + 잡음
+ *
+ * [이상(DANGER)] 설비 종류별 대표 고장. 이상 정도 s(0~1)는 DANGER 를 켠 시각부터 커진다 (s=1 이 완전한 고장 상태).
+ *   펌프   정전 — 전류·회전수·유량이 0 으로 떨어지고(30초에 걸쳐 멈춤), 압력·진동·온도가 따라 떨어진다
+ *   CCTV   통신 불량 — 수신률 급락, 응답 시간·패킷 손실 급증, 화면 흐림 증가
+ *   전광판 설비 번호 순서대로 4가지 원인 — 과열 / 전원 불안(리플) / 통신(응답·오류) / 화면(불량 화소)
+ *   수위계 값이 갑자기 튀고 흔들림이 커짐
+ *
+ * 주의: 펌프 모델은 전류·유량·회전수를 단독으로 보지 못한다(진동·압력·온도 중심이고 나머지는 "평소 범위를 벗어난 센서 비율"로만 반영).
+ *       그래서 정전 때 점수가 오르는 폭은 모델을 다시 학습해야 커진다. 이 클래스는 센서값만 만든다.
  */
 @Service
 public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
 
-    // 시간에 따라 연속적으로 조금씩 움직이는 정상 범위 잡음.
-    private static final String LIVE_NOISE = "(0.55*sin(EXTRACT(EPOCH FROM x.t)/97.0+x.id)+0.25*sin(EXTRACT(EPOCH FROM x.t)/31.0+x.id))";
+    // 측정 잡음(평균 0, 표준편차 약 1). 행마다 새로 뽑는다.
+    private static final String WHITE = "((random() + random() + random() - 1.5) * 2)";
 
-    // 배수펌프 실시간 값만 흔들림을 키우는 배수. 모델이 "평소"로 보는 폭(센서별 표준편차 σ)의 약 1~2σ 안에서 움직이게 맞췄다.
-    // 모델은 평소에서 3σ 이상 벗어나야 "평소와 달라요"로 보므로, 키워도 정상 상태가 이상으로 잡히지 않는다. 1.0 이면 예전과 같다.
-    private static final double PUMP_LIVE_NOISE_SCALE = 2.2;
-
-    private static final String NOISE = "((random() + random() + random() - 1.5) * 2)";   // 평균 0, 표준편차 약 1
-
-    /** 설비 종류별 만드는 방법 */
-    private record Spec(PmEquipmentType type, String table, long rampSec, long spikeLenSec,
-            double ampDanger, double ampCaution, double ampSpike, String insertSql) {
+    /** 설비 종류별 만드는 방법. faultRampSec = DANGER 를 켠 뒤 완전한 고장(s=1)이 될 때까지 걸리는 시간(초, 0 이면 바로) */
+    private record Spec(PmEquipmentType type, String table, long faultRampSec, String insertSql) {
     }
 
-    /** 실시간으로 쌓는 값의 흔들림 식. 전광판은 안쪽 SELECT 별칭이 y 이고, 배수펌프는 폭을 키운다 */
-    private static String liveNoise(PmEquipmentType type) {
-        if (type == PmEquipmentType.DISPLAY) {
-            return LIVE_NOISE.replace("x.", "y.");
-        }
-        if (type == PmEquipmentType.PUMP) {
-            return PUMP_LIVE_NOISE_SCALE + "*" + LIVE_NOISE;
-        }
-        return LIVE_NOISE;
+    /**
+     * 시각으로 정해지는, 천천히 움직이는 값 (대략 -1 ~ 1, 표준편차 약 1).
+     * periodSec 마다 설비·센서별 고정 난수(해시)를 하나 뽑고 사이를 부드럽게 이어 붙인다. 안쪽 SELECT 의 별칭은 b 여야 한다.
+     */
+    private static String slow(String salt, long periodSec) {
+        // numeric 이 아니라 double precision 으로 계산해야 빠르다 (펌프는 행이 수십만 개)
+        String epoch = "b.ep";
+        String k = "floor(" + epoch + " / " + periodSec + ")";
+        String f = "(" + epoch + " / " + periodSec + " - " + k + ")";
+        String w = "(" + f + " * " + f + " * (3 - 2 * " + f + "))";
+        int saltNo = (salt.hashCode() & 0xffff) + 1;
+        return "(2.2 * ((1 - " + w + ") * " + hash(saltNo, k, 0) + " + " + w + " * " + hash(saltNo, k, 1) + "))";
     }
 
-    private static final Spec PUMP = new Spec(PmEquipmentType.PUMP, "pm_sensor_pump", 36 * 3600L, 2 * 3600L, 0.3, 0.06, 0.06, """
+    // (설비, 센서, 구간 번호)마다 고정된 -1 ~ 1 값
+    private static String hash(int saltNo, String k, int plus) {
+        return "(CAST(hashint8(b.id * 1000003 + CAST(" + k + " + " + plus + " AS bigint) * 7919 + " + saltNo
+                + ") % 2001 AS double precision) / 2000)";
+    }
+
+    // 하루 주기 값(-1 ~ 1). phaseHour 시각에 0 을 지나 올라간다
+    private static String daily(String t, double phaseHour) {
+        return "sin(2 * pi() * (EXTRACT(HOUR FROM " + t + ") + EXTRACT(MINUTE FROM " + t + ") / 60.0 - " + phaseHour + ") / 24)";
+    }
+
+    private static final String SLOW_COLS_PUMP = ", " + slow("ld", 1200) + " AS ld, " + slow("th", 10800) + " AS th";
+    private static final String SLOW_COLS_CCTV = ", " + slow("ld", 21600) + " AS ld";
+    private static final String SLOW_COLS_DISPLAY = ", " + slow("ld", 21600) + " AS ld, " + slow("wm", 28800) + " AS wm";
+
+    // 배수펌프: 부하(ld)가 회전수·유량·전류를 같이 움직이고 압력은 반대로(펌프 곡선). s=1 이면 정전.
+    private static final Spec PUMP = new Spec(PmEquipmentType.PUMP, "pm_sensor_pump", 30, """
             INSERT INTO pm_sensor_pump (equip_id, recorded_at, vibration, pressure, temperature, current, flow, rpm)
             SELECT x.id, x.t,
-                   980 + 2.0 * {N} - 850 * x.s,
-                   1013 + 14 * {N} - 250 * x.s,
-                   GREATEST(0, 2.505 + 0.015 * {N} - 0.6 * x.s),
-                   GREATEST(0, 1.1 + 0.3 * {N} + 14 * x.s),
-                   GREATEST(0, 36.2 + 1.8 * {N} - 4.5 * x.s),
-                   GREATEST(0, 38 + 3 * {N} - 6 * x.s)
-              FROM ({SEV}) x
+                   GREATEST(0, 980 + 0.9 * x.ld + 1.7 * {W} - 850 * x.s),
+                   GREATEST(0, 1005 - 4 * x.ld + 8.5 * {W} - 250 * x.s),
+                   GREATEST(0, 2.505 + 0.006 * x.th + 0.004 * x.ld + 0.004 * {W} - 0.6 * x.s),
+                   GREATEST(0, (1.10 + 0.04 * x.ld + 0.015 * {W}) * (1 - x.s)),
+                   GREATEST(0, (36.3 + 0.8 * x.ld + 0.5 * {W}) * (1 - x.s)),
+                   GREATEST(0, (38.3 + 0.7 * x.ld + 0.3 * {W}) * (1 - x.s))
+              FROM (SELECT b.id, b.rk, b.t, b.s""" + SLOW_COLS_PUMP + """
+
+                      FROM ({SEV}) b OFFSET 0) x
             ON CONFLICT DO NOTHING
             """);
 
-    private static final Spec CCTV = new Spec(PmEquipmentType.CCTV, "pm_sensor_cctv", 6 * 86400L, 5 * 3600L, 0.10, 0.05, 0.20, """
+    private static final Spec CCTV = new Spec(PmEquipmentType.CCTV, "pm_sensor_cctv", 0, """
             INSERT INTO pm_sensor_cctv (equip_id, recorded_at, video_receive_rate, response_time_ms, packet_loss_rate, image_blur_score)
             SELECT x.id, x.t,
-                   LEAST(100, GREATEST(0, 99.0 + 0.65 * {N} - 7.5 * x.s)),
-                   GREATEST(0, 48.7 + 5.8 * {N} + 47 * x.s),
-                   GREATEST(0, 0.18 + 0.19 * {N} + 2.2 * x.s),
-                   GREATEST(0, 6.6 + 3.5 * {N} + 31 * x.s)
-              FROM ({SEV}) x
+                   LEAST(100, GREATEST(0, 99.1 + 0.12 * x.ld + 0.03 * {W} - 55 * x.s)),
+                   GREATEST(0, 48.7 + 1.0 * """ + daily("x.t", 14) + """
+ + 0.8 * x.ld + 0.3 * {W} + 350 * x.s),
+                   GREATEST(0, 0.165 + 0.015 * x.ld + 0.008 * {W} + 12 * x.s),
+                   GREATEST(0, 6.5 - 0.5 * """ + daily("x.t", 14) + """
+ + 0.3 * x.ld + 0.1 * {W} + 20 * x.s)
+              FROM (SELECT b.id, b.rk, b.t, b.s""" + SLOW_COLS_CCTV + """
+
+                      FROM ({SEV}) b OFFSET 0) x
             ON CONFLICT DO NOTHING
             """);
 
-    // 전광판: 주변 온도를 한 번만 뽑아야 본체 온도와 짝이 맞아서 안쪽 SELECT 를 한 겹 더 둔다 (OFFSET 0 = 합쳐지지 않게)
-    private static final Spec DISPLAY = new Spec(PmEquipmentType.DISPLAY, "pm_sensor_display", 6 * 86400L, 8 * 3600L, 0.40, 0.20, 0.70, """
+    // 불량 화소 비율(%): 화소는 한 번 죽으면 되살아나지 않으므로 시간이 갈수록 계단처럼 오르기만 한다 (잡음 없음).
+    // 2026-10-01 을 기준일로 하루 약 0.000114 씩(주 0.0008) 올라 5e-5 단위로 끊긴다 → 백필·실시간이 같은 선 위에서 이어진다.
+    // 전광판 모델은 "평소 값(37일 전~7일 전의 중앙값)"과 비교하므로 이 정도 기울기에서는 점수가 40 을 넘지 않는다(검증함). 설비마다 시작값이 조금씩 다르다.
+    private static final String BAD_PIXEL = "GREATEST(0.003, CAST(round(CAST(floor((0.0140 + 0.0004 * ((x.rk - 1) % 3) + 0.0008 / 7.0 * "
+            + "((CAST(EXTRACT(EPOCH FROM x.t) AS double precision) - 1790812800) / 86400.0)) / 0.00005) * 0.00005 AS numeric), 5) AS double precision))";
+
+    // 전광판: 외기 온도를 한 번만 뽑아야 본체 온도와 짝이 맞아서 안쪽 SELECT 를 한 겹 더 둔다 (OFFSET 0 = 합쳐지지 않게)
+    // 이상 원인은 설비 번호(rk) 순서대로 0 과열 / 1 전원 / 2 통신 / 3 화면
+    private static final Spec DISPLAY = new Spec(PmEquipmentType.DISPLAY, "pm_sensor_display", 0, """
             INSERT INTO pm_sensor_display (equip_id, recorded_at, temperature_c, ambient_c, ripple_v, response_time_ms, error_count, bad_pixel_pct)
             SELECT y.id, y.t,
-                   y.a + 6.5 + 0.6 * {N} + CASE WHEN y.cause = 0 THEN 9 * y.s ELSE 0 END,
+                   y.a + 6.5 + 0.15 * y.ld + 0.05 * {W} + CASE WHEN y.cause = 0 THEN 14 * y.s ELSE 0 END,
                    y.a,
-                   GREATEST(0, 0.028 + 0.004 * {N} + CASE WHEN y.cause = 1 THEN 0.05 * y.s ELSE 0 END),
-                   GREATEST(0, 43 + 5 * {N} + CASE WHEN y.cause = 2 THEN 60 * y.s ELSE 0 END),
-                   CAST(CASE WHEN random() < 0.1 + CASE WHEN y.cause = 2 THEN 0.8 * y.s ELSE 0 END
+                   GREATEST(0, 0.028 + 0.0015 * y.ld + 0.0003 * {W} + CASE WHEN y.cause = 1 THEN 0.12 * y.s ELSE 0 END),
+                   GREATEST(0, 43 + 1.5 * """ + daily("y.t", 14) + """
+ + 0.8 * y.ld + 0.6 * {W} + CASE WHEN y.cause = 2 THEN 300 * y.s ELSE 0 END),
+                   CAST(CASE WHEN random() < 0.08 + CASE WHEN y.cause = 2 THEN 0.8 * y.s ELSE 0 END
                              THEN 1 + floor(random() * (1 + CASE WHEN y.cause = 2 THEN 8 * y.s ELSE 0 END)) ELSE 0 END AS integer),
-                   GREATEST(0, 0.015 + 0.003 * {N} + CASE WHEN y.cause = 3 THEN 0.35 * y.s ELSE 0 END)
-              FROM (SELECT x.id, x.t, x.s, (x.rk - 1) % 4 AS cause,
-                           18 + 7 * sin(2 * pi() * (EXTRACT(HOUR FROM x.t) - 9) / 24) + 1.0 * {N} AS a
-                      FROM ({SEV}) x OFFSET 0) y
+                   GREATEST(0, y.bp + CASE WHEN y.cause = 3 THEN 1.2 * y.s ELSE 0 END)
+              FROM (SELECT x.id, x.t, x.s, x.ld, (x.rk - 1) % 4 AS cause,
+                           18 + 7 * """ + daily("x.t", 9) + """
+ + 1.2 * x.wm + 0.05 * {W} AS a,
+                           """ + BAD_PIXEL + " AS bp\n" + """
+                      FROM (SELECT b.id, b.rk, b.t, b.s""" + SLOW_COLS_DISPLAY + """
+
+                              FROM ({SEV}) b OFFSET 0) x OFFSET 0) y
             ON CONFLICT DO NOTHING
             """);
 
-    private static final Spec WATER = new Spec(PmEquipmentType.WATER_LEVEL, "pm_sensor_water_level", 2 * 3600L, 3600L, 0.50, 0.10, 0.07, """
+    private static final Spec WATER = new Spec(PmEquipmentType.WATER_LEVEL, "pm_sensor_water_level", 0, """
             INSERT INTO pm_sensor_water_level (equip_id, recorded_at, level_m)
             SELECT x.id, x.t,
-                   0.30 + 0.02 * sin(2 * pi() * (EXTRACT(HOUR FROM x.t) + EXTRACT(MINUTE FROM x.t) / 60.0 - 6) / 24)
-                        + 0.004 * {N} * (1 + 10 * x.s) + 0.5 * x.s
+                   0.30 + 0.02 * """ + daily("x.t", 6) + """
+ + 0.004 * {W} * (1 + 8 * x.s) + 0.4 * x.s
               FROM ({SEV}) x
             ON CONFLICT DO NOTHING
             """);
 
-    // 설비 × 시각 목록과 그 시각의 이상 정도 s(0~1). s 가 0 이면 정상 값, 1 이면 가장 심한 이상 값
+    /** 설비 × 시각 목록(inner)에 초 단위 시각(ep)을 한 번만 계산해 붙인다. OFFSET 0 = 합쳐지지 않게(그래야 컬럼마다 다시 계산하지 않는다) */
+    private static String withEpoch(String inner) {
+        return "SELECT s0.id, s0.rk, s0.t, s0.s, CAST(EXTRACT(EPOCH FROM s0.t) AS double precision) AS ep FROM (" + inner + ") s0 OFFSET 0";
+    }
+
+    // 설비 × 시각 목록 (과거 백필용). 이상 정도 s 는 항상 0 = 정상 값만 만든다
     private static final String SEVERITY = """
-            SELECT eq.id, eq.rk, g.t,
-                   CASE eq.kind
-                     WHEN 'D' THEN eq.amp * POWER(LEAST(1.0, GREATEST(0.0,
-                                      EXTRACT(EPOCH FROM (g.t - CAST(:onset AS timestamp))) / CAST(:rampSec AS double precision))), 1.6)
-                     WHEN 'S' THEN eq.amp * CASE WHEN g.t >= CAST(:spike0 AS timestamp)
-                                                  AND g.t < CAST(:spike0 AS timestamp) + make_interval(secs => CAST(:spikeLen AS double precision))
-                                                 THEN sin(pi() * EXTRACT(EPOCH FROM (g.t - CAST(:spike0 AS timestamp)))
-                                                          / CAST(:spikeLen AS double precision))
-                                                 ELSE 0 END
-                     ELSE 0
-                   END AS s
+            SELECT eq.id, eq.rk, g.t, CAST(0 AS double precision) AS s
               FROM eq
              CROSS JOIN LATERAL generate_series(CAST(:startAt AS timestamp), CAST(:endAt AS timestamp),
                                                 make_interval(secs => CAST(:stepSec AS double precision))) AS g(t)
@@ -140,9 +172,6 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
     private final int defaultWeeks;
     private final int defaultNormalWeeks;
     private final int pumpWeeks;
-    // false 면 예전처럼 실시간 값은 DANGER 버튼을 누른 설비만 이상. (직접 만든 인스턴스는 false, 스프링은 기본 true 를 주입)
-    @Value("${puf.pm.sensor-stub.persist-abnormal:true}")
-    private boolean persistAbnormal = false;
 
     public PmSensorBackfillServiceImpl(DbClock dbClock,
             @Value("${puf.pm.backfill.weeks:14}") int defaultWeeks,
@@ -154,6 +183,10 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
         this.pumpWeeks = pumpWeeks;
     }
 
+    /**
+     * 과거 백필. 이제 이상 구간이 없어서 normalWeeks 는 값 검사와 응답 표시에만 쓰이고, 만드는 데이터에는 영향이 없다
+     * (기존 API 모양을 바꾸지 않으려고 남겨 두었다).
+     */
     @Override
     @Transactional
     public PmSensorBackfillResponse backfill(Integer weeksArg, Integer normalWeeksArg, LocalDateTime endAtArg, boolean reset,
@@ -184,7 +217,6 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
                     + " AND EXISTS (SELECT 1 FROM " + spec.table() + " s WHERE s.equip_id = e.id)")
                     .setParameter("type", spec.type().name()).executeUpdate();
             int typeWeeks = spec == PUMP && pumpWeeks > 0 ? Math.min(weeks, pumpWeeks) : weeks;
-            int typeNormal = Math.min(normalWeeks, typeWeeks);
 
             List<Long> targets = targets(spec, reset, equipIds);
             skipped += skippedCount(spec, reset, equipIds, targets);
@@ -200,21 +232,13 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
             int step = intervalOf(spec);
             LocalDateTime end = alignDown(endAt, step);
             LocalDateTime start = alignDown(end.minusWeeks(typeWeeks), step);
-            LocalDateTime normalEnd = start.plusWeeks(typeNormal);
-            LocalDateTime onset = end.minusSeconds(spec.rampSec()).isBefore(normalEnd) ? normalEnd : end.minusSeconds(spec.rampSec());
-            long rampSec = Math.max(1, Duration.between(onset, end).getSeconds());
-            // 튐은 끝 3일 전에 (지난 7일 점수 그래프 안에서 보이게). 정상 구간 안으로 들어가면 정상 구간 끝으로 미룬다
-            LocalDateTime spike0 = end.minusDays(3).isBefore(normalEnd) ? normalEnd : end.minusDays(3);
 
-            String sql = spec.insertSql().replace("{SEV}", "WITH ranked AS (" + RANKED + "), eq AS (SELECT * FROM ranked WHERE id IN (:ids)) " + SEVERITY)
-                    .replace("{N}", NOISE);
+            String sql = spec.insertSql().replace("{SEV}", withEpoch("WITH ranked AS (" + RANKED + "), eq AS (SELECT * FROM ranked WHERE id IN (:ids)) " + SEVERITY))
+                    .replace("{W}", WHITE);
             long rows = em.createNativeQuery(sql)
                     .setParameter("type", spec.type().name())
                     .setParameter("ids", targets)
                     .setParameter("startAt", start).setParameter("endAt", end).setParameter("stepSec", step)
-                    .setParameter("onset", onset).setParameter("rampSec", rampSec)
-                    .setParameter("spike0", spike0).setParameter("spikeLen", spec.spikeLenSec())
-                    .setParameter("ampD", spec.ampDanger()).setParameter("ampC", spec.ampCaution()).setParameter("ampS", spec.ampSpike())
                     .executeUpdate();
 
             em.createNativeQuery("UPDATE pm_equipment e SET data_started_at = (SELECT MIN(s.recorded_at) FROM " + spec.table()
@@ -226,10 +250,11 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
         return new PmSensorBackfillResponse(endAt, weeks, normalWeeks, reset, skipped, results);
     }
 
-    // 종류별 번호(rk)는 지워지지 않은 같은 종류 전체에서 id 순으로 매긴다 (대상을 골라도 시나리오가 바뀌지 않게)
+    // 종류별 번호(rk)는 지워지지 않은 같은 종류 전체에서 id 순으로 매긴다 (대상을 골라도 원인 배정이 바뀌지 않게)
     /**
-     * 실시간 시연 센서. 과거 백필과 같은 값 범위·설비별 시나리오를 재사용한다.
+     * 실시간 시연 센서. 과거 백필과 같은 정상값 식을 쓴다 (백필과 값의 범위·움직임이 같아서 구간이 바뀌어도 티가 나지 않는다).
      * DB 시계, 장비의 sensor_interval_sec, 조회 API와 같은 2000년 버킷 기준을 사용한다.
+     * DANGER 모드(pm_stub_mode)인 설비만 켠 시각부터 이상값이 들어가고, 나머지는 전부 정상이다.
      * 중단 중 생긴 공백은 최근 maxSamples개만 채운다 (장기 이력은 기존 backfill API 담당).
      */
     @Override
@@ -260,12 +285,12 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
                           FROM ranked r
                     )
                     SELECT e.id, e.rk, g.t,
-                           CASE WHEN EXISTS (SELECT 1 FROM pm_stub_mode m WHERE m.equip_id=e.id
-                               AND m.mode='DANGER' AND g.t>=m.changed_at)
-                               THEN CAST(:ampD AS double precision)
-                                WHEN EXISTS (SELECT 1 FROM pm_stub_mode m WHERE m.equip_id=e.id)
-                               THEN 0.0
-                                ELSE {BASE} END AS s
+                           CAST(COALESCE((SELECT CASE WHEN m.mode = 'DANGER' AND g.t >= m.changed_at
+                                                      THEN CASE WHEN CAST(:rampSec AS double precision) <= 0 THEN 1.0
+                                                                ELSE LEAST(1.0, (EXTRACT(EPOCH FROM (g.t - m.changed_at)) + CAST(:rampSec AS double precision) / 3)
+                                                                                / CAST(:rampSec AS double precision)) END
+                                                      ELSE 0.0 END
+                                            FROM pm_stub_mode m WHERE m.equip_id = e.id), 0.0) AS double precision) AS s
                       FROM eq e
                      CROSS JOIN LATERAL generate_series(
                          GREATEST(COALESCE(
@@ -274,14 +299,10 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
                              e.until_at - make_interval(secs => e.step * (:maxSamples - 1))),
                          e.until_at, make_interval(secs => e.step)) AS g(t)
                     """.replace("{TABLE}", spec.table());
-            // 모든 이름 파라미터가 SQL 안에 한 번씩은 나오게 한다 (안 나오는 파라미터를 설정하면 하이버네이트가 예외를 낸다)
-            String unused = " + 0.0 * (CAST(:ampC AS double precision) + CAST(:ampS AS double precision))";
-            times = times.replace("{BASE}", "(" + (persistAbnormal ? liveBaseSeverity(spec) : "0.0") + unused + ")");
-            String sql = spec.insertSql().replace("+ 1.0 * {N} AS a", "+ 1.0 * "+LIVE_NOISE+" AS a").replace("{SEV}", times).replace("{N}", liveNoise(spec.type()));
+            String sql = spec.insertSql().replace("{SEV}", withEpoch(times)).replace("{W}", WHITE);
             int added = em.createNativeQuery(sql)
                     .setParameter("type", spec.type().name()).setParameter("now", now)
-                    .setParameter("ampD", spec.ampDanger()).setParameter("ampC", spec.ampCaution())
-                    .setParameter("ampS", spec.ampSpike())
+                    .setParameter("rampSec", spec.faultRampSec())
                     .setParameter("maxSamples", maxSamples).executeUpdate();
             total += added;
             // 새 설비 또는 기존 메타데이터가 비어 있는 설비의 시작 시각을 기록한다.
@@ -297,32 +318,9 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
         return total;
     }
 
-    /**
-     * 실시간 값의 평소 이상 정도 (DANGER 버튼을 누른 적 없는 설비). 과거 백필의 설비별 시나리오와 이어지게 번호(rk)로 정한다.
-     *   rk%4==1 계속 위험 / 2 계속 주의 / 0 가끔 한 번씩 튀었다 돌아옴 / 3 계속 정상.
-     * 수위계는 천천히 오르는 값을 모델이 평소로 받아들이므로 "계속"이 아니라 8시간마다 2시간 동안 올랐다가 내려오는 식으로 한다.
-     * 조치 완료(NORMAL 버튼)를 누른 설비는 pm_stub_mode 행이 생겨서 이 값 대신 0 이 된다.
-     */
-    private static String liveBaseSeverity(Spec spec) {
-        String hourOfDay = "EXTRACT(EPOCH FROM g.t) / 3600.0";
-        if (spec.type() == PmEquipmentType.WATER_LEVEL) {
-            String ph = "MOD(CAST(" + hourOfDay + " + e.rk * 1.7 AS numeric), 8.0)";
-            return "CASE MOD(e.rk, 4) WHEN 1 THEN CAST(:ampD AS double precision) WHEN 2 THEN CAST(:ampC AS double precision) ELSE 0.0 END"
-                    + " * CASE WHEN MOD(e.rk, 4) IN (1, 2) AND " + ph + " < 2 THEN CAST(" + ph + " / 2.0 AS double precision) ELSE 0.0 END";
-        }
-        double spikeHours = spec.spikeLenSec() / 3600.0;
-        String ph = "MOD(CAST(" + hourOfDay + " + e.rk * 5 AS numeric), 30.0)";
-        return "CASE MOD(e.rk, 4) WHEN 1 THEN CAST(:ampD AS double precision) WHEN 2 THEN CAST(:ampC AS double precision)"
-                + " WHEN 0 THEN CASE WHEN " + ph + " < " + spikeHours + " THEN CAST(:ampS AS double precision)"
-                + " * sin(pi() * CAST(" + ph + " AS double precision) / " + spikeHours + ") ELSE 0.0 END"
-                + " ELSE 0.0 END";
-    }
-
+    // 종류별 번호(rk)와 대상 설비 (과거 백필용: 이상 없이 정상값만)
     private static final String RANKED = """
-            SELECT r.id, r.rk,
-                   CASE MOD(r.rk, 4) WHEN 1 THEN 'D' WHEN 2 THEN 'D' WHEN 0 THEN 'S' ELSE 'N' END AS kind,
-                   CASE MOD(r.rk, 4) WHEN 1 THEN CAST(:ampD AS double precision) WHEN 2 THEN CAST(:ampC AS double precision)
-                                     WHEN 0 THEN CAST(:ampS AS double precision) ELSE 0.0 END AS amp
+            SELECT r.id, r.rk
               FROM (SELECT e.id, row_number() OVER (ORDER BY e.id) AS rk
                       FROM pm_equipment e JOIN underpass u ON u.id = e.underpass_id AND u.is_deleted = FALSE
                      WHERE e.is_deleted = FALSE AND CAST(e.type AS text) = :type) r
@@ -360,7 +358,10 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
         return ((Number) q.getSingleResult()).intValue() - targets.size();
     }
 
-    /** 모드 전환 시 주기를 기다리지 않고 대상 한 대의 새 센서값을 추가한다. */
+    /**
+     * 모드 전환 시 주기를 기다리지 않고 대상 한 대의 새 센서값을 추가한다.
+     * danger=true 면 이상이 막 시작된 상태의 값(바로 완전한 고장이 되는 종류는 s=1, 서서히 멈추는 펌프는 s=1/3 (이어지는 실시간 값도 1/3 에서 시작해 s=1 까지 오른다)), false 면 정상값.
+     */
     @Transactional
     public int emitNow(long equipId, String type, boolean danger) {
         em.createNativeQuery("SELECT TRUE FROM pg_advisory_xact_lock(731905210)").getSingleResult();
@@ -370,8 +371,9 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
                 + "GREATEST(CAST(:now AS timestamp), COALESCE((SELECT MAX(recorded_at)+interval '1 microsecond' FROM "
                 +spec.table()+" WHERE equip_id=e.id),CAST(:now AS timestamp))) AS t, CAST(:severity AS double precision) AS s "
                 +"FROM pm_equipment e WHERE e.id=:equipId AND NOT e.is_deleted";
-        return em.createNativeQuery(spec.insertSql().replace("+ 1.0 * {N} AS a", "+ 1.0 * "+LIVE_NOISE+" AS a").replace("{SEV}",times).replace("{N}",liveNoise(spec.type())))
-                .setParameter("now",dbClock.now()).setParameter("severity",danger?spec.ampDanger():0.0)
+        double severity = !danger ? 0.0 : spec.faultRampSec() > 0 ? 1.0 / 3 : 1.0;
+        return em.createNativeQuery(spec.insertSql().replace("{SEV}",withEpoch(times)).replace("{W}",WHITE))
+                .setParameter("now",dbClock.now()).setParameter("severity",severity)
                 .setParameter("equipId",equipId).executeUpdate();
     }
 

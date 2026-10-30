@@ -41,6 +41,8 @@ import tools.jackson.databind.JsonNode;
  *   경계 : 점수 = 주의 구간,  수위 = 통제 수위 + 0.5   → 자동 통제까지 일어난다
  *   심각 : 점수 = 주의 구간,  수위 = 통제 수위 + 심각 추가분 + 0.5
  *
+ * 비도 같이 맞춘다 (DemoRainTier): 관심 5 · 주의 13 · 경계 24 · 심각 36 mm/h (안전은 평상시 비 그대로). 수위(cm)보다 항상 크고 50 을 넘지 않는다.
+ *
  * 로컬에서는 진짜 침수 서버(FastAPI 8001)가 점수·예측을 계속 보내므로, 고른 지하차도는 "고정(pin)" 한다.
  *  - 고정된 지하차도의 점수·예측은 진짜 침수 서버가 보내도 InternalController 에서 무시한다 (이 서비스가 보내는 값만 통과)
  *  - 스케줄러(DemoStubScheduler)도 고정된 지하차도는 건드리지 않는다 (호우 시나리오·평상시 가짜 갱신·수위 생성 모두)
@@ -164,7 +166,7 @@ public class DemoLevelService {
         boolean withForecast = refreshCount++ % FORECAST_EVERY == 0;
         pins.forEach((uid, pin) -> {
             try {
-                push(uid, wobble(pin), withForecast);
+                push(uid, wobble(pin), withForecast);   // 비는 push 안에서 단계에 맞춰 살짝 흔든다
             } catch (RuntimeException e) {
                 log.warn("[DEMO] 고정값 갱신 실패 underpass {}: {}", uid, e.toString());
             }
@@ -264,9 +266,9 @@ public class DemoLevelService {
     private void push(Long uid, Pin pin, boolean withForecast) {
         // 단계가 내려갈 때 중간에 한 단계 더 높게 판정되지 않도록: 수위를 먼저, 점수를 나중에 넣는다
         postWater(uid, pin.waterCm());
-        postScore(uid, pin.score());
+        postScore(uid, pin);
         if (withForecast) {
-            postForecast(uid, pin.score());
+            postForecast(uid, pin);
         }
     }
 
@@ -278,21 +280,39 @@ public class DemoLevelService {
         api.postWaterLevel(body, true);
     }
 
-    private void postScore(Long uid, BigDecimal score) {
-        JsonNode rain = api.rainfall(uid);
+    private void postScore(Long uid, Pin pin) {
+        double intensity = DemoRainTier.intensity(pin.level());
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("underpassId", uid);
-        body.put("riskScore", score);
-        for (String key : new String[] {"rainfallMm", "rainfall1hMm", "rainfall3hMm", "rainfall6hMm", "rainfall12hMm", "rainfall24hMm"}) {
-            JsonNode v = rain == null ? null : rain.get(key);
-            body.put(key, v == null || v.isNull() ? BigDecimal.ZERO : v.decimalValue());
+        body.put("riskScore", pin.score());
+        String[] keys = {"rainfallMm", "rainfall1hMm", "rainfall3hMm", "rainfall6hMm", "rainfall12hMm", "rainfall24hMm"};
+        if (intensity > 0) {
+            // 관심 이상: 단계에 어울리는 비 (현재 = 시간당 세기, 누적은 50mm 이하). 세기만 ±5% 흔든다
+            double now = intensity * (1 + (java.util.concurrent.ThreadLocalRandom.current().nextDouble() * 2 - 1) * 0.05);
+            double[] acc = DemoRainTier.accumulations(now);
+            body.put(keys[0], dec1(now));
+            for (int i = 0; i < acc.length; i++) {
+                body.put(keys[i + 1], dec1(acc[i]));
+            }
+        } else {
+            JsonNode rain = api.rainfall(uid);
+            for (String key : keys) {
+                JsonNode v = rain == null ? null : rain.get(key);
+                body.put(key, v == null || v.isNull() ? BigDecimal.ZERO : v.decimalValue());
+            }
         }
         body.put("predictedAt", dbClock.now().truncatedTo(ChronoUnit.MILLIS));
         api.postRiskScore(body, true);
     }
 
     // 예측 그래프도 같은 점수로 평평하게 (진짜 침수 서버·평상시 랜덤값이 섞이지 않게)
-    private void postForecast(Long uid, BigDecimal score) {
+    private static BigDecimal dec1(double v) {
+        return BigDecimal.valueOf(v).setScale(1, RoundingMode.HALF_UP);
+    }
+
+    private void postForecast(Long uid, Pin pin) {
+        BigDecimal score = pin.score();
+        double intensity = DemoRainTier.intensity(pin.level());
         JsonNode forecast = api.forecast(uid);
         if (forecast == null || !forecast.isArray()) {
             return;
@@ -306,7 +326,7 @@ public class DemoLevelService {
             Map<String, Object> item = new LinkedHashMap<>();
             item.put("targetAt", f.get("targetAt"));
             item.put("riskScore", score);
-            item.put("rainfallMm", f.get("rainfallMm"));
+            item.put("rainfallMm", intensity > 0 ? (Object) dec1(DemoRainTier.forecast(intensity, count)) : f.get("rainfallMm"));
             items.add(item);
         }
         if (items.isEmpty()) {
