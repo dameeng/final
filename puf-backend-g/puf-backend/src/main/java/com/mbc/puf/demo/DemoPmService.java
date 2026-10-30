@@ -84,6 +84,20 @@ public class DemoPmService {
         return list();
     }
 
+    /** 설비 하나를 위험(DANGER) 또는 정상(NORMAL)으로 고정하고 바로 점수를 넣는다 (노면 제외, 지하차도 무관) */
+    public List<Map<String, Object>> setOne(LoginUser user, long equipId, String mode) {
+        List<Map<String, Object>> rows = jdbc.queryForList(
+                "SELECT e.type::text AS type FROM pm_equipment e WHERE e.id = ? AND NOT e.is_deleted AND e.type::text <> 'ROAD'", equipId);
+        if (rows.isEmpty()) {
+            throw new com.mbc.puf.common.exception.BusinessException(org.springframework.http.HttpStatus.NOT_FOUND, "설비가 없거나 노면입니다.");
+        }
+        stubMode.change(user, equipId, mode);   // 센서 stub 모드 (권한·지역 검사 포함)
+        LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+        pins.put(equipId, new Pin(mode, now));
+        send(List.of(item(equipId, String.valueOf(rows.get(0).get("type")), mode, now)));
+        return list();
+    }
+
     /** 고정 풀기 (점수는 그대로 두고 예지보전 서버 점수가 다시 이어받는다) */
     public List<Map<String, Object>> release() {
         pins.clear();
@@ -148,12 +162,9 @@ public class DemoPmService {
         try {
             LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
             List<PmScoreIngestItem> items = new ArrayList<>();
-            for (Map<String, Object> e : targets()) {
-                long id = ((Number) e.get("id")).longValue();
-                Pin p = pins.get(id);
-                if (p == null) {
-                    continue;
-                }
+            for (Map.Entry<Long, Pin> en : pins.entrySet()) {
+                long id = en.getKey();
+                Pin p = en.getValue();
                 // 누군가 센서 stub 을 반대로 바꿨으면(개별 버튼·조치완료) 고정을 푼다
                 List<String> cur = jdbc.queryForList("SELECT mode FROM pm_stub_mode WHERE equip_id = ?", String.class, id);
                 String curMode = cur.isEmpty() ? "NORMAL" : cur.get(0);
@@ -162,7 +173,12 @@ public class DemoPmService {
                     log.info("[DemoPm] equip={} 센서 stub 이 {} 로 바뀌어 고정 해제", id, curMode);
                     continue;
                 }
-                items.add(item(id, String.valueOf(e.get("type")), p.mode(), now));
+                List<String> type = jdbc.queryForList("SELECT type::text FROM pm_equipment WHERE id = ? AND NOT is_deleted", String.class, id);
+                if (type.isEmpty()) {
+                    pins.remove(id);
+                    continue;
+                }
+                items.add(item(id, type.get(0), p.mode(), now));
             }
             send(items);
         } catch (RuntimeException ex) {
