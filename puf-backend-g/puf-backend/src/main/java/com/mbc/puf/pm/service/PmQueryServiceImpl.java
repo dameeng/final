@@ -36,6 +36,7 @@ import jakarta.persistence.PersistenceContext;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 /**
  * 예지보전 화면 조회. 전부 읽기만 한다.
@@ -166,6 +167,7 @@ public class PmQueryServiceImpl implements PmQueryService {
                 .param("equipId", equipId).single(em, DetailRow.class);
         String detailJson = row == null ? null : row.getDetailJson();
         JsonNode detail = detailJson == null ? null : objectMapper.readTree(detailJson);
+        attachLatestForecast(equipId, row, detail);
         String anomalyStartedAt = detail != null && detail.hasNonNull("anomalyStartedAt")
                 ? detail.get("anomalyStartedAt").asString() : null;
 
@@ -182,6 +184,22 @@ public class PmQueryServiceImpl implements PmQueryService {
                 row == null ? null : row.getModelVersion(), row == null ? null : row.getPredictedAt(),
                 anomalyStartedAt, topCauses(detail, row == null ? null : row.getScore()),
                 currentSensors(equipId, item.getType()));
+    }
+
+    /**
+     * 미래 예측(detail.forecast)은 예지보전 서버가 10분~1시간마다 한 번만 만들어 그때 점수에만 붙인다 (DB 용량).
+     * 최근 점수에 없으면 하루 안에서 forecast 가 있는 가장 최근 점수의 것을 붙여 내려준다. 없으면 그대로 둔다.
+     */
+    private void attachLatestForecast(Long equipId, DetailRow row, JsonNode detail) {
+        if (row == null || row.getPredictedAt() == null || !(detail instanceof ObjectNode node) || node.has("forecast")) return;
+        DetailRow found = new NativeSql("SELECT CAST(s.detail->'forecast' AS text) AS detail_json FROM pm_score s"
+                + " WHERE s.equip_id = :equipId AND s.detail->'forecast' IS NOT NULL AND s.predicted_at > :since"
+                + " ORDER BY s.predicted_at DESC LIMIT 1")
+                .param("equipId", equipId).param("since", row.getPredictedAt().minusDays(1))
+                .single(em, DetailRow.class);
+        if (found != null && found.getDetailJson() != null) {
+            node.set("forecast", objectMapper.readTree(found.getDetailJson()));
+        }
     }
 
     /** The caller has already checked the equipment scope via findEquipment. */
