@@ -276,12 +276,13 @@ function afterText(f: ForecastView, at: number) {
   return h < 48 ? `약 ${Math.max(1, Math.round(h))}시간 후` : `약 ${Math.round(h / 24)}일 후`
 }
 const rangeText = (hours: number) => (hours < 48 ? `${hours}시간` : `${Math.round(hours / 24)}일`)
-// 위험·주의 도달 예상 (설비 기준치로 다시 계산)
+// 위험·주의 도달 예상 (설비 기준치로 다시 계산). 출발은 최신 점수 (예측은 10분~1시간마다 만들어져 그 사이 점수가 바뀌어요)
 const forecastEta = computed(() => {
   const f = forecast.value
   if (!f || !data.value) return null
+  const start = scoreValue.value ?? f.scoreNow
   const eta = (limit: number, label: string) => {
-    const at = crossAt(f, f.score, f.scoreNow, limit)
+    const at = crossAt(f, f.score, start, limit)
     if (at == null) return { at, text: `${rangeText(f.horizonHours)} 안에 ${label} 도달 예상 없음`, soon: false }
     if (at <= f.base) return { at, text: `이미 ${label} 단계`, soon: true }
     return { at, text: `${afterText(f, at)} (${shortTime(at)})${at > f.mainEnd ? ' · 참고' : ''}`, soon: at <= f.mainEnd }
