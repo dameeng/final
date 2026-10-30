@@ -3,6 +3,7 @@ package com.mbc.puf.pm.controller;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.mbc.puf.common.response.ApiResponse;
+import com.mbc.puf.demo.DemoPmService;
 import com.mbc.puf.pm.dto.PmInternalEquipmentItem;
 import com.mbc.puf.pm.dto.PmScoreIngestRequest;
 import com.mbc.puf.pm.dto.PmScoreIngestResponse;
@@ -39,9 +41,11 @@ public class PmInternalController {
     private final PmIngestService pmIngestService;
     private final PmSensorService pmSensorService;
     private final PmSensorBackfillService pmSensorBackfillService;
+    private final ObjectProvider<DemoPmService> demoPm;   // 시연용(puf.demo.enabled=true)일 때만 있음
 
     public PmInternalController(PmIngestService pmIngestService, PmSensorService pmSensorService,
-            PmSensorBackfillService pmSensorBackfillService) {
+            PmSensorBackfillService pmSensorBackfillService, ObjectProvider<DemoPmService> demoPm) {
+        this.demoPm = demoPm;
         this.pmIngestService = pmIngestService;
         this.pmSensorService = pmSensorService;
         this.pmSensorBackfillService = pmSensorBackfillService;
@@ -90,6 +94,13 @@ public class PmInternalController {
             + "처리 중인 이벤트가 있으면 새로 만들지 않고 단계가 오를 때만 올린다.")
     @PostMapping("/pm-scores")
     public ResponseEntity<ApiResponse<PmScoreIngestResponse>> receiveScores(@Valid @RequestBody PmScoreIngestRequest request) {
+        DemoPmService demo = demoPm.getIfAvailable();
+        if (demo != null) {
+            request = demo.filter(request);   // 시연에서 위험/정상으로 고정한 설비의 실제 점수는 걸러낸다
+            if (request.getScores().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(new PmScoreIngestResponse(0, 0, 0, 0, 0, 0)));
+            }
+        }
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(pmIngestService.receiveScores(request)));
     }
 }
