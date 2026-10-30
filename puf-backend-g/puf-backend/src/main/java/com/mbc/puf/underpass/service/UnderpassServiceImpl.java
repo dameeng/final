@@ -69,13 +69,17 @@ public class UnderpassServiceImpl implements UnderpassService {
     // 잔류/장시간 IN_TRANSIT 차량을 자동으로 "통과완료" 처리하기까지 기다리는 시간(분). 2026-10-01 확정값
     // (※ 새 DB 구조 단계에서 이 타이머는 삭제 예정 — 소방 보고 흐름과 충돌)
 
-    // 목록용: 지역명 + 최신 위험점수 1건 + 판별대기 건수 + 잔류차량 건수를 한 번에 (예전 LATERAL JOIN 3개와 같음)
+    // "통과 중 차량" = 지금 지하차도 안에 있는 차량: 입구를 지나 아직 출구를 안 지난 것(IN_TRANSIT) + 통제로 잔류 처리된 것(REMAINING)
+    private static final String IN_UNDERPASS = "t.status in (com.mbc.puf.common.enums.TransitStatus.IN_TRANSIT,"
+            + " com.mbc.puf.common.enums.TransitStatus.REMAINING)";
+
+    // 목록용: 지역명 + 최신 위험점수 1건 + 판별대기 건수 + 통과 중 차량 건수를 한 번에 (예전 LATERAL JOIN 3개와 같음)
     private static final String LIST_SELECT = "select u, r.name,"
             + " (select rs.riskScore from RiskScore rs where rs.underpassId = u.id order by rs.predictedAt desc limit 1) as riskScore,"
             + " (select count(p) from PlateLog p join Camera c on c.id = p.cameraId"
             + "   where c.underpassId = u.id and p.reviewStatus = com.mbc.puf.common.enums.ReviewStatus.PENDING),"
             + " (select count(t) from Transit t"
-            + "   where t.underpassId = u.id and t.status = com.mbc.puf.common.enums.TransitStatus.REMAINING)"
+            + "   where t.underpassId = u.id and " + IN_UNDERPASS + ")"
             + " from Underpass u left join Region r on r.id = u.regionId";
 
     private final UnderpassRepository underpassRepository;
@@ -153,6 +157,12 @@ public class UnderpassServiceImpl implements UnderpassService {
     public UnderpassDetailResponse getUnderpass(LoginUser loginUser, Long id) {
         UnderpassDetailResponse detail = toDetail(requireExistingUnderpass(id));
         detail.setManageable(myRegionIds(loginUser).contains(detail.getRegionId()));
+        // 상세 화면의 '통과 중 차량' · '판별 대기' (목록 항목과 같은 기준)
+        detail.setRemainingCount(em.createQuery("select count(t) from Transit t where t.underpassId = :id and " + IN_UNDERPASS, Long.class)
+                .setParameter("id", id).getSingleResult());
+        detail.setPendingReviewCount(em.createQuery("select count(p) from PlateLog p join Camera c on c.id = p.cameraId"
+                + " where c.underpassId = :id and p.reviewStatus = com.mbc.puf.common.enums.ReviewStatus.PENDING", Long.class)
+                .setParameter("id", id).getSingleResult());
         return detail;
     }
 

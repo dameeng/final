@@ -36,6 +36,8 @@ public class UnderpassDetailResponse {
     private Long downEntryCameraId;
     private Long downExitCameraId;
     private LocalDateTime createdAt;
+    private Long remainingCount;       // 지금 지하차도 안에 있는 차량(IN_TRANSIT + REMAINING). 상세 조회에서만 채운다
+    private Long pendingReviewCount;   // 이 지하차도 카메라의 판별 대기(PENDING) 건수. 상세 조회에서만 채운다
 
     public UnderpassDetailResponse() {
     }
@@ -117,4 +119,10 @@ public class UnderpassDetailResponse {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public Long getRemainingCount() { return remainingCount; }
+    public void setRemainingCount(Long remainingCount) { this.remainingCount = remainingCount; }
+
+    public Long getPendingReviewCount() { return pendingReviewCount; }
+    public void setPendingReviewCount(Long pendingReviewCount) { this.pendingReviewCount = pendingReviewCount; }
 }

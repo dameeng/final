@@ -104,7 +104,7 @@ public class DashboardServiceImpl implements DashboardService {
                 + "    JOIN underpass u ON u.id = c.underpass_id"
                 + "   WHERE p.review_status = 'PENDING'" + scope + ") AS pending_review_count,"
                 + " (SELECT COUNT(*) FROM transit t JOIN underpass u ON u.id = t.underpass_id"
-                + "   WHERE t.status = 'REMAINING'" + scope + ") AS remaining_count,"
+                + "   WHERE t.status IN ('IN_TRANSIT', 'REMAINING')" + scope + ") AS remaining_count,"
                 + " (SELECT COUNT(*) FROM alert a JOIN event e ON e.id = a.event_id"
                 + "    JOIN underpass u ON u.id = e.underpass_id"
                 + "   WHERE a.created_at >= date_trunc('day', NOW())" + scope + ") AS alerts_today,"

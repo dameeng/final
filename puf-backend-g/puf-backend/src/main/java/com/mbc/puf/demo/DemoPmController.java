@@ -8,6 +8,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -43,6 +44,18 @@ public class DemoPmController {
     @PostMapping("/danger")
     public ApiResponse<List<Map<String, Object>>> danger(@AuthenticationPrincipal LoginUser user) {
         return ApiResponse.ok(service.setAll(user, "DANGER"));
+    }
+
+    @Operation(summary = "설비 하나 위험으로", description = "해당 설비의 센서 stub 을 위험으로 바꾸고 위험 점수를 바로 넣는다. 고정·해제 규칙은 전체 위험으로와 같다.")
+    @PostMapping("/{equipId}/danger")
+    public ApiResponse<List<Map<String, Object>>> dangerOne(@AuthenticationPrincipal LoginUser user, @PathVariable("equipId") long equipId) {
+        return ApiResponse.ok(service.setOne(user, equipId, "DANGER"));
+    }
+
+    @Operation(summary = "설비 하나 정상으로", description = "해당 설비의 센서 stub 을 정상으로 바꾸고 정상 점수를 바로 넣는다.")
+    @PostMapping("/{equipId}/normal")
+    public ApiResponse<List<Map<String, Object>>> normalOne(@AuthenticationPrincipal LoginUser user, @PathVariable("equipId") long equipId) {
+        return ApiResponse.ok(service.setOne(user, equipId, "NORMAL"));
     }
 
     @Operation(summary = "초량 설비 전체 정상으로", description = "센서 stub 을 정상으로 바꾸고 정상 점수를 바로 넣는다. 실제 점수가 주의 미만이 되면 고정이 풀린다. 처리 중인 점검 이벤트는 직접 조치완료해야 한다.")
