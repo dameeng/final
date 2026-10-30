@@ -169,7 +169,7 @@ document.addEventListener('click', async (e) => {
   else if (t.dataset.rel) { const j = await api('DELETE', '/api/demo/levels', { underpassIds: [Number(t.dataset.rel)] }); if (j && j.data) { rows = j.data; renderLevels() } }
   else if (t.dataset.start) { await api('POST', '/api/cctv/plate/start?cameraId=' + t.dataset.start); loadPlate() }
   else if (t.dataset.stop) { await api('POST', '/api/cctv/plate/stop?cameraId=' + t.dataset.stop); loadPlate() }
-  else if (t.dataset.pm) { const [id, mode] = t.dataset.pm.split(':'); await api('PUT', '/api/pm/equipments/' + id + '/stub-mode', { mode }); setTimeout(loadPm, 1500) }
+  else if (t.dataset.pm) { const [id, mode] = t.dataset.pm.split(':'); await api('POST', '/api/demo/pm/' + id + '/' + mode.toLowerCase()); setTimeout(loadPm, 1500) }
 })
 $('releaseAll').onclick = async () => { const j = await api('DELETE', '/api/demo/levels', {}); if (j && j.data) { rows = j.data; renderLevels() } }
 
