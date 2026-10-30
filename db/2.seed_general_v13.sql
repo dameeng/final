@@ -2,6 +2,10 @@
 -- v11: manager06(강현우)을 manager01과 같은 지역의 직전 야간조 근무자로 추가. 기존 ID 유지.
 -- v12: 영상에 나오는 모든 차량이 접근/진입 직전 알림을 받도록 customer14~19(+차량 18대) 추가, 09무0867→09부0867 정정,
 --      알림 샘플·FAQ·공지를 현재 알림 정책/문구에 맞춤. 기존 ID 유지(고객 1번 차량은 그대로).
+-- v13: 고객당 차량 1대(OCR 이 둘 중 하나로 읽는 customer07·10·19 만 2대 → car 22대), 초량 카메라 226~229 거리 맞춤(접근 1000m / 직전 300m),
+--      초량지하차도 침수 이력 1회, 과거 로그 더미(최근 3일, 모두 끝난 상황): 초량 새벽 집중호우 사건 · 해운대 센텀시티 수동 통제 1회 ·
+--      event / alert(+delivery) / plate_log / transit / ctrl_transfer / 공지 알림 / 관리자 알림(상황 종료형).
+--      점검이력(pm_event·pm_action) · 전광판 이력(display_history) · 설비 데일리 리포트 알림은 설비/전광판이 4.seed_pm 에서 생기므로 4.seed_pm v11 에 있음.
 -- 개발 DB 초기 구축용. 1번은 public 스키마와 기존 데이터를 삭제한다. 기존 운영 DB에 적용하지 말 것.
 -- 네 파일을 순서대로 1회 실행하면 원본 시드의 ID/생성 순서를 유지한다. 시드는 반복 실행용이 아니다.
 
@@ -110,8 +114,8 @@ CROSS JOIN manager previous
 WHERE previous.login_id = 'manager06';
 
 -- =====================================================================
--- 6. customer — 고객 19명 (login_id = customer01~19, pw = login_id). 차량을 고객당 3대씩 맞추느라 11~13 추가,
---    영상에 나오는 차량 전부를 등록하느라 14~19 추가
+-- 6. customer — 고객 19명 (login_id = customer01~19, pw = login_id). 11~13 은 일반 더미 고객,
+--    영상에 나오는 차량을 등록하느라 14~19 추가
 -- =====================================================================
 INSERT INTO customer (login_id, password, name, birth, email, phone, zipcode, road_addr, detail_addr, emergency, is_withdrawn, created_at) VALUES
 ('customer01', '$2b$10$f7pNPQHzg6AvUlBaBfvUeuWGv6A9c8TA6LR8ZAYlZLCi04h2LnnXi', '이하은', '1995-04-12', 'haeun@example.com',   '01020010001', '48058', '부산 해운대구 해운대로 570',      '1201호', '01090010001', FALSE, NOW() - INTERVAL '60 days'),
@@ -135,43 +139,42 @@ INSERT INTO customer (login_id, password, name, birth, email, phone, zipcode, ro
 ('customer19', '$2b$10$f1kUOKGoSKUlXo4I2cNNneXUJwOQH262ZpCc9ik.2Eh85AN5CcNZa', '유태민', '1986-12-14', NULL, '01020010019', '48900', '부산 동구 중앙대로 206', NULL, '01090010019', FALSE, NOW() - INTERVAL '2 days');
 
 -- =====================================================================
--- 7. car — 고객 등록 차량: 고객당 정확히 3대 (19명 × 3 = 57대)
+-- 7. car — 고객 등록 차량: 고객당 1대 (v13). 단 OCR 이 같은 차를 둘 중 하나로 읽는 customer07·10·19 는 2대 → 19명 중 3명이 2대, 총 22대
 --    · 시연용 번호 = AI 서버 roi.mp4 에 나오는 번호 (ocr_server/자동차영상/번호판_목록.txt, test/결과 영상 기준)
 --      Spring 은 번호가 정확히 같아야 매칭하므로 OCR 이 한글을 다르게 읽는 번호는 둘 다 같은 고객에게 등록
---    · customer01: 실행할 때마다 같은 번호로 읽힌 차(12고1252/19저0362/117머1687) -> 로그인해서 알림 확인용
---    · customer07: 50주3712/50수3712 (둘 중 하나로 읽힘), customer10: 52로0979/52모0979 (입구/출구 영상, 둘 중 하나로 읽힘)
+--    · customer01: 12고1252 (실행할 때마다 같은 번호로 읽힌 차) -> 로그인해서 알림 확인용. 19저0362 / 117머1687 은 v13 에서 미등록으로 뺌
+--    · customer07: 50주3712/50수3712, customer10: 52로0979/52모0979, customer19: 47우9587/47루9587 (OCR 이 둘 중 하나로 읽음 → 둘 다 등록)
 --      입구·출구 영상 차량도 APPROACH_LPR/FINAL_LPR 이라 알림이 나가요
---    · v12: 영상(226~229)에 인식되는 모든 차량을 등록해 접근 알림·진입 직전 알림이 전부 나가게 함 (customer14~19).
---      47우9587/47루9587 은 OCR 이 둘 중 하나로 읽는 같은 차라 customer19 에 둘 다 등록. 고객 1번 차량은 변경 없음
---      일부러 한 글자 틀리게 읽힌 번호(09모0867, 19서0362, 285수8596 등)는 미등록으로 두어 번호판 판별 대기(/verify) 시연에 씀
---    · 나머지는 시연용 번호 2개 + 일반 더미 번호 1개 (customer11~13 은 일반 더미 번호만)
+--    · 영상에 인식되는 차량이 고객 수(19명)보다 많아서, 고객당 1대로 줄이면서 일부 영상 차량은 미등록이 됨.
+--      미등록 번호는 접근/진입 직전 알림이 나가지 않고, 번호판 판별 대기(/verify) 시연에 쓸 수 있음 (한 글자 틀리게 읽힌 09모0867, 285수8596 등도 그대로 미등록)
+--    · 한 계정 최대 3대 등록 정책은 그대로(FAQ 와 같음). 시드에만 1대씩 넣는다
 -- =====================================================================
 INSERT INTO car (customer_id, car_num) VALUES
-(1, '12고1252'), (1, '19저0362'), (1, '117머1687'),
-(2, '821루4545'), (2, '50마2269'), (2, '23나5012'),
-(3, '285수8896'), (3, '09부0867'), (3, '67다8834'),
-(4, '33보6383'), (4, '127보7725'), (4, '45라1156'),
-(5, '51소3396'), (5, '386부6716'), (5, '78마6623'),
-(6, '04다5872'), (6, '204로1201'), (6, '56바4490'),
-(7, '01가7454'), (7, '50주3712'), (7, '50수3712'),
-(8, '256어9101'), (8, '231어4584'), (8, '32자8867'),
-(9, '381구8437'), (9, '109가5726'), (9, '64차5501'),
-(10, '259가8906'), (10, '52로0979'), (10, '52모0979'),
-(11, '51허3927'), (11, '12가7841'), (11, '34가2019'),
-(12, '89사7712'), (12, '17카9923'), (12, '91아3345'),
-(13, '73타2278'), (13, '38라6241'), (13, '72바1394'),
-(14, '276러5277'), (14, '205허6828'), (14, '825부3082'),
-(15, '85주8505'), (15, '898러1929'), (15, '22무5744'),
-(16, '60우7674'), (16, '222하5778'), (16, '83루0811'),
-(17, '86누1347'), (17, '55두6346'), (17, '200라3005'),
-(18, '85노1795'), (18, '207거8189'), (18, '48어0101'),
-(19, '47우9587'), (19, '47루9587'), (19, '36거4172');
+(1, '12고1252'),
+(2, '821루4545'),
+(3, '285수8896'),
+(4, '33보6383'),
+(5, '51소3396'),
+(6, '04다5872'),
+(7, '50주3712'), (7, '50수3712'),
+(8, '256어9101'),
+(9, '381구8437'),
+(10, '52로0979'), (10, '52모0979'),
+(11, '51허3927'),
+(12, '89사7712'),
+(13, '73타2278'),
+(14, '276러5277'),
+(15, '85주8505'),
+(16, '60우7674'),
+(17, '86누1347'),
+(18, '85노1795'),
+(19, '47우9587'), (19, '47루9587');
 
 -- =====================================================================
 -- 8. underpass — 부산 지하차도 45개소 (busan_underpass_master 엑셀 기준)
 --    id 순서: 1=초량지하차도(시연 지하차도, OCR 시연 카메라 226~229 소속), 2~13=강서구·금정구·기장군·남구·... 엑셀 순서 그대로 한 칸씩 뒤로(금호=2), 14번부터는 엑셀 순서 그대로
 --    region_id는 region.name으로 조회(id 값에 의존하지 않음). 카메라 참조는 아래 10번에서 UPDATE
---    flood_count(침수 이력)는 엑셀에 없어서 기본값 0
+--    flood_count(침수 이력)는 엑셀에 없어서 기본값 0 (v13: 초량지하차도만 아래 11-2 에서 1회로 갱신)
 -- =====================================================================
 INSERT INTO underpass (name, region_id, road_addr, lat, lng, height, length, width, lanes, safety_grade, river_dist, sea_dist) VALUES
 ('초량지하차도', (SELECT id FROM region WHERE name = '동구' AND is_deleted = FALSE), '부산광역시 동구', 35.1191375, 129.0447344, 3.5, 165, 15, 2, 'B', 346.1, 397),
@@ -233,10 +236,11 @@ SELECT setval('camera_id_seq', 225);
 --      id 를 직접 적지 않음: 위 setval 바로 뒤라 BIGSERIAL 이 slot 순서대로 226, 227, 228, 229 를 줌
 --      226 APPROACH_LPR(roi.mp4) / 227 FINAL_LPR(roi.mp4) / 228 FINAL_LPR(입구.mp4) / 229 FINAL_LPR(출구.mp4)
 --      stream_url = AI 서버 실시간 영상 주소 (225 + slot = 카메라 id)
+--      dist = 진입지점까지 거리(m): 접근 감지 카메라(APPROACH_LPR) 1000m / 직전 감지 카메라(FINAL_LPR) 300m (v13. 이전 값 200/50/0/0)
 INSERT INTO camera (underpass_id, role, stream_url, dist, lat, lng)
 SELECT u.id, s.role::camera_role, 'http://localhost:8000/stream/' || (225 + s.slot), s.dist, u.lat, u.lng
 FROM underpass u
-CROSS JOIN (VALUES (1, 'APPROACH_LPR', 200), (2, 'FINAL_LPR', 50), (3, 'FINAL_LPR', 0), (4, 'FINAL_LPR', 0)) AS s(slot, role, dist)
+CROSS JOIN (VALUES (1, 'APPROACH_LPR', 1000), (2, 'FINAL_LPR', 300), (3, 'FINAL_LPR', 300), (4, 'FINAL_LPR', 300)) AS s(slot, role, dist)
 WHERE u.id = 1
 ORDER BY s.slot;
 
@@ -247,6 +251,9 @@ UPDATE underpass SET up_entry_cam_id = 228, up_exit_cam_id = 229 WHERE id = 1;
 -- 11. (예지보전 설비는 4.seed_pm 로 이동)
 -- 11-1. 선제 통제 대상 (수위 5cm 에서 통제) — 시연/테스트용 1곳 지정. 실제 운영에서는 관리자가 지정
 UPDATE underpass SET early_block = TRUE WHERE name = '초량지하차도';
+
+-- 11-2. 침수 이력 — 초량지하차도 과거 침수 1회 (v13). AI 위험도 모델 입력값이자, 수위 5cm 선제 통제 판단에 쓰이는 값
+UPDATE underpass SET flood_count = 1 WHERE name = '초량지하차도';
 
 -- =====================================================================
 -- 12. threshold — 지하차도별 위험도 임계치 (안전 0 / 관심 40 / 주의 70. 경계·심각은 수위로만 판정하므로 행 없음)
@@ -331,16 +338,16 @@ INSERT INTO faq (category, sort_order, question, answer, manager_id, view_count)
 -- =====================================================================
 -- 18. notice — 공지사항 3건
 -- =====================================================================
-INSERT INTO notice (category, title, content, is_important, send_push, manager_id, view_count) VALUES
+INSERT INTO notice (category, title, content, is_important, send_push, manager_id, view_count, created_at, updated_at) VALUES
 ('INFO', 'PUF 시스템 오픈 안내',
  '부산광역시 지하차도 침수 예방 시스템(PUF)이 정식 오픈되었습니다. 내 차량 번호를 등록하시면 지하차도에 접근하거나 진입하기 직전일 때, 통제 중이거나 위험 단계가 높은 경우 문자와 푸시 알림으로 안내해 드립니다.',
- TRUE, FALSE, 1, 312),
+ TRUE, FALSE, 1, 312, NOW() - INTERVAL '3 days', NOW() - INTERVAL '3 days'),
 ('URGENT', '태풍 대비 사전 안내',
  '기상청 예보에 따라 이번 주말 태풍 영향이 예상됩니다. 수위가 통제 기준에 닿은 지하차도는 자동으로 통제되오니, 전광판과 앱의 통제 안내를 확인하시고 우회도로를 이용해 주시기 바랍니다.',
- TRUE, TRUE, 2, 487),
+ TRUE, TRUE, 2, 487, NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days'),
 ('MAINTENANCE', '시스템 정기 점검 안내',
  '11월 6일(금) 02:00~06:00 시스템 정기 점검이 예정되어 있습니다. 해당 시간 동안 서비스 이용이 제한될 수 있습니다. 점검 중에도 통제 중인 지하차도의 전광판 안내는 유지됩니다.',
- FALSE, FALSE, 1, 156);
+ FALSE, FALSE, 1, 156, NOW() - INTERVAL '1 day', NOW() - INTERVAL '1 day');
 
 -- =====================================================================
 -- 19. chat_synonym — 챗봇 유의어 매핑
@@ -401,7 +408,7 @@ INSERT INTO device_token (customer_id, token, platform) VALUES
 -- shift:        1=주간, 2=오후, 3=야간
 -- manager:      1~6 (login/pw: manager01~06. 6=강현우, 야간조, manager01과 동일 지역)
 -- customer:     1~19 (login: customer01~19)
--- car:          1~57 (고객당 3대. 영상 인식 번호 전부 + 일반 더미 번호)
+-- car:          1~22 (고객당 1대. customer07·10·19 만 OCR 이중 인식 번호 때문에 2대)
 -- underpass:    1~45 (1=초량지하차도, 이후 엑셀 순서: 금호(강서구)=2 → … → 해운대구)
 -- camera:       226 접근 APPROACH_LPR(roi), 227 roi FINAL_LPR, 228 입구 FINAL_LPR, 229 출구 FINAL_LPR (초량지하차도, id 1) — 나머지 카메라(CCTV)는 3.seed_its 가 230번부터 추가
 -- threshold:    1~135 (지하차도당 3단계)
@@ -411,29 +418,273 @@ INSERT INTO device_token (customer_id, token, platform) VALUES
 -- faq:          1~5
 -- notice:       1~3
 -- device_token: 1~18
+-- (v13 과거 로그 더미, 아래 100번) event 14 / alert 6 · alert_delivery 14 / plate_log 31 · transit 7 / ctrl_transfer 8 /
+--                                  notice_alert 19 · notice_delivery 18 / customer_notification 27 / manager_notification 12 (4.seed_pm 이 3건 더 추가 → 15)
 
 -- =====================================================================
 -- 99. 알림 센터 샘플 (고객 알림 3분류 / 관리자 알림 4분류 모두 1건 이상)
 --     실제 운영에서는 서비스 코드가 자동으로 만들고, 이 행들은 화면 확인용 샘플이다.
+--     v13: 고객 위험(RISK) 알림과 관리자 위험 알림은 아래 100번 사건 더미에서 alert/event 와 같이 만든다(ref_id 가 서로 이어지도록).
+--          관리자 알림은 모두 "상황 종료" 형(위험 단계 하강 · 통제 해제 · 번호판 판별 처리 · 정상화). 설비(EQUIPMENT) 알림은 4.seed_pm 에서 만든다.
 -- =====================================================================
--- 고객 샘플은 실제 알림이 만들어내는 제목/본문 형식과 같게 둔다 (고객 1번: 12고1252 · 19저0362 · 117머1687)
---   접근/진입 직전 알림: 본문 = 지하차도 · 차량번호 · 인식 카메라 #id (진입 N m 전) [· 사유: ...]
+-- 고객 샘플은 실제 알림이 만들어내는 제목/본문 형식과 같게 둔다 (고객 1번: 12고1252)
 --   공지: 제목 "새 공지" / "[긴급] 새 공지", 본문 = 공지 제목   문의: 제목 "내 문의에 답변이 등록되었습니다", 본문 = 문의 제목
 INSERT INTO customer_notification (customer_id, category, title, body, ref_type, ref_id, is_read, created_at) VALUES
-(1, 'RISK',    '지하차도 접근 알림',               '초량지하차도 · 12고1252 · 인식 카메라 #226 (진입 200m 전) · 사유: 집중호우로 인한 수위 상승',  'ALERT',   NULL, FALSE, NOW() - INTERVAL '10 minutes'),
-(1, 'RISK',    '지하차도 진입 직전 알림',          '초량지하차도 · 19저0362 · 인식 카메라 #227 (진입 50m 전) · 사유: 집중호우로 인한 수위 상승',   'ALERT',   NULL, FALSE, NOW() - INTERVAL '2 hours'),
-(1, 'RISK',    '지하차도 접근 알림',               '초량지하차도 · 117머1687 · 인식 카메라 #226 (진입 200m 전)',                                  'ALERT',   NULL, TRUE,  NOW() - INTERVAL '1 day'),
 (1, 'NOTICE',  '새 공지',                          'PUF 시스템 오픈 안내',                                                                         'NOTICE',  1,    FALSE, NOW() - INTERVAL '3 days'),
 (1, 'NOTICE',  '[긴급] 새 공지',                   '태풍 대비 사전 안내',                                                                          'NOTICE',  2,    TRUE,  NOW() - INTERVAL '2 days'),
 (1, 'INQUIRY', '내 문의에 답변이 등록되었습니다',  '차량 번호를 잘못 등록했어요',                                                                  'INQUIRY', NULL, FALSE, NOW() - INTERVAL '5 hours');
 
--- 관리자 샘플도 실제 제목/본문 형식과 같게 둔다 (초량지하차도 = 동구, region id 4)
-INSERT INTO manager_notification (category, region_id, title, body, ref_type, ref_id, is_urgent, created_at) VALUES
-('RISK',      4, '위험 단계 상승',          '초량지하차도 · 주의 → 경계 · 수위 5cm',                                                     'UNDERPASS', 1,    FALSE, NOW() - INTERVAL '15 minutes'),
-('RISK',      4, '지하차도 자동 통제 시작', '초량지하차도 · 사유: 수위 5cm · 통제 기준 5cm 도달 (자동 통제)',                             'UNDERPASS', 1,    TRUE,  NOW() - INTERVAL '14 minutes'),
-('EQUIPMENT', 4, '설비 위험 진입',          '초량지하차도 · 배수펌프 P-1-1 · 위험 단계 (82점)',                                          'PM_EVENT',  NULL, TRUE,  NOW() - INTERVAL '1 hour'),
-('TASK',      4, '번호판 수동 판별 필요',   '초량지하차도 · 09모0867',                                                                   'PLATE_LOG', NULL, FALSE, NOW() - INTERVAL '30 minutes'),
-('TASK',      NULL, '새 1:1 문의',          '차량 번호를 잘못 등록했어요',                                                               'INQUIRY',   NULL, FALSE, NOW() - INTERVAL '6 hours'),
-('SYSTEM',    NULL, '데이터 수신 지연',     '위험도 데이터 수신이 지연되고 있습니다.',                                                   NULL,        NULL, FALSE, NOW() - INTERVAL '3 hours');
+-- =====================================================================
+-- 100. 과거 로그 더미 (v13) — 최근 3일, 모두 이미 끝난 상황
+--   · 초량지하차도(id 1): 3일 전 새벽 집중호우 사건 1회
+--       관심 → 주의 → 경계(수위 5cm, 자동 통제) → 주의 → 관심 → 해제(야간조 manager06) → 안전
+--   · 센텀시티지하차도(해운대구): 2일 전 오후 수동 통제 1회 (오후조 manager02)
+--   · 번호판 인식(plate_log, 카메라 226~229) / 입출구 통과(transit, 전부 정상 통과) / 개인화 알림(alert + 채널별 발송) /
+--     통제정보 이관(ctrl_transfer, 통제·해제마다 경찰 1 + 소방 1) / 공지 일괄발송 알림(notice_alert)
+--   · 시각은 시드를 돌린 날 0시 기준 상대값(3일 전 / 2일 전 / 어제). 지금 진행 중인 상황은 만들지 않는다(열린 통제·판별 대기 없음)
+--   · 위험도 점수·수위 과거값(risk_score, water_level)은 넣지 않는다: 시연 구동 시 백필
+--   · 알림 제목/본문은 Spring 서비스가 만드는 형식과 같다
+--   · 도우미 함수는 pg_temp(이 세션에서만 보임)에 만들고 마지막에 지운다
+-- =====================================================================
+
+-- 지하차도 이벤트 1건 (RISK_LEVEL_UP/DOWN · BLOCK · RELEASE)
+CREATE FUNCTION pg_temp.seed_event(p_underpass TEXT, p_type underpass_event_type, p_level risk_level, p_score NUMERIC,
+                                   p_water NUMERIC, p_operator TEXT, p_auto BOOLEAN, p_reason TEXT, p_at TIMESTAMP)
+RETURNS BIGINT AS $$
+    INSERT INTO event (underpass_id, type, risk_level, score, water_cm, operator_id, is_auto, reason, created_at)
+    SELECT u.id, p_type, p_level, p_score, p_water, (SELECT m.id FROM manager m WHERE m.login_id = p_operator), p_auto, p_reason, p_at
+    FROM underpass u WHERE u.name = p_underpass AND u.is_deleted = FALSE
+    RETURNING id;
+$$ LANGUAGE sql;
+
+-- 번호판 인식 로그 1건 (등록 차량이면 car_id 매칭. 수동 판별을 거친 건은 corrected_num 이 있으면 그 번호로 매칭)
+CREATE FUNCTION pg_temp.seed_plate(p_cam BIGINT, p_num TEXT, p_corrected TEXT, p_conf NUMERIC, p_status recognition_status,
+                                   p_review review_status, p_reviewer TEXT, p_at TIMESTAMP)
+RETURNS BIGINT AS $$
+    INSERT INTO plate_log (camera_id, detected_num, corrected_num, confidence, recog_status, car_id,
+                           review_status, review_due, reviewed_by, reviewed_at, detected_at)
+    VALUES (p_cam, p_num, p_corrected, p_conf, p_status,
+            CASE WHEN p_status IN ('SUCCESS', 'LOW_CONFIDENCE')
+                 THEN (SELECT c.id FROM car c WHERE c.car_num = COALESCE(p_corrected, p_num) AND c.is_deleted = FALSE ORDER BY c.id LIMIT 1) END,
+            p_review,
+            CASE WHEN p_review <> 'NONE' THEN p_at + INTERVAL '1 minute' END,
+            (SELECT m.id FROM manager m WHERE m.login_id = p_reviewer),
+            CASE WHEN p_review = 'CONFIRMED' THEN p_at + INTERVAL '40 seconds' END,
+            p_at)
+    RETURNING id;
+$$ LANGUAGE sql;
+
+-- 상행 입구(228) → 출구(229) 정상 통과 1건 (plate_log 2건 + transit 1건)
+CREATE FUNCTION pg_temp.seed_pass(p_num TEXT, p_conf NUMERIC, p_at TIMESTAMP)
+RETURNS VOID AS $$
+DECLARE
+    v_in  BIGINT;
+    v_out BIGINT;
+BEGIN
+    v_in  := pg_temp.seed_plate(228, p_num, NULL, p_conf, 'SUCCESS', 'NONE', NULL, p_at);
+    v_out := pg_temp.seed_plate(229, p_num, NULL, p_conf - 0.02, 'SUCCESS', 'NONE', NULL, p_at + INTERVAL '35 seconds');
+    INSERT INTO transit (underpass_id, car_num, direction, entry_log_id, exit_log_id, status, entry_at, exit_at)
+    VALUES ((SELECT id FROM underpass WHERE name = '초량지하차도' AND is_deleted = FALSE), p_num, 'UP', v_in, v_out, 'EXITED',
+            p_at, p_at + INTERVAL '35 seconds');
+END;
+$$ LANGUAGE plpgsql;
+
+-- 개인화 알림 1건: alert + 채널별 발송(문자 + 그 고객의 활성 푸시 토큰마다) + 고객 알림 센터 행
+--   p_fail_push 가 TRUE 면 첫 번째 푸시 토큰 발송을 FAIL 로 기록한다
+CREATE FUNCTION pg_temp.seed_alert(p_event BIGINT, p_num TEXT, p_cam BIGINT, p_type alert_type, p_at TIMESTAMP,
+                                   p_read BOOLEAN, p_reason TEXT, p_fail_push BOOLEAN)
+RETURNS VOID AS $$
+DECLARE
+    v_car   BIGINT;
+    v_cust  BIGINT;
+    v_alert BIGINT;
+    v_uname TEXT;
+    v_dist  INT;
+    v_first BOOLEAN := TRUE;
+    tk      RECORD;
+BEGIN
+    SELECT c.id, c.customer_id INTO v_car, v_cust FROM car c WHERE c.car_num = p_num AND c.is_deleted = FALSE ORDER BY c.id LIMIT 1;
+    SELECT u.name INTO v_uname FROM event e JOIN underpass u ON u.id = e.underpass_id WHERE e.id = p_event;
+    SELECT dist INTO v_dist FROM camera WHERE id = p_cam;
+
+    INSERT INTO alert (event_id, customer_id, car_id, car_num, camera_id, type, is_read, created_at)
+    VALUES (p_event, v_cust, v_car, p_num, p_cam, p_type, p_read, p_at) RETURNING id INTO v_alert;
+
+    INSERT INTO alert_delivery (alert_id, channel, token_id, status, sent_at)
+    VALUES (v_alert, 'SMS', NULL, 'SUCCESS', p_at + INTERVAL '2 seconds');
+    FOR tk IN SELECT d.id, d.platform FROM device_token d WHERE d.customer_id = v_cust AND d.is_active = TRUE ORDER BY d.id LOOP
+        INSERT INTO alert_delivery (alert_id, channel, token_id, status, sent_at)
+        VALUES (v_alert,
+                (CASE WHEN tk.platform = 'WEB' THEN 'PUSH_WEB' ELSE 'PUSH_APP' END)::alert_channel,
+                tk.id,
+                (CASE WHEN p_fail_push AND v_first THEN 'FAIL' ELSE 'SUCCESS' END)::delivery_status,
+                p_at + INTERVAL '3 seconds');
+        v_first := FALSE;
+    END LOOP;
+
+    INSERT INTO customer_notification (customer_id, category, title, body, ref_type, ref_id, is_read, created_at)
+    VALUES (v_cust, 'RISK',
+            CASE WHEN p_type = 'FINAL' THEN '지하차도 진입 직전 알림' ELSE '지하차도 접근 알림' END,
+            v_uname || ' · ' || p_num || ' · 인식 카메라 #' || p_cam || ' (진입 ' || v_dist || 'm 전)'
+                || CASE WHEN p_reason IS NULL OR p_reason = '' THEN '' ELSE ' · 사유: ' || p_reason END,
+            'ALERT', v_alert, p_read, p_at);
+END;
+$$ LANGUAGE plpgsql;
+
+DO $$
+DECLARE
+    d0 TIMESTAMP := date_trunc('day', LOCALTIMESTAMP) - INTERVAL '3 days';   -- 초량 사건 당일 0시
+    d2 TIMESTAMP := date_trunc('day', LOCALTIMESTAMP) - INTERVAL '2 days';   -- 센텀시티 통제 당일 0시
+    d1 TIMESTAMP := date_trunc('day', LOCALTIMESTAMP) - INTERVAL '1 day';    -- 어제 0시
+    v_auto CONSTANT TEXT := '수위 5cm · 통제 기준 5cm 도달 (자동 통제)';
+    u_cho BIGINT; r_cho BIGINT; u_cen BIGINT; r_cen BIGINT;
+    m06 BIGINT; m02 BIGINT;
+    e_w BIGINT; e_c BIGINT; e_a BIGINT; e_blk BIGINT; e_d1 BIGINT; e_d2 BIGINT; e_rel BIGINT; e_d3 BIGINT;
+    s_w BIGINT; s_c BIGINT; s_blk BIGINT; s_d1 BIGINT; s_rel BIGINT; s_d2 BIGINT;
+    p_a BIGINT; p_b BIGINT; p_c BIGINT;
+BEGIN
+    SELECT id, region_id INTO u_cho, r_cho FROM underpass WHERE name = '초량지하차도' AND is_deleted = FALSE;
+    SELECT id, region_id INTO u_cen, r_cen FROM underpass WHERE name = '센텀시티지하차도' AND is_deleted = FALSE;
+    SELECT id INTO m06 FROM manager WHERE login_id = 'manager06';
+    SELECT id INTO m02 FROM manager WHERE login_id = 'manager02';
+
+    -- ---------------------------------------------------------------- 초량지하차도 사건 (3일 전 새벽, 이벤트 8건)
+    e_w   := pg_temp.seed_event('초량지하차도', 'RISK_LEVEL_UP',   '관심', 45, 0,   NULL,        FALSE, NULL, d0 + TIME '01:40');
+    e_c   := pg_temp.seed_event('초량지하차도', 'RISK_LEVEL_UP',   '주의', 72, 1.5, NULL,        FALSE, NULL, d0 + TIME '02:05');
+    e_a   := pg_temp.seed_event('초량지하차도', 'RISK_LEVEL_UP',   '경계', 78, 5,   NULL,        FALSE, NULL, d0 + TIME '02:20');
+    e_blk := pg_temp.seed_event('초량지하차도', 'BLOCK',           NULL,   NULL, 5, NULL,        TRUE,  v_auto, d0 + TIME '02:20:05');
+    e_d1  := pg_temp.seed_event('초량지하차도', 'RISK_LEVEL_DOWN', '주의', 71, 2,   NULL,        FALSE, NULL, d0 + TIME '03:40');
+    e_d2  := pg_temp.seed_event('초량지하차도', 'RISK_LEVEL_DOWN', '관심', 55, 0.5, NULL,        FALSE, NULL, d0 + TIME '04:00');
+    e_rel := pg_temp.seed_event('초량지하차도', 'RELEASE',         NULL,   NULL, NULL, 'manager06', FALSE, '수위 안정화에 따른 해제', d0 + TIME '04:10');
+    e_d3  := pg_temp.seed_event('초량지하차도', 'RISK_LEVEL_DOWN', '안전', 31, 0,   NULL,        FALSE, NULL, d0 + TIME '05:10');
+
+    -- 번호판 인식 + 접근/진입 직전 알림 (관심 단계 접근 알림 1건, 통제 중 알림 5건)
+    PERFORM pg_temp.seed_plate(226, '33보6383', NULL, 0.90, 'SUCCESS', 'NONE', NULL, d0 + TIME '01:50');
+    PERFORM pg_temp.seed_alert(e_w,   '33보6383', 226, 'PREDICTIVE', d0 + TIME '01:50:02', TRUE,  NULL,   FALSE);
+
+    PERFORM pg_temp.seed_plate(226, '12고1252', NULL, 0.93, 'SUCCESS', 'NONE', NULL, d0 + TIME '02:26');
+    PERFORM pg_temp.seed_alert(e_blk, '12고1252', 226, 'PREDICTIVE', d0 + TIME '02:26:02', TRUE,  v_auto, FALSE);
+    PERFORM pg_temp.seed_plate(227, '12고1252', NULL, 0.95, 'SUCCESS', 'NONE', NULL, d0 + TIME '02:31');
+    PERFORM pg_temp.seed_alert(e_blk, '12고1252', 227, 'FINAL',      d0 + TIME '02:31:02', FALSE, v_auto, FALSE);
+
+    PERFORM pg_temp.seed_plate(226, '50주3712', NULL, 0.88, 'SUCCESS', 'NONE', NULL, d0 + TIME '02:40');
+    PERFORM pg_temp.seed_alert(e_blk, '50주3712', 226, 'PREDICTIVE', d0 + TIME '02:40:02', TRUE,  v_auto, TRUE);   -- 웹 푸시 1건 발송 실패 예시
+
+    PERFORM pg_temp.seed_plate(227, '52로0979', NULL, 0.91, 'SUCCESS', 'NONE', NULL, d0 + TIME '02:48');
+    PERFORM pg_temp.seed_alert(e_blk, '52로0979', 227, 'FINAL',      d0 + TIME '02:48:02', TRUE,  v_auto, FALSE);
+
+    PERFORM pg_temp.seed_plate(226, '47루9587', NULL, 0.87, 'SUCCESS', 'NONE', NULL, d0 + TIME '03:05');
+    PERFORM pg_temp.seed_alert(e_blk, '47루9587', 226, 'PREDICTIVE', d0 + TIME '03:05:02', FALSE, v_auto, FALSE);
+
+    -- 미등록 번호·판별 처리·인식 실패 (판별 대기가 남아 있지 않도록 모두 처리 완료/자동 처리)
+    p_a := pg_temp.seed_plate(226, '09모0867', '09부0867', 0.52, 'UNMATCHED', 'CONFIRMED',      'manager06', d0 + TIME '02:55');   -- 관리자가 수동 수정
+    p_b := pg_temp.seed_plate(227, '19저0362', NULL,       0.55, 'UNMATCHED', 'AUTO_PROCESSED', NULL,        d0 + TIME '03:12');   -- 1분 안에 판별 안 돼 자동 처리
+    PERFORM pg_temp.seed_plate(226, '285수8596', NULL,     0.79, 'UNMATCHED', 'NONE',           NULL,        d0 + TIME '03:20');
+    PERFORM pg_temp.seed_plate(226, '인식실패',  NULL,     NULL, 'FAIL',      'NONE',           NULL,        d0 + TIME '03:33');
+
+    -- 통제정보 이관: 통제(자동) · 해제(manager06) 마다 경찰 1건 + 소방 1건
+    INSERT INTO ctrl_transfer (event_id, agency, memo, manager_id, snapshot, created_at) VALUES
+    (e_blk, 'POLICE', NULL, NULL,
+        '{"docType":"CONTROL_NOTICE","auto":true,"riskScore":78,"rainfallMm":42.5,"waterCm":5,"displayText":"초량\n통제 중 통행 금지","managerName":"시스템(자동 통제)","managerRegion":"-"}'::jsonb,
+        d0 + TIME '02:20:06'),
+    (e_blk, 'FIRE', '통제정보 전달 (잔류차량은 별도 수동 이관)', NULL,
+        '{"docType":"CONTROL_NOTICE","auto":true,"riskScore":78,"rainfallMm":42.5,"waterCm":5,"displayText":"초량\n통제 중 통행 금지","managerName":"시스템(자동 통제)","managerRegion":"-"}'::jsonb,
+        d0 + TIME '02:20:06'),
+    (e_rel, 'POLICE', NULL, m06,
+        '{"docType":"CONTROL_NOTICE","auto":false,"riskScore":55,"rainfallMm":8,"displayText":"초량\n통행 재개 서행 통과","managerName":"강현우","managerRegion":"중구","shiftLabel":"야간조 23:00~07:00"}'::jsonb,
+        d0 + TIME '04:10:05'),
+    (e_rel, 'FIRE', '통제 해제정보 전달', m06,
+        '{"docType":"CONTROL_NOTICE","auto":false,"riskScore":55,"rainfallMm":8,"displayText":"초량\n통행 재개 서행 통과","managerName":"강현우","managerRegion":"중구","shiftLabel":"야간조 23:00~07:00"}'::jsonb,
+        d0 + TIME '04:10:05');
+
+    -- ---------------------------------------------------------------- 센텀시티지하차도 수동 통제 (2일 전 오후, 이벤트 6건)
+    s_w   := pg_temp.seed_event('센텀시티지하차도', 'RISK_LEVEL_UP',   '관심', 48, NULL, NULL,        FALSE, NULL, d2 + TIME '14:00');
+    s_c   := pg_temp.seed_event('센텀시티지하차도', 'RISK_LEVEL_UP',   '주의', 74, NULL, NULL,        FALSE, NULL, d2 + TIME '14:30');
+    s_blk := pg_temp.seed_event('센텀시티지하차도', 'BLOCK',           NULL,   NULL, NULL, 'manager02', FALSE, '태풍 접근에 따른 사전 통제', d2 + TIME '15:05');
+    s_d1  := pg_temp.seed_event('센텀시티지하차도', 'RISK_LEVEL_DOWN', '관심', 55, NULL, NULL,        FALSE, NULL, d2 + TIME '18:10');
+    s_rel := pg_temp.seed_event('센텀시티지하차도', 'RELEASE',         NULL,   NULL, NULL, 'manager02', FALSE, '기상 호전에 따른 해제', d2 + TIME '18:40');
+    s_d2  := pg_temp.seed_event('센텀시티지하차도', 'RISK_LEVEL_DOWN', '안전', 33, NULL, NULL,        FALSE, NULL, d2 + TIME '19:30');
+
+    INSERT INTO ctrl_transfer (event_id, agency, memo, manager_id, snapshot, created_at) VALUES
+    (s_blk, 'POLICE', NULL, m02,
+        '{"docType":"CONTROL_NOTICE","auto":false,"riskScore":74,"rainfallMm":35,"managerName":"이정호","managerRegion":"해운대구","shiftLabel":"오후조 15:00~23:00"}'::jsonb,
+        d2 + TIME '15:05:05'),
+    (s_blk, 'FIRE', '통제정보 전달 (잔류차량은 별도 수동 이관)', m02,
+        '{"docType":"CONTROL_NOTICE","auto":false,"riskScore":74,"rainfallMm":35,"managerName":"이정호","managerRegion":"해운대구","shiftLabel":"오후조 15:00~23:00"}'::jsonb,
+        d2 + TIME '15:05:05'),
+    (s_rel, 'POLICE', NULL, m02,
+        '{"docType":"CONTROL_NOTICE","auto":false,"riskScore":55,"rainfallMm":6,"managerName":"이정호","managerRegion":"해운대구","shiftLabel":"오후조 15:00~23:00"}'::jsonb,
+        d2 + TIME '18:40:05'),
+    (s_rel, 'FIRE', '통제 해제정보 전달', m02,
+        '{"docType":"CONTROL_NOTICE","auto":false,"riskScore":55,"rainfallMm":6,"managerName":"이정호","managerRegion":"해운대구","shiftLabel":"오후조 15:00~23:00"}'::jsonb,
+        d2 + TIME '18:40:05');
+
+    -- ---------------------------------------------------------------- 평상시 번호판 인식 + 입출구 통과 (2일 전 · 어제, 위험 없음 → 알림 없음)
+    PERFORM pg_temp.seed_plate(226, '821루4545', NULL, 0.92, 'SUCCESS', 'NONE', NULL, d2 + TIME '08:11');
+    PERFORM pg_temp.seed_pass('821루4545', 0.94, d2 + TIME '08:12');
+    PERFORM pg_temp.seed_plate(226, '285수8896', NULL, 0.90, 'SUCCESS', 'NONE', NULL, d2 + TIME '08:39');
+    PERFORM pg_temp.seed_pass('285수8896', 0.89, d2 + TIME '08:40');
+    PERFORM pg_temp.seed_plate(226, '52모0979', NULL, 0.85, 'SUCCESS', 'NONE', NULL, d2 + TIME '18:04');
+    PERFORM pg_temp.seed_pass('52모0979', 0.87, d2 + TIME '18:05');
+
+    PERFORM pg_temp.seed_plate(226, '256어9101', NULL, 0.93, 'SUCCESS', 'NONE', NULL, d1 + TIME '07:29');
+    PERFORM pg_temp.seed_pass('256어9101', 0.95, d1 + TIME '07:30');
+    p_c := pg_temp.seed_plate(226, '381구8431', '381구8437', 0.55, 'LOW_CONFIDENCE', 'CONFIRMED', 'manager01', d1 + TIME '09:14');   -- 신뢰도 낮아 수동 수정
+    PERFORM pg_temp.seed_pass('381구8437', 0.90, d1 + TIME '09:15');
+    PERFORM pg_temp.seed_plate(226, '85노1795', NULL, 0.91, 'SUCCESS', 'NONE', NULL, d1 + TIME '17:49');
+    PERFORM pg_temp.seed_pass('85노1795', 0.93, d1 + TIME '17:50');
+    PERFORM pg_temp.seed_plate(226, '60우7674', NULL, 0.90, 'SUCCESS', 'NONE', NULL, d1 + TIME '22:09');
+    PERFORM pg_temp.seed_pass('60우7674', 0.92, d1 + TIME '22:10');
+
+    -- ---------------------------------------------------------------- 관리자 알림 (모두 상황 종료형. 서비스가 만드는 제목/본문 형식)
+    INSERT INTO manager_notification (category, region_id, title, body, ref_type, ref_id, is_urgent, created_at) VALUES
+    ('RISK', r_cho, '위험 단계 하강',          '초량지하차도 · 경계 → 주의 · 수위 2cm',                     'UNDERPASS', u_cho, FALSE, d0 + TIME '03:40'),
+    ('RISK', r_cho, '위험 단계 하강',          '초량지하차도 · 주의 → 관심 · 수위 0.5cm',                   'UNDERPASS', u_cho, FALSE, d0 + TIME '04:00'),
+    ('RISK', r_cho, '지하차도 통제 해제',      '초량지하차도 · 사유: 수위 안정화에 따른 해제',               'UNDERPASS', u_cho, FALSE, d0 + TIME '04:10'),
+    ('RISK', r_cho, '위험 단계 하강',          '초량지하차도 · 관심 → 안전',                                 'UNDERPASS', u_cho, FALSE, d0 + TIME '05:10'),
+    ('RISK', r_cen, '위험 단계 하강',          '센텀시티지하차도 · 주의 → 관심',                             'UNDERPASS', u_cen, FALSE, d2 + TIME '18:10'),
+    ('RISK', r_cen, '지하차도 통제 해제',      '센텀시티지하차도 · 사유: 기상 호전에 따른 해제',             'UNDERPASS', u_cen, FALSE, d2 + TIME '18:40'),
+    ('RISK', r_cen, '위험 단계 하강',          '센텀시티지하차도 · 관심 → 안전',                             'UNDERPASS', u_cen, FALSE, d2 + TIME '19:30'),
+    ('TASK', r_cho, '번호판 수동 판별 필요',   '초량지하차도 · 09모0867',                                    'PLATE_LOG', p_a,   FALSE, d0 + TIME '02:55'),
+    ('TASK', r_cho, '번호판 수동 판별 필요',   '초량지하차도 · 19저0362',                                    'PLATE_LOG', p_b,   FALSE, d0 + TIME '03:12'),
+    ('TASK', r_cho, '번호판 수동 판별 필요',   '초량지하차도 · 381구8431',                                   'PLATE_LOG', p_c,   FALSE, d1 + TIME '09:14');
+    INSERT INTO manager_notification (category, region_id, title, body, ref_type, ref_id, is_urgent, created_at) VALUES
+    ('TASK',   NULL, '새 1:1 문의',            '차량 번호를 잘못 등록했어요',                                 'INQUIRY',   NULL,  FALSE, NOW() - INTERVAL '6 hours'),
+    ('SYSTEM', NULL, '데이터 수신 정상화',     '위험도 데이터 수신이 정상화되었습니다.',                      NULL,        NULL,  FALSE, NOW() - INTERVAL '3 hours');
+
+    -- 12시간 지난 지역 알림은 그 지역 담당 관리자들이 이미 읽은 것으로 (지역 없는 알림은 안 읽음으로 남김)
+    INSERT INTO manager_notification_read (notification_id, manager_id, read_at)
+    SELECT n.id, mr.manager_id, n.created_at + INTERVAL '15 minutes'
+    FROM manager_notification n
+    JOIN manager_region mr ON mr.region_id = n.region_id
+    WHERE n.region_id IS NOT NULL AND n.created_at < LOCALTIMESTAMP - INTERVAL '12 hours'
+    ORDER BY n.id, mr.manager_id;
+END $$;
+
+-- 공지 일괄발송 알림: '태풍 대비 사전 안내'(send_push = TRUE)를 활성 고객 전체에게 (고객 1번의 알림 센터 행은 위 99번에 이미 있음)
+INSERT INTO notice_alert (notice_id, customer_id, is_read, created_at)
+SELECT n.id, c.id, (c.id = 1 OR c.id % 2 = 0), n.created_at + INTERVAL '1 second'
+FROM notice n CROSS JOIN customer c
+WHERE n.title = '태풍 대비 사전 안내' AND c.is_withdrawn = FALSE
+ORDER BY c.id;
+
+INSERT INTO notice_delivery (notice_alert_id, channel, token_id, status, sent_at)
+SELECT na.id, (CASE WHEN dt.platform = 'WEB' THEN 'PUSH_WEB' ELSE 'PUSH_APP' END)::alert_channel, dt.id,
+       'SUCCESS'::delivery_status, na.created_at + INTERVAL '2 seconds'
+FROM notice_alert na
+JOIN device_token dt ON dt.customer_id = na.customer_id AND dt.is_active = TRUE
+ORDER BY na.id, dt.id;
+
+INSERT INTO customer_notification (customer_id, category, title, body, ref_type, ref_id, is_read, created_at)
+SELECT c.id, 'NOTICE'::customer_notification_category, '[긴급] 새 공지', n.title, 'NOTICE', n.id, (c.id % 2 = 0), n.created_at + INTERVAL '1 second'
+FROM notice n CROSS JOIN customer c
+WHERE n.title = '태풍 대비 사전 안내' AND c.id <> 1 AND c.is_withdrawn = FALSE
+ORDER BY c.id;
+
+-- 도우미 함수 정리
+DROP FUNCTION pg_temp.seed_alert(BIGINT, TEXT, BIGINT, alert_type, TIMESTAMP, BOOLEAN, TEXT, BOOLEAN);
+DROP FUNCTION pg_temp.seed_pass(TEXT, NUMERIC, TIMESTAMP);
+DROP FUNCTION pg_temp.seed_plate(BIGINT, TEXT, TEXT, NUMERIC, recognition_status, review_status, TEXT, TIMESTAMP);
+DROP FUNCTION pg_temp.seed_event(TEXT, underpass_event_type, risk_level, NUMERIC, NUMERIC, TEXT, BOOLEAN, TEXT, TIMESTAMP);
 
 COMMIT;
