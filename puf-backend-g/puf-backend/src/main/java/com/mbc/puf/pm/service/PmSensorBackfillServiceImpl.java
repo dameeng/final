@@ -102,34 +102,41 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
     private static final Spec CCTV = new Spec(PmEquipmentType.CCTV, "pm_sensor_cctv", 0, """
             INSERT INTO pm_sensor_cctv (equip_id, recorded_at, video_receive_rate, response_time_ms, packet_loss_rate, image_blur_score)
             SELECT x.id, x.t,
-                   LEAST(100, GREATEST(0, 99.1 + 0.12 * x.ld + 0.1 * {W} - 55 * x.s)),
+                   LEAST(100, GREATEST(0, 99.1 + 0.12 * x.ld + 0.03 * {W} - 55 * x.s)),
                    GREATEST(0, 48.7 + 1.0 * """ + daily("x.t", 14) + """
- + 0.8 * x.ld + 1.0 * {W} + 350 * x.s),
-                   GREATEST(0, 0.165 + 0.015 * x.ld + 0.025 * {W} + 12 * x.s),
+ + 0.8 * x.ld + 0.3 * {W} + 350 * x.s),
+                   GREATEST(0, 0.165 + 0.015 * x.ld + 0.008 * {W} + 12 * x.s),
                    GREATEST(0, 6.5 - 0.5 * """ + daily("x.t", 14) + """
- + 0.3 * x.ld + 0.4 * {W} + 20 * x.s)
+ + 0.3 * x.ld + 0.1 * {W} + 20 * x.s)
               FROM (SELECT b.id, b.rk, b.t, b.s""" + SLOW_COLS_CCTV + """
 
                       FROM ({SEV}) b OFFSET 0) x
             ON CONFLICT DO NOTHING
             """);
 
+    // 불량 화소 비율(%): 화소는 한 번 죽으면 되살아나지 않으므로 시간이 갈수록 계단처럼 오르기만 한다 (잡음 없음).
+    // 2026-10-01 을 기준일로 하루 약 0.000114 씩(주 0.0008) 올라 5e-5 단위로 끊긴다 → 백필·실시간이 같은 선 위에서 이어진다.
+    // 전광판 모델은 "평소 값(37일 전~7일 전의 중앙값)"과 비교하므로 이 정도 기울기에서는 점수가 40 을 넘지 않는다(검증함). 설비마다 시작값이 조금씩 다르다.
+    private static final String BAD_PIXEL = "GREATEST(0.003, CAST(round(CAST(floor((0.0140 + 0.0004 * ((x.rk - 1) % 3) + 0.0008 / 7.0 * "
+            + "((CAST(EXTRACT(EPOCH FROM x.t) AS double precision) - 1790812800) / 86400.0)) / 0.00005) * 0.00005 AS numeric), 5) AS double precision))";
+
     // 전광판: 외기 온도를 한 번만 뽑아야 본체 온도와 짝이 맞아서 안쪽 SELECT 를 한 겹 더 둔다 (OFFSET 0 = 합쳐지지 않게)
     // 이상 원인은 설비 번호(rk) 순서대로 0 과열 / 1 전원 / 2 통신 / 3 화면
     private static final Spec DISPLAY = new Spec(PmEquipmentType.DISPLAY, "pm_sensor_display", 0, """
             INSERT INTO pm_sensor_display (equip_id, recorded_at, temperature_c, ambient_c, ripple_v, response_time_ms, error_count, bad_pixel_pct)
             SELECT y.id, y.t,
-                   y.a + 6.5 + 0.15 * y.ld + 0.25 * {W} + CASE WHEN y.cause = 0 THEN 14 * y.s ELSE 0 END,
+                   y.a + 6.5 + 0.15 * y.ld + 0.05 * {W} + CASE WHEN y.cause = 0 THEN 14 * y.s ELSE 0 END,
                    y.a,
-                   GREATEST(0, 0.028 + 0.0015 * y.ld + 0.0015 * {W} + CASE WHEN y.cause = 1 THEN 0.12 * y.s ELSE 0 END),
+                   GREATEST(0, 0.028 + 0.0015 * y.ld + 0.0003 * {W} + CASE WHEN y.cause = 1 THEN 0.12 * y.s ELSE 0 END),
                    GREATEST(0, 43 + 1.5 * """ + daily("y.t", 14) + """
- + 2 * {W} + CASE WHEN y.cause = 2 THEN 300 * y.s ELSE 0 END),
+ + 0.8 * y.ld + 0.6 * {W} + CASE WHEN y.cause = 2 THEN 300 * y.s ELSE 0 END),
                    CAST(CASE WHEN random() < 0.08 + CASE WHEN y.cause = 2 THEN 0.8 * y.s ELSE 0 END
                              THEN 1 + floor(random() * (1 + CASE WHEN y.cause = 2 THEN 8 * y.s ELSE 0 END)) ELSE 0 END AS integer),
-                   GREATEST(0, 0.015 + 0.001 * {W} + CASE WHEN y.cause = 3 THEN 1.2 * y.s ELSE 0 END)
+                   GREATEST(0, y.bp + CASE WHEN y.cause = 3 THEN 1.2 * y.s ELSE 0 END)
               FROM (SELECT x.id, x.t, x.s, x.ld, (x.rk - 1) % 4 AS cause,
                            18 + 7 * """ + daily("x.t", 9) + """
- + 1.2 * x.wm + 0.4 * {W} AS a
+ + 1.2 * x.wm + 0.05 * {W} AS a,
+                           """ + BAD_PIXEL + " AS bp\n" + """
                       FROM (SELECT b.id, b.rk, b.t, b.s""" + SLOW_COLS_DISPLAY + """
 
                               FROM ({SEV}) b OFFSET 0) x OFFSET 0) y
