@@ -386,8 +386,8 @@ onBeforeUnmount(() => dispose?.())
             <input type="checkbox" checked /> 고객 화면에 공개</label>
         </div>
 <div class="dlg-f">
-          <button type="button" class="btn" data-close="fq">취소</button>
           <button type="button" class="btn primary" id="fq-ok">저장</button>
+          <button type="button" class="btn" data-close="fq">취소</button>
         </div>
       </dialog>
 <div id="toast" class="toast" hidden role="status"></div>

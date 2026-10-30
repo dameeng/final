@@ -958,7 +958,7 @@ onBeforeUnmount(() => {
             ><button type="button" @click="retryInfo">다시 불러오기</button></div
           ><div v-else-if="weather" class="directions-weather"
             ><b>{{weather.condition}} · {{weather.temperature??'—'}}°C</b
-            ><span>습도 {{weather.humidity??'—'}}% · 강우량 {{weather.rainfall??'—'}} mm</span
+            ><span>습도 {{weather.humidity??'—'}}% · 강수량 {{weather.rainfall??'—'}} mm</span
             ><small>기상청 · {{new Date(weather.observedAt).toLocaleString('ko-KR')}}</small></div
           ></div
         ></WorkflowPage

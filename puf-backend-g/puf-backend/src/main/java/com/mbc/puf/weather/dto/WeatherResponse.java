@@ -9,7 +9,7 @@ public class WeatherResponse {
     private final String areaName;                    // 조회된 날씨 지역(가장 가까운 곳)
     private final BigDecimal temperature;             // 현재 기온(℃)
     private final Integer humidity;                   // 현재 습도(%)
-    private final BigDecimal rainfall;                // 현재 강우량(mm, 최근 1시간)
+    private final BigDecimal rainfall;                // 현재 강수량(mm, 최근 1시간)
     private final String condition;                   // 현재 날씨 상태(맑음/구름많음/흐림/비/소나기)
     private final String observedAt;                  // 관측 시각(yyyy-MM-dd HH:mm)
     private final List<Hour> hourly;                  // 시간별 예보

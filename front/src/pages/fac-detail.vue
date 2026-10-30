@@ -178,7 +178,7 @@ onBeforeUnmount(() => dispose?.())
             <small class="sub">주의 50점 이상 · 위험 70점 이상</small>
 <div class="kv2">
               <div>
-                <small>강우량</small>
+                <small>강수량</small>
                 <strong>18.0 mm</strong>
               </div>
               <div>
@@ -619,8 +619,8 @@ onBeforeUnmount(() => dispose?.())
           </div>
         </div>
         <div class="dlg-f">
-          <button type="button" class="btn" data-close="cf">취소</button>
           <button type="button" class="btn primary" id="cf-ok">확인</button>
+          <button type="button" class="btn" data-close="cf">취소</button>
         </div>
       </dialog>
 <dialog id="dl" aria-labelledby="dl-t">
@@ -632,8 +632,8 @@ onBeforeUnmount(() => dispose?.())
           </div>
         </div>
         <div class="dlg-f">
-          <button type="button" class="btn" data-close="dl">취소</button>
           <button type="button" class="btn primary inl-70da9b2a07" id="dl-ok" disabled>삭제</button>
+          <button type="button" class="btn" data-close="dl">취소</button>
         </div>
       </dialog>
 <div id="toast" class="toast" hidden role="status"></div>

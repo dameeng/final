@@ -179,7 +179,7 @@ onBeforeUnmount(() => { listController?.abort(); pageController?.abort(); clearT
         <label class="vms-field"><span>표시 문구</span><textarea v-model="editor.content" rows="3" placeholder="줄바꿈으로 줄을 나눕니다" @input="editor.presetId=undefined"></textarea><small class="vms-counter" :class="{'is-over':contentLength>100}">{{contentLength}} / 100</small></label>
         <div class="vms-field"><span>미리보기</span><VmsLedDisplay :content="editor.content.trim()||'(문구를 입력하세요)'" /></div>
         <p v-if="editor.error" class="vms-error" role="alert">{{editor.error}}</p>
-        <div class="vms-actions is-end"><button type="button" @click="editor=undefined">취소</button><button type="button" class="is-primary" :disabled="editor.saving||!contentLength||contentLength>100" @click="save">{{editor.saving?'저장 중…':editor.pageNo==null?'추가':'저장'}}</button></div>
+        <div class="vms-actions is-end"><button type="button" class="is-primary" :disabled="editor.saving||!contentLength||contentLength>100" @click="save">{{editor.saving?'저장 중…':editor.pageNo==null?'추가':'저장'}}</button><button type="button" @click="editor=undefined">취소</button></div>
       </div>
     </div>
     <p v-if="notice" class="vms-toast" role="status">{{notice}}</p>

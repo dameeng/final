@@ -143,8 +143,8 @@ onBeforeUnmount(() => dispose?.())
 <div class="page-head">
         <h1>지하차도 등록</h1>
         <div class="row">
-          <a class="btn" href="/fac-list">취소</a>
           <button type="button" class="btn primary" id="save">저장</button>
+          <a class="btn" href="/fac-list">취소</a>
         </div>
       </div>
 <div class="inl-e78cbf1db6">

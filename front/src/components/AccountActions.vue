@@ -110,8 +110,8 @@ async function withdraw() {
         </label>
         <p v-if="error" role="alert">{{error}}</p>
         <div>
-          <button type="button" :disabled="busy" @click="dialog?.close()">취소</button>
           <button type="submit" :disabled="busy">회원탈퇴</button>
+          <button type="button" :disabled="busy" @click="dialog?.close()">취소</button>
         </div>
       </form>
     </WorkflowPage>
@@ -143,8 +143,8 @@ async function withdraw() {
         </label>
         <p v-if="passwordError" role="alert">{{passwordError}}</p>
         <div>
-          <button type="button" :disabled="busy" @click="passwordDialog?.close()">취소</button>
           <button type="submit" :disabled="busy">비밀번호 변경</button>
+          <button type="button" :disabled="busy" @click="passwordDialog?.close()">취소</button>
         </div>
       </form>
     </WorkflowPage>

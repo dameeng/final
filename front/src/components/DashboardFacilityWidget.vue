@@ -144,7 +144,7 @@ onBeforeUnmount(()=>{facilityRequest?.abort();request?.abort();chartResize?.disc
       </div>
       <p class="water-risk-period">{{displayDate(scores[0].predictedAt)}}<span aria-hidden="true">—</span>{{displayDate(scores.at(-1).predictedAt)}}</p>
     </figure>
-    <dl v-else-if="detail" class="water-widget-detail"><dt>시설</dt><dd>{{detail.name}}</dd><dt>위험 단계</dt><dd><RiskLevelBadge :value="detail.currentRiskLevel" /></dd><dt>위험 점수</dt><dd>{{detail.riskScore??detail.currentRiskScore??'—'}}</dd><dt>현재 수위</dt><dd>{{detail.currentWaterCm??'—'}} cm</dd><dt>강우량</dt><dd>{{detail.rainfallMm??'—'}} mm</dd></dl>
+    <dl v-else-if="detail" class="water-widget-detail"><dt>시설</dt><dd>{{detail.name}}</dd><dt>위험 단계</dt><dd><RiskLevelBadge :value="detail.currentRiskLevel" /></dd><dt>위험 점수</dt><dd>{{detail.riskScore??detail.currentRiskScore??'—'}}</dd><dt>현재 수위</dt><dd>{{detail.currentWaterCm??'—'}} cm</dd><dt>강수량</dt><dd>{{detail.rainfallMm??'—'}} mm</dd></dl>
     <div v-else class="water-widget-empty"><svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><path d="M8 8v24h26M12 25l7-7 6 4 8-11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg><p>{{selected?'표시할 관측 정보가 없습니다.':'시설을 선택해 주세요.'}}</p></div>
     <RouterLink v-if="selected" class="water-widget-detail-link" :to="{path:'/fac-detail',query:{id:selected}}">선택 시설 상세 <span aria-hidden="true">→</span></RouterLink>
   </div>

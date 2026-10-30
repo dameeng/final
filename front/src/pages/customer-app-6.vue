@@ -33,7 +33,7 @@ const weather = ref(false)
         <div class="sub">부산 · 상세 주소 확인 필요</div>
         <div class="kv">
           <div>
-            <small>강우량</small>
+            <small>강수량</small>
             <b>18.0 mm</b>
           </div>
           <div>

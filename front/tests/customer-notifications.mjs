@@ -17,7 +17,7 @@ try {
       id: 7,
       category: 'RISK',
       title: '지하차도 위험 안내',
-      body: '강우량이 증가했습니다. 통제 현황을 확인하세요.',
+      body: '강수량이 증가했습니다. 통제 현황을 확인하세요.',
       read: false,
       createdAt: '2026-10-20 12:00',
     },
@@ -124,7 +124,7 @@ try {
   await page.waitForURL(
     (url) => url.pathname === '/my-alerts' && url.searchParams.get('notification') === '7',
   )
-  await page.locator('.notification-center-body').filter({ hasText: '강우량이 증가' }).waitFor()
+  await page.locator('.notification-center-body').filter({ hasText: '강수량이 증가' }).waitFor()
   assert(
     calls.some((c) => c.path === '/api/customers/me/notifications/7/read' && c.method === 'PUT'),
   )

@@ -143,8 +143,8 @@ onBeforeUnmount(() => dispose?.())
 <div class="page-head">
         <h1>공지 등록</h1>
         <div class="row">
-          <a class="btn" href="/cs-content">취소</a>
           <button type="button" class="btn primary" id="save">저장</button>
+          <a class="btn" href="/cs-content">취소</a>
         </div>
       </div>
 <div class="formcol">
@@ -212,8 +212,8 @@ onBeforeUnmount(() => dispose?.())
           <p class="hint inl-1169661891">발송 내역은 로그의 ‘알림 발송’에 기록돼요.</p>
         </div>
         <div class="dlg-f">
-          <button type="button" class="btn" data-close="cf">취소</button>
           <button type="button" class="btn primary" id="cf-ok">저장하고 발송</button>
+          <button type="button" class="btn" data-close="cf">취소</button>
         </div>
       </dialog>
 <div id="toast" class="toast" hidden role="status"></div>

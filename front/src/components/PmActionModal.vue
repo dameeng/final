@@ -97,10 +97,10 @@ async function submit() {
       </template>
       <p v-if="error" class="pm-action-error" role="alert">{{error}}</p>
       <div class="pm-action-buttons">
-        <button class="btn" type="button" @click="dialog?.close()">취소</button>
         <button v-if="!closed" class="btn primary" type="submit" :disabled="busy">
           {{busy?'저장 중…':'저장'}}
         </button>
+        <button class="btn" type="button" @click="dialog?.close()">취소</button>
       </div>
     </form>
   </WorkflowPage>

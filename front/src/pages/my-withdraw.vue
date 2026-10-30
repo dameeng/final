@@ -83,8 +83,8 @@ onBeforeUnmount(() => dispose?.())
             <p class="inl-1169661891">탈퇴하면 모든 정보가 삭제되고 되돌릴 수 없어요.</p>
           </div>
           <div class="dlg-f">
-            <button type="button" class="btn" data-close="dg">취소</button>
             <button type="button" class="btn danger" id="dg-ok">탈퇴</button>
+            <button type="button" class="btn" data-close="dg">취소</button>
           </div>
         </dialog>
       </main>

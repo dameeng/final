@@ -1627,8 +1627,8 @@ defineExpose({ open, load })
             <RouterLink :to="{path:'/fac-detail',query:{id:String(detail.id)}}" @click="modal?.close()">상세보기</RouterLink>
           </footer>
           <footer v-if="mode!=='detail'&amp;&amp;mode!=='video'">
-            <button type="button" :disabled="saving" @click="modal?.close()">취소</button>
             <button type="submit" :disabled="saving">{{saving?'처리 중…':'확인'}}</button>
+            <button type="button" :disabled="saving" @click="modal?.close()">취소</button>
           </footer>
         </form>
       </WorkflowPage>

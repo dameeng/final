@@ -265,7 +265,7 @@ onBeforeUnmount(() => dispose?.())
 <div id="ext" class="inl-c7da9158e3">
             <div class="kv">
               <div>
-                <small>현재 강우량</small>
+                <small>현재 강수량</small>
                 <strong id="r"></strong>
               </div>
               <div>

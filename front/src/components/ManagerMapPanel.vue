@@ -120,7 +120,7 @@ watch(
         ></section
         ><section class="manager-live-section" aria-label="실시간 현황"><h3>실시간 현황</h3><dl class="manager-live-metrics"
           ><div><dt>현재 수위</dt><dd>{{facility.currentWaterCm??'—'}}<small>cm</small></dd></div
-          ><div><dt>강우량</dt><dd>{{facility.rainfallMm??'—'}}<small>mm</small></dd></div
+          ><div><dt>강수량</dt><dd>{{facility.rainfallMm??'—'}}<small>mm</small></dd></div
           ><div><dt>잔류 차량</dt><dd>{{facility.remainingCount??'—'}}<small>대</small></dd></div
           ><div :class="{'has-pending':(facility.pendingReviewCount??0)>0}"><dt>판별 대기</dt><dd>{{facility.pendingReviewCount??'—'}}<small>건</small></dd></div></dl></section
         ><div class="manager-observation-info"

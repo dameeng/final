@@ -754,7 +754,7 @@ onBeforeUnmount(() => {
         <p v-if="oldObservation" role="status">1시간 이상 지난 관측 자료입니다. 관측 시각을 확인해 주세요.</p>
         <p>{{ weather?.condition || '—' }}</p>
         <dl>
-          <dt>강우량</dt>
+          <dt>강수량</dt>
           <dd>{{ show(weather?.rainfall, ' mm') }}</dd>
           <dt>습도</dt>
           <dd>{{ show(weather?.humidity, '%') }}</dd>

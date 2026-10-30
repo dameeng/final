@@ -972,7 +972,7 @@ async function refresh() {
     }
   }
 }
-// 위험도(riskScore)/강우량(rainfallMm)은 상세 응답에 없고 MP-05 추이 엔드포인트에만 있어
+// 위험도(riskScore)/강수량(rainfallMm)은 상세 응답에 없고 MP-05 추이 엔드포인트에만 있어
 // 최근 1건을 가져와 최신 값으로 사용합니다. 실패해도 상세 조회 자체는 계속 진행합니다.
 async function fetchLatestRiskScore(id: string, signal: AbortSignal): Promise<Json | null> {
   try {
@@ -2169,7 +2169,7 @@ onBeforeUnmount(() => {
      <div v-show="expanded" class="detail-extended">
             <div class="kv"
               ><div
-                ><small>현재 강우량</small
+                ><small>현재 강수량</small
                 ><strong>{{selected.rainfallMm===null?'—':selected.rainfallMm+' mm'}}</strong></div
               ><div
                 ><small>인근 날씨</small

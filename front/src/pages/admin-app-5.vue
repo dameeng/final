@@ -45,7 +45,7 @@ onBeforeUnmount(() => clearInterval(timer))
         </div>
         <div class="kv">
           <div>
-            <small>강우량</small>
+            <small>강수량</small>
             <b>18.0 mm</b>
           </div>
           <div>

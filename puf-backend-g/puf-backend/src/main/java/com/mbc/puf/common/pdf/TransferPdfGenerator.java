@@ -66,7 +66,7 @@ public class TransferPdfGenerator {
             if(d.reasonNote()!=null&&!d.reasonNote().isBlank())formRow(t,f,"상세 사유",d.reasonNote());
             String info="";
             if(d.riskScore()!=null)info=String.format(java.util.Locale.ROOT,"위험도 %.1f점",d.riskScore());
-            if(d.rainfallMm()!=null)info+=(info.isBlank()?"":" / ")+String.format(java.util.Locale.ROOT,"강우량 %.1fmm",d.rainfallMm());
+            if(d.rainfallMm()!=null)info+=(info.isBlank()?"":" / ")+String.format(java.util.Locale.ROOT,"강수량 %.1fmm",d.rainfallMm());
             formRow(t,f,"관측 정보",orDash(info));formRow(t,f,"통제 조치",methodLine(d));
             if(!d.blockEvent())formRow(t,f,"기존 통제",startInfoLine(d));
             formRow(t,f,"담당자",managerLine(d));

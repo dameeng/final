@@ -378,8 +378,8 @@ onBeforeUnmount(() => dispose?.())
             </div>
           </div>
 <div class="dlg-f">
-            <button type="button" class="btn" data-close="reg">취소</button>
             <button type="button" class="btn primary" id="reg-ok">등록</button>
+            <button type="button" class="btn" data-close="reg">취소</button>
           </div>
         </form>
       </dialog>

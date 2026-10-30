@@ -112,9 +112,9 @@ function action(item: Action) {
           <span class="app-metric-caption">위험도 평가</span>
         </div>
         <div class="app-metric">
-          <small>강우량</small>
+          <small>강수량</small>
           <b>{{facility.rainfallMm??'미수신'}}<span v-if="facility.rainfallMm!=null">mm</span></b>
-          <span class="app-metric-caption">관측 강우량</span>
+          <span class="app-metric-caption">관측 강수량</span>
         </div>
         <div class="app-metric">
           <small>잔류 차량</small>

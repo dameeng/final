@@ -13,7 +13,7 @@ const props = defineProps<{ hours: Hour[] }>()
 const metrics: { key: Metric; label: string; unit: string }[] = [
   { key: 'temperature', label: '기온', unit: '°C' },
   { key: 'precipitationProbability', label: '강수 확률', unit: '%' },
-  { key: 'rainfall', label: '강우량', unit: ' mm' },
+  { key: 'rainfall', label: '강수량', unit: ' mm' },
 ]
 const hourLabel = (value: string) => dateParts(value)?.time || value
 const selected = ref<Metric>('temperature')

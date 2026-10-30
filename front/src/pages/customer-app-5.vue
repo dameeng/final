@@ -260,7 +260,7 @@ onBeforeUnmount(() => {
             <p class="app-weather-temperature">
               <strong>{{liveWeather.temperature??'—'}}°</strong> {{liveWeather.condition}}
             </p>
-            <p>습도 {{liveWeather.humidity??'—'}}% · 강우량 {{liveWeather.rainfall??'—'}} mm</p>
+            <p>습도 {{liveWeather.humidity??'—'}}% · 강수량 {{liveWeather.rainfall??'—'}} mm</p>
             <small>기상청 · {{new Date(liveWeather.observedAt).toLocaleString('ko-KR')}}</small>
           </template>
         </section>

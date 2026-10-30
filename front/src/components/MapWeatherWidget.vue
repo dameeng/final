@@ -113,7 +113,7 @@ onBeforeUnmount(() => {
             <dd>{{show(weather.humidity,'%')}}</dd>
           </div>
           <div>
-            <dt>강우량</dt>
+            <dt>강수량</dt>
             <dd>{{show(weather.rainfall,' mm')}}</dd>
           </div>
           <div>

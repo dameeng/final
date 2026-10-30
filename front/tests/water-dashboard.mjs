@@ -164,7 +164,7 @@ try {
     assert.equal(await panel.locator('.manager-facility-heading>strong').textContent(), 'Facility 1')
     const readings = await panel.locator('dl').evaluate(node => Object.fromEntries([...node.querySelectorAll('dt')].map(term => [term.textContent.trim(), term.nextElementSibling?.textContent.trim()])))
     assert.equal(readings['현재 수위'], '8 cm', 'Selected facility water level must retain the API reading')
-    assert.equal(readings['강우량'], '2 mm', 'Selected facility rainfall must retain the API reading')
+    assert.equal(readings['강수량'], '2 mm', 'Selected facility rainfall must retain the API reading')
     await panel.locator('summary').filter({ hasText: '관측 기록' }).click()
     const history = panel.getByRole('img', { name: '선택 시설 위험도 관측 기록', exact: true })
     await history.waitFor()

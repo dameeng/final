@@ -169,7 +169,7 @@ onBeforeUnmount(()=>{if(shortcuts.editing)shortcuts.cancel();window.removeEventL
 <template>
   <div class="board-toolbar" :class="{'is-editing':editing}">
     <button type="button" @click="editing?opened=!opened:begin()">화면편집</button>
-    <template v-if="editing"><span>제목을 끌어 이동 · 위·아래·왼쪽·오른쪽 테두리로 크기 조절</span><button @click="reset">기본 구성</button><button @click="cancel">취소</button><button @click="finish">저장</button></template>
+    <template v-if="editing"><span>제목을 끌어 이동 · 위·아래·왼쪽·오른쪽 테두리로 크기 조절</span><button @click="reset">기본 구성</button><button @click="finish">저장</button><button @click="cancel">취소</button></template>
     <p v-if="error" role="alert">{{error}}</p>
   </div>
   <Teleport to="body">

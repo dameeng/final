@@ -92,16 +92,16 @@ onBeforeUnmount(() => dispose?.())
             </div>
           </div>
           <div class="dlg-f">
-            <button type="button" class="btn" data-close="dc">취소</button>
             <button type="button" class="btn primary" id="dc-ok">저장</button>
+            <button type="button" class="btn" data-close="dc">취소</button>
           </div>
         </dialog>
 <dialog id="dd" aria-labelledby="dd-t">
           <div class="dlg-h"><h2 id="dd-t">차량 삭제</h2></div>
           <div class="dlg-b"><p id="dd-m" class="inl-1169661891"></p></div>
           <div class="dlg-f">
-            <button type="button" class="btn" data-close="dd">취소</button>
             <button type="button" class="btn danger" id="dd-ok">삭제</button>
+            <button type="button" class="btn" data-close="dd">취소</button>
           </div>
         </dialog>
       </main>

@@ -210,7 +210,7 @@ function control() {
                 <dd><RiskLevelBadge :value="facility.currentRiskLevel" /></dd>
                 <dt>현재 수위</dt>
                 <dd>{{facility.currentWaterCm??'—'}} cm</dd>
-                <dt>강우량</dt>
+                <dt>강수량</dt>
                 <dd>{{facility.rainfallMm??'—'}} mm</dd>
               </dl>
             </section>

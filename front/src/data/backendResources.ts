@@ -729,7 +729,7 @@ backendResources['risk-history'] = {
   parents: [{ ...facility, required: true }],
   columns: [
     ['riskScore', '위험 점수'],
-    ['rainfallMm', '강우량(mm)'],
+    ['rainfallMm', '강수량(mm)'],
     ['predictedAt', '관측 시각'],
   ],
   filters: [num('hours', '조회 시간'), num('limit', '조회 개수')],

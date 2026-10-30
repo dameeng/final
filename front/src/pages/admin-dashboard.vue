@@ -421,7 +421,7 @@ onBeforeUnmount(() => dispose?.())
                       </div>
 <div class="kv">
                         <div>
-                          <small>강우량</small>
+                          <small>강수량</small>
                           <strong id="s-rain"></strong>
                         </div>
                         <div>
@@ -752,8 +752,8 @@ onBeforeUnmount(() => dispose?.())
           <p style="margin:0;color:var(--ink-sub)">실제 도로 통제 상태가 바뀌고, 처리 내용이 로그에 기록됩니다.</p>
         </div>
 <div class="dlg-f">
-          <button type="button" class="btn" id="c-cancel">취소</button>
           <button type="button" class="btn primary" id="c-ok">확인</button>
+          <button type="button" class="btn" id="c-cancel">취소</button>
         </div>
       </dialog>
 <dialog id="obs" aria-labelledby="o-title">
