@@ -1,77 +1,17 @@
-/* 관리자 공통 본문과 같은 너비·제목 크기를 사용합니다. */
-.contacts-page {
-  width: 100%;
-  max-width: none;
-  min-width: 0;
-  margin: 0;
-  box-sizing: border-box;
-}
-.contacts-page h1 {
-  margin: 0 0 20px;
-  font-size: 22px;
-  line-height: 1.5;
-}
-.contacts-page :deep(.jurisdiction-phone-list) {
-  width: 100%;
-  margin: 0;
-  box-sizing: border-box;
-}
-.contacts-page :deep(.jurisdiction-phone-list li) {
-  padding: 18px 20px;
-}
-.contacts-note {
-  font-size: 13px;
-  color: var(--ink-sub,#64748b);
-}
-.contact-card {
-  padding: 24px;
-  margin: 20px 0;
-  border: 1px solid var(--line,#cbd5e1);
-  border-radius: 10px;
-  background: var(--surface,#fff);
-}
-h2 {
-  font-size: 18px;
-  margin: 0 0 8px;
-}
-.contact-fields {
-  display: grid;
-  grid-template-columns: repeat(3,minmax(0,1fr));
-  gap: 16px;
-  margin: 20px 0;
-}
-.contact-fields label {
-  display: grid;
-  gap: 8px;
-  min-width: 0;
-  font-size: 14px;
-}
-input {
-  min-width: 0;
-  width: 100%;
-  padding: 10px;
-  border: 1px solid var(--line,#cbd5e1);
-  background: var(--surface,#fff);
-  color: inherit;
-}
-.contact-save {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-}
-button {
-  padding: 12px 20px;
-  font-size: 14px;
-}
-@media (max-width:650px) {
-  .contact-fields {
-    grid-template-columns: 1fr;
-  }
-  .contact-card {
-    padding: 18px;
-  }
-  .contact-save {
-    flex-wrap: wrap;
-  }
-}
+.contacts-page{width:100%;min-width:0;box-sizing:border-box;padding-bottom:24px;color:var(--ink,#153451)}
+.contacts-page h1{margin:0 0 22px;font-size:22px;line-height:1.5}
+.contacts-intro{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:32px;padding:32px 40px;border:1px solid #d3e7f7;border-radius:18px;background:linear-gradient(115deg,#f4f9ff,#eaf5ff 70%,#dfeffb);color:#204e78;box-shadow:0 6px 20px #174f8706}
+.contacts-intro::after{content:'';position:absolute;width:310px;height:310px;right:-80px;top:-155px;border:45px solid #ffffff55;border-radius:50%;pointer-events:none}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:2px;color:#527da3}
+.contacts-intro h2{margin:13px 0 12px;color:#204e78;font-size:29px;line-height:1.4;letter-spacing:-1px;font-weight:700}
+.contacts-intro p{margin:0;color:#56748f;font-size:14px;line-height:1.8}
+.intro-stat{position:relative;z-index:1;display:flex;gap:20px;align-items:center;min-width:210px;padding:26px 32px;border:1px solid #d3e5f5;border-radius:14px;background:#ffffffb3}
+.intro-stat>.ui-icon{width:38px;height:38px;color:#4c8bc1}.intro-stat strong{display:block;color:#2869a1;font-size:38px;line-height:1.2}.intro-stat strong span{margin-left:9px;font-size:15px;font-weight:500}.intro-stat small{display:block;margin-top:9px;font-size:12px;color:#607f99}
+.directory-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:30px 0 18px}.directory-heading h2{margin:0;font-size:18px}.directory-heading h2 span{display:inline-block;margin-left:7px;padding:2px 8px;border-radius:6px;background:var(--surface,#fff);color:var(--primary,#246db1);font-size:13px}.directory-heading p{margin:7px 0 0;font-size:13px;color:var(--ink-sub,#667e96)}.directory-label{font-size:12px;color:var(--ink-sub,#667e96)}
+.contact-grid{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}.directory-card{--accent:#3176c4;--tint:#ecf4ff;min-width:0;padding:24px 22px 0;background:var(--surface,#fff);border:1px solid var(--line,#dce6f0);border-radius:14px;box-shadow:0 4px 16px #183a5a04;overflow:hidden;transition:box-shadow .2s,transform .2s}.directory-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px #183a5a10}.community{--accent:#17857f;--tint:#e9f7f4}.police{--accent:#6567bc;--tint:#f0effb}.civilian{--accent:#b57a2b;--tint:#fff5e5}.card-top{display:flex;justify-content:space-between;align-items:center;gap:10px}.institution-icon{display:grid;place-items:center;width:46px;height:46px;border-radius:13px;color:var(--accent);background:var(--tint)}.institution-icon .ui-icon{width:24px;height:24px}.category{font-size:11px;font-weight:600;color:var(--accent);padding:5px 9px;border-radius:6px;background:var(--tint)}.directory-card h3{margin:20px 0 6px;font-size:18px;letter-spacing:-.4px}.organization{margin:0;font-size:12px;color:var(--ink-sub,#667e96)}.description{min-height:72px;margin:20px 0 16px;font-size:13px;line-height:1.85;color:var(--ink-sub,#667e96)}.tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:24px}.tags span{padding:4px 7px;border:1px solid var(--line,#e3eaf1);border-radius:5px;font-size:10px;color:var(--ink-sub,#667e96)}
+.phone-panel{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin:0 -22px;padding:18px 20px;border-top:1px solid var(--line,#e3eaf1);background:color-mix(in srgb,var(--surface,#fff) 96%,#3176c4)}.phone-label{display:block;font-size:10px;color:var(--ink-sub,#667e96)}.phone-panel strong,.phone-panel a{display:block;margin-top:7px;font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;color:inherit;white-space:nowrap}.phone-panel button{display:flex;align-items:center;justify-content:center;gap:5px;flex-shrink:0;padding:8px;border:1px solid var(--line,#dce6f0);border-radius:7px;background:var(--surface,#fff);color:var(--ink-sub,#667e96);font:inherit;font-size:11px;cursor:pointer}.phone-panel button:hover{color:var(--primary,#246db1);border-color:var(--primary,#246db1)}.phone-panel button:focus-visible{outline:2px solid var(--primary,#246db1);outline-offset:3px}.phone-panel button .ui-icon{width:13px;height:13px}
+.contact-guide{display:flex;gap:18px;margin-top:24px;padding:25px 28px;background:var(--surface,#fff);border:1px solid var(--line,#dce6f0);border-radius:14px}.guide-icon{display:grid;place-items:center;flex-shrink:0;width:40px;height:40px;background:#edf5ff;color:#246db1;border-radius:10px}.contact-guide h2{margin:0 0 7px;font-size:15px}.contact-guide p{margin:0;font-size:12px;line-height:1.7;color:var(--ink-sub,#667e96)}.guide-steps{display:flex;flex-wrap:wrap;gap:15px 35px;margin-top:19px;font-size:12px}.guide-steps span{display:flex;gap:9px;align-items:center}.guide-steps b{color:var(--primary,#246db1);font-size:11px}
+@media(max-width:1250px){.contact-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.description{min-height:48px}.contacts-intro{padding:28px}.contacts-intro h2{font-size:26px}}
+@media(max-width:600px){.contacts-intro{padding:24px;display:block}.contacts-intro h2{font-size:25px}.contacts-intro p{font-size:12px}.intro-stat{margin-top:22px;padding:14px 18px;min-width:0;gap:16px}.intro-stat strong{font-size:28px}.intro-stat small{margin-top:4px}.intro-stat>.ui-icon{width:28px;height:28px}.contact-grid{grid-template-columns:1fr}.directory-label{display:none}.directory-heading{margin-top:24px}.contact-guide{padding:20px 18px;gap:12px}.guide-steps{display:grid;gap:12px}.contacts-page h1{font-size:20px}.description{min-height:0}}
+@media(prefers-reduced-motion:reduce){.directory-card{transition:none}.directory-card:hover{transform:none}}
+.phone-panel button{min-width:88px}.phone-panel button.is-copied{color:#17857f;border-color:#a9d8cc;background:#effaf6}

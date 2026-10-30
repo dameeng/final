@@ -1,5 +1,13 @@
 /* Desktop administrator workspaces: shared rhythm, without changing app layouts
    or the geometry of maps, media players and charts. */
+/* Keep the canvas continuous on short pages, including legacy page wrappers. */
+#app .admin-interface.admin-shell,
+#app .admin-interface.admin-shell > .wire-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  box-sizing: border-box;
+  background: var(--r-canvas);
+}
 #app .admin-interface.admin-shell {
   --admin-section-gap:24px;
   --admin-card-padding:20px;
