@@ -9,11 +9,11 @@ withDefaults(defineProps<{ live?: boolean }>(), { live: false })
 const groups = adminSidebarGroups
 const groupIcons: Record<string, UiIconName> = {
   '지하차도 관리': 'map',
-  '예지보전': 'tool',
-  '차량 기록': 'car',
-  '안전 대응': 'shield',
-  '고객·지원': 'chat',
-  '운영·설정': 'settings',
+  '설비·점검 관리': 'tool',
+  '차량 인식·통행': 'car',
+  '재난 대응': 'shield',
+  '고객 지원': 'chat',
+  '운영 설정': 'settings',
 }
 </script>
 <template>

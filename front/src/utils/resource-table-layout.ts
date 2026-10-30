@@ -20,7 +20,13 @@ export function resourceTableLayout(resource: string, columns: [string, string][
     underpassName: 128, cameraId: 140, detectedNum: 112, imagePath: 196, correctedNum: 112, confidence: 80,
     recognitionStatus: 104, reviewStatus: 100, reviewDeadline: 140, detectedAt: 140,
   }
-  const own = resource === 'cameras' ? cameraWidths : resource === 'ocr' ? ocrWidths : {}
+  const alertWidths: Record<string, number> = {
+    underpassName: 160, customerName: 100, carNum: 120, alertType: 120, pushStatus: 120, sentAt: 156,
+  }
+  const transitWidths: Record<string, number> = {
+    underpassName: 160, displayCarNum: 120, status: 104, entryAt: 156, exitAt: 156,
+  }
+  const own = resource === 'cameras' ? cameraWidths : resource === 'ocr' ? ocrWidths : resource === 'alerts' ? alertWidths : resource === 'transits' ? transitWidths : {}
   const widths = columns.map(([key]) => own[key] ?? fieldWidths[key] ?? (/At$/.test(key) ? 172 : undefined))
   if (actions) widths.push(resource === 'ocr' ? 116 : actionWidths[resource] || 180)
   const minWidth = widths.reduce<number>((sum, width) => sum + (width ?? 240), 0)

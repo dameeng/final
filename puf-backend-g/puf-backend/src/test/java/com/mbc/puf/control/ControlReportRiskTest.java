@@ -90,8 +90,8 @@ class ControlReportRiskTest {
             String text = com.itextpdf.kernel.pdf.canvas.parser.PdfTextExtractor.getTextFromPage(pdf.getPage(1));
             assertTrue(text.contains("AI 위험단계"));
             assertTrue(text.contains("경계"));
-            assertTrue(text.contains("위험 점수 76.4점"));
-            assertTrue(text.contains("판정 시각 2026.10.30 14:30"));
+            assertTrue(text.contains("경계 · 76.4점 · 판정 2026.10.30 14:30"));
+            assertFalse(text.contains("발생 당시 판정 결과"));
         }
     }
 }

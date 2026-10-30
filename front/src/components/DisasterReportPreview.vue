@@ -5,7 +5,7 @@ const fields = [
   ['발생장소', '초량1지하차도 · 부산광역시 동구'],
   ['발생일시', '2026-10-30 14:30'],
   ['재난유형', '집중호우에 따른 침수 위험'],
-  ['AI 위험단계', '경계'],
+  ['AI 위험단계', '경계 · 76.4점 · 판정 2026-10-30 14:30'],
   ['시간당 강수량', '65 mm (가상값)'],
   ['CCTV 확인', '확인 필요'],
   ['인명피해', '확인 중'],
@@ -19,7 +19,7 @@ const fields = [
     <p class="report-subtitle">예시 데이터 · 실제 재난 발생 및 통제 문서가 아닙니다.</p>
     <table aria-label="재난상황 기본 정보">
       <tbody>
-        <tr v-for="[label, value] in fields" :key="label"><th scope="row">{{ label }}</th><td>{{ value }}<template v-if="label==='AI 위험단계'"><small class="risk-meta">위험 점수 76.4점 · 판정 시각 2026-10-30 14:30</small><small class="risk-meta">발생 당시 판정 결과 · 예시</small></template></td></tr>
+        <tr v-for="[label, value] in fields" :key="label"><th scope="row">{{ label }}</th><td><span :class="{'risk-one-line':label==='AI 위험단계'}">{{ value }}</span></td></tr>
         <tr v-if="managerRegion"><th scope="row">담당 지역</th><td>{{ managerRegion }}</td></tr>
       </tbody>
     </table>
@@ -41,5 +41,6 @@ const fields = [
 .disaster-report footer { margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--line,#dedede); color: var(--ink-sub,#777); font-size: 13px; line-height: 1.7; }
 @media(max-width:600px) { .disaster-report { padding: 20px 16px; } .disaster-report table { font-size: 13px; } .disaster-report th { width: 34%; } }
 @media print { .disaster-report { max-width: none; border: 0; border-radius: 0; padding: 0; background: white; color: black; } .disaster-report tr,.disaster-report section { break-inside: avoid; } }
-.risk-meta { display: block; margin-top: 5px; color: var(--ink-sub,#777); font-size: 12px; line-height: 1.7; }
+.risk-one-line { display: block; white-space: nowrap; overflow-x: auto; font-size: 13px; }
+@media(max-width:600px) { .risk-one-line { font-size: 11px; } }
 </style>

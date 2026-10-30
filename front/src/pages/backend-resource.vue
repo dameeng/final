@@ -1147,7 +1147,7 @@ defineExpose({ open, load })
         v-if="!customer&&resourceId==='faqs'&&alertLogReturn.path"
         :to="alertLogReturn.path"
         class="alert-log-return"
-      >← 알림 발송 기록으로 돌아가기</RouterLink>
+      >← 알림 전송 내역으로 돌아가기</RouterLink>
       <!-- 제목과 같은 글자를 위에 한 번 더 쓰지 않는다 (고객 서비스 묶음 이름만 표시) -->
 
       <div class="service-heading page-head" :class="{'app-resource-heading':appPage&&!props.embedded,'review-page-heading':resourceId==='reviews','record-page-heading':!appPage&&!props.embedded&&['ocr','reviews','transits'].includes(resourceId)}">
@@ -1405,7 +1405,8 @@ defineExpose({ open, load })
                 :class="{'notification-arrival-glow':notificationGlow.has(resourceId==='manager-notifications'?'notification':resourceId==='notices'?'notice':resourceId==='inquiries'?'inquiry':'',row.id)}"
               >
                 <td v-for="[key,label] in visibleColumns" :key="key" :data-label="label" :data-field="key">
-                  <span v-if="resourceId === 'cameras' && key === 'cameraRole'" class="camera-role-label" :data-role="row.cameraRole">{{displayField(key,row[key])}}</span>
+                  <span v-if="['alerts','transits'].includes(resourceId) && key==='underpassName'" class="compact-underpass-name" :title="String(row[key]||'')">{{displayField(key,row[key])}}</span>
+                  <span v-else-if="resourceId === 'cameras' && key === 'cameraRole'" class="camera-role-label" :data-role="row.cameraRole">{{displayField(key,row[key])}}</span>
                   <span v-else-if="resourceId === 'cameras' && key === 'streamUrl'" class="camera-stream-address" :title="row.streamUrl || ''">{{row.streamUrl || '영상 주소 미등록'}}</span>
                   <span v-else-if="restored && ['inquiries','alerts','ocr','reviews'].includes(resourceId) && ['status','pushStatus','recognitionStatus','reviewStatus'].includes(key)" class="resource-status" :data-status="row[key]">{{displayField(key,row[key])}}</span>
                   <span v-else-if="resourceId === 'shifts' && ['startTime','endTime'].includes(key)" class="resource-time">{{row[key] ? String(row[key]).slice(0,5) : '—'}}</span>
@@ -1691,4 +1692,8 @@ defineExpose({ open, load })
 .customer-inquiry-actions{display:flex;justify-content:flex-end;gap:8px;padding:0 16px 14px;}
 .customer-inquiry-actions button{min-height:34px;padding:5px 12px;border:1px solid var(--r-line);border-radius:8px;background:var(--r-surface);color:var(--r-muted);font-size:12px;}
 .customer-inquiry-open:focus-visible{outline:2px solid var(--r-accent);outline-offset:-3px;}
+</style>
+
+<style scoped>
+.compact-underpass-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>

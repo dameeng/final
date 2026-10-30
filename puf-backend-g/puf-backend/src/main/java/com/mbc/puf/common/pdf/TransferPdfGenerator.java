@@ -87,10 +87,10 @@ public class TransferPdfGenerator {
     }
     private String riskAssessment(ControlNoticeData data) {
         String stage = data.riskLevel() == null ? "미확인" : data.riskLevel().getDbValue();
-        String score = data.riskScore() == null ? "위험 점수 미확인"
-                : String.format(java.util.Locale.ROOT, "위험 점수 %.1f점", data.riskScore());
-        String time = data.riskAssessedAt() == null ? "판정 시각 미확인" : "판정 시각 " + fmt(data.riskAssessedAt());
-        return stage + "\n" + score + " · " + time + "\n발생 당시 판정 결과";
+        String score = data.riskScore() == null ? "점수 미확인"
+                : String.format(java.util.Locale.ROOT, "%.1f점", data.riskScore());
+        String time = data.riskAssessedAt() == null ? "판정 시각 미확인" : "판정 " + fmt(data.riskAssessedAt());
+        return stage + " · " + score + " · " + time;
     }
 
     private void reportRow(Table table,PdfFont font,String label,String value){

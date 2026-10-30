@@ -18,7 +18,7 @@ export const adminSections = [
     ],
   },
   {
-    title: '예지보전',
+    title: '설비·점검 관리',
     links: [
       ['설비 목록', '/pm-equipment'],
       ['설비 상세', '/pm-equipment-detail'],
@@ -27,7 +27,7 @@ export const adminSections = [
     ],
   },
   {
-    title: '고객 서비스',
+    title: '고객 지원',
     links: [
       ['고객 관리', '/cs-customers'],
       ['고객 상세', '/cs-customer-detail'],

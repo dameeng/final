@@ -10,7 +10,7 @@ export const adminSidebarGroups = [
     ],
   },
   {
-    title: '예지보전',
+    title: '설비·점검 관리',
     links: [
       ['장비 현황', '/pm-equipment', '/pm-equipment'],
       ['점검 대기', '/pm-queue', '/pm-queue'],
@@ -20,7 +20,7 @@ export const adminSidebarGroups = [
     ],
   },
   {
-    title: '차량 기록',
+    title: '차량 인식·통행',
     links: [
       ['OCR 인식 기록', '', '/admin-data/ocr'],
       ['번호판 판별 대기', '/verify', '/admin-data/reviews'],
@@ -28,7 +28,7 @@ export const adminSidebarGroups = [
     ],
   },
   {
-    title: '안전 대응',
+    title: '재난 대응',
     links: [
       ['경찰·소방 이관', '', '/admin-data/transfers'],
       ['관할 담당자 연락처', '/jurisdiction-contacts', '/jurisdiction-contacts'],
@@ -37,7 +37,7 @@ export const adminSidebarGroups = [
     ],
   },
   {
-    title: '고객·지원',
+    title: '고객 지원',
     links: [
       ['고객 조회', '/cs-customers', '/admin-data/customers'],
       ['문의 처리', '', '/admin-data/inquiries'],
@@ -48,7 +48,7 @@ export const adminSidebarGroups = [
     ],
   },
   {
-    title: '운영·설정',
+    title: '운영 설정',
     links: [
       ['관리자·근무조', '', '/admin-data/managers'],
       ['지역 관리', '', '/admin-data/regions'],
