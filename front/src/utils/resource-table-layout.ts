@@ -10,13 +10,19 @@ const fieldWidths: Record<string, number> = {
 }
 const actionWidths: Record<string, number> = {
   managers: 330, notices: 240, inquiries: 280, cameras: 340,
-  customers: 144, ocr: 144, reviews: 180, regions: 180,
+  customers: 144, reviews: 180, regions: 180,
   presets: 180, reasons: 180, faqs: 240, transfers: 180, transits: 200,
 }
 export function resourceTableLayout(resource: string, columns: [string, string][], actions: boolean) {
   const cameraWidths: Record<string, number> = { id: 112, cameraRole: 160, distanceM: 120 }
-  const widths = columns.map(([key]) => (resource === 'cameras' ? cameraWidths[key] : undefined) ?? fieldWidths[key] ?? (/At$/.test(key) ? 172 : undefined))
-  if (actions) widths.push(actionWidths[resource] || 180)
+  // OCR 인식 기록: 내용 길이에 맞춰 줄여 1440px 화면에서 가로 스크롤 없이 보이게 (카메라 'APPROACH · 226' 한 줄)
+  const ocrWidths: Record<string, number> = {
+    underpassName: 128, cameraId: 140, detectedNum: 112, imagePath: 196, correctedNum: 112, confidence: 80,
+    recognitionStatus: 104, reviewStatus: 100, reviewDeadline: 140, detectedAt: 140,
+  }
+  const own = resource === 'cameras' ? cameraWidths : resource === 'ocr' ? ocrWidths : {}
+  const widths = columns.map(([key]) => own[key] ?? fieldWidths[key] ?? (/At$/.test(key) ? 172 : undefined))
+  if (actions) widths.push(resource === 'ocr' ? 116 : actionWidths[resource] || 180)
   const minWidth = widths.reduce<number>((sum, width) => sum + (width ?? 240), 0)
   return { widths, minWidth }
 }

@@ -28,10 +28,20 @@ type Feature = {
   normal?: { median: number; low: number; high: number }; contribution: number; direction: string
 }
 type Cause = { key: string; label: string; value: number; unit?: string; median: number; contribution: number; points: number }
+// 예지보전 서버의 미래 예측 (detail.forecast, pm_server/pdm/forecast.py). 펌프·수위 24시간, CCTV 7일, 전광판 3일(참고 7일)
+type Num = number | null
+type ForecastSensor = {
+  metric: string; name: string; unit: string; now: Num; trendPerHour: Num
+  value: Num[]; low: Num[]; high: Num[]; normal: { low: number; high: number } | null; exceedAt: string | null; direction: string | null
+}
+type Forecast = {
+  basedAt: string; stepHours: number; mainHours: number; horizonHours: number; times: string[]; note?: string; method?: string
+  score: Num[]; scoreLow?: Num[]; scoreHigh?: Num[]; scoreNow: Num; sensors: ForecastSensor[]
+}
 type Detail = {
   equipment: Record<string, any>
   currentSensors?: { recordedAt: string | null; values: Record<string, number | null> } | null
-  detail: { features?: Feature[]; extra?: Record<string, any> } | null
+  detail: { features?: Feature[]; extra?: Record<string, any>; forecast?: Forecast } | null
   cautionMin: number; dangerMin: number
   lastCheckedAt: string | null; recentActions: Record<string, any>[]
   modelVersion: string | null; scoredAt: string | null; anomalyStartedAt: string | null
@@ -234,14 +244,62 @@ function featureBar(f: Feature) {
   return { lo: pos(lo), width: pos(hi) - pos(lo), median: f.normal ? pos(f.normal.median) : null, value: pos(f.value), out }
 }
 
-// ---- 7일 위험 점수 그래프 (0~100, 기준 구간 배경) ----
+// ---- 미래 예측 (점선): 최근 점수보다 너무 오래된 예측은 쓰지 않는다 ----
+const HOUR = 3600000
+const forecast = computed(() => {
+  const f = data.value?.detail?.forecast
+  if (!f || !Array.isArray(f.times) || !f.times.length) return null
+  const base = riskTimestamp(f.basedAt), scored = riskTimestamp(data.value?.scoredAt)
+  if (!Number.isFinite(base) || (Number.isFinite(scored) && scored - base > Math.max(2, f.stepHours * 2) * HOUR)) return null
+  return { ...f, base, mainEnd: base + f.mainHours * HOUR, ts: f.times.map((t) => riskTimestamp(t)) }
+})
+type ForecastView = NonNullable<typeof forecast.value>
+// 값 목록이 limit 에 처음 닿는 시각 (지금 값 start 에서 첫 점까지도 직선으로). 이미 닿아 있으면 base
+function crossAt(f: ForecastView, values: Num[], start: Num, limit: number, up = true) {
+  const hit = (v: number) => (up ? v >= limit : v <= limit)
+  if (start != null && hit(start)) return f.base
+  let pt = f.base, pv: number | null = start
+  for (let i = 0; i < values.length; i++) {
+    const v = values[i], t = f.ts[i]!
+    if (v == null || !Number.isFinite(t)) { pv = null; continue }
+    if (hit(v)) return pv == null ? t : pt + (t - pt) * Math.min(1, Math.max(0, (limit - pv) / (v - pv || 1)))
+    pt = t; pv = v
+  }
+  return null
+}
+function shortTime(t: number) {
+  const d = new Date(t)
+  return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}시`
+}
+function afterText(f: ForecastView, at: number) {
+  const h = (at - f.base) / HOUR
+  return h < 48 ? `약 ${Math.max(1, Math.round(h))}시간 후` : `약 ${Math.round(h / 24)}일 후`
+}
+const rangeText = (hours: number) => (hours < 48 ? `${hours}시간` : `${Math.round(hours / 24)}일`)
+// 위험·주의 도달 예상 (설비 기준치로 다시 계산). 출발은 최신 점수 (예측은 10분~1시간마다 만들어져 그 사이 점수가 바뀌어요)
+const forecastEta = computed(() => {
+  const f = forecast.value
+  if (!f || !data.value) return null
+  const start = scoreValue.value ?? f.scoreNow
+  const eta = (limit: number, label: string) => {
+    const at = crossAt(f, f.score, start, limit)
+    if (at == null) return { at, text: `${rangeText(f.horizonHours)} 안에 ${label} 도달 예상 없음`, soon: false }
+    if (at <= f.base) return { at, text: `이미 ${label} 단계`, soon: true }
+    return { at, text: `${afterText(f, at)} (${shortTime(at)})${at > f.mainEnd ? ' · 참고' : ''}`, soon: at <= f.mainEnd }
+  }
+  return { danger: eta(Number(data.value.dangerMin), '위험'), caution: eta(Number(data.value.cautionMin), '주의') }
+})
+
+// ---- 7일 위험 점수 그래프 (0~100, 기준 구간 배경) + 미래 예측 점선 ----
 const scoreChart = computed(() => {
   const rows = scores.value.map((r) => ({ t: riskTimestamp(r.at), s: Number(r.score), m: Number(r.maxScore) }))
     .filter((r) => Number.isFinite(r.t))
   const y = (v: number) => PT + PH - (Math.max(0, Math.min(100, v)) / 100) * PH
   const yTicks = [0, 50, 100].map((v) => ({ y: y(v), label: String(v) }))
-  if (rows.length < 2) return { rows, y, yTicks, path: '', max: '', xTicks: [] as { x: number; label: string }[], last: null }
-  const t0 = rows[0]!.t, t1 = rows[rows.length - 1]!.t
+  const empty = { rows, y, yTicks, path: '', max: '', xTicks: [] as { x: number; label: string }[], last: null, future: null }
+  if (rows.length < 2) return empty
+  const f = forecast.value
+  const t0 = rows[0]!.t, t1 = Math.max(rows[rows.length - 1]!.t, f ? f.ts[f.ts.length - 1]! : 0)
   const x = (t: number) => PL + ((t - t0) / (t1 - t0 || 1)) * PW
   const line = (key: 's' | 'm') => rows.map((r, i) => `${i ? 'L' : 'M'}${x(r.t).toFixed(1)},${y(r[key]).toFixed(1)}`).join(' ')
   const end = rows[rows.length - 1]!
@@ -249,19 +307,50 @@ const scoreChart = computed(() => {
     rows, y, yTicks, path: line('s'), max: line('m'),
     xTicks: timeTicks(t0, t1).map((t) => ({ x: x(t.at), label: t.label })),
     last: { x: x(end.t), y: y(end.s), label: end.s.toFixed(1) + '점' },
+    future: f ? futurePaths(f, f.score, f.scoreLow, f.scoreHigh, f.scoreNow ?? end.s, x, y) : null,
+  }
+})
+// 예측 점선(주 범위 · 참고 범위)과 80% 범위 띠. start = 지금 값 (선이 지금 위치에서 시작)
+function futurePaths(f: ForecastView, values: Num[], low: Num[] | undefined, high: Num[] | undefined, start: number,
+  x: (t: number) => number, y: (v: number) => number) {
+  const pts = [{ t: f.base, v: start, lo: start, hi: start }]
+  values.forEach((v, i) => { if (v != null && Number.isFinite(f.ts[i]!)) pts.push({ t: f.ts[i]!, v, lo: low?.[i] ?? v, hi: high?.[i] ?? v }) })
+  if (pts.length < 2) return null
+  const seg = (list: typeof pts) => list.map((p, i) => `${i ? 'L' : 'M'}${x(p.t).toFixed(1)},${y(p.v).toFixed(1)}`).join(' ')
+  const cut = pts.findIndex((p) => p.t > f.mainEnd)
+  const main = cut < 0 ? pts : pts.slice(0, cut + 1), rest = cut < 0 ? [] : pts.slice(cut)
+  const band = pts.map((p) => `${x(p.t).toFixed(1)},${y(p.hi).toFixed(1)}`)
+    .concat([...pts].reverse().map((p) => `${x(p.t).toFixed(1)},${y(p.lo).toFixed(1)}`)).join(' ')
+  return { main: seg(main), rest: rest.length > 1 ? seg(rest) : '', band, now: x(f.base), mainEnd: cut < 0 ? null : x(f.mainEnd) }
+}
+
+// 선택한 센서의 미래 예측 (펌프는 화면 단위로 환산)
+const sensorForecast = computed(() => {
+  const f = forecast.value, s = f?.sensors?.find((r) => r.metric === column.value)
+  if (!f || !s) return null
+  const conv = (list: Num[]) => list.map((v) => (v == null ? null : pmSensorValue(s.metric, v)))
+  const exceed = s.exceedAt ? riskTimestamp(s.exceedAt) : null
+  return {
+    f, s, value: conv(s.value), low: conv(s.low), high: conv(s.high),
+    now: s.now == null ? null : pmSensorValue(s.metric, s.now),
+    exceedText: exceed == null || !Number.isFinite(exceed) ? `${rangeText(f.horizonHours)} 안에 벗어날 예상 없음`
+      : exceed <= f.base ? '이미 평소 범위 밖'
+        : `${afterText(f, exceed)} (${shortTime(exceed)}) ${s.direction === 'down' ? '아래로' : '위로'}${exceed > f.mainEnd ? ' · 참고' : ''}`,
   }
 })
 
-// ---- 원인 센서 그래프 (자동 눈금, 평소 범위 띠) ----
+// ---- 원인 센서 그래프 (자동 눈금, 평소 범위 띠) + 미래 예측 점선 ----
 const trendChart = computed(() => {
   const series = trends.value.map((tr) => tr.points.map((p) => ({ t: riskTimestamp(p.at), v: pmSensorValue(tr.column, Number(p.value)) })).filter((p) => Number.isFinite(p.t) && Number.isFinite(p.v)))
   const all = series.flat()
   if (!all.length) return null
   const raw = trends.value.length === 1 ? trends.value[0]! : null
   const band = raw?.band ? { low: pmSensorValue(raw.column, raw.band.low), high: pmSensorValue(raw.column, raw.band.high) } : null
-  const vals = all.map((p) => p.v).concat(band ? [band.low, band.high] : [])
+  const sf = sensorForecast.value
+  const futureVals = sf ? [...sf.value, ...sf.low, ...sf.high].filter((v): v is number => v != null && Number.isFinite(v)) : []
+  const vals = all.map((p) => p.v).concat(band ? [band.low, band.high] : [], futureVals)
   const axis = niceAxis(Math.min(...vals), Math.max(...vals))
-  const t0 = Math.min(...all.map((p) => p.t)), t1 = Math.max(...all.map((p) => p.t))
+  const t0 = Math.min(...all.map((p) => p.t)), t1 = Math.max(...all.map((p) => p.t), sf ? sf.f.ts[sf.f.ts.length - 1]! : 0)
   const x = (t: number) => PL + ((t - t0) / (t1 - t0 || 1)) * TPW
   const y = (v: number) => PT + TPH - ((v - axis.min) / (axis.max - axis.min)) * TPH
   const main = series[0]!
@@ -281,6 +370,7 @@ const trendChart = computed(() => {
     last: { x: x(last.t), y: y(last.v), label: axis.format(last.v, 1) + unit.value, at:new Date(last.t).toISOString() },
     count:main.length,
     outside:band?last.v<band.low||last.v>band.high:null,
+    future: sf ? futurePaths(sf.f, sf.value, sf.low, sf.high, sf.now ?? last.v, x, y) : null,
   }
 })
 const unit = computed(() => PM_SENSOR_UNITS[column.value] || '')
@@ -382,6 +472,10 @@ watch([data,trends],async()=>{
             <dl class="service-detail pm-facts">
               <dt>이상 시작</dt><dd>{{data.anomalyStartedAt?displayDate(data.anomalyStartedAt):'이상 없음'}}</dd>
               <dt>최근 점수</dt><dd>{{data.scoredAt?displayDate(data.scoredAt):'아직 없음'}}</dd>
+              <template v-if="forecastEta">
+                <dt>위험 도달 예상</dt><dd class="pm-eta" :class="{'pm-eta--soon':forecastEta.danger.soon}">{{forecastEta.danger.text}}</dd>
+                <dt>주의 도달 예상</dt><dd class="pm-eta" :class="{'pm-eta--warn':forecastEta.caution.soon}">{{forecastEta.caution.text}}</dd>
+              </template>
               <template v-if="extra.suspectedCause"><dt>의심 원인</dt><dd>{{pmLabel(PM_CAUSES,extra.suspectedCause)}}</dd></template>
               <template v-if="extra.anomalyType"><dt>이상 유형</dt><dd>{{extra.anomalyType}}</dd></template>
               <dt>모델</dt><dd class="pm-mono">{{data.modelVersion||'—'}}</dd>
@@ -427,9 +521,9 @@ watch([data,trends],async()=>{
             <p v-if="data.topCauses?.length" class="pm-muted small">점수 {{scoreValue?.toFixed(1)}} 중 각 원인이 끌어올린 몫</p>
           </section>
           <section class="card pm-score-history">
-            <div class="pm-section-heading"><h2>위험 점수 추이</h2><span class="pm-period">최근 7일</span></div>
-            <div v-if="scoreChart.path" class="pm-score-threshold-legend" aria-label="위험 점수 단계 기준"><span><i class="caution"></i>주의 {{data.cautionMin}}</span><span><i class="danger"></i>위험 {{data.dangerMin}}</span></div>
-            <svg v-if="scoreChart.path" class="pm-chart" :viewBox="`0 0 ${CW} ${CH}`" role="img" aria-label="최근 7일 위험 점수 추이">
+            <div class="pm-section-heading"><h2>위험 점수 추이</h2><span class="pm-period">최근 7일<template v-if="forecast"> + 앞으로 {{rangeText(forecast.horizonHours)}}</template></span></div>
+            <div v-if="scoreChart.path" class="pm-score-threshold-legend" aria-label="위험 점수 단계 기준"><span><i class="caution"></i>주의 {{data.cautionMin}}</span><span><i class="danger"></i>위험 {{data.dangerMin}}</span><span v-if="scoreChart.future"><i class="forecast"></i>예측</span></div>
+            <svg v-if="scoreChart.path" class="pm-chart" :viewBox="`0 0 ${CW} ${CH}`" role="img" :aria-label="forecast?`최근 7일 위험 점수 추이와 앞으로 ${rangeText(forecast.horizonHours)} 예측`:'최근 7일 위험 점수 추이'">
               <rect :x="PL" :y="PT" :width="PW" :height="scoreChart.y(data.dangerMin)-PT" class="zone-danger" />
               <rect :x="PL" :y="scoreChart.y(data.dangerMin)" :width="PW" :height="scoreChart.y(data.cautionMin)-scoreChart.y(data.dangerMin)" class="zone-caution" />
               <g v-for="t in scoreChart.xTicks" :key="'x'+t.x">
@@ -442,6 +536,13 @@ watch([data,trends],async()=>{
               <line :x1="PL" :x2="PL+PW" :y1="PT+PH" :y2="PT+PH" class="axis" />
               <path :d="scoreChart.max" class="line-max" />
               <path :d="scoreChart.path" class="line-main" />
+              <template v-if="scoreChart.future">
+                <polygon :points="scoreChart.future.band" class="forecast-band" />
+                <line :x1="scoreChart.future.now" :x2="scoreChart.future.now" :y1="PT" :y2="PT+PH" class="now-line" />
+                <text :x="scoreChart.future.now" :y="PT-8" text-anchor="middle" class="tick">지금</text>
+                <path :d="scoreChart.future.main" class="line-forecast" />
+                <path v-if="scoreChart.future.rest" :d="scoreChart.future.rest" class="line-forecast line-forecast--ref" />
+              </template>
               <template v-if="scoreChart.last">
                 <circle :cx="scoreChart.last.x" :cy="scoreChart.last.y" r="4" class="dot-main" />
               </template>
@@ -451,6 +552,10 @@ watch([data,trends],async()=>{
               예지보전 서버의 지난 7일 채우기(백필)가 끝나면 그래프가 나와요.
             </p>
             <p v-if="scoreChart.path" class="pm-muted small">선 = 1시간 평균 · 옅은 선 = 구간 최고점 · 배경 = 이 설비의 기준</p>
+            <p v-if="scoreChart.future&&forecast" class="pm-muted small">
+              점선 = 예측 (앞으로 {{rangeText(forecast.mainHours)}}<template v-if="forecast.horizonHours>forecast.mainHours">, 흐린 점선은 {{rangeText(forecast.horizonHours)}}까지 참고</template>) · 띠 = 80% 예측 범위 · {{displayDate(forecast.basedAt)}} 기준.
+              지금 추세가 이어질 때의 예상이고, 고장 시각이 아니라 단계에 닿는 예상 시각이에요.
+            </p>
           </section>
         </div>
 
@@ -519,6 +624,7 @@ watch([data,trends],async()=>{
             <span><i class="sw sw-sensor"></i>{{trends.length>1?'본체 온도':tabLabel}}</span>
             <span v-if="trends.length>1"><i class="sw sw-second"></i>외기 온도</span>
             <span v-if="trendChart.band"><i class="sw sw-band"></i>평소 범위 {{trendChart.band.label}}</span>
+            <span v-if="trendChart.future"><i class="sw sw-forecast"></i>예측 (80% 범위)</span>
           </div>
           <div ref="sensorChartScroll" class="pm-chart-scroll" tabindex="0" role="region" aria-label="센서 추이 그래프. 좁은 화면에서는 가로로 스크롤할 수 있습니다.">
           <svg v-if="trendChart" :key="column" class="pm-chart pm-chart--wide" :viewBox="`0 0 ${TCW} ${TCH}`" role="img" :aria-label="tabLabel+' 최근 7일 추이'">
@@ -533,6 +639,12 @@ watch([data,trends],async()=>{
             </g>
             <text v-if="unit" :x="PL-8" y="12" text-anchor="end" class="tick unit">({{unit}})</text>
             <path v-for="(d,i) in trendChart.paths" :key="i" :d="d" pathLength="1" :class="i?'line-second':'line-sensor'" />
+            <template v-if="trendChart.future">
+              <polygon :points="trendChart.future.band" class="forecast-band forecast-band--sensor" />
+              <line :x1="trendChart.future.now" :x2="trendChart.future.now" :y1="PT" :y2="PT+TPH" class="now-line" />
+              <path :d="trendChart.future.main" class="line-forecast line-forecast--sensor" />
+              <path v-if="trendChart.future.rest" :d="trendChart.future.rest" class="line-forecast line-forecast--sensor line-forecast--ref" />
+            </template>
             <circle :cx="trendChart.last.x" :cy="trendChart.last.y" r="5" class="dot-sensor"><title>{{displayDate(trendChart.last.at)}} · {{trendChart.last.label}}</title></circle>
           </svg>
           </div>
@@ -540,7 +652,8 @@ watch([data,trends],async()=>{
           <aside class="pm-sensor-summary" aria-label="선택한 센서 요약">
             <span class="pm-muted small">{{tabLabel}} · 최근 관측값</span><strong class="pm-reading">{{trendChart.last.label}}</strong>
             <span class="pm-sensor-state" :class="{'is-outside':trendChart.outside,'is-unknown':trendChart.outside===null}">{{trendChart.outside===null?'기준 데이터 없음':trendChart.outside?'평소 범위 벗어남':'평소 범위 이내'}}</span>
-            <dl><template v-if="trendChart.band"><dt>평소 범위</dt><dd>{{trendChart.band.label}}</dd></template><dt>관측 시각</dt><dd>{{displayDate(trendChart.last.at)}}</dd><dt>관측 구간</dt><dd>{{trendChart.count}}개</dd></dl>
+            <dl><template v-if="trendChart.band"><dt>평소 범위</dt><dd>{{trendChart.band.label}}</dd></template><dt>관측 시각</dt><dd>{{displayDate(trendChart.last.at)}}</dd><dt>관측 구간</dt><dd>{{trendChart.count}}개</dd>
+              <template v-if="sensorForecast"><dt>범위 이탈 예상</dt><dd class="pm-eta" :class="{'pm-eta--soon':sensorForecast.s.exceedAt}">{{sensorForecast.exceedText}}</dd></template></dl>
           </aside>
           </div>
           <p v-if="!trendChart&&!trendLoading&&!trendError" class="pm-muted">아직 센서 기록이 없어요.</p>
@@ -548,6 +661,7 @@ watch([data,trends],async()=>{
             <template v-if="trends.length>1">1시간 평균 · 두 선 사이가 벌어질수록 본체가 평소보다 뜨거워요</template>
             <template v-else-if="trendChart.band">1시간 평균 · 평소 범위는 이 설비의 처음 28일 평균 ± 2σ</template>
             <template v-else>1시간 평균 · 평소 범위를 만들 기준 데이터가 아직 모자라요</template>
+            <template v-if="trendChart.future&&sensorForecast"> · 점선 = 최근 추세로 그린 예측이고, 범위 이탈 예상은 예지보전 모델의 평소 범위 기준이에요</template>
           </p>
         </section>
 
@@ -647,6 +761,16 @@ watch([data,trends],async()=>{
 .pm-legend .sw-band { height:10px; background:var(--pm-band-fill,#eaf3ff); border:1px solid color-mix(in srgb,var(--r-accent,#2375d6) 35%,var(--r-line,#dce7f2)); }
 .pm-legend-now { margin-left: auto; }
 .pm-legend-now b { color: var(--ink, #1f2630); }
+.pm-chart .line-forecast { fill: none; stroke: var(--primary, #2b5c8a); stroke-width: 2.2; stroke-dasharray: 6 4; }
+.pm-chart .line-forecast--sensor { stroke: #d85a30; }
+.pm-chart .line-forecast--ref { stroke-opacity: .4; }
+.pm-chart .forecast-band { fill: var(--primary, #2b5c8a); fill-opacity: .1; stroke: none; }
+.pm-chart .forecast-band--sensor { fill: #d85a30; }
+.pm-chart .now-line { stroke: var(--ink-sub, #5b6573); stroke-width: 1; stroke-dasharray: 2 3; }
+.pm-legend .sw-forecast { background: repeating-linear-gradient(90deg, #d85a30 0 5px, transparent 5px 8px); }
+.pm-score-threshold-legend i.forecast { background: repeating-linear-gradient(90deg, var(--primary, #2b5c8a) 0 5px, transparent 5px 8px); height: 3px; }
+.pm-eta--soon { color: var(--danger, #c0392b); font-weight: 600; }
+.pm-eta--warn { color: var(--warn, #b7791f); font-weight: 600; }
 .pm-chart .lbl-danger { fill: #a32d2d; }
 .pm-chart .lbl-caution { fill: #854f0b; }
 .pm-detail .tabs button { font: inherit; }
