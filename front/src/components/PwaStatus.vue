@@ -36,7 +36,7 @@ onBeforeUnmount(() => {
 </script>
 <template>
   <div v-if="!online||(!hideInstall&&(prompt||message))" class="pwa-status" role="status">
-    <span v-if="!online">오프라인 · 실시간 상태를 확인할 수 없습니다.</span>
+    <span v-if="!online">오프라인 · 실시간 상태를 확인할 수 없습니다</span>
     <button v-if="prompt&&!hideInstall" type="button" @click="install">홈 화면에 앱 설치</button>
     <span v-if="message">{{message}}</span>
   </div>
