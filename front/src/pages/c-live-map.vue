@@ -511,7 +511,15 @@ function showAppMapPopup(node: HTMLElement, position: any, kind: 'facility' | 'c
 }
 watch(selectedId, value => { if (!value) removeAppMapPopup('facility') })
 let overlays: any[] = []
-let markers: { id: string; marker: any; click: () => void }[] = []
+type MapMarkerItem = { id: string; marker: any; click: () => void; key: string; title: string }
+let markers: MapMarkerItem[] = []
+// 마커 조회용 색인: 매번 배열을 훑지 않도록 id/마커 인스턴스로 바로 찾습니다.
+let markerById = new Map<string, MapMarkerItem>()
+let markerIdByInstance = new Map<any, string>()
+// 마지막으로 그린 지도 상태. 같으면 마커를 다시 만들지 않고 바뀐 부분만 고칩니다.
+let drawnMode: '' | 'overview' | 'markers' = ''
+let drawnKey = ''
+let drawnPopupKey = ''
 watch(
   () => selectedId.value,
   async (id) => {
@@ -749,10 +757,11 @@ const filtered = computed(() =>
               : stateLabel(f) === statusFilter.value)),
   ),
 )
+const facilityById = computed(() => new Map(facilities.value.map((f) => [f.id, f] as const)))
 const selected = computed(() =>
   detail.value?.id === selectedId.value
     ? detail.value
-    : facilities.value.find((f) => f.id === selectedId.value) || null,
+    : facilityById.value.get(selectedId.value) || null,
 )
 const managerSearchOpen = ref(false), managerSearchIndex = ref(-1)
 const managerSearchResults = computed(() => query.value.trim() ? filtered.value.slice(0, 5) : [])
@@ -1235,7 +1244,7 @@ function openSelectedPopup() {
   if (props.manager && !props.mapOnly) return
   if (!map || !selected.value || detailLoading.value) return
   if (dismissedPopupId === selectedId.value) return
-  const item = markers.find((m) => m.id === selectedId.value)
+  const item = markerById.get(selectedId.value)
   if (!item) return
   const row = selected.value,
     content = document.createElement('div')
@@ -1382,8 +1391,8 @@ function styleClusters(clusters: any[]) {
   )
   for (const cluster of ordered) {
     const states = cluster.getMarkers().map((marker: any) => {
-      const id = markers.find((item) => item.marker === marker)?.id
-      const row = facilities.value.find((item) => item.id === id)
+      const id = markerIdByInstance.get(marker)
+      const row = id ? facilityById.value.get(id) : undefined
       return row ? stateLabel(row) : '미확인'
     })
     const state = markerStyles.find((style) =>
@@ -1394,7 +1403,7 @@ function styleClusters(clusters: any[]) {
       Object.assign(content.style, clusterStyle(state, cluster.getMarkers().length, maxCount))
       const ids = cluster
         .getMarkers()
-        .map((marker: any) => markers.find((item) => item.marker === marker)?.id)
+        .map((marker: any) => markerIdByInstance.get(marker))
         .filter(Boolean)
       const selected =
         ids.includes(selectedId.value) ||
@@ -1408,7 +1417,7 @@ function styleClusters(clusters: any[]) {
           : Math.min(1, (cluster.getMarkers().length - 1) / Math.max(1, maxCount - 1))
       const assigned =
         props.manager &&
-        ids.some((id: string) => ownsFacility(facilities.value.find((row) => row.id === id)))
+        ids.some((id: string) => ownsFacility(facilityById.value.get(id)))
       content.innerHTML = mapMarkerSvg(
         props.manager && !assigned ? '#9aa3ae' : markerStyle(state).color,
         markerOpacity.fill + (1 - markerOpacity.fill) * density,
@@ -1425,7 +1434,7 @@ function styleClusters(clusters: any[]) {
       content.style.filter = selected ? 'drop-shadow(0 0 3px #174f8880)' : 'none'
       if (props.manager) {
         const assigned = ids.some((id: string) =>
-          ownsFacility(facilities.value.find((row) => row.id === id)),
+          ownsFacility(facilityById.value.get(id)),
         )
         content.title = assigned
           ? '\uB2F4\uB2F9 \uC2DC\uC124 \uD3EC\uD568'
@@ -1435,6 +1444,9 @@ function styleClusters(clusters: any[]) {
   }
 }
 function removeMarkers() {
+  drawnMode = ''
+  drawnKey = ''
+  drawnPopupKey = ''
   styledClusters = []
   clusterer?.clear()
   for (const { marker, click } of markers) {
@@ -1442,6 +1454,8 @@ function removeMarkers() {
     marker.setMap(null)
   }
   markers = []
+  markerById = new Map()
+  markerIdByInstance = new Map()
   overlays.forEach((overlay) => overlay.setMap(null))
   overlays = []
 }
@@ -1460,7 +1474,7 @@ function closeClusterPopup() {
 async function selectCluster(cluster: any) {
   const ids: string[] = cluster
     .getMarkers()
-    .map((m: any) => markers.find((x) => x.marker === m)?.id)
+    .map((m: any) => markerIdByInstance.get(m))
     .filter(Boolean)
   const rows = facilities.value.filter((row) => ids.includes(row.id))
   if (!rows.length) return
@@ -1529,13 +1543,85 @@ async function selectCluster(cluster: any) {
   clusterPopupOpen = true
   maps.event.preventMap?.()
 }
+function markerAppearance(row: Facility) {
+  const state = stateLabel(row)
+  const assigned = !props.manager || ownsFacility(row)
+  const isSelected = selectedId.value === row.id
+  return {
+    state,
+    assigned,
+    isSelected,
+    key: `${state}|${assigned}|${isSelected}`,
+    title: `${row.name}${props.manager ? (assigned ? ' · 담당 시설' : ' · 담당 외 시설') : ''} · ${state}`,
+  }
+}
+function popupKeyOf(): string {
+  const row = selected.value
+  return selectedId.value ? `${selectedId.value}|${row ? stateLabel(row) : ''}|${row?.updatedAt ?? ''}` : ''
+}
+// 마커 구성(시설·좌표)이 그대로면 마커를 새로 만들지 않고 바뀐 마커의 이미지·제목만 고칩니다.
+function updateMarkersInPlace(): boolean {
+  let changed = false
+  for (const item of markers) {
+    const row = facilityById.value.get(item.id)
+    if (!row) return false
+    const a = markerAppearance(row)
+    if (item.key !== a.key) {
+      item.marker.setImage(markerImage(a.state, a.assigned, a.isSelected))
+      item.marker.setZIndex(a.isSelected ? 12 : markerStyle(a.state).zIndex)
+      item.key = a.key
+      changed = true
+    }
+    if (item.title !== a.title) {
+      item.marker.setTitle(a.title)
+      item.title = a.title
+    }
+  }
+  if (changed) clusterer?.redraw()
+  const popupKey = popupKeyOf()
+  if (popupKey !== drawnPopupKey) {
+    drawnPopupKey = popupKey
+    infoWindow.close()
+    openSelectedPopup()
+  }
+  return true
+}
 function drawMap() {
   if (!map) return
+  const overview = !regionId.value && !query.value && !selectedId.value && !legendFilter.value
+  let nextKey: string
+  let markerRows: Facility[] = []
+  if (overview) {
+    nextKey = [
+      loaded.value,
+      !!listError.value,
+      !!statusError.value,
+      ...regions.map((region) => {
+        const rows = facilities.value.filter((f) => f.regionId === region.id)
+        const blocked = rows.filter((f) => stateLabel(f) === '통제').length
+        const unknown = rows.filter((f) => !['정상', '주의', '통제'].includes(stateLabel(f))).length
+        return `${region.id}:${rows.length}:${blocked}:${unknown}`
+      }),
+    ].join('|')
+    if (drawnMode === 'overview' && drawnKey === nextKey) return
+  } else {
+    markerRows = filtered.value.filter((row) => row.latitude !== null && row.longitude !== null)
+    nextKey = markerRows.map((f) => `${f.id}@${f.latitude},${f.longitude}`).join(';')
+    if (
+      drawnMode === 'markers' &&
+      drawnKey === nextKey &&
+      markers.length === markerRows.length &&
+      updateMarkersInPlace()
+    )
+      return
+  }
   infoWindow.close()
   clusterInfoWindow?.close()
   clusterPopupOpen = false
   removeMarkers()
-  if (!regionId.value && !query.value && !selectedId.value && !legendFilter.value) {
+  drawnMode = overview ? 'overview' : 'markers'
+  drawnKey = nextKey
+  if (overview) {
     for (const region of regions) {
       const rows = facilities.value.filter((f) => f.regionId === region.id)
       const blocked = rows.filter((f) => stateLabel(f) === '통제').length
@@ -1593,22 +1679,30 @@ function drawMap() {
       )
     }
   } else {
-    for (const row of filtered.value) {
-      if (row.latitude === null || row.longitude === null) continue
-      const state = stateLabel(row)
+    for (const row of markerRows) {
+      const a = markerAppearance(row)
       const marker = new maps.Marker({
         map,
-        position: new maps.LatLng(row.latitude, row.longitude),
-        title: `${row.name}${props.manager ? (ownsFacility(row) ? ' · 담당 시설' : ' · 담당 외 시설') : ''} · ${state}`,
-        image: markerImage(state, !props.manager || ownsFacility(row), selectedId.value === row.id),
-        zIndex: selectedId.value === row.id ? 12 : markerStyle(state).zIndex,
+        position: new maps.LatLng(row.latitude!, row.longitude!),
+        title: a.title,
+        image: markerImage(a.state, a.assigned, a.isSelected),
+        zIndex: a.isSelected ? 12 : markerStyle(a.state).zIndex,
       })
-      const click = () => selectFacility(row)
+      const id = row.id
+      // 마커를 다시 만들지 않으므로 클릭 시점의 최신 시설 정보를 id로 다시 찾습니다.
+      const click = () => {
+        const current = facilityById.value.get(id)
+        if (current) selectFacility(current)
+      }
       maps.event.addListener(marker, 'click', click)
-      markers.push({ id: row.id, marker, click })
+      const item: MapMarkerItem = { id, marker, click, key: a.key, title: a.title }
+      markers.push(item)
+      markerById.set(id, item)
+      markerIdByInstance.set(marker, id)
     }
     clusterer?.clear()
     clusterer?.addMarkers(markers.map((m) => m.marker))
+    drawnPopupKey = popupKeyOf()
     openSelectedPopup()
   }
 }
