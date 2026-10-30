@@ -46,7 +46,7 @@
   display:contents;
 }
 #app .admin-interface.admin-shell .service-filters .service-form-fields>label {
-  flex:0 0 200px; width:200px; min-width:200px; max-width:200px; gap:8px;
+  flex:1 1 180px; width:auto; min-width:160px; max-width:none; gap:8px;
 }
 #app .admin-interface.admin-shell .service-filters .service-form-fields>label :is(input,select) { width:100%; }
 #app .admin-interface.admin-shell .service-table :is(th,td)[data-field=id] {
@@ -102,15 +102,15 @@
   #app .admin-interface.admin-shell .service-table :is(th,td).resource-action-column { width:150px; }
 }
 #app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters) label:not(:has(input[type=checkbox])) {
-  width:200px; min-width:200px; max-width:200px; flex:0 0 200px;
+  width:auto; min-width:160px; max-width:none; flex:1 1 180px;
 }
 #app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters) label:not(:has(input[type=checkbox])) :is(input,select) { width:100%; height:44px; min-height:44px; box-sizing:border-box; }
 #app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters)>button {
   display:inline-flex; align-items:center; justify-content:center;
   width:88px; min-width:88px; height:44px; min-height:44px; padding:0 14px; box-sizing:border-box;
 }
-#app .admin-interface.admin-shell .pm-admin-tools .service-filters label { width:200px; min-width:200px; max-width:200px; }
-#app .admin-interface.admin-shell .pm-admin-tools.pm-daily-live .service-filters label { width:auto; max-width:none; flex-basis:auto; }
+#app .admin-interface.admin-shell .pm-admin-tools .service-filters label { flex:1 1 180px; width:auto; min-width:160px; max-width:none; }
+#app .admin-interface.admin-shell .pm-admin-tools.pm-daily-live .service-filters label { flex:1 1 180px; width:auto; max-width:none; }
 #app .admin-interface.admin-shell .pm-admin-tools.pm-daily-live .service-filters input { width:200px; }
 #app .admin-interface.admin-shell .pm-history-live .pm-date { width:200px; height:44px; }
 #app .admin-interface.admin-shell .pm-history-live .pm-select select { width:200px; min-width:200px; height:44px; }
@@ -168,3 +168,407 @@
 #app .admin-interface.admin-shell .record-empty-state h2 { margin:0 0 6px; font-size:15px; font-weight:600; }
 #app .admin-interface.admin-shell .record-empty-state p { margin:0; color:var(--r-muted); font-size:12px; line-height:20px; }
 #app .admin-interface.admin-shell .record-empty-state>button { margin-left:auto; min-height:40px; padding:8px 14px; border:1px solid var(--r-line); border-radius:8px; background:var(--r-soft); color:var(--r-ink); font:inherit; font-size:13px; cursor:pointer; }
+
+/* Region directory */
+#app .admin-interface.admin-shell .region-overview{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:26px 30px;margin-bottom:24px;border:1px solid var(--r-line);border-radius:14px;background:linear-gradient(110deg,var(--r-selected),var(--r-surface));}
+#app .admin-interface.admin-shell .region-overview-copy{display:flex;align-items:center;gap:20px}.region-overview-icon{display:grid;place-items:center;width:62px;height:62px;flex-shrink:0;border:1px solid var(--r-line);border-radius:16px;background:var(--r-surface);color:var(--r-accent)}.region-overview-icon .ui-icon{width:30px;height:30px}.region-eyebrow{color:var(--r-accent);font-size:10px;letter-spacing:1.8px;font-weight:700}
+#app .admin-interface.admin-shell .region-overview h2{font-size:21px;margin:7px 0 6px}.region-overview p{font-size:13px;margin:0;color:var(--r-muted);line-height:1.8}.region-total{padding:0 12px 0 30px;border-left:1px solid var(--r-line);min-width:150px}.region-total>span{font-size:12px;color:var(--r-muted)}.region-total strong{display:block;font-size:34px;color:var(--r-accent);line-height:1.4}.region-total small{font-size:14px;margin-left:7px;font-weight:500}
+.region-list-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:16px}#app .region-list-heading h2{margin:0;font-size:16px}.region-list-heading h2 span{margin-left:7px;padding:2px 7px;border-radius:5px;background:var(--r-selected);color:var(--r-accent);font-size:12px}.region-list-heading p{margin:6px 0 0;font-size:12px;color:var(--r-muted)}.region-search{display:flex;align-items:center;gap:8px;padding:0 12px;border:1px solid var(--r-line);border-radius:9px;background:var(--r-surface);color:var(--r-muted)}.region-search>.ui-icon{width:17px;height:17px}#app .region-search input{width:220px;min-height:42px;padding:8px 0;border:0;box-shadow:none;background:transparent;color:var(--r-ink);font-size:12px}
+#app .admin-interface.admin-shell [data-resource=regions] .service-table th:first-child{width:100px}#app .admin-interface.admin-shell [data-resource=regions] .service-table .resource-action-column{width:180px}#app .admin-interface.admin-shell [data-resource=regions] .service-table td{padding:14px 20px}#app .admin-interface.admin-shell [data-resource=regions] .service-table td[data-field=id]{color:var(--r-muted);font-variant-numeric:tabular-nums}.region-name-cell{display:flex;align-items:center;gap:12px}.region-pin{display:grid;place-items:center;width:34px;height:34px;flex-shrink:0;border:1px solid var(--r-line);border-radius:9px;background:var(--r-selected);color:var(--r-accent)}.region-pin .ui-icon{width:17px;height:17px}.region-name-cell strong{display:block;font-size:14px}.region-name-cell small{display:block;margin-top:2px;color:var(--r-muted);font-size:10px;font-weight:400}
+@media(max-width:650px){#app .admin-interface.admin-shell .region-overview{padding:20px;align-items:flex-start;flex-direction:column}.region-overview-copy{gap:12px!important}.region-overview-icon{width:44px;height:44px}.region-total{border-left:0;border-top:1px solid var(--r-line);padding:14px 0 0;width:100%}.region-search{width:100%;box-sizing:border-box}#app .region-search input{width:100%;min-width:0}.region-list-heading{align-items:stretch}}
+
+/* Administrator team directory */
+#app .admin-interface.admin-shell .manager-directory-summary {
+  display:flex; align-items:center; justify-content:space-between; gap:28px;
+  margin:4px 0 24px; padding:26px 28px; border:1px solid var(--r-line); border-radius:14px;
+  background:linear-gradient(115deg,var(--r-selected),var(--r-surface));
+}
+.manager-directory-intro { display:flex; align-items:center; gap:18px; }
+.manager-directory-symbol { display:grid; place-items:center; width:56px; height:56px; flex:none; border:1px solid var(--r-line); border-radius:16px; background:var(--r-surface); color:var(--r-accent); }
+.manager-directory-symbol .ui-icon { width:28px; height:28px; }
+.directory-eyebrow { color:var(--r-accent); font-size:10px; font-weight:700; letter-spacing:1.8px; }
+#app .manager-directory-intro h2 { margin:6px 0; font-size:21px; line-height:1.5; }
+.manager-directory-intro p { margin:0; font-size:12px; line-height:1.8; color:var(--r-muted); }
+.manager-directory-metrics { display:flex; gap:28px; }
+.manager-directory-metrics>div { min-width:110px; padding-left:24px; border-left:1px solid var(--r-line); }
+.manager-directory-metrics>div>span { font-size:11px; color:var(--r-muted); }
+.manager-directory-metrics strong { display:block; margin-top:5px; font-size:30px; line-height:1.4; color:var(--r-ink); font-variant-numeric:tabular-nums; }
+.manager-directory-metrics>div:first-child strong { color:var(--r-accent); }
+.manager-directory-metrics small { margin-left:6px; font-size:12px; font-weight:500; color:var(--r-muted); }
+.manager-directory-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; margin:0 0 16px; }
+#app .manager-directory-heading h2 { margin:0; font-size:16px; }
+.manager-directory-heading h2 span { padding:2px 7px; margin-left:6px; border-radius:5px; background:var(--r-selected); color:var(--r-accent); font-size:12px; }
+.manager-directory-heading p { margin:5px 0 0; font-size:12px; color:var(--r-muted); }
+.manager-directory-caption { display:flex; align-items:center; gap:6px; color:var(--r-muted); font-size:11px; }
+.manager-directory-caption .ui-icon { width:14px; height:14px; }
+.manager-person { display:flex; align-items:center; gap:10px; white-space:nowrap; }
+.manager-person strong { font-size:14px; font-weight:650; }
+.manager-avatar { display:grid; place-items:center; width:34px; height:34px; flex:none; border-radius:11px; background:var(--r-selected); color:var(--r-accent); font-weight:700; font-size:13px; border:1px solid var(--r-line); }
+.manager-status { display:inline-flex; align-items:center; gap:6px; padding:4px 9px; border-radius:6px; background:var(--r-soft); color:var(--r-muted); font-size:11px; white-space:nowrap; }
+.manager-status>span { width:5px; height:5px; border-radius:50%; background:currentColor; }
+.manager-status[data-status=ACTIVE] { background:color-mix(in srgb,#12a078 12%,var(--r-surface)); color:#168369; }
+.manager-status[data-status=PENDING] { background:color-mix(in srgb,#d49128 12%,var(--r-surface)); color:#a16b19; }
+.manager-region-chips { display:flex; flex-wrap:wrap; gap:5px; }
+.manager-region-chips>span { padding:3px 7px; border:1px solid var(--r-line); border-radius:5px; background:var(--r-soft); color:var(--r-muted); font-size:11px; line-height:18px; white-space:nowrap; }
+.manager-shift { display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:6px; background:var(--r-selected); color:var(--r-accent); font-size:12px; white-space:nowrap; }
+.manager-shift .ui-icon { width:13px; height:13px; }
+.manager-phone { color:var(--r-ink); font-variant-numeric:tabular-nums; text-decoration:none; white-space:nowrap; }
+.manager-phone:hover { color:var(--r-accent); text-decoration:underline; }
+#app .admin-interface.admin-shell [data-resource=managers] td[data-field=loginId] { color:var(--r-muted); font-size:12px; }
+#app .admin-interface.admin-shell [data-resource=managers] td[data-field=role] { font-size:12px; color:var(--r-muted); }
+#app .admin-interface.admin-shell [data-resource=managers] .service-actions>button:last-child { color:var(--admin-alert-ink); }
+:root[data-theme=dark] .manager-status[data-status=ACTIVE] { color:#7eddbb; }
+:root[data-theme=dark] .manager-status[data-status=PENDING] { color:#f0cb84; }
+@media(max-width:1100px) { #app .admin-interface.admin-shell .manager-directory-summary { align-items:stretch; flex-direction:column; gap:22px; }.manager-directory-metrics { gap:20px; }.manager-directory-metrics>div { flex:1; min-width:0; }.manager-directory-metrics>div:first-child { padding-left:0; border-left:0; } }
+@media(max-width:600px) { #app .admin-interface.admin-shell .manager-directory-summary { padding:20px; }.manager-directory-symbol { width:44px; height:44px; }.manager-directory-metrics { gap:12px; }.manager-directory-metrics>div { padding-left:12px; }.manager-directory-metrics>div>span { font-size:10px; }.manager-directory-metrics strong { font-size:25px; }.manager-directory-caption { display:none; } }
+
+/* One control baseline for administrator search panels. */
+#app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters,.manager-notification-filters) {
+  align-items:flex-end;
+  column-gap:16px;
+  row-gap:16px;
+}
+#app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters,.manager-notification-filters) label:not(:has(input[type=checkbox])) {
+  gap:8px;
+}
+#app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters,.manager-notification-filters) .service-field-label {
+  min-height:20px;
+  line-height:20px;
+  margin:0;
+}
+#app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters,.manager-notification-filters) :is(input,select):not([type=checkbox]):not([type=radio]):not([type=range]) {
+  height:44px;
+  min-height:44px;
+  box-sizing:border-box;
+  margin-block:0;
+}
+#app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters,.manager-notification-filters) label:has(input[type=checkbox]),
+#app .admin-interface.admin-shell .service-filters .service-form-fields>label.checkbox-field {
+  display:flex;
+  flex-direction:row;
+  align-items:center;
+  justify-content:flex-start;
+  align-self:flex-end;
+  gap:9px;
+  height:44px;
+  min-height:44px;
+  box-sizing:border-box;
+  margin:0;
+  padding:0 12px;
+  border:1px solid var(--r-line);
+  border-radius:8px;
+  background:var(--r-surface);
+  color:var(--r-muted);
+  cursor:pointer;
+}
+#app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters,.manager-notification-filters) label:has(input[type=checkbox]) .service-field-label {
+  order:1;
+  min-height:0;
+  line-height:20px;
+  white-space:nowrap;
+}
+#app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters,.manager-notification-filters) label input[type=checkbox] {
+  order:0;
+  flex:0 0 16px;
+  width:16px;
+  height:16px;
+  min-height:16px;
+  margin:0;
+  padding:0;
+  accent-color:var(--r-accent);
+}
+#app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters,.manager-notification-filters) label:has(input[type=checkbox]:checked) {
+  border-color:var(--r-accent);
+  background:var(--r-selected);
+  color:var(--r-accent);
+}
+#app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters,.manager-notification-filters) label:has(input[type=checkbox]:focus-visible) {
+  outline:2px solid var(--r-focus);
+  outline-offset:2px;
+}
+#app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters,.manager-notification-filters)>button {
+  align-self:flex-end;
+  height:44px;
+  min-height:44px;
+  margin-block:0;
+  box-sizing:border-box;
+}
+
+/* Facility operations directory */
+#app .admin-interface.admin-shell .facility-directory-summary { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin:0 0 24px; padding:0; border:0; }
+.facility-summary-item { --facility-accent:var(--r-accent); display:flex; align-items:center; gap:16px; padding:22px; border:1px solid var(--r-line); border-radius:12px; background:var(--r-surface); box-shadow:0 3px 12px #15345204; }
+.facility-summary-item.is-normal { --facility-accent:#168369; }.facility-summary-item.is-blocked { --facility-accent:var(--admin-alert-ink); }.facility-summary-item.is-review { --facility-accent:#a67a22; }
+.facility-summary-icon { display:grid; place-items:center; flex:none; width:46px; height:46px; border-radius:13px; color:var(--facility-accent); background:color-mix(in srgb,var(--facility-accent) 10%,var(--r-surface)); }
+.facility-summary-icon .ui-icon { width:23px; height:23px; }.facility-summary-item>div>span { font-size:11px; color:var(--r-muted); }.facility-summary-item strong { display:block; margin-top:4px; font-size:29px; line-height:1.3; color:var(--facility-accent); font-variant-numeric:tabular-nums; }.facility-summary-item small { font-size:12px; font-weight:400; margin-left:6px; color:var(--r-muted); }
+.facility-directory-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:16px; }#app .facility-directory-heading h2 { font-size:17px; margin:0; }.facility-directory-heading p { margin:5px 0 0; font-size:12px; color:var(--r-muted); }.facility-directory-heading>span { display:flex; align-items:center; gap:7px; color:var(--r-muted); font-size:11px; }.facility-directory-heading i { width:6px; height:6px; background:var(--r-accent); border-radius:50%; }
+#app .admin-interface.admin-shell .restored-facilities .tbl button.row-open { display:inline-flex; align-items:center; gap:12px; padding:0; text-align:left; text-decoration:none; }
+.facility-tunnel-icon { display:grid; place-items:center; flex:none; width:40px; height:40px; border:1px solid var(--r-line); border-radius:11px; background:var(--r-selected); color:var(--r-accent); }.facility-name-copy strong { display:block; font-size:14px; font-weight:650; }.facility-name-copy small { display:block; margin-top:4px; font-size:10px; color:var(--r-muted); }
+#app .admin-interface.admin-shell .restored-facilities .tbl tr.facility-blocked-row>td:first-child { box-shadow:inset 3px 0 color-mix(in srgb,var(--admin-alert-ink) 65%,transparent); }.facility-blocked-row .facility-tunnel-icon { background:var(--admin-alert-surface); color:var(--admin-alert-ink); }
+#app .admin-interface.admin-shell .restored-facilities .facility-operation-status { display:inline-flex; align-items:center; gap:6px; font-size:11px; }.facility-operation-status::before { content:''; width:5px; height:5px; background:currentColor; border-radius:50%; }
+.facility-count { display:inline-flex; align-items:baseline; gap:5px; min-width:40px; color:var(--r-muted); }.facility-count strong { font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; }.facility-count small { font-size:11px; }.facility-count.has-count { color:var(--r-accent); }.facility-count.review-count.has-count { color:var(--admin-alert-ink); }
+.facility-region { display:inline-flex; align-items:center; gap:5px; color:var(--r-muted); font-size:12px; }.facility-region .ui-icon { width:13px; height:13px; }
+:root[data-theme=dark] .facility-summary-item.is-normal { --facility-accent:#7eddbb; }:root[data-theme=dark] .facility-summary-item.is-review { --facility-accent:#edc478; }
+
+@media(max-width:600px) { .facility-summary-item { padding:14px; gap:10px; }.facility-summary-icon { width:32px; height:32px; border-radius:9px; }.facility-summary-icon .ui-icon { width:18px; height:18px; }.facility-summary-item strong { font-size:24px; }.facility-summary-item>div>span { font-size:10px; }.facility-directory-heading>span { display:none; } }
+
+/* Search fields share the panel width; only action buttons keep a fixed width. */
+#app .admin-interface.admin-shell .pm-admin-tools.pm-daily-live .service-filters label {
+  white-space: nowrap;
+}
+#app .admin-interface.admin-shell .pm-admin-tools.pm-daily-live .service-filters label input {
+  flex: 1 1 0;
+  width: 0;
+  min-width: 0;
+}
+#app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters,.manager-notification-filters) label,
+#app .admin-interface.admin-shell .service-filters .service-form-fields>label.checkbox-field {
+  flex:1 1 180px;
+  width:auto;
+  min-width:160px;
+  max-width:none;
+  box-sizing:border-box;
+}
+#app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters,.manager-notification-filters) label :is(input,select):not([type=checkbox]):not([type=radio]) {
+  width:100%;
+  min-width:0;
+  max-width:none;
+}
+#app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters,.manager-notification-filters)>button,
+#app .admin-interface.admin-shell .service-filters>button[type=submit] {
+  flex:0 0 auto;
+  margin-left:0;
+}
+#app .admin-interface.admin-shell .pm-history-live .pm-select {
+  flex:1 1 240px;
+  min-width:0;
+}
+#app .admin-interface.admin-shell .pm-history-live .pm-select select {
+  flex:1;
+  width:100%;
+  min-width:0;
+  max-width:none;
+}
+#app .admin-interface.admin-shell .pm-history-live .pm-date {
+  flex:1 1 160px;
+  width:auto;
+  min-width:0;
+}
+@media(max-width:700px) {
+  #app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters,.manager-notification-filters) label,
+  #app .admin-interface.admin-shell .service-filters .service-form-fields>label.checkbox-field {
+    flex:1 1 180px;
+    min-width:0;
+    max-width:100%;
+  }
+}
+
+/* Keep resource filters on one row on desktop; wrap in equal columns below it. */
+@media(min-width:1280px) {
+  #app .admin-interface.admin-shell .service-filters:has(.service-form-fields) .service-form-fields>label,
+  #app .admin-interface.admin-shell .service-filters:has(.service-form-fields) .service-form-fields>label.checkbox-field {
+    flex:1 1 0;
+    width:0;
+    min-width:0;
+    max-width:none;
+  }
+}
+@media(max-width:1279px) {
+  #app .admin-interface.admin-shell .service-filters:has(.service-form-fields) {
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    align-items:end;
+  }
+  #app .admin-interface.admin-shell .service-filters:has(.service-form-fields) .service-form-fields>label,
+  #app .admin-interface.admin-shell .service-filters:has(.service-form-fields) .service-form-fields>label.checkbox-field {
+    width:100%;
+    min-width:0;
+    max-width:none;
+  }
+  #app .admin-interface.admin-shell .service-filters:has(.service-form-fields)>button {
+    width:100%;
+    min-width:0;
+    margin:0;
+  }
+}
+@media(min-width:441px) and (max-width:700px) {
+  #app .admin-interface.admin-shell .service-filters:has(.service-form-fields) {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+@media(max-width:440px) {
+  #app .admin-interface.admin-shell .service-filters:has(.service-form-fields) {
+    grid-template-columns:minmax(0,1fr);
+  }
+}
+
+/* Risk selection sits outside the search panel. */
+#app .admin-interface .facility-risk-filters {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin:0 0 20px;
+  padding:0;
+  border:0;
+  background:transparent;
+}
+#app .admin-interface.admin-shell .facility-risk-filters>button {
+  min-width:72px;
+  min-height:44px;
+  padding:10px 16px;
+  border:1px solid var(--r-line);
+  border-radius:8px;
+  background:var(--r-surface);
+  color:var(--r-ink);
+  font:inherit;
+  font-size:13px;
+  cursor:pointer;
+}
+#app .admin-interface.admin-shell .facility-risk-filters>button[aria-pressed=true] {
+  border-color:var(--r-accent);
+  background:var(--r-selected);
+  color:var(--r-accent);
+  box-shadow:inset 0 -2px var(--r-accent);
+}
+#app .manager-app-shell .facility-risk-filters {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  width:100%;
+}
+
+/* Risk selection uses full-width summary cards. */
+#app .admin-interface.admin-shell .facility-directory-summary button.facility-summary-item {
+  display:flex; flex-direction:column; align-items:flex-start; justify-content:flex-start;
+  width:100%; min-width:0; min-height:88px; box-sizing:border-box; padding:12px 20px; gap:0;
+  margin:0; border:1px solid var(--r-line); border-radius:12px;
+  background:var(--r-surface); box-shadow:none; font:inherit; text-align:left; cursor:pointer;
+  transition:background-color .15s,border-color .15s;
+}
+#app .admin-interface.admin-shell .facility-summary-copy { display:block; }
+#app .admin-interface.admin-shell .facility-summary-copy>span { display:block; color:var(--r-muted); font-size:12px; line-height:20px; }
+#app .admin-interface.admin-shell .facility-summary-copy strong {
+  display:flex; align-items:baseline; gap:6px; margin:4px 0 0; padding:0;
+  background:transparent; font-size:28px; font-weight:650; line-height:36px;
+}
+#app .admin-interface.admin-shell .facility-summary-copy strong small { margin:0; font-size:12px; font-weight:400; line-height:16px; }
+#app .admin-interface.admin-shell .facility-directory-summary button.facility-summary-item:hover { border-color:var(--r-accent); }
+#app .admin-interface.admin-shell .facility-directory-summary button.facility-summary-item[aria-pressed=true] {
+  border-color:var(--r-accent); background:var(--r-selected); box-shadow:none;
+}
+#app .admin-interface.admin-shell .facility-summary-item[aria-pressed=true] .facility-summary-copy>span { color:var(--r-accent); }
+#app .admin-interface.admin-shell .facility-directory-summary button.facility-summary-item:focus-visible { outline:2px solid var(--r-focus); outline-offset:3px; }
+@media(max-width:1000px) {
+  #app .admin-interface.admin-shell .facility-directory-summary { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:500px) {
+  #app .admin-interface.admin-shell .facility-directory-summary { gap:10px; }
+  #app .admin-interface.admin-shell .facility-directory-summary button.facility-summary-item { padding:12px 14px; }
+  #app .admin-interface.admin-shell .facility-summary-copy strong { font-size:24px; }
+}
+
+/* Counts always belong directly to the following results, never to filters. */
+#app .admin-interface .list-result-count + * {
+  margin-top:0;
+}
+.daily-type-results { min-width:0; }
+
+/* Shared list geometry: short operational fields never split into characters. */
+#app .admin-interface.admin-shell .service-table-wrap { max-width:100%; min-width:0; overflow-x:auto; }
+#app .admin-interface.admin-shell .resource-list-table { width:100%; }
+#app .admin-interface.admin-shell .resource-list-table :is(th,td) { padding:14px 16px; vertical-align:middle; line-height:22px; }
+#app .admin-interface.admin-shell .resource-list-table th { white-space:nowrap; font-size:12px; }
+#app .admin-interface.admin-shell .resource-list-table td { word-break:keep-all; overflow-wrap:anywhere; }
+#app .admin-interface.admin-shell .resource-list-table :is(th,td):is([data-field=status],[data-field=role],[data-field=loginId],[data-field=phone],[data-field=shiftName],[data-field=category],[data-field=pushStatus],[data-field=recognitionStatus],[data-field=reviewStatus],[data-field=displayCarNum],[data-field=detectedNum],[data-field=correctedNum],[data-field=startTime],[data-field=endTime]) { white-space:nowrap; overflow-wrap:normal; }
+#app .admin-interface.admin-shell .resource-list-table .resource-action-column .service-actions { flex-wrap:nowrap; }
+#app .admin-interface.admin-shell .resource-list-table .resource-action-column :is(button,a) { flex:none; white-space:nowrap; }
+#app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters) label { white-space:nowrap; }
+.resource-status { display:inline-flex; align-items:center; gap:6px; max-width:100%; padding:3px 8px; border:1px solid var(--r-line); border-radius:6px; background:var(--r-soft); color:var(--r-muted); font-size:11px; line-height:20px; white-space:nowrap; }
+.resource-status[data-status=SUCCESS],.resource-status[data-status=CONFIRMED],.resource-status[data-status=ANSWERED],.resource-status[data-status=AUTO_PROCESSED] { border-color:transparent; background:color-mix(in srgb,#168369 10%,var(--r-surface)); color:#168369; }
+.resource-status[data-status=PENDING],.resource-status[data-status=LOW_CONFIDENCE] { border-color:transparent; background:color-mix(in srgb,#a67a22 10%,var(--r-surface)); color:#94691a; }
+.resource-status[data-status=FAIL] { border-color:transparent; background:var(--admin-alert-surface); color:var(--admin-alert-ink); }
+.resource-time { display:inline-flex; align-items:center; padding:5px 12px; border-radius:7px; background:var(--r-selected); color:var(--r-accent); font-size:14px; font-weight:600; font-variant-numeric:tabular-nums; }
+:root[data-theme=dark] .resource-status:is([data-status=SUCCESS],[data-status=CONFIRMED],[data-status=ANSWERED],[data-status=AUTO_PROCESSED]) { color:#7eddbb; }
+:root[data-theme=dark] .resource-status:is([data-status=PENDING],[data-status=LOW_CONFIDENCE]) { color:#edc478; }
+#app .admin-interface.admin-shell .pm-equipment-live .pm-table { table-layout:fixed; min-width:1304px; }
+#app .admin-interface.admin-shell .pm-queue-live .pm-table { table-layout:fixed; min-width:1260px; }
+#app .admin-interface.admin-shell .pm-history-live .pm-table { table-layout:fixed; min-width:1224px; }
+#app .admin-interface.admin-shell .pm-table th { white-space:nowrap; font-size:12px; }
+#app .admin-interface.admin-shell .pm-table :is(th,td) { vertical-align:middle; }
+#app .admin-interface.admin-shell .pm-table td:is([data-label=일시],[data-label=발생],[data-label=등록자],[data-label=종류],[data-label=상태]) { white-space:nowrap; }
+@media(prefers-reduced-motion:reduce) { #app .admin-interface button.facility-summary-item { transition:none; } }
+#app .admin-interface.admin-shell .pm-settings-table { table-layout:fixed; min-width:1048px; }
+#app .admin-interface.admin-shell .pm-settings-table th { white-space:nowrap; font-size:12px; }
+
+/* Match summary-card height and text baselines across administrator lists. */
+#app .admin-interface.admin-shell :is(.pm-kpis,.chat-monitor-kpis,.pm-admin-tools.pm-daily-live .daily-levels) {
+  gap:14px; margin:0 0 24px;
+}
+#app .admin-interface.admin-shell :is(.pm-kpi,.chat-monitor-kpis>article) {
+  display:flex; flex-direction:column; align-items:flex-start; justify-content:flex-start;
+  box-sizing:border-box; min-height:88px; min-width:0; margin:0; padding:12px 20px; gap:4px; text-align:left;
+  border:1px solid var(--r-line) !important;
+  box-shadow:none !important;
+}
+#app .admin-interface.admin-shell .pm-kpi[aria-pressed=true] {
+  border-color:var(--r-accent) !important;
+  background:var(--r-selected) !important;
+}
+#app .admin-interface.admin-shell :is(.pm-kpi>span,.chat-monitor-kpis>article>small) {
+  margin:0; font-size:12px; font-weight:400; line-height:20px; color:var(--r-muted); white-space:nowrap;
+}
+#app .admin-interface.admin-shell :is(.pm-kpi>strong,.chat-monitor-kpis>article>strong) {
+  margin:0; font-size:28px; font-weight:650; line-height:36px; font-variant-numeric:tabular-nums;
+}
+#app .admin-interface.admin-shell .pm-admin-tools.pm-daily-live .daily-levels>section {
+  display:grid; grid-template-columns:minmax(0,1fr) auto; grid-template-rows:20px 36px;
+  box-sizing:border-box; min-height:88px; padding:12px 20px; gap:4px 8px; align-content:start; align-items:start;
+  border:1px solid var(--r-line);
+}
+#app .admin-interface.admin-shell .pm-admin-tools.pm-daily-live .daily-levels h2 {
+  grid-column:1; grid-row:1; padding:0; margin:0; border:0; background:transparent;
+  color:var(--r-muted); font-size:12px; font-weight:400; line-height:20px; white-space:nowrap;
+}
+#app .admin-interface.admin-shell .pm-admin-tools.pm-daily-live .daily-levels strong {
+  grid-column:1; grid-row:2; margin:0; font-size:28px; line-height:36px;
+}
+#app .admin-interface.admin-shell .pm-admin-tools.pm-daily-live .daily-levels small {
+  grid-column:2; grid-row:1; margin:0; font-size:10px; line-height:20px; white-space:nowrap;
+}
+@media(max-width:500px) {
+  #app .admin-interface.admin-shell :is(.pm-kpis,.chat-monitor-kpis,.pm-admin-tools.pm-daily-live .daily-levels) { gap:10px; }
+  #app .admin-interface.admin-shell :is(.pm-kpi,.chat-monitor-kpis>article,.pm-admin-tools.pm-daily-live .daily-levels>section) { padding:12px 14px; }
+  #app .admin-interface.admin-shell :is(.pm-kpi>strong,.chat-monitor-kpis>article>strong,.pm-admin-tools.pm-daily-live .daily-levels strong) { font-size:24px; }
+}
+
+/* Camera equipment: concise role labels and readable connection addresses. */
+#app .admin-interface.admin-shell [data-resource=cameras] .resource-list-table :is(th,td)[data-field=distanceM] { text-align:right; font-variant-numeric:tabular-nums; }
+.camera-role-label { display:inline-flex; align-items:center; padding:4px 9px; border:1px solid var(--r-line); border-radius:6px; background:var(--r-soft); color:var(--r-ink); font-size:12px; line-height:20px; white-space:nowrap; }
+.camera-role-label[data-role=APPROACH_LPR] { background:var(--r-selected); color:var(--r-accent); border-color:transparent; }
+.camera-role-label[data-role=FINAL_LPR] { background:color-mix(in srgb,#168369 10%,var(--r-surface)); color:#168369; border-color:transparent; }
+:root[data-theme=dark] .camera-role-label[data-role=FINAL_LPR] { color:#7eddbb; }
+.camera-stream-address { display:inline-block; max-width:100%; padding:5px 9px; border-radius:6px; background:var(--r-soft); color:var(--r-muted); font:12px/20px ui-monospace,Consolas,monospace; overflow-wrap:anywhere; }
+
+/* Facility settings pair compact facts with editable threshold stages. */
+#app .admin-interface.admin-shell .restored-facility-detail .facility-settings-grid {
+  grid-template-columns:minmax(320px,.85fr) minmax(0,1.45fr); gap:20px; align-items:stretch;
+}
+#app .admin-interface.admin-shell .facility-settings-grid>.card { min-width:0; padding:20px; gap:0; }
+#app .admin-interface.admin-shell .facility-settings-information>h2 { display:flex; align-items:center; min-height:44px; line-height:24px; }
+.facility-settings-section-label { margin:18px 0 12px; color:var(--r-muted); font-size:12px; line-height:20px; }
+.facility-settings-dimensions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:0 0 20px; }
+.facility-settings-dimensions>div { min-height:88px; box-sizing:border-box; padding:12px 16px; border:1px solid var(--r-line); border-radius:9px; background:var(--r-soft); }
+.facility-settings-dimensions span { display:block; font-size:11px; color:var(--r-muted); line-height:20px; }
+.facility-settings-dimensions strong { display:flex; align-items:baseline; gap:6px; margin-top:4px; color:var(--r-ink); font-size:24px; line-height:32px; font-weight:650; }
+.facility-settings-dimensions small { font-size:12px; color:var(--r-muted); font-weight:400; }
+#app .admin-interface.admin-shell .facility-settings-information .service-detail { grid-template-columns:100px minmax(0,1fr); gap:12px 14px; margin:0 0 20px; }
+#app .admin-interface.admin-shell .facility-settings-information .service-detail :is(dt,dd) { margin:0; font-size:12px; line-height:22px; overflow-wrap:anywhere; }
+#app .admin-interface.admin-shell .facility-settings-information .service-detail dt { color:var(--r-muted); }
+.facility-settings-actions { display:flex; flex-wrap:wrap; gap:8px; padding-top:18px; border-top:1px solid var(--r-line); }
+#app .admin-interface.admin-shell .facility-settings-actions>.btn { width:auto; flex:0 0 auto; min-height:40px; margin:0; padding:8px 12px; font-size:12px; white-space:nowrap; }
+#app .admin-interface.admin-shell .facility-settings-thresholds .service-heading { margin-bottom:18px; }
+@media(max-width:1050px) {
+  #app .admin-interface.admin-shell .restored-facility-detail .facility-settings-grid { grid-template-columns:minmax(0,1fr); }
+}
+@media(max-width:500px) {
+  #app .admin-interface.admin-shell .facility-settings-grid>.card { padding:16px; }
+  .facility-settings-dimensions>div { padding:12px; }
+}

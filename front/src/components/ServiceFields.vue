@@ -2,6 +2,7 @@
 import type { Field } from '../data/backendResources'
 import PostcodeSearch from './PostcodeSearch.vue'
 import PhoneInput from './PhoneInput.vue'
+import FacilitySelect from './FacilitySelect.vue'
 import { formatPhone } from '../utils/phone'
 defineProps<{
   fields: Field[]
@@ -31,7 +32,15 @@ defineProps<{
         :disabled="disabled"
         maxlength="10000"
       ></textarea
-      ><select
+      ><FacilitySelect
+        v-else-if="field.type==='select'&&field.key==='underpassId'"
+        v-model="values[field.key]"
+        :label="field.label"
+        :options="choices[field.key]||field.options?.map(([value,label])=>({value,label}))||[]"
+        :placeholder="emptyLabel||'선택'"
+        :required="field.required"
+        :disabled="disabled"
+      /><select
         v-else-if="field.type==='select'||field.type==='multi'"
         v-model="values[field.key]"
         :aria-label="field.label"

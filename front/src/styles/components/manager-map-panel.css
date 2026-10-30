@@ -71,6 +71,10 @@
   flex-shrink: 0;
 }
 .manager-facility-heading>strong {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:6px 8px;
   min-width: 0;
   font-size: 17px;
   line-height: 1.5;
@@ -98,8 +102,14 @@
   gap: 8px;
   font-size: 11px;
   flex-wrap: wrap;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
+.manager-control-state {
+  color: var(--ink-sub,#64748b);
+  font-weight: 600;
+}
+.manager-control-state.is-blocked { color: var(--r-danger,#b42445); }
+.manager-control-state::before { content:'•'; margin-right:4px; }
 .manager-state {
   padding: 3px 7px;
   border-radius: 4px;
@@ -137,6 +147,13 @@
   align-items: baseline;
   justify-content: space-between;
 }
+.manager-risk-summary {
+  padding: 12px;
+  background: var(--r-canvas,#f0f5fb);
+  border-radius: 8px;
+}
+.manager-risk-summary .manager-gauge { margin-top:8px; height:6px; }
+.manager-risk>span small { display:block; text-align:right; font-size:11px; margin-top:2px; }
 .manager-risk strong {
   font-size: 28px;
 }
@@ -159,30 +176,55 @@
   height: 100%;
   background: #225f9b;
 }
-.manager-panel-body dl {
-  display: grid;
-  grid-template-columns: 76px minmax(0,1fr);
-  gap: 8px;
+.manager-map-panel .manager-live-section h3 { margin:0 0 8px; color:var(--r-ink,#172e49); font-size:12px; font-weight:600; line-height:20px; }
+.manager-map-panel .manager-live-metrics {
+  display: flex;
+  flex-direction:column;
   margin: 0;
-  font-size: 12px;
+  padding:0;
+  border:1px solid var(--r-line,var(--line,#d7e4f5));
+  border-radius:8px;
+  background:var(--r-soft,var(--surface,#fff));
+  overflow:hidden;
 }
-.manager-panel-body dt {
-  color: var(--ink-sub,#64748b);
+.manager-map-panel .manager-live-metrics>div { display:flex; align-items:center; justify-content:space-between; gap:12px; min-width:0; padding:8px 12px; }
+.manager-map-panel .manager-live-metrics>div+div { border-top:1px solid var(--r-line,var(--line,#d7e4f5)); }
+.manager-map-panel .manager-live-metrics dt {
+  color: var(--r-muted,var(--ink-sub,#64748b));
+  font-size:12px;
+  font-weight:400;
+  line-height:20px;
 }
-.manager-panel-body dd {
+.manager-map-panel .manager-live-metrics dd {
+  display:flex;
+  align-items:baseline;
+  justify-content:flex-end;
   margin: 0;
+  color:var(--r-ink,#172e49);
+  font-size:19px;
+  font-weight:650;
+  line-height:26px;
+  text-align:right;
+  font-variant-numeric:tabular-nums;
   overflow-wrap: anywhere;
 }
+.manager-map-panel .manager-live-metrics dd small { min-width:20px; margin-left:6px; font-size:11px; font-weight:400; color:var(--r-muted,var(--ink-sub,#64748b)); text-align:left; }
+.manager-map-panel .manager-live-metrics .has-pending dd { color:var(--admin-alert-ink,#b42445); }
+.manager-observation-info { display:grid; gap:10px; padding-top:12px; border-top:1px solid var(--r-line,var(--line,#d7e4f5)); }
+.manager-observed,.manager-weather { display:grid; grid-template-columns:80px minmax(0,1fr); gap:8px; align-items:baseline; font-size:11px; line-height:18px; }
+.manager-observed>span,.manager-weather b { color:var(--ink-sub,#64748b); font-size:11px; font-weight:400; }
+.manager-observed time { overflow-wrap:anywhere; }
 .manager-weather b,.manager-panel-body summary {
   font-size: 12px;
 }
 .manager-weather p {
   font-size: 12px;
-  margin: 5px 0 0;
+  margin: 0;
   line-height: 1.5;
 }
 .manager-panel-body summary {
   cursor: pointer;
+  padding:8px 0;
 }
 .manager-panel-body svg {
   display: block;
@@ -204,8 +246,11 @@
   opacity: .45;
   cursor: default;
 }
-.manager-panel-body>a {
+.manager-operation { border-top:1px solid var(--line); padding-top:12px; display:grid; gap:8px; }
+.manager-assignment { font-size:11px; line-height:18px; margin:0; color:var(--ink-sub,#64748b); }
+.manager-operation>a {
   text-align: center;
+  display:block;
 }
 .manager-cluster-options {
   list-style: none;

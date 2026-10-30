@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ListResultCount from '../components/ListResultCount.vue'
 import AppPagination from '../components/AppPagination.vue'
 import { adminPageTitle } from '../data/adminTitles'
 import { managerAppPath } from '../utils/manager-app-path'
@@ -237,16 +238,16 @@ function act(row: Equipment) {
           </select>
         </label>
       </div>
-
-      <p v-if="route.path.startsWith('/admin-app/')" class="app-list-result-count" role="status">{{list?`총 ${list.totalItems}건`:'목록을 불러오는 중입니다.'}}</p>
       <div class="pm-results-viewport" :aria-busy="loading">
       <p v-if="error" role="alert" class="service-error">{{error}} <button @click="load">다시 시도</button></p>
       <p v-if="loading&&!list" role="status">설비 목록을 불러오는 중입니다.</p>
+      <ListResultCount v-if="list" :count="list.totalItems" />
       <p v-if="list&&!list.items.length" class="pm-empty">조건에 맞는 설비가 없어요.</p>
 
       <PmEquipmentCards v-if="route.path.startsWith('/admin-app/')&&list?.items.length" :items="list.items" />
       <div v-else-if="list?.items.length" class="service-table-wrap">
         <table class="service-table pm-table">
+          <colgroup><col style="width:120px" /><col style="width:100px" /><col style="width:180px" /><col style="width:172px" /><col style="width:100px" /><col style="width:120px" /><col /><col style="width:172px" /><col style="width:120px" /></colgroup>
           <thead>
             <tr>
               <th>설비</th><th>종류</th><th>지하차도</th><th>위험 점수 / 상태</th><th>7일 변화</th>
@@ -294,7 +295,7 @@ function act(row: Equipment) {
       <AppPagination v-if="route.path.startsWith('/admin-app/')" :page="page" :pages="list?.totalPages||1" :disabled="loading" @change="page=$event" />
       <div v-else class="pm-pager">
         <button class="btn sm" type="button" :disabled="loading||page<=1" @click="page--">이전</button>
-        <span>{{page}} / {{Math.max(1,list?.totalPages||1)}} · 전체 {{list?.totalItems??0}}개</span>
+        <span>{{page}} / {{Math.max(1,list?.totalPages||1)}}</span>
         <button class="btn sm" type="button" :disabled="loading||page>=Math.max(1,list?.totalPages||1)" @click="page++">다음</button>
       </div>
       <p class="pm-note">

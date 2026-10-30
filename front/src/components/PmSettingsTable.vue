@@ -13,6 +13,7 @@ function toggleAll(){selected.value=allSelected.value?[]:props.rows.map(row=>row
 <template>
   <div class="service-table-wrap pm-settings-table-wrap">
     <table class="service-table pm-settings-table">
+      <colgroup><col style="width:48px" /><col style="width:180px" /><col /><col style="width:300px" /><col style="width:172px" /><col style="width:128px" /></colgroup>
       <thead><tr><th><input type="checkbox" aria-label="현재 페이지 설비 전체 선택" :checked="allSelected" :disabled="saving||!rows.length" @change="toggleAll" /></th><th>설비 · 종류</th><th>지하차도</th><th>단계별 시작 점수</th><th>최근 수정</th><th>처리</th></tr></thead>
       <tbody>
         <tr v-for="row in rows" :key="row.equipId">

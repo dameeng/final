@@ -102,3 +102,34 @@
   color: #225f9b;
   line-height: 1.6;
 }
+
+/* CCTV workspace: one toolbar, a framed video and a balanced log column. */
+.facility-viewer-toolbar { display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:12px 24px; padding:0; }
+.facility-viewer-toolbar .facility-camera-select { flex:1 1 420px; min-width:0; font-size:12px; color:var(--r-muted); gap:10px; }
+.facility-viewer-toolbar .facility-recognition-controls { flex:0 0 auto; }
+.facility-video-panel { min-width:0; overflow:hidden; border:1px solid var(--r-line); border-radius:12px; background:var(--r-surface); }
+.facility-video-heading { display:flex; align-items:center; flex-wrap:wrap; gap:8px 16px; min-height:64px; box-sizing:border-box; padding:12px 18px; border-bottom:1px solid var(--r-line); }
+.facility-video-heading h2 { font-size:15px; line-height:22px; }
+.facility-video-heading .recognition-start { min-height:36px; padding:8px 12px; font-size:12px; line-height:20px; }
+.facility-video-heading .facility-analysis-state { margin-left:auto; }
+.facility-analysis-state { display:inline-flex; align-items:center; gap:6px; font-size:11px; line-height:20px; color:var(--r-muted); white-space:nowrap; }
+.facility-analysis-state::before { content:''; width:6px; height:6px; border-radius:50%; background:currentColor; }
+.facility-analysis-state.is-running { color:#168369; }.facility-analysis-state.is-error { color:var(--admin-alert-ink); }
+.facility-video-panel .facility-camera-stage { min-height:0; border-radius:0; }
+.facility-video-panel .facility-camera-stage.is-empty { display:grid; place-items:center; min-height:260px; padding:28px 20px; box-sizing:border-box; }
+.facility-video-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; text-align:center; }
+.facility-video-empty>.ui-icon { width:40px; height:40px; color:#8fa6bc; }
+.facility-video-empty strong { color:#edf4fb; font-size:15px; font-weight:600; line-height:24px; }
+.facility-camera-stage .facility-video-empty p { margin:0; padding:0; max-width:320px; color:#a9bed1; font-size:12px; line-height:1.8; }
+.facility-camera-facts { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:0; padding:14px 18px; border-top:1px solid var(--r-line); }
+.facility-camera-facts>div { min-width:0; }.facility-camera-facts dt { font-size:10px; line-height:18px; color:var(--r-muted); }.facility-camera-facts dd { margin:4px 0 0; font-size:12px; line-height:20px; color:var(--r-ink); overflow-wrap:anywhere; }
+.facility-recognition-feedback { margin:0; padding:10px 14px; border:1px solid var(--r-line); border-radius:8px; background:var(--r-surface); color:var(--r-muted); font-size:12px; line-height:1.8; }
+.facility-recognition-feedback.recognition-error { color:var(--admin-alert-ink); }
+.facility-cctv-layout:not(.compact-cctv):not(.app-cctv-records) .facility-camera-row { grid-template-columns:minmax(0,1fr) clamp(300px,23vw,400px); gap:20px; }
+.facility-video-panel .facility-camera-stage>img { max-height:min(65dvh,720px); }
+:global(:root[data-theme=dark] .facility-analysis-state.is-running) { color:#7eddbb; }
+@media(max-width:1000px) { .facility-cctv-layout:not(.compact-cctv):not(.app-cctv-records) .facility-camera-row { grid-template-columns:minmax(0,1fr); }.facility-ocr-column :deep(.facility-ocr-log) { position:static; height:440px; max-height:65dvh; } }
+@media(max-width:600px) { .facility-viewer-toolbar { gap:12px; }.facility-viewer-toolbar .facility-camera-select { flex-basis:100%; }.facility-camera-buttons { gap:6px; }.facility-camera-buttons button { padding:8px 10px; font-size:12px; }.facility-camera-facts { padding:12px 14px; gap:10px; }.facility-video-heading { padding:12px 14px; }.facility-video-panel .facility-camera-stage.is-empty { min-height:220px; } }
+
+.facility-road-analysis { padding:18px; border:1px solid var(--r-line); border-radius:12px; background:var(--r-surface); }
+.facility-road-analysis h3 { margin:0 0 16px; font-size:15px; }.facility-road-analysis p { font-size:12px; line-height:1.8; color:var(--r-muted); }.facility-road-analysis a { display:inline-block; margin-top:12px; font-size:12px; color:var(--r-accent); }

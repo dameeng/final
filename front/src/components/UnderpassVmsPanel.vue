@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ListResultCount from './ListResultCount.vue'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import VmsLedDisplay from './VmsLedDisplay.vue'
 import { asPage, backend, queryString } from '../services/backend'
@@ -133,7 +134,7 @@ onBeforeUnmount(() => { listController?.abort(); pageController?.abort(); clearT
       </div>
       <p v-if="pageError" class="vms-error" role="alert">{{pageError}}</p>
       <div>
-        <h3>페이지 목록 · 총 {{pages.length}}건</h3>
+        <h3>페이지 목록</h3><ListResultCount :count="pages.length" />
         <div class="vms-table"><table>
           <thead><tr><th>번호</th><th>구분</th><th>표시 문구</th><th>원인 지하차도</th><th>수정 시각</th><th>처리</th></tr></thead>
           <tbody>
@@ -153,6 +154,7 @@ onBeforeUnmount(() => { listController?.abort(); pageController?.abort(); clearT
       </div>
       <div>
         <div class="vms-history-head"><h3>변경 이력</h3><select v-model="historySource" aria-label="변경 구분"><option value="">전체</option><option value="AUTO">자동</option><option value="MANUAL">수동</option></select></div>
+        <ListResultCount :count="history.length" />
         <p v-if="historyError" class="vms-error" role="alert">{{historyError}}</p>
         <p v-else-if="!history.length" class="vms-empty">변경 이력이 없습니다.</p>
         <div v-else class="vms-table"><table>

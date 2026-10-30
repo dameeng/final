@@ -1,4 +1,8 @@
 export const uiIconPaths = {
+  checkCircle: 'M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0ZM7 12l3 3 7-7',
+  clock: 'M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0ZM12 6v6l4 2',
+  car: 'M5 7l2-4h10l2 4M3 11l2-4h14l2 4v8H3ZM3 11h18M7 15h.01M17 15h.01M5 19v2M19 19v2',
+  shield: 'M12 2 3 6v6c0 5 9 10 9 10s9-5 9-10V6ZM8 12l3 3 5-6',
   dashboard: 'M3 3h7v7H3ZM14 3h7v7h-7ZM3 14h7v7H3ZM14 14h7v7h-7Z',
   camera: 'M3 5h13v10H3ZM16 8l5-3v10l-5-3M9 15v5M5 20h8',
   settings: 'M4 6h16M4 12h16M4 18h16M8 3v6M16 9v6M10 15v6',
@@ -7,7 +11,7 @@ export const uiIconPaths = {
   history: 'M3 11a9 9 0 1 1 2 7M3 4v7h7M12 7v6l4 2',
   refresh: 'M20 8a8 8 0 0 0-14-3L3 8M3 3v5h5M4 16a8 8 0 0 0 14 3l3-3M21 21v-5h-5',
   map: 'M3 5l6-3 6 3 6-3v17l-6 3-6-3-6 3ZM9 2v17M15 5v17',
-  route: 'M5 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM19 21a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM5 7v5h14v5M15 8l4 4-4 4',
+  route: 'M7 3 4 21M17 3l3 18M12 3v3m0 5v3m0 5v2',
   bell: 'M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4M12 2V1',
   menu: 'M4 6h16M4 12h16M4 18h16',
   back: 'M15 5l-7 7 7 7',
@@ -23,7 +27,7 @@ export const uiIconPaths = {
   eyeOff:
     'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12ZM15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0M3 3l18 18',
   location:
-    'M12 2v3m0 14v3M2 12h3m14 0h3M19 12a7 7 0 1 1-14 0 7 7 0 0 1 14 0M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0',
+    'M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0ZM15 10a3 3 0 1 1-6 0 3 3 0 0 1 6 0',
   theme: 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0M12 3v18',
 } as const
 

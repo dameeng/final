@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ListResultCount from '../components/ListResultCount.vue'
 import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import AppPagination from '../components/AppPagination.vue'
 import PmDailyTables from '../components/PmDailyTables.vue'
@@ -54,7 +55,7 @@ onBeforeUnmount(()=>{controller?.abort();clearTimeout(timer)})
     <p v-if="loading" role="status">리포트를 불러오는 중입니다.</p><p v-if="error" role="alert">{{error}}</p>
     <template v-if="report"><p v-if="appView">집계 시각 · {{displayDate(report.generatedAt)}}</p><div class="daily-levels"><section v-for="[key,label] in levelSummaries" :key="key" :class="'daily-level-'+key"><h2>{{label}}</h2><strong>{{summary.levelCounts?.[key!]??0}}</strong><small>이전 {{summary.previousLevelCounts?.[key!]??0}}개</small></section></div>
     <PmDailyTables v-if="!appView" :summary="summary" /><template v-else><PmDailyMobileChart :summary="summary" />
-    <section v-for="[key,label] in groups" :key="key" class="daily-section"><h2>{{label}} <small>{{key==='newEvents'?summary.newEventCount:key==='openEvents'?summary.openEventCount:key==='actions'?summary.actionCount:summary[key]?.length??0}}건</small></h2><ul><li v-for="(row,index) in groupRows(key)" :key="row.eventId||row.actionId||row.equipId||index"><RouterLink v-if="row.equipId" :to="{path:managerAppPath('/pm-equipment-detail',route.path),query:{id:String(row.equipId)}}">{{row.name||row.code||'설비 '+row.equipId}}</RouterLink><strong v-else>{{row.name||'기록'}}</strong><span>{{row.underpassName}} · {{PM_TRIGGERS[row.triggerType]||PM_EVENT_STATUS[row.status]||PM_LEVELS[row.level]||row.content||''}}</span></li></ul><AppPagination v-if="appView&&(summary[key]?.length||0)>5" :page="groupPage(key)" :pages="Math.ceil(summary[key].length/5)" @change="groupPages[key]=$event" /><p v-if="!summary[key]?.length">해당 기록이 없습니다.</p></section></template></template>
+    <section v-for="[key,label] in groups" :key="key" class="daily-section"><h2>{{label}}</h2><ListResultCount :count="(key==='newEvents'?summary.newEventCount:key==='openEvents'?summary.openEventCount:key==='actions'?summary.actionCount:summary[key]?.length)??0" /><ul><li v-for="(row,index) in groupRows(key)" :key="row.eventId||row.actionId||row.equipId||index"><RouterLink v-if="row.equipId" :to="{path:managerAppPath('/pm-equipment-detail',route.path),query:{id:String(row.equipId)}}">{{row.name||row.code||'설비 '+row.equipId}}</RouterLink><strong v-else>{{row.name||'기록'}}</strong><span>{{row.underpassName}} · {{PM_TRIGGERS[row.triggerType]||PM_EVENT_STATUS[row.status]||PM_LEVELS[row.level]||row.content||''}}</span></li></ul><AppPagination v-if="appView&&(summary[key]?.length||0)>5" :page="groupPage(key)" :pages="Math.ceil(summary[key].length/5)" @change="groupPages[key]=$event" /><p v-if="!summary[key]?.length">해당 기록이 없습니다.</p></section></template></template>
   </main></BackendLayout>
 </template>
 <style scoped>

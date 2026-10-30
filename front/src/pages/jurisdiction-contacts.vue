@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ListResultCount from '../components/ListResultCount.vue'
 import { onBeforeUnmount, ref } from 'vue'
 import BackendLayout from '../components/BackendLayout.vue'
 import UiIcon from '../components/UiIcon.vue'
@@ -35,7 +36,8 @@ onBeforeUnmount(() => copyTimers.forEach(timer => clearTimeout(timer)))
         <div><span class="eyebrow">ROUTEL · CONTACT DIRECTORY</span><h2>현장과 기관을 잇는<br>빠른 소통의 시작</h2><p>시설 관리부터 현장 협조까지, 필요한 담당 기관의 연락처를 한곳에서 확인하세요.</p></div>
         <div class="intro-stat"><UiIcon name="user" /><div><strong>{{ jurisdictionContacts.length }}<span>개 기관</span></strong><small>분야별 협력 연락처</small></div></div>
       </div>
-      <div class="directory-heading"><div><h2>기관별 연락처 <span>{{ jurisdictionContacts.length }}</span></h2><p>업무에 맞는 담당 기관을 확인하세요.</p></div><span class="directory-label">관할 협력 기관</span></div>
+      <div class="directory-heading"><div><h2>기관별 연락처</h2><p>업무에 맞는 담당 기관을 확인하세요.</p></div><span class="directory-label">관할 협력 기관</span></div>
+      <ListResultCount :count="jurisdictionContacts.length" />
       <ul class="contact-grid" aria-label="관할 담당자 전화번호 목록">
         <li v-for="contact in jurisdictionContacts" :key="contact.id" class="directory-card" :class="contact.id">
           <div class="card-top"><span class="institution-icon"><svg v-if="contact.id === 'road'" class="ui-icon" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3 4 21M17 3l3 18M12 3v3m0 5v3m0 5v2" /></svg><UiIcon v-else :name="details[contact.id]!.icon" /></span><span class="category">{{ details[contact.id]!.category }}</span></div>

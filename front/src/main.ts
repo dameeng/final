@@ -43,6 +43,7 @@ import './styles/manager-spacing.css'
 import './styles/dark-chart-glow.css'
 import './styles/admin-web-workspace.css'
 import './styles/admin-web-sections.css'
+import './styles/admin-consistency.css'
 import './styles/customer-mobile-polish.css'
 createApp(App)
   .component('PasswordInput', PasswordInput)

@@ -87,6 +87,9 @@
     <h2>④ 예지보전 설비 위험 stub (NORMAL / DANGER)</h2>
     <p class="muted">설비 센서 stub의 모드를 바꾸면 예지보전 서버(8002)가 새 센서값으로 점수를 계산해 보냅니다. 누른 뒤 몇 초~수십 초 지나야 점수가 바뀝니다.
       점검 조치완료(RESOLVED) 시 해당 설비는 자동으로 정상으로 돌아갑니다.</p>
+    <div class="row"><b>초량 설비 한 번에</b>
+      <button class="red" id="pmAllDanger">초량 설비 전체 위험으로</button><button class="gray" id="pmAllNormal">전체 정상으로</button><button class="gray" id="pmAllRelease">고정만 풀기</button>
+      <span class="muted">누르면 위험 점수가 바로 들어가 알림이 즉시 옵니다. 실제 모델 점수가 따라오면 자동으로 이어받습니다.</span></div>
     <div class="row">지하차도 <select id="pmUp"></select><button id="pmReload" class="gray">설비 목록 불러오기</button></div>
     <div id="pmEquipments" class="muted">설비 목록을 불러오세요.</div>
   </section>
@@ -243,6 +246,9 @@ async function loadPm() {
     || '<span class="muted">설비가 없거나 관리자 로그인이 필요합니다.</span>'
 }
 $('pmReload').onclick = loadPm
+$('pmAllDanger').onclick = async () => { await api('POST', '/api/demo/pm/danger'); setTimeout(loadPm, 1500) }
+$('pmAllNormal').onclick = async () => { await api('POST', '/api/demo/pm/normal'); setTimeout(loadPm, 1500) }
+$('pmAllRelease').onclick = async () => { await api('DELETE', '/api/demo/pm'); setTimeout(loadPm, 500) }
 $('pmUp').onchange = loadPm
 
 // ───────── 시작 / 주기 갱신
