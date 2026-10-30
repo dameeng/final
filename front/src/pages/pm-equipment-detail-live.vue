@@ -84,8 +84,9 @@ const waterComparison = computed(() => eq.value.type === 'WATER_LEVEL')
 const comparisonSensors = computed<Record<string, any>[]>(() => {
   if (!waterComparison.value) {
     const rows: Record<string, any>[] = Array.isArray(extra.value.sensors) ? extra.value.sensors : []
-    // 펌프는 현재·평소를 실제 단위로 환산 (벗어난 정도는 그대로)
-    return rows.map((s) => ({ ...s, '현재': pmSensorDisplay(s['항목'], s['현재']), '평소': pmSensorDisplay(s['항목'], s['평소']) }))
+    // 펌프는 현재·평소를 실제 단위로 환산 (벗어난 정도는 그대로). 예전 점수의 '평소와 달라요'는 수위 표와 같은 말로
+    return rows.map((s) => ({ ...s, '현재': pmSensorDisplay(s['항목'], s['현재']), '평소': pmSensorDisplay(s['항목'], s['평소']),
+      '상태': s['상태'] === '평소와 달라요' ? '평소 범위 벗어남' : s['상태'] }))
   }
   return (data.value?.detail?.features || []).map(feature => {
     const value = feature.value, normal = feature.normal
@@ -366,7 +367,7 @@ const trendChart = computed(() => {
         }
       : null,
     yTicks: axis.ticks.map((v) => ({ y: y(v), label: axis.format(v) })),
-    xTicks: timeTicks(t0, t1).map((t) => ({ x: x(t.at), label: t.label })),
+    xTicks: timeTicks(t0, t1, 10).map((t) => ({ x: x(t.at), label: t.label })),
     last: { x: x(last.t), y: y(last.v), label: axis.format(last.v, 1) + unit.value, at:new Date(last.t).toISOString() },
     count:main.length,
     outside:band?last.v<band.low||last.v>band.high:null,
@@ -393,16 +394,18 @@ function niceAxis(lo: number, hi: number) {
     Number(v.toFixed(digits + extra)).toLocaleString('ko-KR', { maximumFractionDigits: digits + extra })
   return { min, max, ticks, format }
 }
-// 시간 눈금: 이틀 넘게면 날짜마다 "10/18 토", 짧으면 6시간마다 "06시"
+// 시간 눈금: 이틀 넘게면 날짜 "10/18 토", 짧으면 6시간마다 "06시".
+// 기간이 길면(예측 포함 2주) 글자가 붙지 않게 maxTicks 개 안쪽으로 며칠씩 건너뛰고, 건너뛸 때는 요일을 뺀다
 const WEEK = '일월화수목금토'
-function timeTicks(t0: number, t1: number) {
+function timeTicks(t0: number, t1: number, maxTicks = 7) {
   const out: { at: number; label: string }[] = []
   const day = 86400000, hours = 6 * 3600000
   if (t1 - t0 > 2 * day) {
+    const step = Math.max(1, Math.ceil((t1 - t0) / day / maxTicks))
     const d = new Date(t0)
     d.setHours(24, 0, 0, 0)
-    for (; d.getTime() <= t1; d.setDate(d.getDate() + 1))
-      out.push({ at: d.getTime(), label: `${d.getMonth() + 1}/${d.getDate()} ${WEEK[d.getDay()]}` })
+    for (; d.getTime() <= t1; d.setDate(d.getDate() + step))
+      out.push({ at: d.getTime(), label: `${d.getMonth() + 1}/${d.getDate()}${step === 1 ? ' ' + WEEK[d.getDay()] : ''}` })
   } else {
     let t = Math.ceil(t0 / hours) * hours
     for (; t <= t1; t += hours) {
@@ -518,7 +521,6 @@ watch([data,trends],async()=>{
                 <strong :class="{first:i===0}">+{{num(c.points,1)}}점</strong>
               </li>
             </ol>
-            <p v-if="data.topCauses?.length" class="pm-muted small">점수 {{scoreValue?.toFixed(1)}} 중 각 원인이 끌어올린 몫</p>
           </section>
           <section class="card pm-score-history">
             <div class="pm-section-heading"><h2>위험 점수 추이</h2><span class="pm-period">최근 7일<template v-if="forecast"> + 앞으로 {{rangeText(forecast.horizonHours)}}</template></span></div>
@@ -551,17 +553,12 @@ watch([data,trends],async()=>{
               점수 기록이 {{scoreChart.rows.length}}건뿐이라 아직 추이를 그릴 수 없어요.
               예지보전 서버의 지난 7일 채우기(백필)가 끝나면 그래프가 나와요.
             </p>
-            <p v-if="scoreChart.path" class="pm-muted small">선 = 1시간 평균 · 옅은 선 = 구간 최고점 · 배경 = 이 설비의 기준</p>
-            <p v-if="scoreChart.future&&forecast" class="pm-muted small">
-              점선 = 예측 (앞으로 {{rangeText(forecast.mainHours)}}<template v-if="forecast.horizonHours>forecast.mainHours">, 흐린 점선은 {{rangeText(forecast.horizonHours)}}까지 참고</template>) · 띠 = 80% 예측 범위 · {{displayDate(forecast.basedAt)}} 기준.
-              지금 추세가 이어질 때의 예상이고, 고장 시각이 아니라 단계에 닿는 예상 시각이에요.
-            </p>
+            <p v-if="scoreChart.future&&forecast" class="pm-muted small" title="지금 추세가 이어질 때의 예상이에요. 고장 시각이 아니라 단계에 닿는 예상 시각이에요.">점선 예측 · 띠 80% 범위 · {{shortTime(forecast.base)}} 기준</p>
           </section>
         </div>
 
         <section class="card pm-evidence-card">
           <h2>판단 근거 · 특징값 {{features.length}}개</h2>
-          <p class="pm-muted small">파란 띠 = 정상 범위 · 회색 눈금 = 평소 값 · 점 = 지금 값 (범위를 벗어나면 빨강)</p>
           <p v-if="!features.length" class="pm-muted">아직 판단 근거가 없어요.</p>
           <div v-for="f in features" :key="f.key" class="pm-feature">
             <span>{{f.label}} <small v-if="f.kind==='변화량'">(변화량)</small></span>
