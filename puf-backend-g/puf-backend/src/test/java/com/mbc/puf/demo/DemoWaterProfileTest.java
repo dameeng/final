@@ -19,15 +19,21 @@ class DemoWaterProfileTest {
  @Test void readsRealScoreEvenWhenModelStubIsOffAndDrainsGradually(){
   var repo=mock(UnderpassRepository.class);var u=new Underpass();u.setEarlyBlock(true);u.setCurrentRiskScore(new BigDecimal("99"));
   when(repo.findByIdAndDeletedFalse(1L)).thenReturn(Optional.of(u));
-  var profile=new DemoWaterProfile(repo,15,15,1.5);double first=profile.sample(1L,false,0).orElseThrow();
+  var profile=new DemoWaterProfile(repo,15,15,1.5,2.5);double first=profile.sample(1L,false,0,true).orElseThrow();
   assertEquals(1.5,first,.001);   // 점수가 갑자기 99 가 되어도 수위는 한 번에 1.5cm 만 오른다
-  double high=first;for(int i=0;i<19;i++)high=profile.sample(1L,false,0).orElseThrow();
-  assertTrue(high>20);u.setCurrentRiskScore(BigDecimal.ZERO);double drained=profile.sample(1L,false,0).orElseThrow();assertEquals(high-2,drained,.001);
-  for(int i=0;i<20;i++)profile.sample(1L,true,0);assertTrue(profile.sample(1L,true,0).orElseThrow()<.5);
+  double high=first;for(int i=0;i<19;i++)high=profile.sample(1L,false,0,true).orElseThrow();
+  assertTrue(high>20);u.setCurrentRiskScore(BigDecimal.ZERO);double drained=profile.sample(1L,false,0,true).orElseThrow();assertEquals(high-2,drained,.001);
+  for(int i=0;i<20;i++)profile.sample(1L,true,0,true);assertTrue(profile.sample(1L,true,0,true).orElseThrow()<.5);
+ }
+ @Test void calmWeatherNeverRaisesWaterAboveCalmMaxEvenWithHighScore(){
+  var repo=mock(UnderpassRepository.class);var u=new Underpass();u.setEarlyBlock(true);u.setCurrentRiskScore(new BigDecimal("99"));
+  when(repo.findByIdAndDeletedFalse(1L)).thenReturn(Optional.of(u));
+  var profile=new DemoWaterProfile(repo,15,15,1.5,2.5);double v=0;for(int i=0;i<60;i++)v=profile.sample(1L,false,0,false).orElseThrow();
+  assertEquals(2.5,v,.001);assertTrue(v<5);   // 점수가 99 여도 평상시에는 2.5cm 에서 멈춘다 (5cm 자동 통제 안 됨)
  }
  @Test void honorsScenarioPeakAndLeavesCalmSamplingCadence(){
   var repo=mock(UnderpassRepository.class);var u=new Underpass();when(repo.findByIdAndDeletedFalse(1L)).thenReturn(Optional.of(u));
-  var profile=new DemoWaterProfile(repo,15,15,1.5);assertTrue(profile.sample(1L,false,0).isEmpty());
-  assertEquals(33,profile.sample(1L,true,33).orElseThrow(),.001);
+  var profile=new DemoWaterProfile(repo,15,15,1.5,2.5);assertTrue(profile.sample(1L,false,0,true).isEmpty());
+  assertEquals(33,profile.sample(1L,true,33,true).orElseThrow(),.001);
  }
 }

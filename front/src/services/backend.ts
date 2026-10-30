@@ -20,6 +20,18 @@ export function queryString(values: Record<string, unknown>) {
   })
   return p.size ? '?' + p : ''
 }
+// Content-Disposition 의 filename*=UTF-8''... 또는 filename="..." 에서 파일명을 꺼낸다 (없으면 '')
+function pdfFilename(header: string | null) {
+  if (!header) return ''
+  const star = /filename\*\s*=\s*UTF-8''([^;]+)/i.exec(header)
+  try {
+    if (star) return decodeURIComponent(star[1]!.trim())
+  } catch {
+    /* 디코딩 실패하면 아래로 */
+  }
+  const plain = /filename\s*=\s*"?([^";]+)"?/i.exec(header)
+  return plain ? plain[1]!.trim() : ''
+}
 export async function backend<T = any>(
   path: string,
   options: { method?: string; body?: unknown; signal?: AbortSignal; pdf?: boolean } = {},
@@ -42,7 +54,8 @@ export async function backend<T = any>(
       const blob = await r.blob()
       if (!r.headers.get('content-type')?.includes('application/pdf'))
         throw new BackendError('PDF 문서 응답을 확인하지 못했습니다.', r.status)
-      return blob as T
+      const serverName = pdfFilename(r.headers.get('content-disposition'))
+      return (serverName ? new File([blob], serverName, { type: blob.type }) : blob) as T
     }
     const data = await r.json().catch(() => null)
     if (!r.ok || data?.success === false)
@@ -78,11 +91,12 @@ export function asPage<T>(data: T[] | PageData<T>, page = 1, size = 20): PageDat
   if (!data || !Array.isArray(data.items)) throw new Error('목록 응답 형식이 올바르지 않습니다.')
   return { ...data, page: data.page || page, size: data.size || size }
 }
-export function downloadPdf(blob: Blob, name: string) {
+// preferServerName 이 true 이고 서버가 파일명을 내려줬으면(backend 가 File 로 돌려준다) 그 이름을 쓰고, 아니면 name 을 쓴다
+export function downloadPdf(blob: Blob, name: string, preferServerName = false) {
   const url = URL.createObjectURL(blob),
     a = document.createElement('a')
   a.href = url
-  a.download = name
+  a.download = preferServerName && blob instanceof File && blob.name ? blob.name : name
   a.click()
   setTimeout(() => URL.revokeObjectURL(url), 30000)
 }
