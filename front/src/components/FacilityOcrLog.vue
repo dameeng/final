@@ -4,7 +4,7 @@ import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { asPage, backend, queryString } from '../services/backend'
 import { useBackendEvents } from '../composables/useBackendEvents'
 import { displayDate } from '../utils/display-date'
-import { valueLabels } from '../data/backendResources'
+import { DEMO_CAMERA_NAMES } from '../utils/camera-names'
 import { useNewItemGlow } from '../composables/useNewItemGlow'
 const props=defineProps<{underpassId:string; app?:boolean}>()
 const rows=ref<Record<string,any>[]>([]), loading=ref(false), error=ref(''), updated=ref('')
@@ -51,9 +51,9 @@ onBeforeUnmount(()=>{controller?.abort();clearTimeout(refreshTimer)})
     <p v-else-if="!error&&!rows.length" class="ocr-log-empty">아직 인식된 번호판이 없습니다.</p>
     <ol ref="list" class="ocr-log-list" tabindex="0" aria-label="최근 OCR 인식 목록">
       <li v-for="record in rows" :key="record.id" :class="{'notification-arrival-glow':isNewRecord(record)}">
-        <div class="ocr-log-row"><strong>{{record.correctedNum||record.detectedNum||'번호 미인식'}}</strong><span class="ocr-log-state" :class="{'ocr-log-failed':record.recognitionStatus==='FAIL','ocr-log-pending':record.reviewStatus==='PENDING'}">{{valueLabels[record.recognitionStatus]||record.recognitionStatus||'상태 미제공'}}</span></div>
+        <div class="ocr-log-row"><strong>{{record.correctedNum||record.detectedNum||'번호 미인식'}}</strong></div>
         <time :datetime="record.detectedAt">{{displayDate(record.detectedAt)}}</time>
-        <div class="ocr-log-meta"><span v-if="record.cameraId!=null">카메라 {{record.cameraId}}</span><span>{{valueLabels[record.reviewStatus]||record.reviewStatus||'판별 상태 미제공'}}</span></div>
+        <div v-if="record.cameraId!=null" class="ocr-log-meta"><span>{{DEMO_CAMERA_NAMES[String(record.cameraId)]||`카메라 ${record.cameraId}`}}</span></div>
         <RouterLink :to="{path:app?'/admin-app/ocr':'/admin-data/ocr',query:{underpassId,id:String(record.id)}}">인식 기록 보기 →</RouterLink>
       </li>
     </ol>
