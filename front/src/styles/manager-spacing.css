@@ -5,7 +5,7 @@
 }
 #app .manager-app-shell .pm-delete-app-dialog .pm-delete-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:20px; }
 #app .manager-app-shell .pm-delete-app-dialog .pm-delete-actions button { min-height:44px; min-width:72px; margin:0; }
-#app .manager-app-shell .restored-facility-filters .chips>button.facility-summary-button {
+#app .manager-app-shell .facility-risk-filters>button.facility-summary-button {
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
   height:68px; min-height:68px; padding:8px; border:1px solid var(--r-line); border-radius:12px;
   background:var(--r-surface); color:var(--r-ink); line-height:20px; box-shadow:none;
@@ -14,7 +14,7 @@
 #app .manager-app-shell .facility-summary-button>strong { font-size:23px; line-height:26px; font-weight:650; font-variant-numeric:tabular-nums; }
 #app .manager-app-shell .facility-summary-button>strong[data-level=DANGER] { color:var(--status-danger-ink,#d52c27); }
 #app .manager-app-shell .facility-summary-button>strong[data-level=WARNING] { color:var(--status-caution-ink,#bd7a09); }
-#app .manager-app-shell .restored-facility-filters .chips>button.facility-summary-button[aria-pressed=true] { border-color:var(--r-accent); box-shadow:inset 0 -2px var(--r-accent); }
+#app .manager-app-shell .facility-risk-filters>button.facility-summary-button[aria-pressed=true] { border-color:var(--r-accent); box-shadow:inset 0 -2px var(--r-accent); }
 #app :is(.manager-app-shell,.restored-facility-detail) {
   --manager-page-space:12px;
   --manager-card-space:16px;

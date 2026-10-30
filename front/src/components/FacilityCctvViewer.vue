@@ -163,12 +163,20 @@ function label(camera: Record<string, any>) {
   return `${camera.name || DEMO_CAMERA_NAMES[String(camera.id)] || valueLabels[camera.cameraRole] || camera.cameraRole || 'CCTV'} · ${camera.id}`
 }
 const app = computed(() => route.path.startsWith('/admin-app/'))
+const viewerState = computed(() => {
+  if (startingNow.value) return '분석 시작 중'
+  if (stoppingNow.value) return '정지 중'
+  const state = analysisState.value?.state
+  if (state) return ({ STARTING:'분석 시작 중', RUNNING:'영상 분석 중', STOPPING:'정지 중', STOPPED:'정지', COMPLETED:'분석 완료', ERROR:'분석 오류' } as Record<string,string>)[state] || '상태 확인 중'
+  return !current.value?.streamUrl ? '영상 주소 미등록' : streamFailed.value ? '영상 대기' : '상태 확인 중'
+})
 </script>
 <template>
   <div class="facility-cctv-layout" :class="{'compact-cctv':compact,'app-cctv-records':app}">
   <section class="facility-cctv-viewer" aria-label="시설 CCTV">
     <template v-if="current">
       <!-- 브라우저 기본 선택 목록은 실시간 영상과 함께 펼치면 글자가 안 그려지는 경우가 있어 버튼으로 고른다 -->
+      <div class="facility-viewer-toolbar">
       <div class="facility-camera-select">
         <span id="facility-camera-select-label">CCTV 선택</span>
         <div class="facility-camera-buttons" role="group" aria-labelledby="facility-camera-select-label">
@@ -178,8 +186,7 @@ const app = computed(() => route.path.startsWith('/admin-app/'))
           </button>
         </div>
       </div>
-      <h2>{{label(current)}}</h2>
-      <div class="facility-recognition-controls">
+      <div v-if="app" class="facility-recognition-controls">
         <div class="recognition-buttons">
           <button type="button" class="recognition-start" :disabled="startingNow || stoppingNow" @click="controlRecognition('start')">
             {{ startingNow ? '분석 시작 중…' : '영상 분석 실행' }}
@@ -188,10 +195,24 @@ const app = computed(() => route.path.startsWith('/admin-app/'))
             {{ stoppingNow ? '정지 중…' : '정지' }}
           </button>
         </div>
-        <p v-if="recognitionMessage" role="status" :class="{ 'recognition-error': recognitionError }">{{ recognitionMessage }}</p>
       </div>
+      </div>
+      <p v-if="recognitionMessage" class="facility-recognition-feedback" role="status" :class="{ 'recognition-error': recognitionError }">{{ recognitionMessage }}</p>
       <div class="facility-camera-row">
-      <div v-if="!app" class="facility-camera-stage">
+      <div v-if="!app" class="facility-video-panel">
+      <header class="facility-video-heading">
+        <h2>{{label(current)}}</h2>
+        <div class="recognition-buttons" aria-label="영상 분석 제어">
+          <button type="button" class="recognition-start" :disabled="startingNow || stoppingNow" @click="controlRecognition('start')">
+            {{ startingNow ? '분석 시작 중…' : '영상 분석 실행' }}
+          </button>
+          <button type="button" class="recognition-start recognition-stop" :disabled="startingNow || stoppingNow" @click="controlRecognition('stop')">
+            {{ stoppingNow ? '정지 중…' : '정지' }}
+          </button>
+        </div>
+        <span class="facility-analysis-state" :class="{'is-running':analysisState?.state==='RUNNING','is-error':analysisState?.state==='ERROR'}">{{viewerState}}</span>
+      </header>
+      <div class="facility-camera-stage" :class="{'is-empty':(isAiStream&&streamFailed)||!current.streamUrl}">
         <template v-if="isAiStream">
           <img
             v-if="!streamFailed"
@@ -200,7 +221,7 @@ const app = computed(() => route.path.startsWith('/admin-app/'))
             :alt="label(current) + ' 실시간 영상'"
             @error="streamFailed = true"
           />
-          <p v-else>영상이 꺼져 있습니다. '영상 분석 실행'을 누르면 영상이 나옵니다.</p>
+          <div v-else class="facility-video-empty"><UiIcon name="camera" /><strong>표시할 영상이 없습니다</strong><p>‘영상 분석 실행’을 눌러 영상을 불러오세요.</p></div>
         </template>
         <TrafficVideo
           v-else-if="current.streamUrl"
@@ -208,9 +229,11 @@ const app = computed(() => route.path.startsWith('/admin-app/'))
           :src="current.streamUrl"
           hls
         />
-        <p v-else>영상 주소가 등록되지 않았습니다.</p>
+        <div v-else class="facility-video-empty"><UiIcon name="camera" /><strong>영상 주소가 등록되지 않았습니다</strong><p>설비 탭에서 카메라의 영상 주소를 확인해 주세요.</p></div>
       </div>
-      <div v-if="!compact && isRoadCamera" class="facility-ocr-column">
+      <dl v-if="!compact" class="facility-camera-facts"><div><dt>카메라 번호</dt><dd>{{current.id}}</dd></div><div><dt>카메라 역할</dt><dd>{{isRoadCamera?'노면·싱크홀 분석':valueLabels[current.cameraRole]||current.cameraRole||'미지정'}}</dd></div><div><dt>설치 거리</dt><dd>{{current.distanceM == null?'미등록':current.distanceM+' m'}}</dd></div></dl>
+      </div>
+      <div v-if="!compact && isRoadCamera" class="facility-ocr-column facility-road-analysis">
         <h3>노면 · 싱크홀 분석</h3>
         <p role="status">{{roadStateLabel}}<template v-if="roadStatus?.frameSeconds != null"> · 영상 {{Number(roadStatus.frameSeconds).toFixed(1)}}초</template></p>
         <p v-if="roadStatus?.error" role="alert">{{roadStatus.error}}</p>

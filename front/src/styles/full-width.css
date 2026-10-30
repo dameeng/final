@@ -1,5 +1,5 @@
 :root {
-  --admin-sidebar-width: 380px;
+  --admin-sidebar-width: 430px;
 }
 /* Use the available viewport width across desktop pages. */
 @media screen {

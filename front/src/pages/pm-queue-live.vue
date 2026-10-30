@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ListResultCount from '../components/ListResultCount.vue'
 import AppPagination from '../components/AppPagination.vue'
 import { adminPageTitle } from '../data/adminTitles'
 import { managerAppPath } from '../utils/manager-app-path'
@@ -177,7 +178,7 @@ function act(row: PmEvent, mode: 'start' | 'note' | 'resolve') {
 <template>
   <BackendLayout class="page-pm-queue">
     <section class="service-workspace pm-queue-live">
-      
+
       <div class="page-head service-heading">
         <div>
           <h1><AdminPageIcon />{{adminPageTitle('/pm-queue')}}</h1>
@@ -190,6 +191,20 @@ function act(row: PmEvent, mode: 'start' | 'note' | 'resolve') {
         </div>
       </div>
 
+
+
+      <div class="pm-filters">
+        <nav class="tabs" aria-label="점검 상태">
+          <button v-for="[value,label] in tabs" :key="value" type="button" :class="{'is-current':status===value,on:status===value}" :aria-pressed="status===value" @click="status=value">
+            {{label+(tabCount(value)!=null?' '+tabCount(value):'')}}
+          </button>
+        </nav>
+        <label class="pm-type">
+          <select v-model="type" aria-label="종류">
+            <option v-for="[value,label] in typeOptions" :key="value" :value="value">{{label}}</option>
+          </select>
+        </label>
+      </div>
       <div class="pm-kpis">
         <button type="button" class="card pm-kpi pm-kpi--danger" :class="{'is-current':status==='CHECK_NEEDED'}" :aria-pressed="status==='CHECK_NEEDED'" @click="status=status==='CHECK_NEEDED'?'':'CHECK_NEEDED'">
           <span>확인 필요</span><strong>{{counts.CHECK_NEEDED??'—'}}</strong>
@@ -204,24 +219,10 @@ function act(row: PmEvent, mode: 'start' | 'note' | 'resolve') {
           <span title="센서 정보 미수신">미수신</span><strong>{{counts.noData??'—'}}</strong>
         </div>
       </div>
-
-      <div class="pm-filters">
-        <nav class="tabs" aria-label="점검 상태">
-          <button v-for="[value,label] in tabs" :key="value" type="button" :class="{'is-current':status===value,on:status===value}" :aria-pressed="status===value" @click="status=value">
-            {{label+(tabCount(value)!=null?' '+tabCount(value):'')}}
-          </button>
-        </nav>
-        <label class="pm-type">
-          <select v-model="type" aria-label="종류">
-            <option v-for="[value,label] in typeOptions" :key="value" :value="value">{{label}}</option>
-          </select>
-        </label>
-      </div>
-
-      <p v-if="route.path.startsWith('/admin-app/')" class="app-list-result-count" role="status">{{list?`총 ${list.totalItems}건`:'목록을 불러오는 중입니다.'}}</p>
       <div class="pm-results-viewport" :aria-busy="loading">
       <p v-if="error" role="alert" class="service-error">{{error}} <button @click="load">다시 시도</button></p>
       <p v-if="loading&&!list" role="status">점검 대상을 불러오는 중입니다.</p>
+      <ListResultCount v-if="list" :count="list.totalItems" />
       <p v-if="list&&!list.items.length" class="pm-empty">
         {{status===''||status==='CHECK_NEEDED'?'지금 처리할 점검 대상이 없어요.':'해당하는 점검 기록이 없어요.'}}
       </p>
@@ -229,6 +230,7 @@ function act(row: PmEvent, mode: 'start' | 'note' | 'resolve') {
       <PmEquipmentCards v-if="route.path.startsWith('/admin-app/')&&list?.items.length" :items="list.items" inspection />
       <div v-else-if="list?.items.length" class="service-table-wrap">
         <table class="service-table pm-table">
+          <colgroup><col style="width:172px" /><col style="width:120px" /><col style="width:100px" /><col style="width:180px" /><col style="width:128px" /><col style="width:200px" /><col style="width:120px" /><col style="width:240px" /></colgroup>
           <thead>
             <tr><th>발생</th><th>설비</th><th>종류</th><th>지하차도</th><th>이유</th><th>발생 때 → 지금 점수</th><th>상태</th><th>처리</th></tr>
           </thead>
@@ -265,7 +267,7 @@ function act(row: PmEvent, mode: 'start' | 'note' | 'resolve') {
       <AppPagination v-if="route.path.startsWith('/admin-app/')" :page="page" :pages="list?.totalPages||1" :disabled="loading" @change="page=$event" />
       <div v-else class="pm-pager">
         <button class="btn sm" type="button" :disabled="loading||page<=1" @click="page--">이전</button>
-        <span>{{page}} / {{Math.max(1,list?.totalPages||1)}} · 전체 {{list?.totalItems??0}}건</span>
+        <span>{{page}} / {{Math.max(1,list?.totalPages||1)}}</span>
         <button class="btn sm" type="button" :disabled="loading||page>=Math.max(1,list?.totalPages||1)" @click="page++">다음</button>
       </div>
       <p class="pm-note">행을 누르면 설비 상세로 가요 · 점검 시작 → 기록 추가 → 점검 종료(조치 완료 또는 기타, 조치 내용 필수). 끝난 점검은 다시 열 수 없어요.</p>

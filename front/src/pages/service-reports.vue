@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ListResultCount from '../components/ListResultCount.vue'
 import AppPagination from '../components/AppPagination.vue'
 import { adminPageTitle } from '../data/adminTitles'
 import { displayDate } from '../utils/display-date'
@@ -149,6 +150,7 @@ onBeforeUnmount(() => {
         </text>
         <path :d="trendSeries.observedPath" fill="none" stroke="#2166a5" stroke-width="3" />
       </svg>
+      <ListResultCount v-if="!loading" :count="rows.length" />
       <div v-if="!loading" class="service-table-wrap">
         <table class="service-table">
           <thead>

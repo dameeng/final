@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import RiskLevelBadge from '../components/RiskLevelBadge.vue'
+import EarlyBlockBadge from '../components/EarlyBlockBadge.vue'
 import { useRiskChartClock } from '../composables/useRiskChartClock'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import BackendLayout from '../components/BackendLayout.vue'
 import BackendResource from './backend-resource.vue'
 import FacilityCctvViewer from '../components/FacilityCctvViewer.vue'
+import FacilityDetailTabs from '../components/FacilityDetailTabs.vue'
 import FacilityMaintenancePanel from '../components/FacilityMaintenancePanel.vue'
 import UnderpassVmsPanel from '../components/UnderpassVmsPanel.vue'
 import TunnelCctvDialog from '../components/TunnelCctvDialog.vue'
@@ -173,7 +175,8 @@ function control() {
       <div class="page-head service-heading">
         <div>
           <h1><AdminPageIcon />
-            {{facility?.name||'지하차도 상세'}} <RiskLevelBadge v-if="facility" :value="facility.currentRiskLevel" />
+            {{facility?.name||'지하차도 상세'}}
+            <EarlyBlockBadge :enabled="facility?.earlyBlock" />
           </h1>
           <div class="sub">{{facility?.roadAddress}}</div>
         </div>
@@ -189,18 +192,7 @@ function control() {
       </p>
       <p v-if="loading" role="status">시설 정보를 불러오는 중입니다.</p>
       <p v-if="controlNotice" class="service-message" role="status">{{controlNotice}} <RouterLink :to="{path:'/admin-data/transfers',query:{underpassId:id}}">경찰·소방 문서 보기 →</RouterLink></p>
-      <nav class="tabs" aria-label="지하차도 상세 탭">
-        <!-- 다섯 탭이 같은 경로(?tab= 만 다름)라 라우터 기본 활성 표시는 전부 켜진다. 현재 탭 하나에만 직접 표시 -->
-        <RouterLink
-          v-for="[value,label] in [['overview','개요'],['equip','설비'],['sign','전광판'],['cctv','CCTV'],['settings','설정']]"
-          :key="value"
-          v-slot="{href,navigate}"
-          :to="{path:'/fac-detail',query:{id,underpassId:id,tab:value}}"
-          custom
-        >
-          <a :href="href" :class="{'is-current':tab===value}" :aria-current="tab===value?'page':undefined" @click="navigate">{{label}}</a>
-        </RouterLink>
-      </nav>
+      <FacilityDetailTabs :id="id" :tab="tab" />
 <template v-if="facility">
         <section v-if="tab==='overview'" aria-label="개요">
           <div class="restored-overview-grid">
@@ -244,7 +236,7 @@ function control() {
             </section>
             <section class="card">
               <h2>위험 점수 추이 · 최근 1시간 관측 | 3시간 예측</h2>
-              <p v-if="series.latest" class="sub">지금 <b>{{series.latest.score.toFixed(1)}}점</b> <RiskLevelBadge v-if="facility" :value="facility.currentRiskLevel" /></p>
+              <p v-if="series.latest" class="sub">지금 <b>{{series.latest.score.toFixed(1)}}점</b></p>
               <svg
                 v-if="!series.empty"
                 class="restored-risk-chart"
@@ -302,6 +294,10 @@ function control() {
                 <dd>{{facility.heightM??'—'}} m</dd>
                 <dt>길이</dt>
                 <dd>{{facility.lengthM??'—'}} m</dd>
+                <dt>침수 이력</dt>
+                <dd>{{facility.floodHistoryCount == null ? '미등록' : facility.floodHistoryCount + '회'}}</dd>
+                <dt>선제 차단 대상</dt>
+                <dd>{{facility.earlyBlock == null ? '미등록' : facility.earlyBlock ? '대상' : '대상 아님'}}</dd>
               </dl>
               <RouterLink :to="{path:'/logs',query:{underpassId:id}}">최근 이벤트 · 통합 로그 →</RouterLink>
               </div><FacilityMaintenancePanel :underpass-id="id" /></div>
@@ -314,22 +310,26 @@ function control() {
           <p v-if="cameraError" role="alert" class="service-error">{{cameraError}} <button type="button" @click="load">다시 시도</button></p>
           <FacilityCctvViewer v-else :cameras="cameras" :underpass-id="id" :facility-name="facility?.name" />
         </section>
-<section v-else-if="tab==='settings'" class="restored-overview-grid">
-          <section class="card">
-            <h2>시설 정보</h2>
+<section v-else-if="tab==='settings'" class="restored-overview-grid facility-settings-grid">
+          <section class="card facility-settings-information">
+            <h2>시설 정보</h2><p class="facility-settings-section-label">시설 제원</p><div class="facility-settings-dimensions"><div><span>높이</span><strong>{{facility.heightM??'—'}}<small>m</small></strong></div><div><span>길이</span><strong>{{facility.lengthM??'—'}}<small>m</small></strong></div></div>
             <dl class="service-detail">
               <dt>시설명</dt>
               <dd>{{facility.name}}</dd>
               <dt>도로명 주소</dt>
               <dd>{{facility.roadAddress}}</dd>
+              <dt>침수 이력</dt>
+              <dd>{{facility.floodHistoryCount == null ? '미등록' : facility.floodHistoryCount + '회'}}</dd>
+              <dt>선제 차단 대상</dt>
+              <dd>{{facility.earlyBlock == null ? '미등록' : facility.earlyBlock ? '대상' : '대상 아님'}}</dd>
             </dl>
-            <button class="btn" @click="operations?.open('edit',facility)">시설 정보 수정</button>
+            <div class="facility-settings-actions"><button class="btn" @click="operations?.open('edit',facility)">시설 정보 수정</button>
             <button
               class="btn"
               @click="operations?.open('action',facility,backendResources.facilities!.actions?.[3])"
-            >입출구 카메라 지정</button>
+            >입출구 카메라 지정</button></div>
           </section>
-          <section class="card"><BackendResource embedded resource-key="thresholds" /></section>
+          <section class="card facility-settings-thresholds"><BackendResource embedded resource-key="thresholds" /></section>
         </section>
 <div class="restored-facility-operations">
           <BackendResource

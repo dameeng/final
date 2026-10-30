@@ -7,6 +7,7 @@ import ServiceResource from './backend-resource.vue'
 import FeedbackToast from '../components/FeedbackToast.vue'
 import AccountActions from '../components/AccountActions.vue'
 import ManagerPushDevices from '../components/ManagerPushDevices.vue'
+import ManagerWebProfileSummary from '../components/ManagerWebProfileSummary.vue'
 import profileMascot from '../assets/mascot/routel-ru-transparent.png'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -173,7 +174,7 @@ onBeforeUnmount(() => controller.abort())
 </script>
 <template>
   <component :is="manager?BackendLayout:'div'"
-    ><section class="service-workspace account-service" :class="{'manager-account-page':managerApp}"
+    ><section class="service-workspace account-service" :class="{'manager-account-page':managerApp,'manager-web-account':manager&&!managerApp}"
       ><h1><AdminPageIcon />{{pageTitle}}</h1
       ><button v-if="customerWeb&&profile.id" type="button" class="customer-guide-replay" @click="openCustomerGuide"><UiIcon name="help" />루와 사용법 보기</button><FeedbackToast :message="message" /><p v-if="loading" role="status"
         >정보를 불러오는 중입니다.</p
@@ -187,9 +188,9 @@ onBeforeUnmount(() => controller.abort())
           v-if="manager||['summary','profile','settings'].includes(accountSection)"
           :id="!manager?'account-settings':undefined"
           class="account-panel"
-          ><summary v-if="managerApp" class="manager-profile-summary"><UiIcon name="user" /><span><strong>내 정보 관리</strong></span><span class="manager-profile-chevron" aria-hidden="true">›</span></summary><h2 v-if="pageTitle!=='내 정보'">내 정보</h2
-          ><p v-if="!customerWeb||editing">{{profile.name}} · {{profile.loginId}}</p
-          ><template v-if="manager"
+          ><summary v-if="managerApp" class="manager-profile-summary"><UiIcon name="user" /><span><strong>내 정보 관리</strong></span><span class="manager-profile-chevron" aria-hidden="true">›</span></summary><ManagerWebProfileSummary v-if="manager&&!managerApp" :profile="profile" :editing="editing" @edit="editing=true" /><h2 v-if="pageTitle!=='내 정보'&&!(manager&&!managerApp)">내 정보</h2
+          ><p v-if="(!customerWeb||editing)&&!(manager&&!managerApp)">{{profile.name}} · {{profile.loginId}}</p
+          ><template v-if="managerApp"
             ><p
               >담당 지역: {{profile.regions?.map((region:any)=>region.name).join(' · ')||'미지정'}}</p
             ><p
@@ -203,7 +204,7 @@ onBeforeUnmount(() => controller.abort())
                   >{{['phone','emergency'].includes(field.key)?formatPhone(profile[field.key])||'미등록':profile[field.key]||'미등록'}}</dd
                 ></template
               ></dl
-            ><button v-if="!customerWeb" type="button" @click="editing=true">수정</button></template
+            ><button v-if="!customerWeb&&!(manager&&!managerApp)" type="button" @click="editing=true">수정</button></template
           ><form v-if="editing" @submit.prevent="save"
             ><ServiceFields
               :fields="fields"
@@ -245,7 +246,7 @@ onBeforeUnmount(() => controller.abort())
         ><RouterLink to="/admin-app/history"><UiIcon name="document" />점검 이력 <span>›</span></RouterLink
         ><RouterLink to="/admin-app/notifications"><UiIcon name="bell" />알림 내역 <span>›</span></RouterLink
         ><RouterLink to="/admin-app/contacts"><UiIcon name="user" />관할 담당자 연락처 <span>›</span></RouterLink><button type="button" class="manager-guide-launch" @click="openManagerGuide"><UiIcon name="map" />루와 관리자 사용법 보기<span class="account-menu-chevron" aria-hidden="true">›</span></button><details class="manager-mypage-devices"><summary><UiIcon name="bell" />알림 기기 관리<span>›</span></summary><ManagerPushDevices /></details></nav
-      ><AdminPageDirectory v-else-if="manager" /><ManagerPushDevices v-if="manager&&!managerApp" /><AccountActions v-if="manager" /><button v-if="managerApp" type="button" class="manager-mypage-logout" :disabled="busy" @click="logoutManager"><UiIcon name="logout" />로그아웃</button></section
+      ><div v-if="manager&&!managerApp&&profile.id" class="manager-web-tools"><ManagerPushDevices /><AccountActions /><AdminPageDirectory /></div><AccountActions v-if="managerApp" /><button v-if="managerApp" type="button" class="manager-mypage-logout" :disabled="busy" @click="logoutManager"><UiIcon name="logout" />로그아웃</button></section
   ></component>
 </template>
 <style scoped src="../styles/pages/service-account.css"></style>

@@ -103,6 +103,7 @@
 :root[data-theme=dark] #app .admin-interface :is(.badge.danger,.risk-level-badge--severe) { background:#452d39; color:#ffb5c5; border-color:#8b5365; }
 :root[data-theme=dark] #app .admin-interface .risk-level-badge--alert { background:#452f25; color:#ffba9b; }
 :root[data-theme=dark] #app .admin-interface .risk-level-badge--watch { background:#30344e; color:#c7c9ff; }
+:root[data-theme=dark] #app .admin-interface .early-block-badge { border-color:#877046; background:#403722; color:#f3d28a; }
 :root[data-theme=dark] #app .admin-interface .risk-level-badge--unknown { background:#293c4c; color:#bfd1e3; }
 
 /* Selected/disabled states retain their meaning and original hit areas. */

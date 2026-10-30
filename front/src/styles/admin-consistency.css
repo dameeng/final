@@ -1,0 +1,169 @@
+/* Shared typography and spacing for administrator web screens.
+   Risk colors, score figures, profile names and page-specific charts retain emphasis. */
+#app .admin-interface.admin-shell {
+  --admin-title-size:22px;
+  --admin-title-top-gap:24px;
+  --admin-title-bottom-gap:16px;
+  --admin-page-padding:24px;
+  --admin-layout-gap:12px;
+  --admin-control-height:44px;
+  --admin-control-radius:8px;
+  --admin-body-size:13px;
+  --admin-body-line:22px;
+  --admin-label-size:12px;
+  --admin-section-size:15px;
+  --admin-section-gap:20px;
+  font-size:var(--admin-body-size);
+  line-height:var(--admin-body-line);
+}
+
+/* All page titles start at the same content edge. */
+#app .admin-interface.admin-shell .wire-page[class]>:is(main.page,.backend-main) {
+  padding:24px;
+  min-width:0;
+  box-sizing:border-box;
+}
+#app .admin-interface.admin-shell .backend-main>:is(.service-workspace,.account-service,.contacts-page) {
+  width:100%; max-width:none; min-width:0; margin-inline:0;
+}
+#app .admin-interface.admin-shell :is(.service-heading,.page-head) {
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap;
+  min-height:44px; gap:12px 20px; margin:0 0 16px;
+}
+#app .admin-interface.admin-shell :is(.service-heading,.page-head) h1,
+#app .admin-interface.admin-shell :is(.account-service,.contacts-page)>h1 {
+  margin:0; font-size:22px; font-weight:700; line-height:32px; letter-spacing:-.03em;
+}
+#app .admin-interface.admin-shell .account-service>h1 { margin-bottom:16px; }
+#app .admin-interface.admin-shell .backend-main .account-service>h1 {
+  font-size:22px; font-weight:700; line-height:32px;
+}
+#app .admin-interface.admin-shell :is(.service-heading,.page-head) h2 {
+  margin:0; font-size:15px; font-weight:600; line-height:24px;
+}
+#app .admin-interface.admin-shell :is(.service-heading,.page-head) :is(.sub,p),
+#app .admin-interface.admin-shell :is(.pm-note,.contacts-note,.profile-note,.chat-monitor-note) {
+  font-size:12px; font-weight:400; line-height:20px; color:var(--r-muted);
+}
+#app .admin-interface.admin-shell :is(.service-heading,.page-head) .sub { margin:4px 0 0; }
+
+/* Ordinary section headings share a baseline; headline figures are excluded. */
+#app .admin-interface.admin-shell :is(.card,.account-panel,.configuration-content)>h2,
+#app .admin-interface.admin-shell :is(.configuration-section-heading,.daily-web-section>header,.facility-video-heading) :is(h2,h3),
+#app .admin-interface.admin-shell :is(.manager-push-devices,.account-actions,.chat-monitor-card)>h2 {
+  font-size:15px; font-weight:600; line-height:24px;
+}
+#app .admin-interface.admin-shell :is(.account-panel,.manager-push-devices,.account-actions,.chat-monitor-card) {
+  border-radius:12px;
+}
+
+/* Common controls use the same label, field and action metrics. */
+#app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters,.manager-notification-filters) {
+  gap:16px; padding:20px; margin:0 0 20px; border-radius:12px;
+}
+#app .admin-interface.admin-shell .pm-admin-tools.pm-daily-live .service-filters {
+  gap:16px; padding:20px; margin:0 0 20px;
+}
+#app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters,.manager-notification-filters) label,
+#app .admin-interface.admin-shell .service-form-fields .service-field-label {
+  font-size:12px; font-weight:500; line-height:20px;
+}
+#app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters,.manager-notification-filters) :is(input,select):not([type=checkbox]):not([type=radio]) {
+  height:44px; min-height:44px; box-sizing:border-box; border-radius:8px;
+  font-size:13px; font-weight:400; line-height:22px;
+}
+#app .admin-interface.admin-shell :is(.service-actions,.pm-head-actions,.facility-detail-actions,.pm-detail-actions,.page-head>.actions) {
+  display:flex; flex-wrap:wrap; align-items:center; gap:8px;
+}
+#app .admin-interface.admin-shell :is(.service-actions,.pm-head-actions,.facility-detail-actions,.pm-detail-actions,.page-head>.actions)>:is(button,a.btn),
+#app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters,.manager-notification-filters)>button {
+  display:inline-flex; align-items:center; justify-content:center; flex:none;
+  min-height:44px; box-sizing:border-box; padding:10px 14px; border-radius:8px;
+  font-size:13px; font-weight:600; line-height:22px; white-space:nowrap;
+}
+
+/* A table's labels and plain text are consistent; nested strong values keep emphasis. */
+#app .admin-interface.admin-shell :is(.service-table,.restored-facilities .tbl,.chat-monitor-table table) {
+  font-size:13px; line-height:22px; border-collapse:collapse;
+}
+#app .admin-interface.admin-shell :is(.service-table,.restored-facilities .tbl,.chat-monitor-table table) th {
+  padding:14px 16px; font-size:12px; font-weight:600; line-height:20px; white-space:nowrap;
+}
+#app .admin-interface.admin-shell :is(.service-table,.restored-facilities .tbl,.chat-monitor-table table) td {
+  padding:14px 16px; font-size:13px; font-weight:400; line-height:22px; vertical-align:middle;
+}
+#app .admin-interface.admin-shell :is(.service-table,.restored-facilities .tbl,.chat-monitor-table table) :is(button,a.btn) {
+  display:inline-flex; align-items:center; justify-content:center;
+  min-height:36px; box-sizing:border-box; padding:7px 12px; border-radius:8px;
+  font-size:12px; font-weight:500; line-height:20px; white-space:nowrap;
+}
+#app .admin-interface.admin-shell .restored-facilities .tbl tbody td {
+  padding-block:8px;
+}
+#app .admin-interface.admin-shell .restored-facilities .tbl button.row-open {
+  padding:0;
+}
+#app .admin-interface.admin-shell .restored-facilities .facility-name-copy strong {
+  line-height:20px;
+}
+#app .admin-interface.admin-shell .restored-facilities .facility-name-copy small {
+  margin-top:2px;
+  line-height:16px;
+}
+#app .admin-interface.admin-shell :is(.service-pagination,.chat-monitor-pagination) {
+  display:flex; align-items:center; justify-content:center; gap:8px; margin:20px 0 0;
+  font-size:12px; line-height:20px;
+}
+#app .admin-interface.admin-shell :is(.service-pagination,.chat-monitor-pagination)>button {
+  display:inline-flex; align-items:center; justify-content:center; min-height:36px;
+  padding:7px 12px; border-radius:8px; font-size:12px; font-weight:500; line-height:20px;
+}
+
+/* Flat, compact result cards share the same labels and 88px geometry. */
+#app .admin-interface.admin-shell :is(.resource-overview,.facility-directory-summary,.pm-kpis,.chat-monitor-kpis,.pm-daily-live .daily-levels) {
+  gap:14px; margin:0 0 24px;
+}
+#app .admin-interface.admin-shell :is(.resource-overview-item,.facility-summary-item,.pm-kpi,.chat-monitor-kpis>article) {
+  min-height:88px; box-sizing:border-box; padding:12px 20px; border-radius:12px;
+}
+
+/* Do not stretch a short empty result into an otherwise empty panel. */
+#app .admin-interface.admin-shell :is(.record-empty-state,.configuration-empty,.pm-empty) {
+  min-height:0; padding:20px; border-radius:12px;
+}
+#app .admin-interface.admin-shell :is(.record-empty-state,.configuration-empty,.pm-empty) :is(p,span) {
+  font-size:12px; line-height:20px;
+}
+
+/* Secondary administrator screens follow the same panel and heading rules. */
+#app .admin-interface.admin-shell .page-index {
+  width:100%; max-width:none; box-sizing:border-box; margin:0; padding:24px; color:var(--r-ink);
+}
+#app .admin-interface.admin-shell .index-head {
+  gap:20px; padding:20px; border:1px solid var(--r-line); border-radius:12px;
+  background:var(--r-surface); color:var(--r-ink);
+}
+#app .admin-interface.admin-shell .index-head h1 { font-size:22px; font-weight:700; line-height:32px; color:var(--r-ink); }
+#app .admin-interface.admin-shell .index-head p { color:var(--r-accent); font-size:11px; line-height:18px; }
+#app .admin-interface.admin-shell .index-head>div>span { color:var(--r-muted); font-size:12px; line-height:20px; }
+#app .admin-interface.admin-shell .admin-grid article h2 { font-size:15px; font-weight:600; line-height:24px; }
+#app .admin-interface.admin-shell .inspection-counts { gap:14px; margin:0 0 24px; }
+#app .admin-interface.admin-shell .inspection-counts>div {
+  display:flex; flex-direction:column; align-items:flex-start; gap:4px;
+  min-height:88px; box-sizing:border-box; padding:12px 20px; text-align:left;
+  border:1px solid var(--r-line); border-radius:12px; background:var(--r-surface);
+}
+#app .admin-interface.admin-shell .inspection-counts small { font-size:12px; font-weight:400; line-height:20px; }
+#app .admin-interface.admin-shell .inspection-counts strong { font-size:28px; font-weight:650; line-height:36px; }
+#app .admin-interface.admin-shell .inspection-report>h2 { font-size:15px; font-weight:600; line-height:24px; }
+
+@media(max-width:700px) {
+  #app .admin-interface.admin-shell .wire-page[class]>:is(main.page,.backend-main) { padding:20px 16px; }
+  #app .admin-interface.admin-shell .page-index { padding:20px 16px; }
+  #app .admin-interface.admin-shell :is(.service-filters,.chat-monitor-filters,.manager-notification-filters) { padding:16px; gap:12px; }
+  #app .admin-interface.admin-shell .pm-admin-tools.pm-daily-live .service-filters { padding:16px; gap:12px; }
+}
+@media(max-width:500px) {
+  #app .admin-interface.admin-shell :is(.resource-overview,.facility-directory-summary,.pm-kpis,.chat-monitor-kpis,.pm-daily-live .daily-levels) { gap:10px; }
+  #app .admin-interface.admin-shell :is(.resource-overview-item,.facility-summary-item,.pm-kpi,.chat-monitor-kpis>article) { padding:12px 14px; }
+}

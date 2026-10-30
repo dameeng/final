@@ -18,7 +18,7 @@ const icon=computed<UiIconName|null>(()=>{
   if(path.startsWith('/pm-'))return 'tool'
   if(path==='/jurisdiction-contacts')return 'user'
   const resource=path.startsWith('/admin-data/')?path.split('/').at(-1):resourceRoutes[path]
-  const icons:Record<string,UiIconName>={facilities:'map',cameras:'camera',thresholds:'settings',display:'dashboard',presets:'document',reasons:'document',ocr:'camera',reviews:'eye',transits:'route',events:'history',transfers:'document',customers:'user',managers:'user',regions:'location',shifts:'history',alerts:'bell','manager-notifications':'bell',notices:'document',faqs:'help',inquiries:'chat'}
+  const icons:Record<string,UiIconName>={facilities:'map',cameras:'camera',thresholds:'settings',display:'dashboard',presets:'document',reasons:'document',ocr:'camera',reviews:'eye',transits:'car',events:'history',transfers:'document',customers:'user',managers:'user',regions:'location',shifts:'history',alerts:'bell','manager-notifications':'bell',notices:'document',faqs:'help',inquiries:'chat'}
   return resource?icons[resource]||'document':null
 })
 </script>

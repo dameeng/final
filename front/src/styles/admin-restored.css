@@ -357,9 +357,9 @@
   grid-template-columns: minmax(0,1fr);
   align-items: center;
   flex-shrink: 0;
-  gap: 2px;
+  gap: 0;
   margin-top: auto;
-  padding: 12px 16px;
+  padding: 10px 16px;
   border-top: 1px solid color-mix(in srgb,var(--line,#c9ced6) 55%,transparent);
 }
 .admin-shell .wire-page[class] .side-bot.admin-sidebar-links>a,.service-mobile .side-bot.admin-sidebar-links>a {
@@ -370,7 +370,7 @@
   width: 100%;
   min-height: 40px;
   padding: 8px 12px;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 20px;
   white-space: nowrap;
   text-decoration: none;

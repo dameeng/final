@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import ListResultCount from '../components/ListResultCount.vue'
+import ResourceOverview from '../components/ResourceOverview.vue'
 import AppPagination from '../components/AppPagination.vue'
 import { adminPageTitle } from '../data/adminTitles'
 import { managerAppPath } from '../utils/manager-app-path'
@@ -224,10 +226,8 @@ function resetFilters() {
       <p v-if="error" role="alert" class="service-error">{{error}} <button @click="load">다시 시도</button></p>
       <p v-if="loading&&!list" role="status">점검 이력을 불러오는 중입니다.</p>
 
-      <p v-if="list" class="pm-summary">
-        <template v-if="selectedEquipment">{{selectedEquipment.name}} · </template>
-        {{startDate||endDate?`${startDate||'처음'} ~ ${endDate||'오늘'}`:'전체 기간'}} · <b>{{list?.totalItems??0}}건</b>
-      </p>
+      <ResourceOverview v-if="list && !route.path.startsWith('/admin-app/')" resource="pm-history" :items="list.items" :total="list.totalItems" />
+      <ListResultCount v-if="list" :count="list.totalItems"><template v-if="selectedEquipment">{{selectedEquipment.name}} · </template>{{startDate||endDate?`${startDate||'처음'} ~ ${endDate||'오늘'}`:'전체 기간'}}</ListResultCount>
 
       <div v-if="list&&!list.items.length" class="card pm-empty">
         <b>이 조건에 맞는 점검 기록이 없어요.</b>
@@ -238,6 +238,7 @@ function resetFilters() {
       <PmEquipmentCards v-if="route.path.startsWith('/admin-app/')&&list?.items.length" :items="list.items" />
       <div v-else-if="list?.items.length" class="service-table-wrap">
         <table class="service-table pm-table">
+          <colgroup><col style="width:128px" /><col style="width:172px" /><col style="width:144px" /><col style="width:180px" /><col /><col style="width:120px" /><col style="width:240px" /></colgroup>
           <thead>
             <tr><th>이력 구분</th><th>기록 시각</th><th>설비</th><th>지하차도</th><th>조치 내용</th><th>등록자</th><th>점검 전 → 후</th></tr>
           </thead>
@@ -272,7 +273,7 @@ function resetFilters() {
       <AppPagination v-if="route.path.startsWith('/admin-app/')" :page="page" :pages="list?.totalPages||1" :disabled="loading" @change="page=$event" />
       <div v-else class="pm-pager">
         <button class="btn sm" type="button" :disabled="loading||page<=1" @click="page--">이전</button>
-        <span>{{page}} / {{Math.max(1,list?.totalPages||1)}} · 전체 {{list?.totalItems??0}}건</span>
+        <span>{{page}} / {{Math.max(1,list?.totalPages||1)}}</span>
         <button class="btn sm" type="button" :disabled="loading||page>=Math.max(1,list?.totalPages||1)" @click="page++">다음</button>
       </div>
       <p class="pm-note">조치 기록은 점검 대기에서만 남길 수 있어요 · 등록자는 기록한 관리자로 자동 저장돼요 · 점검 뒤 점수는 조치 기록 뒤 처음 들어온 점수예요</p>

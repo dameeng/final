@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import RiskLevelBadge from './RiskLevelBadge.vue'
+import EarlyBlockBadge from './EarlyBlockBadge.vue'
 import { nextTick, ref, watch } from 'vue'
 type Facility = {
   id: string
   name: string
   address: string
+  earlyBlock?: boolean
   riskScore: number | null
   rainfallMm: number | null
   currentWaterCm?: number | null
@@ -100,32 +102,35 @@ watch(
           >{{expanded?'상세 접기 ▴':'상세 펼치기 ▾'}}</button
       ><p>{{facility.address||'주소 미제공'}}</p
       ><div class="manager-facility-status"
-        ><RiskLevelBadge :value="riskLevel||state" /><span>{{control}}</span
-        ></div
+        ><RiskLevelBadge :value="riskLevel||state" /><span class="manager-control-state" :class="{'is-blocked':control==='통제 중'}">{{control}}</span
+        ><EarlyBlockBadge :enabled="facility.earlyBlock" /></div
       ></div
     ><div ref="body" v-show="expanded" id="manager-map-panel-body" class="manager-panel-body"
       ><template v-if="facility"
         ><p v-if="loading" role="status">최신 상태 조회 중…</p
         ><p v-if="error" role="alert">{{error}}</p
+        ><section class="manager-risk-summary" aria-label="위험 점수"
         ><div class="manager-risk"
           ><strong
             >{{facility.riskScore===null?'—':facility.riskScore.toFixed(1)
             }}<small>점</small></strong
-          ><span>위험 점수</span></div
+          ><span>위험 점수 <small>/ 100점</small></span></div
         ><div class="manager-gauge"
           ><b :style="{width:Math.max(0,Math.min(100,facility.riskScore||0))+'%'}"></b></div
-        ><dl
-          ><dt>현재 수위</dt><dd>{{facility.currentWaterCm??'—'}} cm</dd><dt>강우량</dt
-          ><dd>{{facility.rainfallMm??'—'}} mm</dd><dt>잔류 차량</dt
-          ><dd>{{facility.remainingCount??'—'}}대</dd><dt>판별 대기</dt
-          ><dd>{{facility.pendingReviewCount??'—'}}건</dd><dt>관측 시각</dt
-          ><dd>{{observed}}</dd></dl
+        ></section
+        ><section class="manager-live-section" aria-label="실시간 현황"><h3>실시간 현황</h3><dl class="manager-live-metrics"
+          ><div><dt>현재 수위</dt><dd>{{facility.currentWaterCm??'—'}}<small>cm</small></dd></div
+          ><div><dt>강우량</dt><dd>{{facility.rainfallMm??'—'}}<small>mm</small></dd></div
+          ><div><dt>잔류 차량</dt><dd>{{facility.remainingCount??'—'}}<small>대</small></dd></div
+          ><div :class="{'has-pending':(facility.pendingReviewCount??0)>0}"><dt>판별 대기</dt><dd>{{facility.pendingReviewCount??'—'}}<small>건</small></dd></div></dl></section
+        ><div class="manager-observation-info"
+        ><div class="manager-observed"><span>관측 시각</span><time>{{observed}}</time></div
         ><div class="manager-weather"
           ><b>시설 위치 날씨</b><p v-if="weatherLoading">날씨 조회 중…</p
           ><p v-else-if="weatherError">{{weatherError}}</p
           ><p v-else
             >{{weather?.condition||'기상 상태 미제공'}} · {{weather?.temperature??'—'}}°C</p
-          ></div
+          ></div></div
         ><details
           ><summary>관측 기록</summary
           ><svg
@@ -191,6 +196,7 @@ watch(
           ><p v-if="chartSeries?.carryPath" class="sub"
             >엷은 점선: 최근 관측값을 현재까지 유지 (추가 관측 아님)</p
           ><p v-if="forecastError">{{forecastError}}</p></details
+        ><div class="manager-operation"
         ><p class="manager-assignment">{{canControl?'담당 시설':'담당 외 시설 · 통제 권한 없음'}}</p
         ><div class="manager-control-actions"
           ><button
@@ -204,7 +210,7 @@ watch(
             @click="$emit('control',1)"
             >통제 해제</button
           ></div
-        ><RouterLink :to="'/fac-detail?id='+facility.id">시설 상세 →</RouterLink></template
+        ><RouterLink :to="'/fac-detail?id='+facility.id">시설 상세 →</RouterLink></div></template
       ><ul v-else-if="cluster.length" class="manager-cluster-options"
         ><li v-for="row in cluster" :key="row.id"
           ><button type="button" @click="$emit('select',row.id)"

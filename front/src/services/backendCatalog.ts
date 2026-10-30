@@ -19,8 +19,10 @@ export function riskGroup(value: unknown) {
   if (['SAFE', '안전', '정상'].includes(code)) return 'SAFE'
   return ''
 }
-export function matchesRisk(value: unknown, filter: string) {
-  return !filter || riskGroup(value) === filter
+export function matchesRisk(value: unknown, filter: string, controlled = false) {
+  // Facility lists show controlled underpasses as requiring attention even when
+  // the latest sensor risk has returned to safe. Use that same group in filters.
+  return !filter || (controlled ? 'DANGER' : riskGroup(value)) === filter
 }
 export function riskSummaryLabel(value: unknown, controlled = false) {
   if (controlled) return '통제'

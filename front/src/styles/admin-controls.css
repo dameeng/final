@@ -280,6 +280,18 @@ html {
 .sidebar-group>summary.sidebar-group-label::-webkit-details-marker {
   display: none;
 }
+.sidebar-heading-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.sidebar-heading-content > .ui-icon {
+  width: 19px;
+  height: 19px;
+  flex: 0 0 19px;
+  color: inherit;
+}
 .sidebar-group>summary.sidebar-group-label::after {
   content: '\203a';
   font-size: 20px;
@@ -328,6 +340,9 @@ html {
   z-index: 61;
   font-size: 14px;
   line-height: 1.5;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  isolation: isolate;
 }
 .admin-shell .wire-page[class] .side .side-top {
   display: flex;
@@ -349,6 +364,7 @@ html {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 4px 12px 12px;
 }
 .admin-shell .wire-page[class]:has(.side.open) .scrim {

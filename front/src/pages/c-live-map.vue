@@ -260,6 +260,7 @@ type Facility = {
   manageable?: boolean
   riskLevel?: string
   controlled?: boolean
+  earlyBlock?: boolean
   currentWaterCm?: number | null
   assignedRegionName?: string
   latitude: number | null
@@ -619,6 +620,7 @@ function normalize(row: Json, current?: Json): Facility | null {
   return {
     id,
     name: text(row.name) || '이름 미제공',
+    earlyBlock: typeof row.earlyBlock === 'boolean' ? row.earlyBlock : undefined,
     address: text(row.roadAddress || row.address),
     regionId: findRegion(row),
     assignedRegionId: String(row.regionId ?? ''),
@@ -1014,6 +1016,7 @@ async function loadDetail(id: string) {
         ...body,
         underpassId: id,
         name: body.name || base?.name,
+        earlyBlock: body.earlyBlock ?? base?.earlyBlock,
         regionName: body.regionName,
         latitude: body.latitude ?? base?.latitude,
         longitude: body.longitude ?? base?.longitude,

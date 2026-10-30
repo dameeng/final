@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ListResultCount from '../components/ListResultCount.vue'
 import AppPagination from '../components/AppPagination.vue'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
@@ -75,7 +76,7 @@ onBeforeUnmount(() => { disposed = true; version++; detailVersion++; clearInterv
       </template>
       <template v-else>
         <form class="chat-monitor-filters" @submit.prevent="page=1;load()"><label>결과<select v-model="result"><option value="">전체</option><option value="answered">답변함</option><option value="unanswered">답변 못 함</option></select></label><label>질문·답변 검색<input v-model="query" type="search" placeholder="검색어를 입력하세요" maxlength="200" /></label></form>
-        <p v-if="logs">총 {{logs.totalItems}}건</p>
+        <ListResultCount v-if="logs" :count="logs.totalItems" />
         <div class="chat-monitor-table"><table><thead><tr><th>시각</th><th>대화 세션</th><th>질문</th><th>결과</th><th>상세</th></tr></thead><tbody><tr v-for="row in logs?.items" :key="row.id"><td>{{time(row.createdAt)}}</td><td>이용자 {{row.sessionId.slice(0,8)}}</td><td>{{row.question}}</td><td><span class="chat-log-state" :class="{'is-failed':row.result!=='answered'}">{{row.result==='answered'?'답변함':'답변 못 함'}}</span></td><td><button type="button" @click="openDetail(row)">대화 보기</button></td></tr><tr v-if="logs&&!logs.items.length"><td colspan="5" class="chat-monitor-empty">저장된 대화가 없습니다.</td></tr></tbody></table></div>
         <AppPagination v-if="logs&&route.path.startsWith('/admin-app/')" :page="page" :pages="logs.totalPages" :disabled="busy" @change="movePage" />
         <nav v-else-if="logs" class="chat-monitor-pagination" aria-label="대화 로그 페이지"><button type="button" :disabled="page<=1||busy" @click="movePage(page-1)">이전</button><span>{{page}} / {{logs.totalPages}} 페이지</span><button type="button" :disabled="page>=logs.totalPages||busy" @click="movePage(page+1)">다음</button></nav>
