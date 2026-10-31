@@ -485,7 +485,7 @@ watch([data,trends],async()=>{
             </dl>
           </section>
           <section class="card pm-inspection-card">
-            <div class="pm-section-heading"><h2>점검 현황</h2><div class="pm-inspection-link-slot"><RouterLink v-if="eq.openEventId" class="btn primary" :to="{path:appPath('/pm-inspection'),query:{id:String(eq.equipId),eventId:String(eq.openEventId)}}">확인 필요</RouterLink><span v-else class="pm-period">점검 관리</span></div></div>
+            <div class="pm-section-heading"><h2>점검 현황</h2><div class="pm-inspection-link-slot"><RouterLink v-if="eq.openEventId" class="btn primary" :to="{path:appPath('/pm-inspection'),query:{id:String(eq.equipId),eventId:String(eq.openEventId)}}">확인 필요</RouterLink><button v-else class="btn primary" type="button" @click="modal?.openRegister({equipId:Number(eq.equipId),name:String(eq.name||''),underpassName:eq.underpassName})">+ 점검 등록</button></div></div>
             <p v-if="eq.openEventId" class="pm-open-event">
               <span class="pm-chip pm-chip--open">{{pmLabel(PM_EVENT_STATUS,eq.openEventStatus)}}</span>
               <template v-if="openEvent">{{pmLabel(PM_TRIGGERS,openEvent.triggerType)}} · {{displayDate(openEvent.createdAt)}}</template>
