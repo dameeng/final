@@ -32,7 +32,7 @@ import jakarta.persistence.PersistenceContext;
  *   중심값은 예지보전 모델이 학습한 평소 값(baseline)에 맞췄다:
  *   펌프  진동 980 / 압력 1005 / 온도 2.505 / 전류 1.1 / 유량 36.3 / 회전수 38.3
  *   CCTV  수신률 99.1% / 응답 48.7ms(저녁에 조금 느려짐) / 손실 0.165% / 흐림 6.5(밤에 조금 높음)
- *   전광판 본체-외기 6.5℃ (외기는 하루 주기 + 날씨 변화) / 리플 0.028V / 응답 43ms / 오류 시간당 약 0.08건 / 불량화소 0.015%
+ *   전광판 본체-외기 6.5℃ (외기는 하루 주기 + 날씨 변화) / 리플 0.028V / 응답 43ms / 오류 평소 0건(통신 이상일 때만 생김) / 불량화소 0.014%에서 주당 0.0008씩 계단식으로 오름
  *   수위계 0.30m 기준 하루 주기 ±0.02 + 잡음
  *
  * [이상(DANGER)] 설비 종류별 대표 고장. 이상 정도 s(0~1)는 DANGER 를 켠 시각부터 커진다 (s=1 이 완전한 고장 상태).
@@ -130,8 +130,8 @@ public class PmSensorBackfillServiceImpl implements PmSensorBackfillService {
                    GREATEST(0, 0.028 + 0.0015 * y.ld + 0.0003 * {W} + CASE WHEN y.cause = 1 THEN 0.12 * y.s ELSE 0 END),
                    GREATEST(0, 43 + 1.5 * """ + daily("y.t", 14) + """
  + 0.8 * y.ld + 0.6 * {W} + CASE WHEN y.cause = 2 THEN 300 * y.s ELSE 0 END),
-                   CAST(CASE WHEN random() < 0.08 + CASE WHEN y.cause = 2 THEN 0.8 * y.s ELSE 0 END
-                             THEN 1 + floor(random() * (1 + CASE WHEN y.cause = 2 THEN 8 * y.s ELSE 0 END)) ELSE 0 END AS integer),
+                   CAST(CASE WHEN y.cause = 2 AND random() < 0.8 * y.s
+                             THEN 1 + floor(random() * (1 + 8 * y.s)) ELSE 0 END AS integer),
                    GREATEST(0, y.bp + CASE WHEN y.cause = 3 THEN 1.2 * y.s ELSE 0 END)
               FROM (SELECT x.id, x.t, x.s, x.ld, (x.rk - 1) % 4 AS cause,
                            18 + 7 * """ + daily("x.t", 9) + """
