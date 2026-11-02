@@ -19,7 +19,7 @@ SELECT setval('region_id_seq', 1, true);
 -- PUF 일반 더미 데이터 시드 (2.seed_general.sql)
 -- 실행 순서: 1.puf_db_schema → 2.seed_general(이 파일) → 3.seed_its → 4.seed_pm
 -- 예지보전 설비·임계치는 4.seed_pm 에서 넣음(이 파일에는 없음)
--- 실행 전제: puf_db_schema_v10.sql 실행 완료 (이 파일 시작 시 region id=1 '미배정' 생성, delivery_status 의 PENDING 도 스키마에 포함됨)
+-- 실행 전제: puf_db_schema_v13.sql 실행 완료 (이 파일 시작 시 region id=1 '미배정' 생성, delivery_status 의 PENDING 도 스키마에 포함됨)
 -- 실행 순서: FK 의존성 순서대로 정렬됨, 위에서 아래로 순서대로 실행
 -- 비밀번호: 모든 계정의 비밀번호 = 로그인 아이디 (BCrypt 해시)
 -- 지역: 부산광역시 16개 구/군
@@ -240,7 +240,7 @@ SELECT setval('camera_id_seq', 225);
 INSERT INTO camera (underpass_id, role, stream_url, dist, lat, lng)
 SELECT u.id, s.role::camera_role, 'http://localhost:8000/stream/' || (225 + s.slot), s.dist, u.lat, u.lng
 FROM underpass u
-CROSS JOIN (VALUES (1, 'APPROACH_LPR', 1000), (2, 'FINAL_LPR', 300), (3, 'FINAL_LPR', 300), (4, 'FINAL_LPR', 300)) AS s(slot, role, dist)
+CROSS JOIN (VALUES (1, 'APPROACH_LPR', 1000), (2, 'FINAL_LPR', 300), (3, 'CCTV', 50), (4, 'CCTV', 50)) AS s(slot, role, dist)
 WHERE u.id = 1
 ORDER BY s.slot;
 
@@ -524,7 +524,7 @@ BEGIN
 
     INSERT INTO customer_notification (customer_id, category, title, body, ref_type, ref_id, is_read, created_at)
     VALUES (v_cust, 'RISK',
-            CASE WHEN p_type = 'FINAL' THEN '지하차도 진입 직전 알림' ELSE '지하차도 접근 알림' END,
+            CASE WHEN p_type = 'FINAL' THEN '진입 직전 알림' ELSE '접근 알림' END,
             v_uname || ' · ' || p_num || ' · 인식 카메라 #' || p_cam || ' (진입 ' || v_dist || 'm 전)'
                 || CASE WHEN p_reason IS NULL OR p_reason = '' THEN '' ELSE ' · 사유: ' || p_reason END,
             'ALERT', v_alert, p_read, p_at);
