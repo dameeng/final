@@ -23,7 +23,7 @@
   min-width:0;
   box-sizing:border-box;
 }
-#app .admin-interface.admin-shell .backend-main>:is(.service-workspace,.account-service,.contacts-page) {
+#app .admin-interface.admin-shell .backend-main>:is(.service-workspace,.account-service,.contacts-page):not(.admin-login-card) {
   width:100%; max-width:none; min-width:0; margin-inline:0;
 }
 #app .admin-interface.admin-shell :is(.service-heading,.page-head) {
