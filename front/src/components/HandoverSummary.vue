@@ -9,7 +9,7 @@ const counts = computed(() => summary.value.counts || {})
 <template>
   <div class="handover-live-summary">
     <header><h3>{{report.shiftName||'직전 근무조'}} · {{report.authorName||'작성자 미지정'}}</h3><p>{{displayDate(report.windowStart)}} ~ {{displayDate(report.windowEnd)}}</p><p v-if="report.authorPhone">연락처 · {{report.authorPhone}}</p></header>
-    <p v-if="summary.demo" class="handover-demo-note">시연용 업무 요약입니다. 미처리 점검은 실제 조회 현황입니다.</p>
+    <p v-if="summary.demo" class="handover-demo-note">업무 요약 미리보기입니다. 미처리 점검은 실제 조회 현황입니다.</p>
     <dl class="handover-live-counts"><div v-for="[key,label] in [['block','통제'],['riskUp','위험 상승'],['pmChecked','점검'],['pmPending','미처리 점검']]" :key="key"><dt>{{label}}</dt><dd>{{counts[key!]??0}}건</dd></div></dl>
     <section v-if="summary.pm"><h3>예지보전 현황</h3><p>신규 {{summary.pm.newEventCount??0}}건 · 점검 기록 {{summary.pm.actionCount??0}}건 · 처리 중 {{summary.pm.openEventCount??0}}건</p><p>미수신 {{summary.pm.stale?.length??0}}개 · 최초 수신 대기 {{summary.pm.neverReceived??0}}개</p></section>
     <section v-if="summary.blockedNow?.length||summary.elevatedNow?.length"><h3>다음 근무조 확인 시설</h3><p v-for="facility in summary.blockedNow" :key="'blocked'+facility.underpassId">통제 중 · {{facility.name}}</p><p v-for="facility in summary.elevatedNow" :key="facility.underpassId">주의 확인 · {{facility.name}}</p></section>

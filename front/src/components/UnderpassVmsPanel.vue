@@ -118,7 +118,7 @@ onBeforeUnmount(() => { listController?.abort(); pageController?.abort(); clearT
       <div class="vms-options">
         <button v-for="v in vmsList" :key="v.id" type="button" class="vms-option" :aria-pressed="v.id===selectedId" @click="selectedId=v.id">
           <span class="vms-option-row"><strong>{{v.name}}</strong><span class="vms-chip" :class="v.zone==='NEAR'?'is-near':''">{{v.zone==='NEAR'?'근접 · 차단 정보':'원거리 · 차단+우회'}}</span></span>
-          <small>{{v.dist??'—'}}m · {{v.spec||'규격 미상'}} · 페이지 {{v.pages?.length??0}}장<template v-if="v.pages?.some(p=>p.manual)"> (수동 {{v.pages.filter(p=>p.manual).length}})</template><template v-if="v.dummy"> · 더미</template></small>
+          <small>{{v.dist??'—'}}m · {{v.spec||'규격 미상'}} · 페이지 {{v.pages?.length??0}}장<template v-if="v.pages?.some(p=>p.manual)"> (수동 {{v.pages.filter(p=>p.manual).length}})</template></small>
         </button>
       </div>
       <p class="vms-note">{{underpassName||'이 지하차도'}}가 차단되면 근접 전광판엔 차단 정보, 원거리 전광판엔 차단+우회 정보가 자동으로 표출됩니다.</p>

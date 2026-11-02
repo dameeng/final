@@ -51,8 +51,8 @@ const steps=computed(()=>props.manager?managerGuideSteps(guideFacility.value,gui
     extra('주변 CCTV와 전광판도 확인해요','지도 위 CCTV·VMS 버튼을 켜면 주변 교통 시설을 볼 수 있어요. 해당 마커를 누르면 영상이나 전광판 정보를 확인해요. 영상은 제공 기관의 연결 상태에 따라 재생이 지연될 수 있어요.',mapPath,'.traffic-layer-switches||.mtop'),
   ]
   if(index===2&&mobile.value)return [item,
-    extra('시연은 동구청에서 오페라하우스로 가요','기본 출발지는 부산 동구청, 도착지는 부산 오페라하우스예요. ‘시연 바로 시작’을 누르면 경로를 조회하고 가상 위치로 주행해요. 실제 GPS로 안내하려면 주행 방식을 바꿔 주세요.','/customer-app/screen-7','.navigation-search'),
-    extra('주행 중 통제되는 상황도 시연해요','시연 주행을 시작한 뒤 패널의 ‘주행 중 통제 발생’을 누르면 우회 경로를 다시 찾아요. 통제 안내에서 ‘우회 경로로 안내 시작’을 누르면 새 경로로 이어져요. 실제 시설 상태는 바꾸지 않아요.','/customer-app/screen-7','.navigation-search'),
+    extra('동구청에서 오페라하우스까지 확인해요','기본 출발지는 부산 동구청, 도착지는 부산 오페라하우스예요. ‘경로 미리보기’를 누르면 경로를 조회하고 가상 위치로 주행해요. 실제 GPS로 안내하려면 주행 방식을 바꿔 주세요.','/customer-app/screen-7','.navigation-search'),
+    extra('주행 중 통제되는 상황도 확인해요','경로 미리보기를 시작한 뒤 패널의 ‘주행 중 통제 발생’을 누르면 우회 경로를 다시 찾아요. 통제 안내에서 ‘우회 경로로 안내 시작’을 누르면 새 경로로 이어져요. 실제 시설 상태는 바꾸지 않아요.','/customer-app/screen-7','.navigation-search'),
   ]
   if(index===4)return [item,
     extra('종을 누르면 받은 알림을 볼 수 있어요','헤더의 종을 눌러 최근 알림을 확인하세요. 알림을 누르면 상세 내용으로 이동하고 읽음 처리돼요. 최근 알림 창의 ‘모두 읽음’으로 정리할 수 있어요. 통제 안내를 받으면 해당 시설에 진입하지 마세요.',mobile.value?'/customer-app/screen-13':'/my-home','.customer-mobile-header .notification-bell||.notification-bell'),

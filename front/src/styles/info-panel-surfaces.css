@@ -51,6 +51,16 @@
   border: 1px solid var(--r-line);
 }
 
+#app .customer-shell .home-premium .home-closing {
+  padding: 28px 32px;
+}
+
+@media (max-width:600px) {
+  #app .customer-shell .home-premium .home-closing {
+    padding: 24px 20px;
+  }
+}
+
 /* The PASS notice can be inside the app page or a body-level native dialog. */
 :root .pass-signup-dialog .phone-lock-notice {
   background: var(--r-surface,var(--surface,#fff));

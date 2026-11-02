@@ -14,7 +14,8 @@ const activeGroup=ref('recommended')
 const recordPage=ref(1)
 const recordPages=computed(()=>Math.max(1,Math.ceil((props.summary[activeGroup.value]?.length||0)/5)))
 const visibleRecords=computed(()=>(props.summary[activeGroup.value]||[]).slice((recordPage.value-1)*5,recordPage.value*5))
-watch([activeGroup,()=>props.summary],()=>{recordPage.value=1})
+watch(activeGroup,()=>{recordPage.value=1})
+watch(recordPages,pages=>{recordPage.value=Math.min(recordPage.value,pages)})
 function groupCount(key:string) {
   return key==='newEvents'?props.summary.newEventCount??0:key==='openEvents'?props.summary.openEventCount??0:key==='actions'?props.summary.actionCount??0:props.summary[key]?.length??0
 }

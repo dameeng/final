@@ -302,7 +302,7 @@ onBeforeUnmount(() => {
                 {{label||'전체'}}
               </button>
             </nav>
-<p class="data-provenance">시설명은 부산 공개 자료이며, 상태와 날씨는 구성 예시입니다.</p>
+<p class="data-provenance">시설명은 부산 공개 자료이며, 상태와 날씨는 실시간 연동 전입니다.</p>
             <button v-if="cluster" @click="cluster=null;selected=null">전체 목록으로</button>
             <div v-if="current" class="mobile-sheet-detail">
               <h2>{{current[0]}}</h2>

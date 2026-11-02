@@ -445,13 +445,13 @@ async function simulateClosure() {
   if(drivingMode.value!=='demo'||!requested.value||!position.value||!destination.value||busy.value)return
   const from={...position.value},to=destination.value
   const remaining=timeline.value.total-demoMeters.value
-  if(remaining<300){gpsError.value='목적지에 가까워 통제 시연을 시작할 수 없어요. 시연을 다시 시작한 뒤 눌러 주세요.';return}
+  if(remaining<300){gpsError.value='목적지에 가까워 통제 상황을 확인할 수 없어요. 경로 미리보기를 다시 시작한 뒤 눌러 주세요.';return}
   const ahead=timeline.value.positionAt(demoMeters.value+Math.min(700,remaining/2))
   if(!ahead)return
   const wasPaused=demoPaused.value
   if(!demoPaused.value)toggleDemoPause()
   busy.value=true;error.value='';gpsError.value=''
-  announce('시연 상황입니다. 전방 통제로 우회 경로를 찾습니다.')
+  announce('경로 미리보기입니다. 전방 통제로 우회 경로를 찾습니다.')
   try {
     let candidate:Route|undefined
     const dx=ahead.lng-from.lng,dy=ahead.lat-from.lat,length=Math.hypot(dx,dy)||1
@@ -464,14 +464,14 @@ async function simulateClosure() {
       candidate=options.find(row=>routePoints(row).length>1&&!passesAvoidPoint(row,ahead,60))
       if(candidate)break
     }
-    if(!candidate)throw Error('이 위치에서는 시연 우회 경로를 찾지 못했어요. 기존 시연을 계속하며 잠시 뒤 다시 시도해 주세요.')
+    if(!candidate)throw Error('이 위치에서는 우회 경로를 미리 볼 수 없어요. 기존 경로 미리보기를 계속하며 잠시 뒤 다시 시도해 주세요.')
     stopNavigation()
-    origin.value={...from,name:'시연 현재 위치'}
+    origin.value={...from,name:'미리보기 위치'}
     originText.value=origin.value.name
     position.value=null
     routes.value=[candidate];selected.value=0
     demoIncident.value=true
-    safety.value={distance:candidate.summary.distance,duration:candidate.summary.duration,path:routePoints(candidate).map(p=>[p.lat,p.lng]),guides:[],mandatory:true,detoured:true,blockedHazards:['전방 시연 구간'],advisoryHazards:[],passesHazards:[],message:'주행 중 통제가 발생한 시연 상황입니다. 실제 시설 통제에는 영향을 주지 않습니다.'}
+    safety.value={distance:candidate.summary.distance,duration:candidate.summary.duration,path:routePoints(candidate).map(p=>[p.lat,p.lng]),guides:[],mandatory:true,detoured:true,blockedHazards:['전방 가상 통제 구간'],advisoryHazards:[],passesHazards:[],message:'주행 중 통제를 가정한 경로입니다. 실제 시설 통제에는 영향을 주지 않습니다.'}
     await nextTick();draw();void showSafety()
   } catch(e) {
     gpsError.value=(e as Error).message
@@ -521,7 +521,7 @@ function startNavigation() {
   editing.value = false
   if (drivingMode.value === 'demo') {
     if (timeline.value.total <= 0) {
-      gpsError.value = '시연할 수 있는 경로가 없습니다. 경로를 다시 조회해 주세요.'
+      gpsError.value = '미리 볼 수 있는 경로가 없습니다. 경로를 다시 조회해 주세요.'
       return
     }
     demoMeters.value = 0
@@ -756,7 +756,7 @@ onBeforeUnmount(() => {
                   >검색</button
                 ></div
               ></label
-            ><button class="btn p" :disabled="busy">{{busy?'경로 조회 중…':'길찾기'}}</button><button type="button" class="btn navigation-demo-start" :disabled="busy" @click="startDemoTrip">시연 바로 시작</button></form
+            ><button class="btn p" :disabled="busy">{{busy?'경로 조회 중…':'길찾기'}}</button><button type="button" class="btn navigation-demo-start" :disabled="busy" @click="startDemoTrip">경로 미리보기</button></form
           ><ul v-if="choices.length" class="directions-place-results"
             ><li v-for="place in choices" :key="place.id"
               ><button @click="pickPlace(place)"
@@ -786,7 +786,7 @@ onBeforeUnmount(() => {
             ><p
               >{{arrived?destination?.name:!position?'GPS 위치를 기다리고 있습니다.':offRoute?'현재 위치에서 경로를 다시 조회하세요.':currentGuide?.guidance||'목적지 방향으로 이동하세요.'}}</p
             ><small v-if="position&&!arrived"
-              >{{currentGuide?.name}} · {{drivingMode==='demo' ? `시연 ${demoSpeed}배속${demoPaused?' · 일시정지':''}` : `위치 정확도 ${Math.round(position.accuracy)} m`}}</small
+              >{{currentGuide?.name}} · {{drivingMode==='demo' ? `미리보기 ${demoSpeed}배속${demoPaused?' · 일시정지':''}` : `위치 정확도 ${Math.round(position.accuracy)} m`}}</small
             ></div
           ></section
         >
@@ -801,18 +801,18 @@ onBeforeUnmount(() => {
             <label>주행 방식
               <select v-model="drivingMode" @change="changeDrivingMode">
                 <option value="gps">실제 GPS 안내</option>
-                <option value="demo">시연 주행</option>
+                <option value="demo">경로 미리보기</option>
               </select>
             </label>
             <template v-if="drivingMode==='demo'">
-              <label>시연 배속
-                <select v-model.number="demoSpeed" aria-label="시연 배속">
+              <label>재생 속도
+                <select v-model.number="demoSpeed" aria-label="재생 속도">
                   <option v-for="speed in [1,2,4,8,16]" :key="speed" :value="speed">{{speed}}배속</option>
                 </select>
               </label>
-              <div v-if="requested" class="navigation-demo-actions"><button type="button" @click="toggleDemoPause">{{demoPaused?'시연 재개':'일시정지'}}</button>
+              <div v-if="requested" class="navigation-demo-actions"><button type="button" @click="toggleDemoPause">{{demoPaused?'재개':'일시정지'}}</button>
               <button type="button" :disabled="busy" @click="simulateClosure">{{busy?'우회 경로 조회 중…':'주행 중 통제 발생'}}</button></div>
-              <small v-if="demoIncident">통제 상황 시연 · 실제 시설 상태 유지</small>
+              <small v-if="demoIncident">가상 통제 상황 · 실제 시설 상태 유지</small>
               <small>가상 위치 · 1배속 기준 시속 50km</small>
             </template>
           </div><div v-if="!requested&&!arrived" class="navigation-route-options"
@@ -847,7 +847,7 @@ onBeforeUnmount(() => {
               :aria-pressed="voice"
               @click="voice=!voice"
               >음성 안내 {{voice?'켜짐':'꺼짐'}}</button
-            ><button v-if="offRoute" type="button" @click="reroute">경로 다시 찾기</button><button v-if="offRoute&&drivingMode==='gps'" type="button" @click="previewRoute">시연으로 경로 확인</button></div
+            ><button v-if="offRoute" type="button" @click="reroute">경로 다시 찾기</button><button v-if="offRoute&&drivingMode==='gps'" type="button" @click="previewRoute">경로 미리보기로 확인</button></div
           ><nav class="navigation-quick-actions" aria-label="경로 상세 메뉴"
             ><button type="button" @click="guideDialog?.showModal()"
               >구간 안내 <small>{{guides.length}}</small></button

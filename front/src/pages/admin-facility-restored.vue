@@ -29,6 +29,7 @@ const facility = ref<Record<string, any>>(),
   cameras = ref<any[]>([]),
   cameraError = ref(''),
   error = ref(''),
+  refreshError = ref(''),
   loading = ref(false),
   operations = ref<InstanceType<typeof BackendResource>>()
 const controlNotice=ref('')
@@ -62,6 +63,7 @@ async function load() {
   error.value = ''
   cameraError.value = ''
   if (String(facility.value?.id ?? '') !== id.value) {
+    refreshError.value = ''
     facility.value = undefined
     cameras.value = []
     history.value = []
@@ -72,6 +74,7 @@ async function load() {
     facility.value = await backend('/api/underpasses/' + encodeURIComponent(id.value), {
       signal: current.signal,
     })
+    refreshError.value = ''
     const results = await Promise.allSettled([
       backend(
         // 10초마다 쌓이므로 최근 1시간(약 360건)을 받아 그래프에서 1분 평균으로 그린다
@@ -105,7 +108,10 @@ async function load() {
       forecastError.value = '예측 정보를 불러오지 못했습니다.'
     }
   } catch (e) {
-    if (!current.signal.aborted) error.value = (e as Error).message
+    if (!current.signal.aborted) {
+      if (facility.value) refreshError.value = (e as Error).message
+      else error.value = (e as Error).message
+    }
   } finally {
     if (!current.signal.aborted) loading.value = false
   }
@@ -190,7 +196,8 @@ function control() {
       <p v-if="error" role="alert" class="service-error">
         {{error}} <button @click="load">다시 시도</button>
       </p>
-      <p v-if="loading" role="status">시설 정보를 불러오는 중입니다.</p>
+      <p v-if="loading&&!facility" role="status">시설 정보를 불러오는 중입니다.</p>
+      <p v-if="refreshError" role="status">갱신 실패 · 이전 조회 결과입니다. {{refreshError}}</p>
       <p v-if="controlNotice" class="service-message" role="status">{{controlNotice}} <RouterLink :to="{path:'/admin-data/transfers',query:{underpassId:id}}">경찰·소방 문서 보기 →</RouterLink></p>
       <FacilityDetailTabs :id="id" :tab="tab" />
 <template v-if="facility">
