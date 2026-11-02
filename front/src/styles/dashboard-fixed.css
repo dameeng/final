@@ -233,7 +233,7 @@
   min-height: 0;
 }
 .wire-page.page-admin-dashboard .fixed-map .manager-map-stage {
-  height: clamp(640px,76dvh,900px);
+  height: clamp(720px,84dvh,1040px);
   max-height: none;
 }
 .wire-page.page-admin-dashboard .fixed-events {
@@ -292,7 +292,7 @@
   }
 }
 @container (min-width:601px) {
-  .page-admin-dashboard .manager-map-stage .manager-map-panel:has(>header button[aria-expanded="true"]) {
+  .page-admin-dashboard .manager-map-stage .manager-map-panel:has(.manager-detail-toggle[aria-expanded="true"]) {
     height: calc(100% - 24px);
   }
 }
@@ -363,4 +363,15 @@
   overflow-wrap: anywhere;
   font-size: 12px;
   line-height: 1.6;
+}
+
+/* Widget headings and actions must wrap when a saved widget is made narrower. */
+.page-admin-dashboard .restored-dashboard :is(.wg-head,.map-top,.extra-widget-title) {
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+.page-admin-dashboard .restored-dashboard :is(.wg-head,.map-top,.extra-widget-title) h2 {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }

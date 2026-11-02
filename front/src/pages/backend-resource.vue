@@ -3,6 +3,7 @@ import DisasterReportPreview from '../components/DisasterReportPreview.vue'
 import ListResultCount from '../components/ListResultCount.vue'
 import ResourceOverview from '../components/ResourceOverview.vue'
 import { resourceTableLayout } from '../utils/resource-table-layout'
+import '../styles/pages/ocr-log-table.css'
 import AppPagination from '../components/AppPagination.vue'
 import FacilityConfiguration from '../components/FacilityConfiguration.vue'
 import NotificationDetailView from '../components/NotificationDetailView.vue'
@@ -266,6 +267,9 @@ const visibleColumns = computed(() =>
     : resource.value.columns,
 )
 const tableLayout = computed(() => resourceTableLayout(resourceId.value, visibleColumns.value, hasRowActions.value))
+const tableColumnStyles = computed(() => tableLayout.value.widths.map(width => width ? {
+  width: resourceId.value === 'ocr' ? `${width / tableLayout.value.minWidth * 100}%` : `${width}px`,
+} : undefined))
 const pageTitle = computed(() =>
   customer.value && resourceId.value === 'notices'
     ? '공지사항'
@@ -1390,12 +1394,12 @@ defineExpose({ open, load })
           <li v-if="!data.items.length" class="compact-notice-empty">등록된 공지사항이 없습니다.</li>
         </ul>
         <div v-else class="service-table-wrap">
-          <table class="service-table resource-list-table" :style="restored ? { minWidth: tableLayout.minWidth + 'px', tableLayout: 'fixed' } : undefined">
-            <colgroup v-if="restored"><col v-for="(width,index) in tableLayout.widths" :key="index" :style="width ? { width: width + 'px' } : undefined" /></colgroup>
+          <table class="service-table resource-list-table" :style="restored ? { minWidth: resourceId==='ocr' ? '0' : tableLayout.minWidth + 'px', tableLayout: 'fixed' } : undefined">
+            <colgroup v-if="restored"><col v-for="(style,index) in tableColumnStyles" :key="index" :style="style" /></colgroup>
             <thead>
               <tr>
-                <th v-for="([key,label],index) in visibleColumns" :key="key" :data-field="key" :style="restored ? { width: tableLayout.widths[index] ? tableLayout.widths[index] + 'px' : 'auto' } : undefined">{{label}}</th>
-                <th v-if="hasRowActions" class="resource-action-column" :style="restored ? { width: tableLayout.widths[tableLayout.widths.length - 1] + 'px' } : undefined">상세·처리</th>
+                <th v-for="([key,label],index) in visibleColumns" :key="key" :data-field="key" :style="restored ? tableColumnStyles[index] || { width: 'auto' } : undefined">{{label}}</th>
+                <th v-if="hasRowActions" class="resource-action-column" :style="restored ? tableColumnStyles[tableColumnStyles.length - 1] : undefined">상세·처리</th>
               </tr>
             </thead>
             <tbody>
@@ -1446,9 +1450,14 @@ defineExpose({ open, load })
                     v-else-if="key==='reviewDeadline'&&row.reviewStatus==='PENDING'&&(row[key]||row.reviewExpiresAt)"
                   >
                     <DeadlineTimer :deadline="row.reviewExpiresAt??row[key]" />
-                    <br />
-                    <small>{{display(row[key])}}</small>
+                    <time v-if="restored&&resourceId==='ocr'&&dateParts(row[key])" class="ocr-log-timestamp" :datetime="row[key]" :aria-label="displayDate(row[key])">
+                      <span>{{dateParts(row[key])!.date}}</span><span v-if="dateParts(row[key])!.time">{{dateParts(row[key])!.time}}</span>
+                    </time>
+                    <template v-else><br /><small>{{display(row[key])}}</small></template>
                   </template>
+                  <time v-else-if="restored&&resourceId==='ocr'&&['detectedAt','reviewDeadline'].includes(key)&&dateParts(row[key])" class="ocr-log-timestamp" :datetime="row[key]" :aria-label="displayDate(row[key])">
+                    <span>{{dateParts(row[key])!.date}}</span><span v-if="dateParts(row[key])!.time">{{dateParts(row[key])!.time}}</span>
+                  </time>
                   <template v-else-if="restored&&resourceId==='customers'&&key==='name'">
                     <button type="button" class="notice-title-button" @click="open('detail',row)">
                       {{row.name}}
@@ -1458,7 +1467,7 @@ defineExpose({ open, load })
                     {{key==='imagePath'?'이미지 없음':displayField(key,row[key])}}
                   </template>
                 </td>
-                <td v-if="hasRowActions" class="resource-action-column">
+                <td v-if="hasRowActions" class="resource-action-column" :data-label="resourceId==='ocr'?'상세·처리':undefined">
                   <div class="service-actions">
                     <button v-if="resourceId==='transits'&&row.status==='REMAINING'&&canWrite" type="button" @click="remainingTransfer?.open(row)">소방 이관 PDF</button>
                     <button

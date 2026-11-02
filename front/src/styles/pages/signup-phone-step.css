@@ -1,0 +1,9 @@
+/* Keep the phone check and next action together only on customer SMS signup. */
+#app .auth-service .signup-form.signup-phone-step .auth-field-group {
+  margin: 0;
+  padding-bottom: 0;
+}
+
+#app .auth-service .signup-form.signup-phone-step .auth-buttons {
+  margin-top: 12px;
+}

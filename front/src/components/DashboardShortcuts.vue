@@ -18,7 +18,7 @@ function drop(event:DragEvent,before:string){event.preventDefault();shortcuts.dr
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path :d="shortcut.icon" /></svg>
         </span>
         <span class="dashboard-shortcut-label">{{ shortcut.label }}</span>
-        <svg class="dashboard-shortcut-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" /></svg>
+        <svg class="dashboard-shortcut-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 4v7a4 4 0 0 1-4 4H4m5-5-5 5 5 5" /></svg>
       </a></RouterLink>
       <div v-if="shortcuts.editing" class="dashboard-shortcut-tools">
         <button type="button" :disabled="index===0" :aria-label="shortcut.label+' 앞으로 이동'" @click="shortcuts.move(shortcut.to,-1)">←</button>
