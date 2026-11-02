@@ -18,6 +18,9 @@ BEGIN;
 --              · 세로형 pm_sensor 폐지 → 설비 종류별 센서 테이블 4개(pm_sensor_cctv/_pump/_display/_water_level)
 --              · pm_score 에 level/reasons/detail/model_version + (설비, 시각) 중복 금지, pm_event 에 trigger_type(위험진입/급상승/미수신)
 --              · manager_device_token(관리자 푸시 토큰) 추가
+-- v13 변경 요약: 예전 패치 파일을 이 DDL 에 합침 — 새 DB 는 1~4 번만 순서대로 실행하면 된다(별도 ALTER 파일 없음)
+--              · 6.pm_manual_event_v13: pm_trigger_type 에 '수동등록' 추가, chk_pm_event_trigger 완화, uq_pm_event_open_manual 추가
+--              · 5.alert_camera_id_v12: alert.camera_id + fk_alert_camera + idx_alert_camera_time (이미 이 DDL 에 있었음)
 -- ⚠️ 개발 DB 전용. public 스키마를 통째로 지우므로 되돌릴 수 없음. 운영 DB 실행 금지.
 -- 실행 순서: 스키마 리셋 → ENUM → 테이블 → CHECK → FK/인덱스 → 필수 기준행
 -- 약어 사전: cam(카메라) num(번호) addr(주소) dist(거리) lat/lng(위경도) ctrl(통제) pm(예지보전) recog(인식)
@@ -49,7 +52,7 @@ CREATE TYPE display_category AS ENUM ('SAFE', 'WATCH', 'CAUTION', 'BLOCK', 'RELE
 CREATE TYPE pm_equipment_type AS ENUM ('CCTV', 'DISPLAY', 'PUMP', 'WATER_LEVEL', 'ROAD'); -- 예지보전 설비 종류(CCTV/전광판/배수펌프/수위센서)
 CREATE TYPE pm_event_status AS ENUM ('CHECK_NEEDED', 'IN_PROGRESS', 'RESOLVED', 'ETC'); -- 예지보전 처리 상태(확인필요/점검중/조치완료/기타)
 CREATE TYPE pm_action_kind AS ENUM ('START', 'RECORD', 'RESOLVED', 'ETC'); -- 예지보전 조치 기록 종류(점검 시작/기록 추가/조치 완료/기타 종료)
-CREATE TYPE pm_trigger_type AS ENUM ('위험진입', '급상승', '미수신', '싱크홀탐지'); -- 예지보전 이벤트 발생 이유(점수가 위험 임계치 넘음/짧은 시간에 점수 급상승/센서 데이터 끊김, '싱크홀탐지')
+CREATE TYPE pm_trigger_type AS ENUM ('위험진입', '급상승', '미수신', '싱크홀탐지', '수동등록'); -- 예지보전 이벤트 발생 이유(점수가 위험 임계치 넘음/짧은 시간에 점수 급상승/센서 데이터 끊김, '싱크홀탐지', 관리자가 직접 등록한 '수동등록')
 CREATE TYPE inquiry_status AS ENUM ('PENDING', 'ANSWERED'); -- 접수의견 답변 여부(대기/답변완료)
 CREATE TYPE customer_notification_category AS ENUM ('RISK', 'NOTICE', 'INQUIRY'); -- 고객 알림 분류(위험/공지/문의)
 CREATE TYPE manager_notification_category AS ENUM ('RISK', 'EQUIPMENT', 'TASK', 'SYSTEM'); -- 관리자 알림 분류(위험/설비/업무/시스템)
@@ -587,7 +590,7 @@ CREATE TABLE pm_threshold_history ( -- 예지보전 임계치 변경 이력 테�
 CREATE TABLE pm_event ( -- 예지보전 이벤트 테이블(점검 목록 역할, 상태로 처리 진행 관리)
     id BIGSERIAL PRIMARY KEY, -- 아이디
     equip_id BIGINT NOT NULL, -- 설비 아이디
-    trigger_type pm_trigger_type NOT NULL, -- 발생 이유(위험진입/급상승/미수신)
+    trigger_type pm_trigger_type NOT NULL, -- 발생 이유(위험진입/급상승/미수신/싱크홀탐지/수동등록)
     level pm_level, -- 넘은 임계치 단계(미수신이면 NULL)
     score DECIMAL(5,2), -- 이벤트 발생 시점 점수(미수신이면 NULL)
     status pm_event_status NOT NULL DEFAULT 'CHECK_NEEDED', -- 처리 상태
@@ -743,10 +746,10 @@ ALTER TABLE pm_equipment
 ADD CONSTRAINT chk_pm_equipment_interval
 CHECK ((type = 'ROAD' AND sensor_interval_sec IS NULL) OR (type <> 'ROAD' AND sensor_interval_sec > 0 AND sensor_interval_sec IS NOT NULL));
 
--- 미수신·싱크홀탐지 이벤트는 점수·단계가 없을 수 있음
+-- 미수신·싱크홀탐지·수동등록 이벤트는 점수·단계가 없을 수 있음
 ALTER TABLE pm_event
 ADD CONSTRAINT chk_pm_event_trigger
-CHECK (trigger_type IN ('미수신', '싱크홀탐지') OR (score IS NOT NULL AND level IS NOT NULL));
+CHECK (trigger_type IN ('미수신', '싱크홀탐지', '수동등록') OR (score IS NOT NULL AND level IS NOT NULL));
 
 ALTER TABLE inquiry
 ADD CONSTRAINT chk_inquiry_author
@@ -980,6 +983,9 @@ CREATE INDEX IF NOT EXISTS idx_pm_road_result_latest ON pm_road_result(equip_id,
 CREATE INDEX IF NOT EXISTS idx_pm_road_result_event ON pm_road_result(event_id);
 CREATE UNIQUE INDEX IF NOT EXISTS uq_pm_event_open_sinkhole ON pm_event(equip_id)
     WHERE trigger_type = '싱크홀탐지' AND status IN ('CHECK_NEEDED', 'IN_PROGRESS');
+-- 같은 설비의 처리 안 끝난 수동등록 이벤트는 1건만 (동시 클릭 방지)
+CREATE UNIQUE INDEX IF NOT EXISTS uq_pm_event_open_manual ON pm_event (equip_id)
+    WHERE trigger_type = '수동등록' AND status IN ('CHECK_NEEDED', 'IN_PROGRESS');
 
 -- v11: 예지보전 센서 stub 설비별 정상/이상 모드
 -- 기존 v10 DB에 한 번 적용. 재실행 가능. 과거 센서/점수/점검 기록은 보존한다.
@@ -989,6 +995,6 @@ CREATE TABLE IF NOT EXISTS pm_stub_mode (
     changed_at TIMESTAMP NOT NULL DEFAULT LOCALTIMESTAMP
 );
 
--- v12: 개인화 알림(alert)에 인식 카메라(camera_id) 추가 — 기존 DB 는 5.alert_camera_id_v12.sql 로 반영
+-- v12: 개인화 알림(alert)에 인식 카메라(camera_id) 추가 — 위 alert 테이블/FK/인덱스에 이미 반영됨 (새 DB 는 별도 파일 불필요)
 
 COMMIT;

@@ -73,16 +73,16 @@ public class MyAlertItem {
     }
 
     private String baseMessageText() {
-        String why = (reason == null || reason.isBlank()) ? "" : " 사유: " + reason + ".";
+        String why = (reason == null || reason.isBlank()) ? "" : " (사유: " + reason + ")";
         if (alertType == AlertType.PREDICTIVE) {
             if (blocked) {
-                return String.format("[긴급재난문자] %s 접근 차량이 감지되었습니다. 현재 통제 중인 구간입니다.%s 차량번호 %s, 우회하세요.",
-                        underpassName, why, carNum);
+                return String.format("[긴급재난문자] %s 접근 중입니다(차량 %s). 현재 통제 중이니 안전하게 감속 후 우회해 주세요.%s",
+                        underpassName, carNum, why);
             }
-            return String.format("[긴급재난문자] %s 접근 차량이 감지되었습니다. 차량번호 %s, 현재 위험 단계이니 우회를 권장합니다.",
+            return String.format("[긴급재난문자] %s 접근 중입니다(차량 %s). 현재 침수 위험이 높아 우회를 권장합니다.",
                     underpassName, carNum);
         }
-        return String.format("[긴급재난문자] %s 진입 직전입니다. 현재 통제 중인 구간이니 즉시 정차 후 우회하세요.%s (차량번호 %s)",
-                underpassName, why, carNum);
+        return String.format("[긴급재난문자] %s 진입 직전입니다(차량 %s). 현재 통제 중이니 안전하게 감속 후 우회해 주세요.%s",
+                underpassName, carNum, why);
     }
 }
