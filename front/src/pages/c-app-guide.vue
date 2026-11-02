@@ -82,7 +82,7 @@ const steps = computed(() =>
         >
         <div class="app-guide-floating-note"
           ><span class="app-guide-status-dot"></span><span class="app-guide-promo-idle">이동 전 확인하는 작은 습관</span><span class="app-guide-promo-alert">필요한 순간, 안전 알림 도착</span></div
-        ><div class="app-guide-phone" aria-label="ROUTEL 앱 화면 예시"
+        ><div class="app-guide-phone" aria-label="ROUTEL 앱 화면"
           ><div class="app-guide-phone-notch"></div
           ><div class="app-guide-phone-top"
             ><b>ROUTEL<span>●</span></b
@@ -103,7 +103,7 @@ const steps = computed(() =>
             ><svg
               viewBox="0 0 280 280"
               role="img"
-              aria-label="지하차도 위치를 보여주는 앱 화면 예시"
+              aria-label="지하차도 위치를 보여주는 앱 화면"
             >
               <rect width="280" height="280" fill="#edf2f7" />
               <path
@@ -145,7 +145,7 @@ const steps = computed(() =>
           ><div class="app-guide-phone-nav"
             ><span class="active">현황</span><span>알림</span><span>내 정보</span></div
           ></div
-        ><div class="app-guide-preview-footer"><p class="app-guide-preview-caption">안전 알림 수신 과정 · 앱 화면 예시</p><button type="button" class="app-guide-promo-control" :aria-label="promoPaused?'홍보 애니메이션 재생':'홍보 애니메이션 일시정지'" :aria-pressed="promoPaused" @click="promoPaused=!promoPaused">{{promoPaused?'▶ 재생':'Ⅱ 일시정지'}}</button></div></div
+        ><div class="app-guide-preview-footer"><p class="app-guide-preview-caption">안전 알림 수신 과정 · 앱 화면 안내</p><button type="button" class="app-guide-promo-control" :aria-label="promoPaused?'홍보 애니메이션 재생':'홍보 애니메이션 일시정지'" :aria-pressed="promoPaused" @click="promoPaused=!promoPaused">{{promoPaused?'▶ 재생':'Ⅱ 일시정지'}}</button></div></div
       >
     </section>
   <section class="app-guide-feature-section" aria-labelledby="app-features-title"

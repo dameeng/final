@@ -495,7 +495,7 @@ async function resend() {
           ><h2>휴대전화 본인인증</h2><p>회원가입에 사용할 인증 방식을 선택해 주세요.</p
           ><div role="group" aria-label="회원가입 인증 방식"
             ><button type="button" :aria-pressed="passMode" @click="passMode=true"
-              >PASS 인증 <small>시연</small></button
+              >PASS 인증</button
             ><button type="button" :aria-pressed="!passMode" @click="passMode=false"
               >문자 인증</button
             ></div

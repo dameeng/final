@@ -22,18 +22,26 @@ const observation = computed(() => {
 })
 let parent: HTMLElement | null = null,
   request: AbortController | undefined
+let loadedLocation = '', pendingLocation = ''
 async function refresh() {
+  const key = `${location.value.lat},${location.value.lng}`
+  if (loading.value && pendingLocation === key) return
   request?.abort()
-  error.value = ''
+  if (loadedLocation !== key || !weather.value) error.value = ''
 
   const controller = new AbortController()
   request = controller
+  pendingLocation = key
   loading.value = true
-  weather.value = null
+  if (loadedLocation !== key) weather.value = null
   const timeout = setTimeout(() => controller.abort(), 15000)
   try {
     const data = await getWeather(location.value.lat, location.value.lng, controller.signal)
-    if (!controller.signal.aborted) weather.value = data
+    if (!controller.signal.aborted) {
+      weather.value = data
+      loadedLocation = key
+      error.value = ''
+    }
   } catch (cause) {
     if (request === controller)
       error.value = controller.signal.aborted
@@ -85,8 +93,9 @@ onBeforeUnmount(() => {
           <UiIcon name="close" />
         </button>
       </header>
-      <p v-if="loading" role="status">날씨를 확인하고 있습니다.</p>
-      <div v-else-if="error" class="weather-error" role="status">
+      <p v-if="error&&weather" role="status">갱신 실패 · 이전 수신 날씨입니다. {{error}} <button type="button" @click="refresh">다시 불러오기</button></p>
+      <p v-if="loading&&!weather" role="status">날씨를 확인하고 있습니다.</p>
+      <div v-else-if="error&&!weather" class="weather-error" role="status">
         <p>{{error}}</p>
         <button type="button" @click="refresh">다시 불러오기</button>
       </div>
@@ -146,7 +155,7 @@ onBeforeUnmount(() => {
       </svg>
       <span>
         <strong>{{show(weather?.temperature,'°')}}</strong>
-        <small>{{loading?'조회 중':weather?.condition||'날씨'}}</small>
+        <small>{{loading&&!weather?'조회 중':weather?.condition||'날씨'}}</small>
       </span>
       <span class="map-weather-chevron" :class="{'is-open':opened}" aria-hidden="true"><svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m4 10 4-4 4 4" /></svg></span>
     </button>

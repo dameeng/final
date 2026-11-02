@@ -6,7 +6,7 @@ export function meeting(name: string, ctx: any) {
   const root = ctx.root as HTMLElement
   root.querySelectorAll('.bot-fab').forEach((e) => e.remove())
   const connection = root.querySelector('.conn>span:nth-of-type(2)')
-  if (connection) connection.textContent = '구성 예시 · 수신 정보 없음'
+  if (connection) connection.textContent = '수신 정보 없음'
   if (
     name === 'c-map' ||
     name === 'admin-dashboard' ||
@@ -15,7 +15,7 @@ export function meeting(name: string, ctx: any) {
   ) {
     const note = document.createElement('p')
     note.className = 'data-provenance'
-    note.textContent = '시설명: 부산 공개 자료 · 상태·수치: 구성 예시 · 지도: 위치 도식'
+    note.textContent = '시설명: 부산 공개 자료 · 상태·수치: 실시간 연동 전 · 지도: 위치 도식'
     root.querySelector('main,.wrap')?.prepend(note)
   }
   if (name === 'c-notice' && ctx.router.currentRoute.value.query.tab === 'faq')
@@ -204,7 +204,7 @@ async function mountLocationEditor(name: string, ctx: any) {
   const root = ctx.root as HTMLElement
   root.querySelectorAll('.bot-fab').forEach((e) => e.remove())
   const connection = root.querySelector('.conn>span:nth-of-type(2)')
-  if (connection) connection.textContent = '구성 예시 · 수신 정보 없음'
+  if (connection) connection.textContent = '수신 정보 없음'
   const address = root.querySelector<HTMLInputElement>(name === 'fac-new' ? '#a' : '#a-a'),
     lat = root.querySelector<HTMLInputElement>(name === 'fac-new' ? '#la' : '#a-la'),
     lng = root.querySelector<HTMLInputElement>(name === 'fac-new' ? '#lo' : '#a-lo')

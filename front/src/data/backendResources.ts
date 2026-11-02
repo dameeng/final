@@ -555,9 +555,9 @@ export const backendResources: Record<string, Resource> = {
     ],
     filters: [text('keyword', '질문·답변'), select('category', '분류', faqCategories)],
     fields: [
-      text('question', '질문', true),
+      { ...text('question', '질문', true), wide: true },
       area('answer', '답변', true),
-      select('category', '분류', faqCategories),
+      { ...select('category', '분류', faqCategories), wide: true },
     ],
     detail: true,
     create: true,

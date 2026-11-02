@@ -113,7 +113,7 @@ async function load(requested?: unknown) {
     const key = parts[index]
     if (result.status === 'fulfilled') {
       if (key === 0) summary.value = result.value
-      else if (key === 1) events.value = Array.isArray(result.value) ? result.value : []
+      else if (key === 1) events.value = Array.isArray(result.value) ? result.value.filter(event => event.kind !== 'ALERT') : []
       else if (key === 2) margins.value = Array.isArray(result.value) ? result.value : []
       else maintenanceTop.value = result.value
     } else error.value = result.reason.message

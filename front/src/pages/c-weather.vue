@@ -723,7 +723,7 @@ onBeforeUnmount(() => {
       <section class="weather-current">
         <h2>{{ selected }} 최근 관측 날씨</h2>
 
-        <p v-if="loading" role="status">조회 중…</p>
+        <p v-if="loading&&!weather" role="status">조회 중…</p>
         <p v-if="error" role="status">{{ error }}</p>
         <p v-if="weatherStale" role="status">갱신 실패 · 이전 수신 날씨입니다.</p>
         <svg

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>PUF 시연 컨트롤 (로컬)</title>
+<title>PUF 제어 도구 (로컬)</title>
 <style>
   :root{--bg:#f5f7fa;--card:#fff;--ink:#1f2937;--mut:#6b7280;--pri:#0f4c81;--line:#e5e9f0}
   body{font-family:system-ui,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;margin:0;background:var(--bg);color:var(--ink)}
@@ -31,9 +31,9 @@
 </head>
 <body>
 <main>
-  <h1>PUF 시연 컨트롤 (로컬)</h1>
-  <p class="muted">로컬 시연용 조종 페이지입니다. 실제 침수 서버(8001)·OCR 서버(8000)·예지보전 서버(8002)가 돌고 있는 상태에서,
-    <b>위험 단계 고정 · 호우 시나리오 · OCR 시작/종료 · 예지보전 위험 stub</b>을 버튼으로 조작합니다. 시연자 컴퓨터에서만 여세요.
+  <h1>PUF 제어 도구 (로컬)</h1>
+  <p class="muted">로컬 제어 페이지입니다. 실제 침수 서버(8001)·OCR 서버(8000)·예지보전 서버(8002)가 돌고 있는 상태에서,
+    <b>위험 단계 고정 · 호우 시나리오 · OCR 시작/종료 · 예지보전 위험 상태</b>를 버튼으로 조작합니다. 관리자 컴퓨터에서만 여세요.
     모든 조작은 <b>관리자(manager01) 로그인</b>이 필요합니다. <a href="/">고객 웹으로</a> · <a href="/admin-dashboard">관리자 대시보드로</a></p>
 
   <section>
@@ -139,7 +139,7 @@ $('logoutBtn').onclick = async () => { await api('POST', '/api/auth/logout', nul
 let rows = []
 async function loadLevels(quiet) {
   const j = await api('GET', '/api/demo/levels', null, quiet)
-  if (!j || !j.data) { if (!quiet) $('levels').textContent = '불러오지 못했습니다 (관리자 로그인 / puf.demo.enabled=true 확인)'; return }
+  if (!j || !j.data) { if (!quiet) $('levels').textContent = '불러오지 못했습니다 (관리자 로그인 또는 서버 설정 확인)'; return }
   rows = j.data; renderLevels()
 }
 function renderLevels() {
@@ -151,7 +151,7 @@ function renderLevels() {
       <div class="stat">위험점수 ${r.riskScore ?? '-'} · 수위 ${r.waterCm ?? '-'}cm · 통제 수위 ${r.blockCm}cm</div>
       <div>${LV.map(([k, n]) => `<button class="L-${k} ${r.pinnedLevel === k ? 'on' : ''}" data-set="${r.underpassId}:${k}">${n}</button>`).join('')}
         <button class="gray" data-rel="${r.underpassId}">고정 풀기</button>${r.status === 'BLOCKED' ? `<button class="L-SEVERE" data-unblock="${r.underpassId}">통제 해제</button>` : ''}</div>
-    </div>`).join('') || '<span class="muted">시연 대상 지하차도가 없습니다.</span>'
+    </div>`).join('') || '<span class="muted">대상 지하차도가 없습니다.</span>'
 }
 // 통제 해제: 응답이 PDF라서 JSON 파싱 없이 상태코드로 판단한다. 수위가 통제 기준 이상이면 409 (먼저 '안전' 등으로 낮출 것)
 async function unblock(id) {
@@ -237,7 +237,7 @@ function fillPmSelect() {
 }
 async function loadPm() {
   const id = $('pmUp').value
-  if (!id) { $('pmEquipments').textContent = '시연 대상 지하차도가 없습니다.'; return }
+  if (!id) { $('pmEquipments').textContent = '대상 지하차도가 없습니다.'; return }
   const j = await api('GET', '/api/pm/equipments?size=100&underpassId=' + id, null, true)
   const eq = list(j && j.data).filter((e) => e.type !== 'ROAD')
   $('pmEquipments').innerHTML = eq.map((e) => `<div class="row line"><span class="grow"><b>${esc(e.name)}</b>

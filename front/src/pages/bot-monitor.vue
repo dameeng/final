@@ -65,7 +65,7 @@ onBeforeUnmount(() => { disposed = true; version++; detailVersion++; clearInterv
       <p v-if="error" role="alert" class="service-error">{{error}}</p>
       <p v-if="busy&&!stats&&!logs" role="status">대화 기록을 불러오는 중입니다…</p>
       <template v-if="statistics">
-        <div class="chat-monitor-period" role="group" aria-label="조회 기간"><button v-for="n in [1,7,30]" :key="n" type="button" :aria-pressed="days===n" @click="days=n">{{n===1?'오늘':`최근 ${n}일`}}</button></div>
+        <div class="chat-monitor-period" role="group" aria-label="조회 기간"><button v-for="n in [1,7]" :key="n" type="button" :aria-pressed="days===n" @click="days=n">{{n===1?'오늘':`최근 ${n}일`}}</button></div>
         <template v-if="stats">
           <div class="chat-monitor-kpis"><article v-for="card in [['질문 수',stats.total],['답변 성공률',stats.successRate+'%'],['답변 못 한 질문',stats.unanswered],['대화 세션 수',stats.sessions]]" :key="card[0]"><small>{{card[0]}}</small><strong>{{card[1]}}</strong></article></div>
           <div class="chat-monitor-split">

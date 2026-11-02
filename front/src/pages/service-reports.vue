@@ -20,6 +20,9 @@ const route = useRoute(),
   rows = ref<any[]>([]),
   error = ref(''),
   loading = ref(false)
+const contentReady = ref(false)
+const refreshError = ref('')
+let loadedQuery = ''
 const regions = ref<any[]>([]),
   facilities = ref<any[]>([]),
   lookupAbort = new AbortController()
@@ -57,15 +60,25 @@ async function load() {
   abort?.abort()
   const current = new AbortController()
   abort = current
+  const query = JSON.stringify([report.value.path, values, app.account?.id, app.account?.role, app.account?.regions?.map(region=>region.id).sort()])
+  if (query !== loadedQuery) { contentReady.value = false; refreshError.value = '' }
   loading.value = true
   error.value = ''
   try {
     const result = await backend('/api/dashboard/' + report.value.path + queryString(values), {
       signal: current.signal,
     })
-    if (!current.signal.aborted) rows.value = Array.isArray(result) ? result : [result]
+    if (!current.signal.aborted) {
+      rows.value = Array.isArray(result) ? result : [result]
+      loadedQuery = query
+      contentReady.value = true
+      refreshError.value = ''
+    }
   } catch (e) {
-    if (!current.signal.aborted) error.value = (e as Error).message
+    if (!current.signal.aborted) {
+      if (contentReady.value) refreshError.value = (e as Error).message
+      else error.value = (e as Error).message
+    }
   } finally {
     if (!current.signal.aborted) loading.value = false
   }
@@ -119,9 +132,10 @@ onBeforeUnmount(() => {
       </form>
       <h2>{{report.title}}</h2>
       <p v-if="error" class="service-error" role="alert">{{error}}</p>
-      <p v-if="loading" role="status">조회 중입니다.</p>
+      <p v-if="refreshError" class="service-message" role="status">갱신 실패 · 이전 조회 결과입니다. {{refreshError}}</p>
+      <p v-if="loading&&!contentReady" role="status">조회 중입니다.</p>
       <svg
-        v-if="selected==='trend'&amp;&amp;rows.length"
+        v-if="contentReady&amp;&amp;selected==='trend'&amp;&amp;rows.length"
         viewBox="0 0 700 220"
         role="img"
         aria-label="평균 위험도 추이 (0~100점)"
@@ -150,8 +164,8 @@ onBeforeUnmount(() => {
         </text>
         <path :d="trendSeries.observedPath" fill="none" stroke="#2166a5" stroke-width="3" />
       </svg>
-      <ListResultCount v-if="!loading" :count="rows.length" />
-      <div v-if="!loading" class="service-table-wrap">
+      <ListResultCount v-if="contentReady" :count="rows.length" />
+      <div v-if="contentReady" class="service-table-wrap">
         <table class="service-table">
           <thead>
             <tr>
@@ -170,11 +184,11 @@ onBeforeUnmount(() => {
           </tbody>
         </table>
       </div>
-      <AppPagination v-if="route.path.startsWith('/admin-app/')&&!loading&&rows.length" :page="page" :pages="pages" @change="page=$event" />
-      <nav v-else-if="!loading && rows.length" class="service-pagination" aria-label="보고서 페이지">
-        <button :disabled="page===1" @click="page--">이전</button>
+      <AppPagination v-if="route.path.startsWith('/admin-app/')&&contentReady&&rows.length" :page="page" :pages="pages" :disabled="loading" @change="page=$event" />
+      <nav v-else-if="contentReady && rows.length" class="service-pagination" aria-label="보고서 페이지">
+        <button :disabled="loading||page===1" @click="page--">이전</button>
         <span>{{page}} / {{pages}} 페이지</span>
-        <button :disabled="page===pages" @click="page++">다음</button>
+        <button :disabled="loading||page===pages" @click="page++">다음</button>
       </nav>
     </section>
   </BackendLayout>

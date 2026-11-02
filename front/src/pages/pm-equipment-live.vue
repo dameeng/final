@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import ListResultCount from '../components/ListResultCount.vue'
 import AppPagination from '../components/AppPagination.vue'
+import '../styles/pages/pm-equipment-list-toolbar.css'
 import { adminPageTitle } from '../data/adminTitles'
 import { managerAppPath } from '../utils/manager-app-path'
 const appPath = (path: string) => managerAppPath(path, route.path)
@@ -231,7 +232,8 @@ function act(row: Equipment) {
         </RouterLink>
       </div>
 
-      <div v-if="route.path.startsWith('/admin-app/')" class="pm-filters">
+      <div class="pm-filters pm-equipment-list-toolbar">
+        <ListResultCount v-if="list" :count="list.totalItems" />
         <label class="pm-type">
           <select v-model="type" aria-label="종류">
             <option v-for="[value,label] in typeTabs" :key="value" :value="value">{{label}}</option>
@@ -241,7 +243,6 @@ function act(row: Equipment) {
       <div class="pm-results-viewport" :aria-busy="loading">
       <p v-if="error" role="alert" class="service-error">{{error}} <button @click="load">다시 시도</button></p>
       <p v-if="loading&&!list" role="status">설비 목록을 불러오는 중입니다.</p>
-      <ListResultCount v-if="list" :count="list.totalItems" />
       <p v-if="list&&!list.items.length" class="pm-empty">조건에 맞는 설비가 없어요.</p>
 
       <PmEquipmentCards v-if="route.path.startsWith('/admin-app/')&&list?.items.length" :items="list.items" />

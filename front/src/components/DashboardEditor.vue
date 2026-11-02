@@ -7,6 +7,7 @@ import DashboardOcr from './DashboardOcr.vue'
 import DashboardFacilityWidget from './DashboardFacilityWidget.vue'
 import JurisdictionContactList from './JurisdictionContactList.vue'
 import { shortcutGroups, useDashboardShortcuts } from '../stores/dashboardShortcuts'
+import { uiIconPaths } from '../utils/ui-icons'
 const props = defineProps<{ grid?: HTMLElement; margins?: {underpassId:number;underpassName:string;riskScore:number;margin:number}[] }>()
 const app = useApp()
 const shortcuts=useDashboardShortcuts(), libraryTab=ref<'widgets'|'shortcuts'>('widgets')
@@ -24,6 +25,20 @@ const catalog = [
   { id:'calendar', name:'캘린더' },
   { id:'contacts', name:'비상연락망', path:'/jurisdiction-contacts' },
 ]
+const widgetIcons:Record<string,string> = {
+  ocr:uiIconPaths.camera,
+  weather:'M8 10a5 5 0 1 1 9 3M12 1v2M4 4l2 2M20 4l-2 2M21 10h2M7 13a4 4 0 0 0 0 8h11a3 3 0 0 0 0-6h-1a5 5 0 0 0-10-2Z',
+  risk:uiIconPaths.chart,
+  summary:uiIconPaths.dashboard,
+  map:uiIconPaths.map,
+  events:'M5 7v3m0 4v3M7 5a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM7 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM7 19a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM11 5h10M11 12h7M11 19h10',
+  detail:uiIconPaths.document,
+  todo:uiIconPaths.tool,
+  top5:'M4 20h16M5 20v-6h4v6M10 20V5h4v15M15 20v-10h4v10',
+  'risk-top5':'M12 2 3 6v6c0 5 9 10 9 10s9-5 9-10V6ZM12 7v6M12 17h.01',
+  calendar:'M4 5h16v16H4ZM8 2v6M16 2v6M4 10h16M8 14h2M14 14h2M8 17h2',
+  contacts:uiIconPaths.user,
+}
 const descriptions:Record<string,string> = {
   ocr:'번호판 인식 현황과 기록', weather:'현재 기온과 날씨 정보', risk:'시설 위험도 변화 추이',
   summary:'주요 운영 수치 요약', map:'시설 위치와 실시간 상태', events:'최근 발생 이벤트',
@@ -182,7 +197,7 @@ onBeforeUnmount(()=>{if(shortcuts.editing)shortcuts.cancel();window.removeEventL
       <template v-if="libraryTab==='widgets'">
         <p class="board-library-description">선택한 위젯은 대시보드에 표시됩니다. 끌어서 배치할 수도 있어요.</p>
         <div v-for="item in catalog" :key="item.id" class="board-library-row" draggable="true" @dragstart="drag($event,item.id)">
-          <button :aria-pressed="enabled(item.id)" @click="toggle(item.id)"><span class="board-library-symbol" aria-hidden="true">▦</span><span class="board-library-copy"><strong>{{item.name}}</strong><small>{{descriptions[item.id]}}</small></span><span class="board-library-check" aria-hidden="true">{{enabled(item.id)?'✓':''}}</span></button>
+          <button :aria-pressed="enabled(item.id)" @click="toggle(item.id)"><span class="board-library-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path :d="widgetIcons[item.id]" /></svg></span><span class="board-library-copy"><strong>{{item.name}}</strong><small>{{descriptions[item.id]}}</small></span><span class="board-library-check" aria-hidden="true">{{enabled(item.id)?'✓':''}}</span></button>
         </div>
       </template>
       <template v-else>

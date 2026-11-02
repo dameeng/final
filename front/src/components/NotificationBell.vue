@@ -25,6 +25,7 @@ const app = useApp(),
   popup = ref<HTMLElement>(),
   position = ref({ top: '0px', left: '0px', width: '340px', maxHeight: '400px' })
 const manager = computed(() => app.account?.role === 'REGIONAL_ADMIN')
+const previewReady = ref(false)
 const notifications = computed(() =>
   manager.value
     ? {
@@ -39,6 +40,10 @@ const notifications = computed(() =>
       }
     : customerNotifications,
 )
+watch(() => [app.account?.id, app.account?.role], () => { previewReady.value = false })
+watch(() => notifications.value.loading, (loading, previous) => {
+  if (!loading && previous && !notifications.value.error) previewReady.value = true
+})
 const popupId = computed(() =>
   manager.value ? 'manager-notification-popup' : 'customer-notification-popup',
 )
@@ -202,14 +207,15 @@ onBeforeUnmount(() => {
           <UiIcon name="close" />
         </button>
         </header>
-        <div class="notification-popup-body">
+        <div class="notification-popup-body" :aria-busy="notifications.loading">
           <p v-if="actionError" role="alert">{{actionError}}</p>
-          <p v-if="notifications.loading" role="status">알림을 불러오는 중입니다.</p>
-          <div v-else-if="notifications.error" role="alert">
+          <p v-if="notifications.loading&&!previewReady&&!notifications.recent.length" role="status">알림을 불러오는 중입니다.</p>
+          <div v-if="notifications.error" :role="previewReady||notifications.recent.length?'status':'alert'">
+            <p v-if="previewReady||notifications.recent.length">갱신 실패 · 이전 조회 결과입니다.</p>
             <p>{{notifications.error}}</p>
             <button type="button" @click="notifications.refresh">다시 불러오기</button>
           </div>
-          <ul v-else-if="notifications.recent.length">
+          <ul v-if="notifications.recent.length">
             <li v-for="item in notifications.recent" :key="item.id" :class="{unread:!item.read,'notification-arrival-glow':notificationGlow.has('notification',item.id)}">
               <RouterLink :to="target(item)" custom v-slot="{href}">
                 <a :href="href" :aria-busy="openingId===item.id" @click="openNotification($event,item)">
@@ -223,7 +229,7 @@ onBeforeUnmount(() => {
               </RouterLink>
             </li>
           </ul>
-          <p v-else>새 알림이 없습니다.</p>
+          <p v-else-if="previewReady&&!notifications.error">새 알림이 없습니다.</p>
         </div>
         <footer>
           <RouterLink :to="historyPath" @click="close()">알림 내역 전체 보기 →</RouterLink>
