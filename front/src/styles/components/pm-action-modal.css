@@ -1,0 +1,55 @@
+/* Only the inspection action form, including its app page presentation. */
+:root .pm-action-modal.service-modal > form {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  gap: 16px;
+}
+
+:root .pm-action-modal .pm-action-field {
+  min-width: 0;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+:root .pm-action-modal .pm-action-field :is(select,textarea) {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--r-line,var(--line,#c9ced6));
+  border-radius: 9px;
+  background: var(--r-surface,var(--surface,#fff));
+  color: var(--r-ink,var(--foreground,#20252b));
+  font: inherit;
+  line-height: 22px;
+}
+
+:root .pm-action-modal .pm-action-field select {
+  height: 44px;
+  min-height: 44px;
+}
+
+:root .pm-action-modal .pm-action-field select:disabled {
+  background: var(--r-soft,var(--surface,#f5f7fa));
+  color: var(--r-muted,var(--ink-sub,#64748b));
+  opacity: 1;
+}
+
+:root .pm-action-modal .pm-action-field textarea {
+  min-height: 112px;
+  resize: vertical;
+}
+
+:root .pm-action-modal .pm-action-row {
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 12px;
+}
+
+@media (max-width:480px) {
+  :root .pm-action-modal .pm-action-row {
+    grid-template-columns: minmax(0,1fr);
+  }
+}

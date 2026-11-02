@@ -1,35 +1,41 @@
 <script setup lang="ts">
-import { ref, onBeforeUnmount } from 'vue'
+import { ref, nextTick, onBeforeUnmount } from 'vue'
 import { loadPostcode, type PostalAddress } from '../services/postcode'
 defineProps<{ disabled?: boolean }>()
 const emit = defineEmits<{ select: [address: PostalAddress] }>(),
-  dialog = ref<HTMLDialogElement>(),
+  dialog = ref<{ showModal(): void | Promise<void>; close(): void | Promise<void> }>(),
   host = ref<HTMLElement>(),
   loading = ref(false),
   error = ref('')
 let alive = true,
+  opened = false,
   request = 0,
   trigger: HTMLElement | null = null
-function close() {
-  request++
-  dialog.value?.close()
+async function close() {
+  if (!opened) return
+  opened = false
+  const ticket = ++request
   host.value?.replaceChildren()
   loading.value = false
-  trigger?.focus()
+  await dialog.value?.close()
+  if (alive && ticket === request) trigger?.focus()
 }
 async function open(event: MouseEvent) {
   trigger = event.currentTarget as HTMLElement
   error.value = ''
   loading.value = true
+  opened = true
   const ticket = ++request
-  dialog.value?.showModal()
   try {
+    await dialog.value?.showModal()
+    await nextTick()
+    if (!alive || ticket !== request || !host.value) return
     const Postcode = await loadPostcode()
     if (!alive || ticket !== request || !host.value) return
     new Postcode({
       width: '100%',
       height: '100%',
-      oncomplete: (data: any) => {
+      oncomplete: async (data: any) => {
         if (!alive || ticket !== request) return
         const address = String(
           data.roadAddress || data.autoRoadAddress || data.jibunAddress || data.address || '',
@@ -38,14 +44,13 @@ async function open(event: MouseEvent) {
           error.value = '주소를 선택해 주세요.'
           return
         }
-        close()
+        await close()
         emit('select', { zipcode: String(data.zonecode || ''), roadAddress: address })
-        queueMicrotask(() =>
-          trigger
-            ?.closest('form')
-            ?.querySelector<HTMLInputElement>('input[autocomplete="address-line2"]')
-            ?.focus(),
-        )
+        await nextTick()
+        trigger
+          ?.closest('form')
+          ?.querySelector<HTMLInputElement>('input[autocomplete="address-line2"]')
+          ?.focus()
       },
     }).embed(host.value)
     loading.value = false
@@ -84,4 +89,4 @@ onBeforeUnmount(() => {
     </WorkflowPage>
   </Teleport>
 </template>
-<style scoped src="../styles/components/postcode-search.css"></style>
+<style src="/src/styles/components/postcode-search.css"></style>

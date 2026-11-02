@@ -1,0 +1,103 @@
+/* Only the administrator OCR log: every field stays visible at the available width. */
+#app .admin-interface.admin-shell .service-workspace[data-resource=ocr] .service-table-wrap {
+  container: ocr-log-table / inline-size;
+}
+#app .admin-interface.admin-shell .service-workspace[data-resource=ocr] .resource-list-table :is(th,td) {
+  box-sizing: border-box;
+  padding: 12px 8px;
+  text-align: left;
+  vertical-align: middle;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 22px;
+}
+#app .admin-interface.admin-shell .service-workspace[data-resource=ocr] .resource-list-table th {
+  line-height: 20px;
+}
+#app .admin-interface.admin-shell .service-workspace[data-resource=ocr] .resource-list-table tbody td:not([colspan]) {
+  height: 92px;
+}
+#app .admin-interface.admin-shell .service-workspace[data-resource=ocr] .resource-list-table .resource-status {
+  box-sizing: border-box;
+  padding: 3px 6px;
+  font-size: 12px;
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+#app .admin-interface.admin-shell .service-workspace[data-resource=ocr] .ocr-log-timestamp {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  font-size: 13px;
+  line-height: 22px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+#app .admin-interface.admin-shell .service-workspace[data-resource=ocr] td[data-field=imagePath] img {
+  display: block;
+  width: 100%;
+  max-width: 180px;
+  height: 64px;
+  object-fit: contain;
+}
+#app .admin-interface.admin-shell .service-workspace[data-resource=ocr] .resource-action-column .service-actions {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+/* A narrow container cannot carry eleven readable columns. Keep the same rows,
+   labels, values and actions, and let the page grow vertically instead. */
+@container ocr-log-table (max-width: 1199px) {
+  #app .admin-interface.admin-shell .service-workspace[data-resource=ocr] .resource-list-table {
+    display: block;
+    width: 100%;
+  }
+  #app .admin-interface.admin-shell .service-workspace[data-resource=ocr] .resource-list-table :is(colgroup,thead) {
+    display: none;
+  }
+  #app .admin-interface.admin-shell .service-workspace[data-resource=ocr] .resource-list-table tbody {
+    display: block;
+  }
+  #app .admin-interface.admin-shell .service-workspace[data-resource=ocr] .resource-list-table tr {
+    display: grid;
+    grid-template-columns: repeat(2,minmax(0,1fr));
+    padding: 8px;
+    border-bottom: 1px solid var(--r-line);
+  }
+  #app .admin-interface.admin-shell .service-workspace[data-resource=ocr] .resource-list-table td {
+    display: grid;
+    grid-template-columns: 80px minmax(0,1fr);
+    align-items: center;
+    gap: 4px 12px;
+    width: auto;
+    min-width: 0;
+    border: 0;
+    padding: 8px;
+  }
+  #app .admin-interface.admin-shell .service-workspace[data-resource=ocr] .resource-list-table tbody td:not([colspan]) {
+    height: auto;
+  }
+  #app .admin-interface.admin-shell .service-workspace[data-resource=ocr] .resource-list-table td[data-label]::before {
+    content: attr(data-label);
+    color: var(--r-muted);
+    font-size: 12px;
+    font-weight: 600;
+  }
+  #app .admin-interface.admin-shell .service-workspace[data-resource=ocr] .resource-list-table td > * {
+    min-width: 0;
+    max-width: 100%;
+    justify-self: start;
+  }
+  #app .admin-interface.admin-shell .service-workspace[data-resource=ocr] td[data-field=reviewDeadline] .ocr-log-timestamp {
+    grid-column: 2;
+  }
+  #app .admin-interface.admin-shell .service-workspace[data-resource=ocr] td[colspan] {
+    display: block;
+    grid-column: 1 / -1;
+  }
+}
+@container ocr-log-table (max-width: 600px) {
+  #app .admin-interface.admin-shell .service-workspace[data-resource=ocr] .resource-list-table tr {
+    grid-template-columns: minmax(0,1fr);
+  }
+}

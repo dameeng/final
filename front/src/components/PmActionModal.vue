@@ -8,6 +8,7 @@
 import { computed, ref } from 'vue'
 import { backend } from '../services/backend'
 import { PM_EVENT_STATUS, PM_CLOSED_STATUS, pmLabel } from '../utils/pm-labels'
+import '../styles/components/pm-action-modal.css'
 
 type Target = { eventId: number; name?: string; status?: string; underpassName?: string }
 type Mode = 'start' | 'note' | 'resolve'

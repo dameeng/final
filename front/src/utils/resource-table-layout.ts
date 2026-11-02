@@ -15,10 +15,10 @@ const actionWidths: Record<string, number> = {
 }
 export function resourceTableLayout(resource: string, columns: [string, string][], actions: boolean) {
   const cameraWidths: Record<string, number> = { id: 112, cameraRole: 160, distanceM: 120 }
-  // OCR 인식 기록: 내용 길이에 맞춰 줄여 1440px 화면에서 가로 스크롤 없이 보이게 (카메라 'APPROACH · 226' 한 줄)
+  // OCR uses these as proportions, with dates on two lines and compact status fields.
   const ocrWidths: Record<string, number> = {
-    underpassName: 128, cameraId: 140, detectedNum: 112, imagePath: 196, correctedNum: 112, confidence: 80,
-    recognitionStatus: 104, reviewStatus: 100, reviewDeadline: 140, detectedAt: 140,
+    underpassName: 152, cameraId: 140, detectedNum: 112, imagePath: 172, correctedNum: 120, confidence: 72,
+    recognitionStatus: 108, reviewStatus: 88, reviewDeadline: 132, detectedAt: 120,
   }
   const alertWidths: Record<string, number> = {
     underpassName: 160, customerName: 100, carNum: 120, alertType: 120, pushStatus: 120, sentAt: 156,
@@ -28,7 +28,7 @@ export function resourceTableLayout(resource: string, columns: [string, string][
   }
   const own = resource === 'cameras' ? cameraWidths : resource === 'ocr' ? ocrWidths : resource === 'alerts' ? alertWidths : resource === 'transits' ? transitWidths : {}
   const widths = columns.map(([key]) => own[key] ?? fieldWidths[key] ?? (/At$/.test(key) ? 172 : undefined))
-  if (actions) widths.push(resource === 'ocr' ? 116 : actionWidths[resource] || 180)
+  if (actions) widths.push(resource === 'ocr' ? 104 : actionWidths[resource] || 180)
   const minWidth = widths.reduce<number>((sum, width) => sum + (width ?? 240), 0)
   return { widths, minWidth }
 }
