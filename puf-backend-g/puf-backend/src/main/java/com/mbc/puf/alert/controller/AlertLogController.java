@@ -40,7 +40,7 @@ public class AlertLogController {
     }
 
     @Operation(summary = "위험 알림 기록(알림 단위)",
-            description = "접근/최종 알림 1건 = 1행. 지역·지하차도를 안 주면 내 담당 지역 전체. channels 에 채널별 결과, pushStatus 에 푸시 수신 요약.")
+            description = "접근/진입 직전 알림 1건 = 1행. 지역·지하차도를 안 주면 내 담당 지역 전체. channels 에 채널별 결과, pushStatus 에 푸시 수신 요약.")
     @GetMapping
     public ApiResponse<PageResponse<AlertLogListItem>> alerts(
             @AuthenticationPrincipal LoginUser loginUser,

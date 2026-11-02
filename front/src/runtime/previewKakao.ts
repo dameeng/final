@@ -353,7 +353,7 @@ export async function mountPreviewKakao(
     status.hidden = !missing
     const provenance = parent.querySelector<HTMLElement>('.data-provenance')
     if (provenance)
-      provenance.textContent = '시설명: 부산 공개 자료 · 상태·수치: 구성 예시 · 지도: 카카오맵'
+      provenance.textContent = '시설명: 부산 공개 자료 · 상태·수치: 실시간 연동 전 · 지도: 카카오맵'
   } catch (error) {
     if (!disposed) {
       status.textContent =

@@ -1,0 +1,69 @@
+/* Neutral information panels use the existing card surface in both themes.
+   Keep canvas, table headings, charts, badges and control states independent. */
+#app .admin-interface :is(
+  .manager-web-assignment > section,
+  .manager-web-tools .manager-push-empty,
+  .manager-live-metrics,
+  .manager-risk-summary,
+  .pm-sensor-summary,
+  .pm-current-thresholds,
+  .pm-current-sensor,
+  .facility-settings-dimensions > div,
+  .configuration-embedded .configuration-threshold-card,
+  .configuration-summary,
+  .configuration-guide,
+  .restored-summary-overview,
+  .camera-stream-address,
+  .inquiry-original
+) {
+  background: var(--r-surface);
+}
+
+#app .admin-interface.admin-shell :is(.service-workspace,.pm-admin-tools,.chat-monitor)
+  :is(.service-filters,.chat-monitor-filters),
+#app .admin-interface :is(.manager-notification-filters,.notification-center-tools),
+#app .admin-interface.manager-app-shell :is(.service-filters,.pm-filter-card) {
+  background: var(--r-surface);
+  border-color: var(--r-line);
+}
+
+#app :is(.customer-shell,.customer-app-editorial) :is(
+  .service-filters,
+  .notification-center-tools
+),
+#app :is(.customer-shell,.customer-app-editorial) .customer-notification-center .notification-center-body,
+#app .customer-app-editorial .app-account-body .app-account-profile,
+#app .customer-shell .page-c-vision .vision-roadmap-note,
+#app .customer-shell .page-c-company .routel-company-direction,
+#app .customer-shell .home-premium .home-closing,
+#app :is(.customer-shell,.customer-app-editorial,.admin-interface) .notification-detail-header,
+#app :is(.customer-shell,.customer-app-editorial,.admin-interface) .faq-accordion .faq-inline-answer {
+  background: var(--r-surface);
+}
+
+/* Answers and expanded notices retain a boundary when their grey fill is gone. */
+#app :is(.customer-shell,.customer-app-editorial,.admin-interface) .faq-accordion .faq-inline-answer {
+  border: 1px solid var(--r-line);
+  border-left: 3px solid var(--r-accent);
+}
+
+#app :is(.customer-shell,.customer-app-editorial) :is(.notification-center-body,.home-closing) {
+  border: 1px solid var(--r-line);
+}
+
+#app .customer-shell .home-premium .home-closing {
+  padding: 28px 32px;
+}
+
+@media (max-width:600px) {
+  #app .customer-shell .home-premium .home-closing {
+    padding: 24px 20px;
+  }
+}
+
+/* The PASS notice can be inside the app page or a body-level native dialog. */
+:root .pass-signup-dialog .phone-lock-notice {
+  background: var(--r-surface,var(--surface,#fff));
+  border-color: var(--r-line,var(--line));
+  color: var(--r-muted,var(--ink-sub));
+}

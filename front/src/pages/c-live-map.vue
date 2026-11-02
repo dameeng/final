@@ -274,10 +274,10 @@ type Facility = {
   pendingReviewCount: number | null
 }
 const customerRoot = ref<HTMLElement>(),
-  expanded = ref(true),
   riskHistory = ref<Json[]>([]),
   riskForecast = ref<Json[]>([]),
-  forecastError = ref('')
+  forecastError = ref(''),
+  historyError = ref('')
 function defaultDistrict() {
   const districts = [...new Set(
     (app.account?.regions || []).map((region) => busanDistrict(region.name)).filter(Boolean),
@@ -351,6 +351,7 @@ function closeFacility() {
   riskHistory.value = []
   riskForecast.value = []
   forecastError.value = ''
+  historyError.value = ''
   infoWindow?.close()
 }
 function clearManagerSelection() {
@@ -980,18 +981,28 @@ async function fetchLatestRiskScore(id: string, signal: AbortSignal): Promise<Js
       `${API.underpasses}/${encodeURIComponent(id)}/risk-scores?hours=6&limit=500`,
       signal,
     )
+    if (!signal.aborted && selectedId.value === id)
+      riskHistory.value = Array.isArray(rows) ? rows.map(object) : []
     if (!Array.isArray(rows) || !rows.length) return null
-    if (!signal.aborted && selectedId.value === id) riskHistory.value = rows.map(object)
     // 서비스가 오름차순으로 반환하므로 마지막 원소가 최신입니다.
     return object(rows[rows.length - 1])
   } catch {
+    if (!props.manager && !props.mapOnly && !signal.aborted && selectedId.value === id)
+      historyError.value = riskHistory.value.length
+        ? '관측 정보를 갱신하지 못했습니다. 마지막으로 조회한 관측값을 표시합니다.'
+        : '관측 정보를 불러오지 못했습니다.'
     return null
   }
 }
 async function loadDetail(id: string) {
-  riskHistory.value = []
-  riskForecast.value = []
+  const keepDisplayed = !props.manager && !props.mapOnly && detail.value?.id === id
+  if (!keepDisplayed) {
+    riskHistory.value = []
+    riskForecast.value = []
+    detail.value = null
+  }
   forecastError.value = ''
+  historyError.value = ''
   detailAbort?.abort()
   detailAbort = new AbortController()
   const signal = detailAbort.signal
@@ -1001,7 +1012,6 @@ async function loadDetail(id: string) {
   const controller = detailAbort
   detailLoading.value = true
   detailError.value = ''
-  detail.value = null
   try {
     const [rawBody, latestRisk] = await Promise.all([
       request(`${API.underpasses}/${encodeURIComponent(id)}`, signal),
@@ -1073,7 +1083,6 @@ async function selectFacility(f: Facility) {
   if (appMap.value) sheetOpen.value = appDetail.value
   if (appMap.value) {
     sessionStorage.setItem('routel-app-facility', f.id)
-    if (appDetail.value) expanded.value = true
   }
   selectedId.value = f.id
   detail.value = null
@@ -1318,7 +1327,7 @@ const markerStyles = [
   { label: '안전', color: '#4f9f86', zIndex: 2 },
   { label: '미확인', color: '#8793a0', zIndex: 1 },
 ]
-const markerLegendStyles = ['안전', '주의', '관심', '위험', '통제'].map(
+const markerLegendStyles = ['안전', '관심', '주의', '위험', '통제'].map(
   (label) => markerStyles.find((style) => style.label === label)!,
 )
 function legendState(state: string) {
@@ -1870,7 +1879,11 @@ watch([regionId, district, query, statusFilter], () => {
   closeClusterPopup()
   clusterFacilityIds.value = []
 })
-watch(selected, async (facility) => {
+watch(() => {
+  const facility = selected.value
+  return facility ? JSON.stringify([facility.id, facility.latitude, facility.longitude, facility.name]) : ''
+}, async () => {
+  const facility = selected.value
   if (!facility || props.manager) return
   await nextTick()
   customerRoot.value?.dispatchEvent(
@@ -2131,59 +2144,44 @@ onBeforeUnmount(() => {
         >
     <button type="button" class="btn back-to-list" @click="closeFacility">목록으로</button>
     <div ref="detailRegion" class="det" tabindex="-1" aria-live="polite">
-          <div class="sub">{{formatTime(selected.updatedAt)}} 기준</div>
-     <div
-            ><h2 class="nm">{{selected.name}}</h2
-            ><div class="sub">{{selected.address||'주소 미제공'}}</div></div
-          >
-     <p v-if="detailLoading" class="sub">최신 상태를 조회 중입니다.</p
-          ><p v-if="detailError" role="alert">{{detailError}}</p>
-     <div class="detail-badges"
-            ><RiskLevelBadge :value="selected.riskLevel||selected.status" /><span
-              class="lvb"
-              >{{controlLabel(selected)}}</span
-            ></div
-          >
-     <div class="kv"
+          <header class="map-detail-heading">
+            <h2 class="nm">{{selected.name}}</h2>
+            <p class="sub map-detail-location">{{selected.address||'주소 미제공'}}</p>
+            <p class="sub map-detail-observed"><span>기준 시각</span><time :datetime="selected.updatedAt||undefined">{{formatTime(selected.updatedAt)}}</time></p>
+            <p class="map-detail-refresh" role="status">{{detailLoading?'최신 상태를 조회 중입니다.':detailError}}</p>
+          </header>
+     <dl class="map-detail-states">
+       <div><dt>위험 단계</dt><dd><RiskLevelBadge :value="selected.riskLevel||selected.status" /></dd></div>
+       <div><dt>통제 상태</dt><dd class="map-detail-control">{{controlLabel(selected)}}</dd></div>
+     </dl>
+     <div class="kv map-detail-metrics"
             ><div
               ><small>위험 점수</small
               ><strong
                 >{{selected.riskScore===null?'—':selected.riskScore.toFixed(1)+'점'}}</strong
               ></div
             ><div
-              ><small>통제 상태</small><strong>{{controlLabel(selected)}}</strong></div
-            ><div
               ><small>현재 수위</small
               ><strong
                 >{{selected.currentWaterCm==null?'—':selected.currentWaterCm+' cm'}}</strong
               ></div
-            ></div
-          >
-     <button
-            type="button"
-            class="btn"
-            :aria-expanded="expanded"
-            @click="expanded=!expanded"
-            >{{expanded?'상세 접기 ▴':'상세 펼치기 ▾'}}</button
-          >
-     <div v-show="expanded" class="detail-extended">
-            <div class="kv"
-              ><div
+            ><div
                 ><small>현재 강수량</small
                 ><strong>{{selected.rainfallMm===null?'—':selected.rainfallMm+' mm'}}</strong></div
               ><div
-                ><small>인근 날씨</small
+                ><small>{{compactWeather?.temperature==null&&compactWeather?.condition?'인근 날씨':'인근 기온'}}</small
                 ><strong
                   class="weather-value"
                   >{{weatherLoading?'조회 중':compactWeather?.temperature!=null?compactWeather.temperature+'°C':compactWeather?.condition||'—'}}</strong
                 ></div
               ></div
             >
-      <div class="route"
+     <div class="detail-extended">
+      <section class="route map-detail-trend" aria-label="위험도 추이"
               ><h2 class="trend-title">위험도 추이</h2
               ><svg
                 v-if="riskPoints||riskSeries.forecast"
-                viewBox="0 0 300 130"
+                viewBox="-8 -4 316 144"
                 class="risk-history-chart"
                 role="img"
                 aria-label="최근 관측 위험도 추이"
@@ -2203,8 +2201,8 @@ onBeforeUnmount(() => {
                   :key="tick.x"
                   :x="tick.x"
                   y="126"
-                  text-anchor="middle"
-                  font-size="9"
+                  :text-anchor="tick===riskSeries.ticks[0]?'start':tick===riskSeries.ticks[riskSeries.ticks.length-1]?'end':'middle'"
+                  font-size="11"
                   fill="currentColor"
                 >
                   {{tick.label}}
@@ -2244,21 +2242,25 @@ onBeforeUnmount(() => {
                   stroke-width="3"
                   stroke-dasharray="6 4"
                 />
-                <text x="0" y="15" font-size="10" fill="currentColor">100</text>
-                <text x="6" y="113" font-size="10" fill="currentColor">0</text></svg
+                <text x="14" y="15" text-anchor="end" font-size="11" fill="currentColor">100</text>
+                <text x="14" y="113" text-anchor="end" font-size="11" fill="currentColor">0</text></svg
               ><p
                 v-else
                 class="sub"
                 >{{detailLoading?'관측 정보를 조회 중입니다.':'표시할 관측 정보가 없습니다.'}}</p
-              ><p v-if="riskSeries.forecast" class="sub">실선: 관측 · 점선: 향후 3시간 예측</p
-              ><p v-if="riskSeries.carryPath" class="sub"
-                >엷은 점선: 최근 관측값을 현재까지 유지 (추가 관측 아님)</p
-              ><p v-if="forecastError" class="sub">{{forecastError}}</p></div
+              ><ul v-if="riskPoints||riskSeries.forecast" class="map-detail-chart-legend" aria-label="위험도 추이 범례">
+                <li v-if="riskSeries.observedPath"><span class="map-detail-line" aria-hidden="true"></span>실제 관측</li>
+                <li v-if="riskSeries.forecastPath"><span class="map-detail-line is-forecast" aria-hidden="true"></span>향후 3시간 예측</li>
+                <li v-if="riskSeries.carryPath"><span class="map-detail-line is-held" aria-hidden="true"></span>최근 관측값 유지</li>
+              </ul>
+              <p v-if="riskSeries.carryPath" class="sub map-detail-chart-note">관측값 유지 구간은 추가 관측이나 예측이 아닙니다.</p>
+              <p v-if="historyError" class="sub map-detail-chart-note" role="status">{{historyError}}</p>
+              <p v-if="forecastError" class="sub map-detail-chart-note">{{forecastError}}{{riskSeries.forecastPath?' 마지막으로 조회한 예측을 표시합니다.':''}}</p></section
             >
       <RouterLink v-if="appMap" :to="'/customer-app/screen-6?id='+selected.id"
               >상세 화면 보기 →</RouterLink
-            ><div class="sub app-guidance"
-              >시간대별 예보·길 안내는 <b>앱</b>에서 확인해요. <RouterLink to="/info/app-guide#install">앱 다운로드 →</RouterLink></div
+            ><footer class="sub app-guidance map-detail-footer"
+              >시간대별 예보·길 안내는 <b>앱</b>에서 확인해요. <RouterLink to="/info/app-guide#install">앱 다운로드 →</RouterLink></footer
             >
           </div>
         </div>
@@ -2484,3 +2486,4 @@ onBeforeUnmount(() => {
 </template>
 
 <style src="../styles/pages/c-live-map.css"></style>
+<style src="/src/styles/pages/map-facility-detail.css"></style>

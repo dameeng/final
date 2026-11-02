@@ -239,7 +239,7 @@ const viewerState = computed(() => {
         <p v-if="roadStatus?.error" role="alert">{{roadStatus.error}}</p>
         <p v-if="roadStatus?.springDelivery==='SENT'">Spring 저장 완료 · 장비 현황에서 분석 결과를 확인하세요.</p>
         <p v-else-if="roadStatus?.springDelivery==='PENDING'">분석 결과를 저장했으며 Spring 전송을 시도 중입니다.</p>
-        <p v-else>등록된 시연 영상을 한 번 재생하며 분석합니다. 226~229번 OCR과 독립적으로 실행됩니다.</p>
+        <p v-else>등록된 영상을 한 번 재생하며 분석합니다. 226~229번 OCR과 독립적으로 실행됩니다.</p>
         <RouterLink :to="roadEquipmentId?{path:'/pm-equipment-detail',query:{id:String(roadEquipmentId)}}:{path:'/pm-equipment',query:{type:'ROAD'}}">장비 현황 · 노면 결과 보기 →</RouterLink>
       </div>
       <div v-else-if="!compact" class="facility-ocr-column"><FacilityOcrLog :key="underpassId" :underpass-id="underpassId" :app="app" /></div>

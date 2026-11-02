@@ -42,7 +42,7 @@ const rows = computed(() => history.H.filter((row) => row.join(' ').includes(que
       </header>
       <main class="bd app-extra-body">
         <template v-if="section==='history'">
-          <p class="sub">구성 예시 · 실제 점검 기록 연동 전입니다.</p>
+          <p class="sub">실제 점검 기록 연동 전입니다.</p>
           <input
             v-model="query"
             type="search"

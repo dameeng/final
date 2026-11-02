@@ -3,6 +3,7 @@ import DisasterReportPreview from '../components/DisasterReportPreview.vue'
 import ListResultCount from '../components/ListResultCount.vue'
 import ResourceOverview from '../components/ResourceOverview.vue'
 import { resourceTableLayout } from '../utils/resource-table-layout'
+import '../styles/pages/ocr-log-table.css'
 import AppPagination from '../components/AppPagination.vue'
 import FacilityConfiguration from '../components/FacilityConfiguration.vue'
 import NotificationDetailView from '../components/NotificationDetailView.vue'
@@ -266,6 +267,9 @@ const visibleColumns = computed(() =>
     : resource.value.columns,
 )
 const tableLayout = computed(() => resourceTableLayout(resourceId.value, visibleColumns.value, hasRowActions.value))
+const tableColumnStyles = computed(() => tableLayout.value.widths.map(width => width ? {
+  width: resourceId.value === 'ocr' ? `${width / tableLayout.value.minWidth * 100}%` : `${width}px`,
+} : undefined))
 const pageTitle = computed(() =>
   customer.value && resourceId.value === 'notices'
     ? '공지사항'
@@ -389,6 +393,8 @@ const data = ref<PageData<Record<string, any>>>({
   }),
   page = ref(1),
   loading = ref(false),
+  contentReady = ref(false),
+  refreshError = ref(''),
   error = ref(''),
   message = ref(''),
   saving = ref(false),
@@ -401,6 +407,7 @@ const data = ref<PageData<Record<string, any>>>({
 let abort: AbortController | undefined,
   request = 0,
   alive = true
+let loadedQuery = ''
 function path(template: string, row = selected.value) {
   return template.replace(/\{(\w+)\}/g, (_, key) =>
     encodeURIComponent(
@@ -482,7 +489,7 @@ async function lookup(fields: Field[], row?: Record<string, any>) {
           value: String(item.id),
           label:
             field.source === 'vms'
-              ? `${item.name}${item.dummy ? ' (시연용)' : ''} · ${item.id}`
+              ? `${item.name} · ${item.id}`
               : item.name || item.content || `${item.cameraRole} · ${item.id}`,
         }))
         // 이관 문서는 담당 지하차도로 바로 진입하되, 문서 링크의 시설 선택은 유지한다.
@@ -506,6 +513,14 @@ async function load() {
   abort?.abort()
   abort = new AbortController()
   const seq = ++request
+  const query = JSON.stringify([
+    resourceId.value, path(resource.value.path), filters, parents, page.value, pageSize.value,
+    app.account?.id, app.account?.role, app.account?.regions?.map(region => region.id).sort(),
+  ])
+  if (query !== loadedQuery) {
+    contentReady.value = false
+    refreshError.value = ''
+  }
   loading.value = true
   error.value = ''
   try {
@@ -524,9 +539,15 @@ async function load() {
         page.value=Math.min(page.value,Math.max(1,totalPages))
         data.value={items:result.slice((page.value-1)*size,page.value*size),page:page.value,size,totalItems:result.length,totalPages}
       } else data.value = asPage(result, page.value, pageSize.value)
+      loadedQuery = query
+      contentReady.value = true
+      refreshError.value = ''
     }
   } catch (e) {
-    if (seq === request && !abort.signal.aborted) error.value = (e as Error).message
+    if (seq === request && !abort.signal.aborted) {
+      if (contentReady.value) refreshError.value = (e as Error).message
+      else error.value = (e as Error).message
+    }
   } finally {
     if (seq === request) loading.value = false
   }
@@ -925,6 +946,8 @@ watch(
       Object.keys(obj).forEach((key) => delete obj[key])
     facilitySearchRows.value=[]; facilitySearchOpen.value=false; facilitySearchIndex.value=-1
     page.value = 1
+    contentReady.value = false
+    loadedQuery = ''
     data.value = { items: [], page: 1, size: pageSize.value, totalItems: 0, totalPages: 0 }
     error.value = ''
     if (!resource.value) {
@@ -1294,6 +1317,7 @@ defineExpose({ open, load })
         {{error}} <RouterLink v-if="!app.account" :to="customer?'/login':'/admin-login'">로그인</RouterLink>
       </p>
       <p v-if="lookupError" class="service-error" role="alert">{{lookupError}} <button type="button" @click="retryLookup">다시 시도</button></p>
+      <p v-if="refreshError" class="service-message" role="status">갱신 실패 · 이전 조회 결과입니다. {{refreshError}}</p>
       <p v-if="message" class="service-message" role="status">{{message}} <RouterLink v-if="resourceId==='facilities'&&selected?.id&&mode==='action'&&/\/(block|release)$/.test(action?.path||'')" :to="{path:'/admin-data/transfers',query:{underpassId:String(selected.id)}}">경찰·소방 문서 보기 →</RouterLink></p>
       <div v-if="underpassSplit&&!parents.underpassId" class="configuration-pick-facility"><span aria-hidden="true"><UiIcon name="location" /></span><h2>관리할 지하차도를 선택하세요</h2><p>왼쪽 내 지하차도 목록에서 시설을 선택하면<br />해당 시설의 {{splitTargets[resourceId]}} 등록 현황과 설정을 확인할 수 있습니다.</p></div>
       <UnderpassVmsPanel
@@ -1304,8 +1328,8 @@ defineExpose({ open, load })
         :manageable="!!splitUnderpassName"
       />
       <p v-else-if="missingParent">위에서 {{resource.parents?.map(field=>field.label).join(' · ')}}를 선택하고 조회하세요.</p>
-      <p v-else-if="loading" role="status">불러오는 중입니다.</p>
-      <template v-else>
+      <p v-else-if="loading&&!contentReady" role="status">불러오는 중입니다.</p>
+      <template v-else-if="contentReady">
         <ResourceOverview v-if="restored && ((!props.embedded && !underpassSplit) || fixedCameraFacility)" :resource="resourceId" :items="data.items" :total="data.totalItems" />
       <section v-if="resourceId === 'managers' && !appPage" class="manager-directory-summary" aria-label="관리자 조회 현황">
         <div class="manager-directory-intro"><span class="manager-directory-symbol"><UiIcon name="user" /></span><div><span class="directory-eyebrow">TEAM MANAGEMENT</span><h2>함께 관리하는 우리 팀</h2><p>관리자별 담당 지역과 근무조를 확인하고 배정하세요.</p></div></div>
@@ -1390,12 +1414,12 @@ defineExpose({ open, load })
           <li v-if="!data.items.length" class="compact-notice-empty">등록된 공지사항이 없습니다.</li>
         </ul>
         <div v-else class="service-table-wrap">
-          <table class="service-table resource-list-table" :style="restored ? { minWidth: tableLayout.minWidth + 'px', tableLayout: 'fixed' } : undefined">
-            <colgroup v-if="restored"><col v-for="(width,index) in tableLayout.widths" :key="index" :style="width ? { width: width + 'px' } : undefined" /></colgroup>
+          <table class="service-table resource-list-table" :style="restored ? { minWidth: resourceId==='ocr' ? '0' : tableLayout.minWidth + 'px', tableLayout: 'fixed' } : undefined">
+            <colgroup v-if="restored"><col v-for="(style,index) in tableColumnStyles" :key="index" :style="style" /></colgroup>
             <thead>
               <tr>
-                <th v-for="([key,label],index) in visibleColumns" :key="key" :data-field="key" :style="restored ? { width: tableLayout.widths[index] ? tableLayout.widths[index] + 'px' : 'auto' } : undefined">{{label}}</th>
-                <th v-if="hasRowActions" class="resource-action-column" :style="restored ? { width: tableLayout.widths[tableLayout.widths.length - 1] + 'px' } : undefined">상세·처리</th>
+                <th v-for="([key,label],index) in visibleColumns" :key="key" :data-field="key" :style="restored ? tableColumnStyles[index] || { width: 'auto' } : undefined">{{label}}</th>
+                <th v-if="hasRowActions" class="resource-action-column" :style="restored ? tableColumnStyles[tableColumnStyles.length - 1] : undefined">상세·처리</th>
               </tr>
             </thead>
             <tbody>
@@ -1446,9 +1470,14 @@ defineExpose({ open, load })
                     v-else-if="key==='reviewDeadline'&&row.reviewStatus==='PENDING'&&(row[key]||row.reviewExpiresAt)"
                   >
                     <DeadlineTimer :deadline="row.reviewExpiresAt??row[key]" />
-                    <br />
-                    <small>{{display(row[key])}}</small>
+                    <time v-if="restored&&resourceId==='ocr'&&dateParts(row[key])" class="ocr-log-timestamp" :datetime="row[key]" :aria-label="displayDate(row[key])">
+                      <span>{{dateParts(row[key])!.date}}</span><span v-if="dateParts(row[key])!.time">{{dateParts(row[key])!.time}}</span>
+                    </time>
+                    <template v-else><br /><small>{{display(row[key])}}</small></template>
                   </template>
+                  <time v-else-if="restored&&resourceId==='ocr'&&['detectedAt','reviewDeadline'].includes(key)&&dateParts(row[key])" class="ocr-log-timestamp" :datetime="row[key]" :aria-label="displayDate(row[key])">
+                    <span>{{dateParts(row[key])!.date}}</span><span v-if="dateParts(row[key])!.time">{{dateParts(row[key])!.time}}</span>
+                  </time>
                   <template v-else-if="restored&&resourceId==='customers'&&key==='name'">
                     <button type="button" class="notice-title-button" @click="open('detail',row)">
                       {{row.name}}
@@ -1458,7 +1487,7 @@ defineExpose({ open, load })
                     {{key==='imagePath'?'이미지 없음':displayField(key,row[key])}}
                   </template>
                 </td>
-                <td v-if="hasRowActions" class="resource-action-column">
+                <td v-if="hasRowActions" class="resource-action-column" :data-label="resourceId==='ocr'?'상세·처리':undefined">
                   <div class="service-actions">
                     <button v-if="resourceId==='transits'&&row.status==='REMAINING'&&canWrite" type="button" @click="remainingTransfer?.open(row)">소방 이관 PDF</button>
                     <button

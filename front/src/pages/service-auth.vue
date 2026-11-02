@@ -20,6 +20,7 @@ import EmailInput from '../components/EmailInput.vue'
 import PhoneInput from '../components/PhoneInput.vue'
 import NationalitySelect from '../components/NationalitySelect.vue'
 import { formatPhone } from '../utils/phone'
+import '../styles/pages/signup-id-feedback.css'
 const app = useApp()
 import type { Field } from '../data/backendResources'
 const route = useRoute(),
@@ -178,6 +179,27 @@ const fields = computed<Field[]>(() =>
 const duplicateMessage = reactive<Record<string, string>>({}),
   checked = reactive<Record<string, string>>({}),
   checking = ref('')
+const phoneDuplicateRequired = computed(
+    () => !manager.value && kind.value === 'signup' && step.value === 1 && !passMode.value,
+  ),
+  phoneDuplicateConfirmed = computed(
+    () => !!String(values.phone || '').trim() && checked.phone === String(values.phone || '').trim(),
+  )
+const phoneDuplicateHint = '휴대전화 중복 확인을 완료해 주세요.'
+let phoneCheckRevision = 0
+let loginIdCheckRevision = 0
+watch(() => values.loginId, () => {
+  if (manager.value || kind.value !== 'signup') return
+  loginIdCheckRevision += 1
+  duplicateMessage.loginId = ''
+}, { flush: 'sync' })
+watch(() => values.phone, () => {
+  if (manager.value || kind.value !== 'signup') return
+  phoneCheckRevision += 1
+  delete checked.phone
+  duplicateMessage.phone = ''
+  if (error.value === phoneDuplicateHint) error.value = ''
+}, { flush: 'sync' })
 const fieldGroups = computed(() =>
   kind.value === 'signup' && step.value === 3
     ? [
@@ -194,6 +216,7 @@ const fieldGroups = computed(() =>
 )
 async function ensureUnique(field: string) {
   const value = String(values[field] || '').trim()
+  const phoneRevision = phoneCheckRevision
   if (!value) return
   if (checked[field] === value) return
   const result = await backend(
@@ -201,6 +224,7 @@ async function ensureUnique(field: string) {
       (field === 'loginId' ? 'login-id' : field) +
       queryString({ [field]: value }),
   )
+  if (field === 'phone' && phoneRevision !== phoneCheckRevision) return
   if (!result.available) {
     duplicateMessage[field] = '\uc774\ubbf8 \uc0ac\uc6a9 \uc911\uc785\ub2c8\ub2e4.'
     throw new Error(
@@ -216,12 +240,15 @@ async function ensureUnique(field: string) {
   duplicateMessage[field] = '\uc0ac\uc6a9 \uac00\ub2a5\ud569\ub2c8\ub2e4.'
 }
 async function checkDuplicate(field: string) {
+  const phoneRevision = phoneCheckRevision
   checking.value = field
   duplicateMessage[field] = ''
+  if (field === 'phone' && error.value === phoneDuplicateHint) error.value = ''
   try {
     await ensureUnique(field)
   } catch (e) {
-    duplicateMessage[field] = (e as Error).message
+    if (field !== 'phone' || phoneRevision === phoneCheckRevision)
+      duplicateMessage[field] = (e as Error).message
   } finally {
     checking.value = ''
   }
@@ -251,6 +278,10 @@ async function submit() {
     error.value = ''
     message.value = ''
     passOpen.value = true
+    return
+  }
+  if (phoneDuplicateRequired.value && (!phoneDuplicateConfirmed.value || !!checking.value)) {
+    error.value = phoneDuplicateHint
     return
   }
   refreshTimers()
@@ -389,14 +420,29 @@ async function submit() {
   }
 }
 async function checkId() {
+  const inlineFeedback = !manager.value && kind.value === 'signup'
+  if (inlineFeedback && checking.value) return
+  const revision = loginIdCheckRevision
   error.value = ''
+  if (inlineFeedback) {
+    message.value = ''
+    duplicateMessage.loginId = ''
+    checking.value = 'loginId'
+  }
   try {
     const result = await backend(
       base.value + '/check-login-id' + queryString({ loginId: values.loginId }),
     )
-    message.value = result.available ? '사용 가능한 아이디입니다.' : '이미 사용 중인 아이디입니다.'
+    const feedback = result.available ? '사용 가능한 아이디입니다.' : '이미 사용 중인 아이디입니다.'
+    if (inlineFeedback) {
+      if (revision === loginIdCheckRevision) duplicateMessage.loginId = feedback
+    } else message.value = feedback
   } catch (e) {
-    error.value = (e as Error).message
+    if (inlineFeedback) {
+      if (revision === loginIdCheckRevision) duplicateMessage.loginId = (e as Error).message
+    } else error.value = (e as Error).message
+  } finally {
+    if (inlineFeedback) checking.value = ''
   }
 }
 async function resend() {
@@ -444,12 +490,12 @@ async function resend() {
       ><p v-if="kind!=='login'&&step<4">{{step}} / 3단계</p
       ><p v-if="error" class="service-error" role="alert">{{error}}</p
       ><p v-if="message" class="service-message" role="status">{{message}}</p
-      ><form v-if="step<4" :class="{'signup-form':kind==='signup','login-form':kind==='login'}" @invalid.capture="focusInvalid" @submit.prevent="submit"
+      ><form v-if="step<4" :class="{'signup-form':kind==='signup','login-form':kind==='login','signup-phone-step':phoneDuplicateRequired}" @invalid.capture="focusInvalid" @submit.prevent="submit"
         ><section v-if="mobilePassSignup&&step===1" class="signup-verification-choice"
           ><h2>휴대전화 본인인증</h2><p>회원가입에 사용할 인증 방식을 선택해 주세요.</p
           ><div role="group" aria-label="회원가입 인증 방식"
             ><button type="button" :aria-pressed="passMode" @click="passMode=true"
-              >PASS 인증 <small>시연</small></button
+              >PASS 인증</button
             ><button type="button" :aria-pressed="!passMode" @click="passMode=false"
               >문자 인증</button
             ></div
@@ -520,6 +566,7 @@ async function resend() {
                 :aria-label="field.label"
                 :type="/password/i.test(field.key)?'password':field.type||'text'"
                 :required="field.required"
+                :aria-describedby="!manager&&kind==='signup'&&field.key==='loginId'&&duplicateMessage.loginId?'signup-login-id-feedback':undefined"
                 :autocomplete="field.key==='password'?(kind==='login'?'current-password':'new-password'):field.key==='detailAddress'?'address-line2':undefined"
                 :disabled="busy"
                 :maxlength="field.key==='code'?10:100"
@@ -527,9 +574,15 @@ async function resend() {
               /><button
                 v-if="kind==='signup'&&step===3&&field.key==='loginId'"
                 type="button"
-                :disabled="busy||!values.loginId"
+                :disabled="busy||!values.loginId||(!manager&&!!checking)"
                 @click="checkId"
-                >중복 확인</button
+                >{{!manager&&checking==='loginId'?'확인 중…':'중복 확인'}}</button
+              ><small
+                v-if="!manager&&kind==='signup'&&field.key==='loginId'&&duplicateMessage.loginId"
+                id="signup-login-id-feedback"
+                class="signup-id-feedback"
+                role="status"
+                >{{duplicateMessage.loginId}}</small
               ><PostcodeSearch
                 v-if="field.key==='zipcode'"
                 :disabled="busy"
@@ -577,7 +630,7 @@ async function resend() {
         ><div class="auth-buttons"
           ><button
             type="submit"
-            :disabled="busy||timerExpired"
+            :disabled="busy||timerExpired||(phoneDuplicateRequired&&(!phoneDuplicateConfirmed||!!checking))"
             >{{busy?'처리 중…':mobilePassSignup&&passMode?(step===1?'PASS로 본인인증':step===3?'가입 신청':'다음'):kind==='login'?'로그인':step===3?(kind==='signup'?'가입 신청':'비밀번호 변경'):'다음'}}</button
           ></div
         ></form
@@ -609,3 +662,5 @@ async function resend() {
 <style scoped src="../styles/pages/service-auth.css"></style>
 
 <style scoped src="../styles/pages/service-auth-2.css"></style>
+
+<style scoped src="/src/styles/pages/signup-phone-step.css"></style>

@@ -29,26 +29,27 @@
 }
 .restored-summary-drawer .facility-summary-groups { display:grid; gap:12px; margin:12px 0; }
 #app dialog.restored-summary-drawer>form>header { margin-bottom:18px; padding-bottom:16px; border-bottom:1px solid var(--r-line,#dce7f2); }
+#app dialog.restored-summary-drawer:has(.facility-summary-groups)>form>header h2 { font-size:18px; line-height:26px; font-weight:600; }
 #app dialog.restored-summary-drawer .facility-drawer-close { display:grid; place-items:center; width:36px; min-width:36px; height:36px; min-height:36px; padding:0; border:0; border-radius:8px; background:var(--r-soft,#f5f8fc); }
 .restored-summary-drawer .restored-summary-overview { display:flex; align-items:center; justify-content:space-between; gap:16px; margin:0 0 8px; padding:16px 18px; border-radius:12px; background:var(--r-soft,#f5f8fc); }
 .facility-risk-score { display:grid; gap:4px; }
-.facility-risk-score>span { color:var(--r-muted,#5c738b); font-size:13px; line-height:20px; }
-.facility-risk-score strong { font-size:28px; line-height:36px; font-weight:600; letter-spacing:-.025em; }
-.facility-risk-score strong small { margin-left:4px; font-size:14px; font-weight:500; }
+.facility-risk-score>span { color:var(--r-muted,#5c738b); font-size:14px; line-height:22px; }
+.facility-risk-score strong { font-size:26px; line-height:34px; font-weight:500; letter-spacing:-.025em; }
+.facility-risk-score strong small { margin-left:4px; font-size:13px; font-weight:400; }
 .facility-risk-state { display:grid; justify-items:end; gap:8px; font-size:14px; line-height:20px; }
 .facility-risk-state :deep(.risk-level-badge) { font-size:13px; }
 .restored-summary-drawer .facility-summary-groups { gap:0; margin:12px 0 18px; }
 .facility-summary-group { padding:16px 0; border:0; border-bottom:1px solid var(--r-line,#dce7f2); border-radius:0; background:transparent; }
 .facility-summary-group:first-child { padding-top:8px; }
 .facility-summary-group:last-child { border-bottom:0; padding-bottom:0; }
-.facility-summary-group h3 { margin:0 0 10px; font-size:14px; line-height:22px; font-weight:600; }
+#app .restored-summary-drawer .facility-summary-group h3 { margin:0 0 10px; font-size:14px; line-height:22px; font-weight:600; }
 .facility-summary-group dl { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px 20px; margin:0; }
 .facility-summary-group:is([data-section=위치],[data-section="안전 정보"])>dl { grid-template-columns:minmax(0,1fr); }
 .facility-summary-group dl>div { display:flex; align-items:baseline; justify-content:space-between; gap:8px; min-width:0; }
 .facility-summary-group .is-wide { grid-column:1 / -1; }
-.facility-summary-group dt { flex-shrink:0; margin:0; color:var(--r-muted,#5c738b); font-size:13px; line-height:24px; white-space:nowrap; }
-.facility-summary-group dd { min-width:0; margin:0; color:var(--r-ink,#172e49); font-size:14px; line-height:24px; font-weight:500; text-align:right; overflow-wrap:anywhere; font-variant-numeric:tabular-nums; }
-.facility-summary-group dd small { margin-left:4px; color:var(--r-muted,#5c738b); font-size:12px; font-weight:400; }
+#app .restored-summary-drawer .facility-summary-group dt { flex-shrink:0; margin:0; color:var(--r-muted,#5c738b); font-size:14px; line-height:24px; font-weight:400; white-space:nowrap; }
+#app .restored-summary-drawer .facility-summary-group dd { min-width:0; margin:0; color:var(--r-ink,#172e49); font-size:14px; line-height:24px; font-weight:400; text-align:right; overflow-wrap:anywhere; font-variant-numeric:tabular-nums; }
+.facility-summary-group dd small { margin-left:4px; color:var(--r-muted,#5c738b); font-size:13px; font-weight:400; }
 .facility-coordinates { margin-top:10px; }
 .facility-coordinates>summary { width:fit-content; color:var(--r-muted,#5c738b); cursor:pointer; font-size:13px; line-height:24px; }
 .facility-coordinates[open]>dl { margin-top:8px; }

@@ -8,7 +8,7 @@ const appPath = (path: string) => managerAppPath(path, route.path)
 // 예지보전 점검 이력 (/pm-history). 예전 목업(pm-history.vue + data/pm-history.json)을 대신한다.
 //  GET /api/pm/actions?startDate=&endDate=&type=&equipId=   조치 기록 최근 순 (기간은 조치 기록일 기준, endDate 당일 포함)
 //  GET /api/pm/equipments?size=100                          설비 고르기 목록
-// 조치 기록은 점검 대기(이벤트)에만 붙는다. 이벤트 없이 "직접 등록"하는 API 는 없어서 등록 버튼은 두지 않는다.
+// 조치 기록은 점검 대기(이벤트)에 붙는다. "+ 점검 등록" 은 POST /api/pm/events 로 점검 대기(수동등록)를 만들면서 첫 기록을 남긴다.
 // 설비 상세의 "점검 이력 전체 →" 는 ?equipId= 로 들어온다.
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -16,6 +16,7 @@ import BackendLayout from '../components/BackendLayout.vue'
 import RiskLevelBadge from '../components/RiskLevelBadge.vue'
 import PmActionKindBadge from '../components/PmActionKindBadge.vue'
 import PmEquipmentCards from '../components/PmEquipmentCards.vue'
+import PmActionModal from '../components/PmActionModal.vue'
 import { backend, queryString, type PageData } from '../services/backend'
 import { useBackendEvents } from '../composables/useBackendEvents'
 import { displayDate } from '../utils/display-date'
@@ -37,7 +38,7 @@ type Action = {
   scoreBefore: number | null
   scoreAfter: number | null
 }
-type Equipment = { equipId: number; name: string; type: string; underpassName: string }
+type Equipment = { equipId: number; name: string; type: string; underpassName: string; openEventId?: number | null }
 
 const PAGE_SIZE = useRoute().path.startsWith('/admin-app/') ? 5 : 20
 const route = useRoute(),
@@ -83,6 +84,14 @@ function setRange(days: number | null) {
 }
 const equipmentOptions = computed(() =>
   equipments.value.filter((e) => !type.value || e.type === type.value).sort((a, b) => a.name.localeCompare(b.name)),
+)
+const modal = ref<InstanceType<typeof PmActionModal>>()
+// 처리 중인 점검이 있거나 노면 설비는 수동 등록 대상에서 뺀다 (서버도 막는다)
+const registerable = computed(() =>
+  equipments.value
+    .filter((e) => e.type !== 'ROAD' && !e.openEventId)
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((e) => ({ equipId: e.equipId, name: e.name, underpassName: e.underpassName })),
 )
 const selectedEquipment = computed(() => equipments.value.find((e) => String(e.equipId) === equipId.value))
 
@@ -175,6 +184,7 @@ function resetFilters() {
           <div class="sub">점검 시작부터 기록 추가·종료까지 확인할 수 있어요.</div>
         </div>
         <div class="pm-head-actions">
+          <button class="btn primary" type="button" @click="modal?.openRegister(registerable)">+ 점검 등록</button>
           <RouterLink class="btn" :to="appPath('/pm-queue')">점검 대기 →</RouterLink>
           <RouterLink class="btn" :to="appPath('/pm-equipment')">{{adminPageTitle('/pm-equipment')}} →</RouterLink>
           <button v-if="!route.path.startsWith('/admin-app/')" class="btn" type="button" :disabled="loading" @click="load">새로고침</button>
@@ -276,8 +286,9 @@ function resetFilters() {
         <span>{{page}} / {{Math.max(1,list?.totalPages||1)}}</span>
         <button class="btn sm" type="button" :disabled="loading||page>=Math.max(1,list?.totalPages||1)" @click="page++">다음</button>
       </div>
-      <p class="pm-note">조치 기록은 점검 대기에서만 남길 수 있어요 · 등록자는 기록한 관리자로 자동 저장돼요 · 점검 뒤 점수는 조치 기록 뒤 처음 들어온 점수예요</p>
+      <p class="pm-note">조치 기록은 점검 대기 또는 '점검 등록'으로 남길 수 있어요 · 등록자는 기록한 관리자로 자동 저장돼요 · 점검 뒤 점수는 조치 기록 뒤 처음 들어온 점수예요</p>
     </section>
+    <PmActionModal ref="modal" @done="load();loadEquipments()" />
   </BackendLayout>
 </template>
 <style scoped>

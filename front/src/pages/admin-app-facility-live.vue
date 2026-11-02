@@ -14,6 +14,7 @@ const route = useRoute(),
   facility = ref<Record<string, any>>(),
   operations = ref<InstanceType<typeof BackendResource>>(),
   error = ref(''),
+  refreshError = ref(''),
   loading = ref(false)
 const recordLinks = [
   { key: 'reviews', description: '확인이 필요한 번호판', icon: 'M9 5H5v16h14V5h-4M9 3h6v4H9zM8 13l2 2 5-5' },
@@ -38,15 +39,18 @@ async function load() {
   loading.value = true
   error.value = ''
   if (String(facility.value?.id ?? '') !== id.value) {
+    refreshError.value = ''
     facility.value = undefined
   }
   try {
     facility.value = await backend('/api/underpasses/' + encodeURIComponent(id.value), {
       signal: request.signal,
     })
+    refreshError.value = ''
   } catch (e) {
     if (!request.signal.aborted) {
-      error.value = (e as Error).message
+      if (facility.value) refreshError.value = (e as Error).message
+      else error.value = (e as Error).message
     }
   } finally {
     if (!request.signal.aborted) loading.value = false
@@ -81,8 +85,9 @@ function action(item: Action) {
 </script>
 <template>
   <section class="app-facility-detail">
-    <p v-if="loading" role="status">시설 정보 조회 중…</p>
+    <p v-if="loading&&!facility" role="status">시설 정보 조회 중…</p>
     <p v-if="error" role="alert">{{error}}</p>
+    <p v-if="refreshError" role="status">갱신 실패 · 이전 조회 결과입니다. {{refreshError}}</p>
     <template v-if="facility">
       <section class="app-facility-summary">
       <div class="app-facility-heading">

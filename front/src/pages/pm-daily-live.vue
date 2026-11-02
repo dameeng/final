@@ -11,6 +11,8 @@ import { useBackendEvents } from '../composables/useBackendEvents'
 import { displayDate } from '../utils/display-date'
 import { managerAppPath } from '../utils/manager-app-path'
 import { PM_TYPES, PM_TRIGGERS, PM_EVENT_STATUS, PM_LEVELS } from '../utils/pm-labels'
+import { useApp } from '../stores/app'
+const app = useApp()
 const route = useRoute()
 const appView = computed(() => route.path.startsWith('/admin-app/'))
 const groupPages = reactive<Record<string, number>>({})
@@ -24,13 +26,21 @@ function groupPage(key: string) { return Math.min(groupPages[key] || 1, Math.max
 const date = ref(new Intl.DateTimeFormat('en-CA', { timeZone:'Asia/Seoul', year:'numeric', month:'2-digit', day:'2-digit' }).format(new Date()))
 const report = ref<Record<string,any>>(), loading = ref(false), downloading = ref(false), error = ref('')
 const summary = computed(() => report.value?.summary || {})
+const refreshError = ref('')
 const levelSummaries = [['safe','안전'],['caution','주의'],['danger','위험'],['noData','미수신']] as const
 let controller: AbortController | undefined, timer: ReturnType<typeof setTimeout> | undefined
+let loadedQuery = ''
 async function load() {
   controller?.abort(); const current = new AbortController(); controller = current
-  loading.value = true; error.value = ''; report.value = undefined
-  try { const result = await backend('/api/pm/reports/daily'+queryString({ date:date.value }), { signal:current.signal }); if (!current.signal.aborted) report.value = result }
-  catch (e) { if (!current.signal.aborted) error.value = (e as Error).message }
+  const query = JSON.stringify([date.value, app.account?.id, app.account?.role, app.account?.regions?.map(region=>region.id).sort()])
+  if (query !== loadedQuery) {
+    report.value = undefined
+    refreshError.value = ''
+    for (const key of Object.keys(groupPages)) delete groupPages[key]
+  }
+  loading.value = true; error.value = ''
+  try { const result = await backend('/api/pm/reports/daily'+queryString({ date:date.value }), { signal:current.signal }); if (!current.signal.aborted) { report.value = result; loadedQuery = query;refreshError.value='' } }
+  catch (e) { if (!current.signal.aborted) { if(report.value)refreshError.value=(e as Error).message;else error.value = (e as Error).message } }
   finally { if (!current.signal.aborted) loading.value = false }
 }
 async function pdf() {
@@ -52,7 +62,8 @@ onBeforeUnmount(()=>{controller?.abort();clearTimeout(timer)})
 <template>
   <BackendLayout><main class="service-workspace pm-admin-tools pm-daily-live"><div class="service-heading"><h1><AdminPageIcon />예지보전 데일리 리포트</h1><div class="service-actions"><button type="button" :disabled="loading||downloading||!report" @click="pdf">{{downloading?'PDF 생성 중…':'PDF 다운로드'}}</button></div></div>
     <form class="service-filters" @submit.prevent="load"><label>조회 날짜<input v-model="date" type="date" required /></label><button :disabled="loading">조회</button><small v-if="report&&!appView" class="daily-generated-at">집계 {{displayDate(report.generatedAt)}}</small></form>
-    <p v-if="loading" role="status">리포트를 불러오는 중입니다.</p><p v-if="error" role="alert">{{error}}</p>
+    <p v-if="loading&&!report" role="status">리포트를 불러오는 중입니다.</p><p v-if="error" role="alert">{{error}}</p>
+    <p v-if="refreshError" role="status">갱신 실패 · 이전 조회 결과입니다. {{refreshError}}</p>
     <template v-if="report"><p v-if="appView">집계 시각 · {{displayDate(report.generatedAt)}}</p><div class="daily-levels"><section v-for="[key,label] in levelSummaries" :key="key" :class="'daily-level-'+key"><h2>{{label}}</h2><strong>{{summary.levelCounts?.[key!]??0}}</strong><small>이전 {{summary.previousLevelCounts?.[key!]??0}}개</small></section></div>
     <PmDailyTables v-if="!appView" :summary="summary" /><template v-else><PmDailyMobileChart :summary="summary" />
     <section v-for="[key,label] in groups" :key="key" class="daily-section"><h2>{{label}}</h2><ListResultCount :count="(key==='newEvents'?summary.newEventCount:key==='openEvents'?summary.openEventCount:key==='actions'?summary.actionCount:summary[key]?.length)??0" /><ul><li v-for="(row,index) in groupRows(key)" :key="row.eventId||row.actionId||row.equipId||index"><RouterLink v-if="row.equipId" :to="{path:managerAppPath('/pm-equipment-detail',route.path),query:{id:String(row.equipId)}}">{{row.name||row.code||'설비 '+row.equipId}}</RouterLink><strong v-else>{{row.name||'기록'}}</strong><span>{{row.underpassName}} · {{PM_TRIGGERS[row.triggerType]||PM_EVENT_STATUS[row.status]||PM_LEVELS[row.level]||row.content||''}}</span></li></ul><AppPagination v-if="appView&&(summary[key]?.length||0)>5" :page="groupPage(key)" :pages="Math.ceil(summary[key].length/5)" @change="groupPages[key]=$event" /><p v-if="!summary[key]?.length">해당 기록이 없습니다.</p></section></template></template>

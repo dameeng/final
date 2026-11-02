@@ -15,6 +15,8 @@ import {
 import { displayDate } from '../utils/display-date'
 import { useBackendEvents } from '../composables/useBackendEvents'
 import NotificationSettings from '../components/NotificationSettings.vue'
+import { useApp } from '../stores/app'
+const app = useApp()
 const route = useRoute(),
   router = useRouter(),
   notifications = useCustomerNotifications(),
@@ -25,6 +27,8 @@ const route = useRoute(),
   category = ref(''),
   unreadOnly = ref(false),
   loading = ref(false),
+  contentReady = ref(false),
+  refreshError = ref(''),
   busy = ref(false),
   error = ref(''),
   expanded = ref<number | null>(null)
@@ -55,11 +59,23 @@ useBackendEvents(({ name, data }) => {
     { ...data, read: previous?.read ?? false } as CustomerNotification,
     ...rows.value.filter((item) => item.id !== data.id),
   ].slice(0, pageSize)
+  if (!loading.value) {
+    loadedQuery = queryKey()
+    contentReady.value = true
+  }
 })
 let alive = true,
   sequence = 0
+let loadedQuery = ''
+const queryKey = () => JSON.stringify([page.value, category.value, unreadOnly.value, app.account?.id, app.account?.role])
 async function load() {
   const version = ++sequence
+  const query = queryKey()
+  if (query !== loadedQuery) {
+    contentReady.value = false
+    refreshError.value = ''
+    rows.value = []
+  }
   loading.value = true
   error.value = ''
   try {
@@ -73,12 +89,18 @@ async function load() {
     rows.value = result.items
     pages.value = Math.max(1, result.totalPages)
     total.value = result.totalItems
+    loadedQuery = query
+    contentReady.value = true
+    refreshError.value = ''
     if (page.value > pages.value) {
       page.value = pages.value
       void load()
     }
   } catch (e) {
-    if (alive && version === sequence) error.value = (e as Error).message
+    if (alive && version === sequence) {
+      if (contentReady.value) refreshError.value = (e as Error).message
+      else error.value = (e as Error).message
+    }
   } finally {
     if (alive && version === sequence) loading.value = false
   }
@@ -183,8 +205,9 @@ onBeforeUnmount(() => {
         ><button type="button" :disabled="busy" @click="markAll">모두 읽음</button></div
       ></div
     ><p v-if="error" class="service-error" role="alert">{{error}}</p
-    ><p v-if="loading" role="status">알림을 불러오는 중입니다.</p
-    ><ul v-else class="notification-center-list"
+    ><p v-if="refreshError" class="service-message" role="status">갱신 실패 · 이전 조회 결과입니다. {{refreshError}}</p
+    ><p v-if="loading&&!contentReady" role="status">알림을 불러오는 중입니다.</p
+    ><ul v-else-if="contentReady" class="notification-center-list"
       ><li
         v-for="item in rows"
         :key="item.id"

@@ -45,6 +45,7 @@ import './styles/admin-web-workspace.css'
 import './styles/admin-web-sections.css'
 import './styles/admin-consistency.css'
 import './styles/customer-mobile-polish.css'
+import './styles/info-panel-surfaces.css'
 createApp(App)
   .component('PasswordInput', PasswordInput)
   .component('UiIcon', UiIcon)

@@ -174,7 +174,7 @@ onBeforeUnmount(() => dispose?.())
                     viewBox="0 0 800 460"
                     preserveAspectRatio="xMidYMid slice"
                     role="img"
-                    aria-label="부산 지역 지하차도 마커 지도 (샘플)"
+                    aria-label="부산 지역 지하차도 위치도"
                   >
                     <rect width="800" height="460" fill="#eef0f3" />
 <g stroke="#d9dde3" stroke-width="1">
@@ -768,7 +768,7 @@ onBeforeUnmount(() => dispose?.())
 <svg
               viewBox="0 0 640 170"
               role="img"
-              aria-label="위험 점수 추이 (샘플): 점차 상승"
+              aria-label="위험 점수 추이: 점차 상승"
               style="display:block;width:100%;height:auto;margin-top:6px;background:#fafbfc;border:1px solid var(--line-soft);border-radius:6px"
             >
               <line x1="40" y1="130" x2="620" y2="130" stroke="#8a93a0" />

@@ -111,12 +111,12 @@
 #app .customer-editorial .mypage-body .wire-page .main { padding:0; }
 
 /* Footer belongs to the same blue-gray palette as the customer content. */
-#app .customer-editorial .customer-footer { background:var(--r-surface); border-top:1px solid var(--r-line); color:var(--r-ink); }
-#app .customer-editorial .customer-footer-inner { width:100%; max-width:1440px; padding:36px 32px 28px; margin:0 auto; }
-#app .customer-editorial .customer-footer-brand>a { color:var(--r-brand); }
-#app .customer-editorial .customer-footer-brand>a>span { color:var(--r-accent); }
-#app .customer-editorial .customer-footer :is(p,.customer-footer-bottom) { color:var(--r-muted); }
-#app .customer-editorial .customer-footer-app { color:var(--r-accent); border-color:var(--r-line); background:var(--r-selected); }
+#app .customer-shell .customer-footer { background:var(--r-surface); border-top:1px solid var(--r-line); color:var(--r-ink); }
+#app .customer-shell .customer-footer-inner { width:100%; max-width:1440px; padding:36px 32px 28px; margin:0 auto; }
+#app .customer-shell .customer-footer-brand>a { color:var(--r-brand); }
+#app .customer-shell .customer-footer-brand>a>span { color:var(--r-accent); }
+#app .customer-shell .customer-footer :is(p,.customer-footer-bottom) { color:var(--r-muted); }
+#app .customer-shell .customer-footer-app { color:var(--r-accent); border-color:var(--r-line); background:var(--r-selected); }
 
 /* Customer app content gets breathing room; all map and manager shells are excluded. */
 #app .customer-app-editorial .app-restored-body { background:var(--r-canvas); }
@@ -206,6 +206,6 @@
   #app .customer-editorial .service-pagination { gap:6px; flex-wrap:wrap; }
   #app .customer-editorial .service-pagination button { min-width:36px; min-height:40px; }
   #app .customer-editorial .notification-center-item { padding:16px; }
-  #app .customer-editorial .customer-footer-inner { padding:28px 20px; }
+  #app .customer-shell .customer-footer-inner { padding:28px 20px; }
   #app .customer-shell .public-chat-launcher { justify-content:center; width:48px; min-width:48px; height:48px; min-height:48px; padding:0; gap:0; font-size:0; line-height:0; right:16px; bottom:calc(20px + env(safe-area-inset-bottom,0px)); }
 }

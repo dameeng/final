@@ -52,8 +52,9 @@
 .board-library header small { display:block; margin-top:5px; font-size:12px; color:var(--ink-sub,#64748b); }
 .board-library header>button { width:34px; min-height:34px; padding:0; border:0; background:transparent; font-size:24px; }
 .board-library-description { margin:16px 0; font-size:12px; line-height:1.6; color:var(--ink-sub,#64748b); }
-.board-library .board-library-row>button { display:grid; grid-template-columns:32px minmax(0,1fr) 22px; align-items:center; gap:10px; margin:0; padding:12px 10px; min-height:70px; border:0; border-bottom:1px solid var(--line,#dce3e9); border-radius:0; background:transparent; }
+.board-library .board-library-row>button { display:grid; grid-template-columns:32px minmax(0,1fr) 22px; align-items:center; gap:10px; width:100%; box-sizing:border-box; text-align:left; white-space:normal; margin:0; padding:12px 10px; min-height:70px; border:0; border-bottom:1px solid var(--line,#dce3e9); border-radius:0; background:transparent; }
 .board-library-row .board-library-symbol { display:grid; place-items:center; width:32px; height:32px; border-radius:9px; background:var(--soft,#edf2f7); color:var(--ui-accent,#365f80); font-size:20px; }
+.board-library .board-library-copy { min-width:0; overflow-wrap:anywhere; }
 .board-library-copy strong { display:block; font-size:13px; font-weight:600; }
 .board-library-copy small { display:block; margin-top:5px; font-size:11px; line-height:1.5; color:var(--ink-sub,#64748b); }
 .board-library-check { display:grid; place-items:center; width:20px; height:20px; border:1px solid #9baebb; border-radius:6px; color:transparent; font-size:13px; font-weight:700; }

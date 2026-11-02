@@ -18,6 +18,7 @@ export const PM_TRIGGERS: Record<string, string> = {
   SURGE: '급상승',
   NO_DATA: '미수신',
   SINKHOLE: '싱크홀 의심 탐지',
+  MANUAL: '수동등록',
 }
 // GET /api/pm/engine-status 의 status
 export const PM_ENGINE: Record<string, [string, 'ok' | 'warn' | 'bad' | 'idle']> = {

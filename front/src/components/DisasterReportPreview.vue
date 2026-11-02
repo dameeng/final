@@ -1,7 +1,7 @@
 <script setup lang="ts">
 defineProps<{ managerRegion?: string }>()
 const fields = [
-  ['보고번호', 'RT-2026-001 (예시)'],
+  ['보고번호', 'RT-2026-001'],
   ['발생장소', '초량1지하차도 · 부산광역시 동구'],
   ['발생일시', '2026-10-30 14:30'],
   ['재난유형', '집중호우에 따른 침수 위험'],
@@ -16,7 +16,7 @@ const fields = [
   <article class="disaster-report" aria-label="재난상황 전파 보고서 미리보기">
     <div class="report-brand">ROUTEL · 모의 재난상황보고서</div>
     <h2>재난상황 전파 보고서</h2>
-    <p class="report-subtitle">예시 데이터 · 실제 재난 발생 및 통제 문서가 아닙니다.</p>
+    <p class="report-subtitle">보고서 미리보기 · 실제 재난 발생 및 통제 문서가 아닙니다.</p>
     <table aria-label="재난상황 기본 정보">
       <tbody>
         <tr v-for="[label, value] in fields" :key="label"><th scope="row">{{ label }}</th><td><span :class="{'risk-one-line':label==='AI 위험단계'}">{{ value }}</span></td></tr>
@@ -25,7 +25,7 @@ const fields = [
     </table>
     <section><h3>요청사항</h3><p>현장 위험 확인, 차량 진입 통제 및 우회 안내, 인명구조 필요 여부 판단</p></section>
     <section><h3>첨부자료</h3><p>별도 첨부 없음 · CCTV 이미지, AI 예측 결과, 지하차도 위치 좌표는 별도 확인 필요</p></section>
-    <footer>전파 대상(예시): 관할 소방상황실 · 경찰 · 지자체 재난안전상황실</footer>
+    <footer>전파 대상: 관할 소방상황실 · 경찰 · 지자체 재난안전상황실</footer>
   </article>
 </template>
 <style scoped>

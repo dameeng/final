@@ -87,13 +87,13 @@ onBeforeUnmount(() => clearInterval(poll))
     :class="{ running }"
     type="button"
     :disabled="busy"
-    :title="running ? '누르면 중지' : '호우 시나리오 시작 (시연용)'"
+    :title="running ? '누르면 중지' : '호우 시나리오 시작'"
     @click="click"
   >
     <template v-if="running">
       호우 진행 · {{ status?.phaseLabel }} {{ status?.elapsedSec }}/{{ status?.totalSec }}초
     </template>
-    <template v-else>호우 시연</template>
+    <template v-else>호우 시나리오</template>
   </button>
 </template>
 <style scoped>
