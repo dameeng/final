@@ -6,7 +6,7 @@ export default defineConfig(({ mode }) => ({
   plugins: [vue(), chatApi(loadEnv(mode, '.', '')), navigationApi(loadEnv(mode, '.', ''))],
   server: {
     fs: { deny: ['.env', '.env.*', '**/.git/**', '**/.routel-data/**', '**/*.{crt,pem}'] },
-    host: 'localhost',
+    host: true,
     port: 8282,
     strictPort: true,
     proxy: {
@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   preview: {
-    host: 'localhost',
+    host: 'true',
     port: 8282,
     strictPort: true,
     proxy: {
