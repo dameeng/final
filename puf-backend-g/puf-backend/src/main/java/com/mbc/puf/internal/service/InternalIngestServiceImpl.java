@@ -400,7 +400,10 @@ public class InternalIngestServiceImpl implements InternalIngestService {
 			transit.setDirection(upEntry ? TransitDirection.UP : TransitDirection.DOWN);
 			transit.setCarNum(storedDetectedNum);
 			transit.setEntryPlateLogId(plateLog.getId());
-			transit.setStatus(TransitStatus.IN_TRANSIT);
+			// 이미 차단 중인 지하차도에 들어온 차량은 차단 시점의 일괄 전환(markRemaining)을 지나쳤으므로 처음부터 잔류로 기록한다.
+			// (나중에 출구에서 인식되면 아래 출구 매칭이 REMAINING 도 EXITED 로 정리한다)
+			transit.setStatus(underpass.getCurrentStatus() == UnderpassCurrentStatus.BLOCKED
+					? TransitStatus.REMAINING : TransitStatus.IN_TRANSIT);
 			transit.setEntryAt(plateLog.getDetectedAt());
 			transitRepository.save(transit);
 			streamPublisher.publishToAdmins(underpass.getRegionId(), "transit-update",

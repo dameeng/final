@@ -36,7 +36,7 @@ public interface TransitRepository extends JpaRepository<Transit, Long> {
                                         @Param("digits") String digits, @Param("from") LocalDateTime from,
                                         @Param("to") LocalDateTime to);
 
-    // BLOCK 시점에 그 지하차도의 IN_TRANSIT 상태 통과 기록을 전부 REMAINING으로 일괄 처리
+    // BLOCK 시점에 그 지하차도의 IN_TRANSIT 상태 통과 기록을 전부 REMAINING으로 일괄 처리 (차단 중에 입구를 지난 차량은 입구 인식 때 바로 REMAINING 으로 저장됨)
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("update Transit t set t.status = com.mbc.puf.common.enums.TransitStatus.REMAINING"
             + " where t.underpassId = :underpassId and t.status = com.mbc.puf.common.enums.TransitStatus.IN_TRANSIT")
