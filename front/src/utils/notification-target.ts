@@ -18,7 +18,7 @@ export function notificationTarget(
     if(manager) {
       if(type==='PM_EQUIPMENT')return detail('/pm-equipment-detail')
       if(type==='PM_EVENT')return {path:target('/pm-queue'),query:{eventId:String(id)}}
-      if(type==='PLATE_LOG')return {path:target('/admin-data/ocr'),query:{id:String(id),...(item.regionId!=null?{regionId:String(item.regionId)}:{})}}
+      if(type==='PLATE_LOG')return {path:currentPath.startsWith('/admin-app/')?'/admin-app/reviews':'/admin-data/reviews',query:{...(item.regionId!=null?{regionId:String(item.regionId)}:{})}}
     }
   }
   if(manager&&type==='PM_REPORT')return {path:target('/pm-history')}
