@@ -94,9 +94,12 @@ defineExpose({open})
     </section>
   </WorkflowPage>
 </template>
+<style>
+/* WorkflowPage 는 루트가 여러 개라 scoped 속성이 dialog 에 안 붙음 -> dialog 자체 스타일은 전역으로 */
+#app dialog.remaining-transfer-dialog{box-sizing:border-box;width:min(600px,calc(100vw - 32px));max-height:calc(100dvh - 32px);padding:28px 32px;overflow:auto;color:var(--r-ink);background:var(--r-surface);border:1px solid var(--r-line);border-radius:16px}
+#app dialog.remaining-transfer-app{max-width:406px}
+@media(max-width:480px){#app dialog.remaining-transfer-dialog{padding:20px}}
+</style>
 <style scoped>
-.remaining-transfer-dialog{box-sizing:border-box;width:min(600px,calc(100vw - 32px));max-height:calc(100dvh - 32px);padding:24px;overflow:auto;color:var(--r-ink);background:var(--r-surface);border:1px solid var(--r-line);border-radius:16px}
-.remaining-transfer-app{max-width:406px}
 header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border-bottom:1px solid var(--r-line);padding-bottom:16px}small{color:var(--r-muted)}h2{margin:6px 0 0;font-size:22px}h3{font-size:16px;margin:20px 0 12px}p{font-size:13px;line-height:1.7;overflow-wrap:anywhere}button{min-height:42px;padding:9px 14px;border:1px solid var(--r-line);border-radius:8px;color:var(--r-ink);background:var(--r-surface);font:inherit;cursor:pointer;flex-shrink:0}button:disabled{opacity:.5;cursor:default}fieldset{display:flex;flex-wrap:wrap;gap:12px;margin:16px 0;padding:16px;border:1px solid var(--r-line);border-radius:10px}legend{font-size:13px}fieldset label{display:flex;align-items:center;gap:6px;font-size:14px}fieldset input{width:18px;height:18px}.transfer-memo{display:grid;gap:8px;font-size:13px}textarea{box-sizing:border-box;width:100%;padding:10px;border:1px solid var(--r-line);border-radius:8px;color:var(--r-ink);background:var(--r-surface);font:inherit;resize:vertical}.transfer-create{width:100%;margin-top:16px;background:var(--r-primary);color:var(--r-on-brand,#fff);border-color:transparent}.transfer-history{margin-top:24px;border-top:1px solid var(--r-line)}article{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--r-line)}article>div{min-width:0}article strong{font-size:13px}article p{margin:6px 0 0;color:var(--r-muted)}.transfer-error{color:var(--danger,#b42318)}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--r-accent);outline-offset:2px}
-@media(max-width:480px){.remaining-transfer-dialog{padding:20px}}
 </style>
