@@ -1,5 +1,6 @@
 -- 통합본 실행 순서: 1.puf_db_schema.sql → 2.seed_general.sql → 3.seed_its.sql → 4.seed_pm.sql
 -- v11: 과거 이력 더미 추가(최근 3일, 모두 끝난 상황) — 점검이력(pm_event · pm_action), 전광판 변경 이력(display_history), 설비 데일리 리포트 알림.
+-- v12: 초량 배수펌프 P-1-1 점검이력 4건 추가(기존 1건 포함 총 5건, 모두 4~6일 전 · 데일리 리포트 대상 기간 밖이라 리포트 건수는 그대로).
 --      2.seed_general v13 의 초량 새벽 사건(event)과 같은 시간대. 설비·전광판은 이 파일에서 생기므로 이 파일 끝(7번)에 둠.
 -- 개발 DB 초기 구축용. 1번은 public 스키마와 기존 데이터를 삭제한다. 기존 운영 DB에 적용하지 말 것.
 -- 네 파일을 순서대로 1회 실행하면 원본 시드의 ID/생성 순서를 유지한다. 시드는 반복 실행용이 아니다.
@@ -134,7 +135,7 @@ WHERE id=230 AND underpass_id=(SELECT id FROM underpass WHERE name='초량지하
 
 -- =====================================================================
 -- 7. 과거 이력 더미 (v11) — 최근 3일, 모두 끝난 상황 (2.seed_general 100번과 같은 날짜 기준)
---   · 점검이력 6건: 조치 완료(RESOLVED) 5 + 기타 종료(ETC) 1. 열린 점검(확인필요·점검중)은 만들지 않는다
+--   · 점검이력 10건: 조치 완료(RESOLVED) 8 + 기타 종료(ETC) 2. 열린 점검(확인필요·점검중)은 만들지 않는다 (초량 P-1-1 은 5건 — 6일 전~4일 전)
 --   · 조치자는 동구 담당 주간조 manager01(07~15시) / 야간조 manager06(23~07시)가 근무하는 시간에만 둔다
 --   · 싱크홀 탐지 점검은 만들지 않음: 사진 분석 결과(pm_road_result)가 같이 있어야 화면이 정상으로 열림
 --   · pm_score · 센서 값은 넣지 않음: Spring stub 이 쌓음(과거 점검 건을 열면 점수 추이 그래프는 비어 있을 수 있음)
@@ -171,6 +172,8 @@ DECLARE
     d2 TIMESTAMP := date_trunc('day', LOCALTIMESTAMP) - INTERVAL '2 days';
     d1 TIMESTAMP := date_trunc('day', LOCALTIMESTAMP) - INTERVAL '1 day';
     d4 TIMESTAMP := date_trunc('day', LOCALTIMESTAMP) - INTERVAL '4 days';
+    d5 TIMESTAMP := date_trunc('day', LOCALTIMESTAMP) - INTERVAL '5 days';
+    d6 TIMESTAMP := date_trunc('day', LOCALTIMESTAMP) - INTERVAL '6 days';
     ev BIGINT;
     u_cho BIGINT; r_cho BIGINT;
     e_blk BIGINT; t_blk TIMESTAMP; e_rel BIGINT; t_rel TIMESTAMP; m06 BIGINT;
@@ -181,6 +184,26 @@ BEGIN
     SELECT id INTO m06 FROM manager WHERE login_id = 'manager06';
 
     -- ---------------------------------------------------------------- 점검이력 (조치 완료 5 + 기타 종료 1)
+    -- 1-1) 초량 배수펌프 P-1-1 이전 점검이력 (v12, 6일 전 ~ 5일 전): 정기 점검 → 진동 상승 → 위험 → 전류 변동. 4일 전 밤(위 1번)에 베어링·흡입구 조치로 이어진다
+    --      수동등록 점검은 점수·단계가 없음. 조치자는 근무 시간(주간조 manager01 07~15시 / 야간조 manager06 23~07시)에만 둔다
+    ev := pg_temp.seed_pm_event(pg_temp.eq('초량지하차도', 'PUMP', 1), '수동등록', NULL, NULL, 'RESOLVED', d6 + TIME '09:30');
+    PERFORM pg_temp.seed_pm_action(ev, 'START',    '점검 시작: 배수펌프 P-1-1 정기 점검 수동 등록, 현장 육안·시운전 점검', 'manager01', d6 + TIME '09:45');
+    PERFORM pg_temp.seed_pm_action(ev, 'RECORD',   '토출 압력·전류 측정값 확인, 베어링 부위 온도 점검', 'manager01', d6 + TIME '10:30');
+    PERFORM pg_temp.seed_pm_action(ev, 'RESOLVED', '조치 완료: 정기 점검 결과 이상 없음, 윤활유 보충', 'manager01', d6 + TIME '11:20');
+
+    ev := pg_temp.seed_pm_event(pg_temp.eq('초량지하차도', 'PUMP', 1), '급상승', '주의', 56.8, 'RESOLVED', d6 + TIME '21:10');
+    PERFORM pg_temp.seed_pm_action(ev, 'START',    '점검 시작: 배수펌프 P-1-1 진동 점수 상승 확인, 현장 점검 출동', 'manager06', d6 + TIME '23:20');
+    PERFORM pg_temp.seed_pm_action(ev, 'RESOLVED', '조치 완료: 모터 고정 볼트 이완 확인 후 재조임, 진동 평소 범위 복귀', 'manager06', d6 + TIME '23:55');
+
+    ev := pg_temp.seed_pm_event(pg_temp.eq('초량지하차도', 'PUMP', 1), '위험진입', '위험', 81.5, 'RESOLVED', d5 + TIME '13:15');
+    PERFORM pg_temp.seed_pm_action(ev, 'START',    '점검 시작: 배수펌프 P-1-1 진동·온도 동시 상승 경보, 예비 펌프 전환 후 현장 확인', 'manager01', d5 + TIME '13:35');
+    PERFORM pg_temp.seed_pm_action(ev, 'RECORD',   '커플링 정렬 불량 의심, 분해 점검 진행', 'manager01', d5 + TIME '14:05');
+    PERFORM pg_temp.seed_pm_action(ev, 'RESOLVED', '조치 완료: 커플링 재정렬 후 시운전 정상, 진동·온도 평소 수준 복귀', 'manager01', d5 + TIME '14:50');
+
+    ev := pg_temp.seed_pm_event(pg_temp.eq('초량지하차도', 'PUMP', 1), '급상승', '주의', 54.2, 'ETC', d5 + TIME '22:30');
+    PERFORM pg_temp.seed_pm_action(ev, 'START',    '점검 시작: 배수펌프 P-1-1 전류 점수 상승 확인', 'manager06', d5 + TIME '23:20');
+    PERFORM pg_temp.seed_pm_action(ev, 'ETC',      '기타 종료: 직전 정비 후 시운전 중 일시적 전류 변동으로 확인되어 자동 복구, 별도 조치 없음', 'manager06', d5 + TIME '23:50');
+
     -- 1) 초량 배수펌프 P-1-1 위험 진입 — 사건 전날 밤 → 야간조가 조치
     ev := pg_temp.seed_pm_event(pg_temp.eq('초량지하차도', 'PUMP', 1), '위험진입', '위험', 84.2, 'RESOLVED', d4 + TIME '22:40');
     PERFORM pg_temp.seed_pm_action(ev, 'START',    '점검 시작: 배수펌프 P-1-1 전류·진동 이상 경보 확인, 현장 점검 출동', 'manager06', d4 + TIME '23:10');
