@@ -157,9 +157,22 @@ onBeforeUnmount(() => {
   controller?.abort()
 })
 const chartNow = useRiskChartClock()
+// '지금'은 가운데보다 살짝 왼쪽(45%) — 고객 지하차도 현황 차트와 같은 비율
 const series = computed(() =>
-  riskSplitChart(history.value, forecast.value, { left: 44, right: 650, top: 24, bottom: 186, now: chartNow.value }),
+  riskSplitChart(history.value, forecast.value, { left: 44, right: 650, top: 24, bottom: 186, now: chartNow.value, split: 0.45 }),
 )
+// 아래 시간 눈금은 정각(10:00, 11:00 …)에만 둔다. 지금 시각은 '지금' 선 위에 따로 표시
+const hourTicks = computed(() => {
+  const left = 44, right = 650, pastMs = 3600000, futureMs = 3 * 3600000, hour = 3600000
+  const now = chartNow.value, mid = series.value.mid
+  const x = (at: number) =>
+    at <= now ? left + ((at - (now - pastMs)) / pastMs) * (mid - left) : mid + ((at - now) / futureMs) * (right - mid)
+  const format = (at: number) =>
+    new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', hour12: false }).format(at)
+  const hours: { x: number; label: string }[] = []
+  for (let at = Math.ceil((now - pastMs) / hour) * hour; at <= now + futureMs; at += hour) hours.push({ x: x(at), label: format(at) })
+  return { hours, now: format(now) }
+})
 // 세로 눈금: 0·100 + 이 시설의 단계 기준값 (못 받으면 50)
 const scoreTicks = computed(() => {
   const mins = thresholds.value.map((t) => Number(t.riskScoreMin)).filter((v) => v > 0 && v < 100)
@@ -256,17 +269,16 @@ function control() {
                   <text x="38" :y="series.y(score)+4" text-anchor="end" font-size="11" fill="currentColor">{{score}}</text>
                 </g>
                 <line :x1="series.mid" :x2="series.mid" y1="18" y2="186" stroke="currentColor" />
-                <text :x="series.mid" y="13" text-anchor="middle" font-size="11" fill="currentColor">지금</text>
+                <text :x="series.mid" y="13" text-anchor="middle" font-size="12" font-weight="700" fill="currentColor">지금 {{hourTicks.now}}</text>
                 <text
-                  v-for="tick in series.ticks"
-                  :key="tick.x"
+                  v-for="tick in hourTicks.hours"
+                  :key="tick.label"
                   :x="tick.x"
                   y="204"
                   text-anchor="middle"
                   font-size="12"
-                  :font-weight="tick.now?700:400"
                   fill="currentColor"
-                >{{tick.now?'지금 '+tick.label:tick.label}}</text>
+                >{{tick.label}}</text>
                 <text :x="(44+series.mid)/2" y="224" text-anchor="middle" font-size="11" fill="currentColor">최근 1시간 관측 · 1분 평균</text>
                 <text :x="(series.mid+650)/2" y="224" text-anchor="middle" font-size="11" fill="currentColor">앞으로 3시간 예측</text>
                 <path :d="series.observedPath" fill="none" stroke="#2b5c8a" stroke-width="3" />
