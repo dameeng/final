@@ -5,7 +5,8 @@
 -- v13: 고객당 차량 1대(OCR 이 둘 중 하나로 읽는 customer07·10·19 만 2대 → car 22대), 초량 카메라 226~229 거리 맞춤(접근 1000m / 직전 300m),
 --      초량지하차도 침수 이력 1회, 과거 로그 더미(최근 3일, 모두 끝난 상황): 초량 새벽 집중호우 사건 · 해운대 센텀시티 수동 통제 1회 ·
 --      event / alert(+delivery) / plate_log / transit / ctrl_transfer / 공지 알림 / 관리자 알림(상황 종료형).
---      점검이력(pm_event·pm_action) · 전광판 이력(display_history) · 설비 데일리 리포트 알림은 설비/전광판이 4.seed_pm 에서 생기므로 4.seed_pm v11 에 있음.
+--      점검이력(pm_event·pm_action) · 전광판 이력(display_history) · 설비 데일리 리포트 알림은 설비/전광판이 4.seed_pm 에서 생기므로 4.seed_pm v12 에 있음.
+-- v14: customer01 의 1:1 문의 원글 + 관리자 답변을 추가(98번). 알림 센터 샘플(고객 문의 답변 · 관리자 새 문의)의 ref_id 가 이 문의를 가리키도록 연결.
 -- 개발 DB 초기 구축용. 1번은 public 스키마와 기존 데이터를 삭제한다. 기존 운영 DB에 적용하지 말 것.
 -- 네 파일을 순서대로 1회 실행하면 원본 시드의 ID/생성 순서를 유지한다. 시드는 반복 실행용이 아니다.
 
@@ -417,9 +418,27 @@ INSERT INTO device_token (customer_id, token, platform) VALUES
 -- display_preset: 1~5 (SAFE/WATCH/CAUTION/BLOCK/RELEASE)
 -- faq:          1~5
 -- notice:       1~3
+-- inquiry:      1~2 (1=customer01 문의 원글, 2=그 답변. 답변 완료)
 -- device_token: 1~18
 -- (v13 과거 로그 더미, 아래 100번) event 14 / alert 6 · alert_delivery 14 / plate_log 31 · transit 7 / ctrl_transfer 8 /
 --                                  notice_alert 19 · notice_delivery 18 / customer_notification 27 / manager_notification 12 (4.seed_pm 이 3건 더 추가 → 15)
+
+-- =====================================================================
+-- 98. inquiry — 1:1 문의 샘플 (v14): customer01(12고1252)의 문의 1건 + 관리자 답변 1건 (답변 완료)
+--   · 아래 99번 알림 센터 샘플(고객 "내 문의에 답변이 등록되었습니다" / 관리자 "새 1:1 문의")이 이 문의를 가리킨다 (ref_id = 원글 id)
+--   · 원글은 6시간 전 접수, 답변은 5시간 전 — 알림 시각과 같음. 답변은 원글당 1개(자기참조 parent_id)
+-- =====================================================================
+INSERT INTO inquiry (parent_id, customer_id, manager_id, title, content, status, view_count, is_deleted, created_at) VALUES
+(NULL, 1, NULL, '차량 번호를 잘못 등록했어요',
+ '내 차량에 번호를 등록할 때 숫자를 잘못 눌러서 다른 번호로 올라가 있어요. 이 상태로 두면 제 차에 알림이 안 오는 건가요? 어떻게 고치면 되는지 알려주세요.',
+ 'ANSWERED', 3, FALSE, NOW() - INTERVAL '6 hours');
+
+INSERT INTO inquiry (parent_id, customer_id, manager_id, title, content, status, view_count, is_deleted, created_at)
+SELECT q.id, NULL, m.id, NULL,
+ '안녕하세요. PUF 고객센터입니다. 등록된 차량 번호는 알림 발송에 쓰이므로, 번호가 다르면 실제 차량에는 접근 알림과 진입 직전 알림이 발송되지 않습니다. 마이페이지의 내 차량에서 잘못 등록된 차량을 삭제한 뒤 올바른 번호로 다시 등록해 주세요. 한 계정에 최대 3대까지 등록할 수 있어 삭제 후 재등록에 제한은 없습니다. 추가로 궁금하신 점은 언제든 문의해 주세요.',
+ 'PENDING', 0, FALSE, NOW() - INTERVAL '5 hours'
+FROM inquiry q, manager m
+WHERE q.customer_id = 1 AND q.parent_id IS NULL AND q.title = '차량 번호를 잘못 등록했어요' AND m.login_id = 'manager01';
 
 -- =====================================================================
 -- 99. 알림 센터 샘플 (고객 알림 3분류 / 관리자 알림 4분류 모두 1건 이상)
@@ -432,7 +451,7 @@ INSERT INTO device_token (customer_id, token, platform) VALUES
 INSERT INTO customer_notification (customer_id, category, title, body, ref_type, ref_id, is_read, created_at) VALUES
 (1, 'NOTICE',  '새 공지',                          'PUF 시스템 오픈 안내',                                                                         'NOTICE',  1,    FALSE, NOW() - INTERVAL '3 days'),
 (1, 'NOTICE',  '[긴급] 새 공지',                   '태풍 대비 사전 안내',                                                                          'NOTICE',  2,    TRUE,  NOW() - INTERVAL '2 days'),
-(1, 'INQUIRY', '내 문의에 답변이 등록되었습니다',  '차량 번호를 잘못 등록했어요',                                                                  'INQUIRY', NULL, FALSE, NOW() - INTERVAL '5 hours');
+(1, 'INQUIRY', '내 문의에 답변이 등록되었습니다',  '차량 번호를 잘못 등록했어요',                                                                  'INQUIRY', (SELECT id FROM inquiry WHERE customer_id = 1 AND parent_id IS NULL ORDER BY id LIMIT 1), FALSE, NOW() - INTERVAL '5 hours');
 
 -- =====================================================================
 -- 100. 과거 로그 더미 (v13) — 최근 3일, 모두 이미 끝난 상황
@@ -649,7 +668,7 @@ BEGIN
     ('TASK', r_cho, '번호판 수동 판별 필요',   '초량지하차도 · 19저0362',                                    'PLATE_LOG', p_b,   FALSE, d0 + TIME '03:12'),
     ('TASK', r_cho, '번호판 수동 판별 필요',   '초량지하차도 · 381구8431',                                   'PLATE_LOG', p_c,   FALSE, d1 + TIME '09:14');
     INSERT INTO manager_notification (category, region_id, title, body, ref_type, ref_id, is_urgent, created_at) VALUES
-    ('TASK',   NULL, '새 1:1 문의',            '차량 번호를 잘못 등록했어요',                                 'INQUIRY',   NULL,  FALSE, NOW() - INTERVAL '6 hours'),
+    ('TASK',   NULL, '새 1:1 문의',            '차량 번호를 잘못 등록했어요',                                 'INQUIRY',   (SELECT id FROM inquiry WHERE customer_id = 1 AND parent_id IS NULL ORDER BY id LIMIT 1),  FALSE, NOW() - INTERVAL '6 hours'),
     ('SYSTEM', NULL, '데이터 수신 정상화',     '위험도 데이터 수신이 정상화되었습니다.',                      NULL,        NULL,  FALSE, NOW() - INTERVAL '3 hours');
 
     -- 12시간 지난 지역 알림은 그 지역 담당 관리자들이 이미 읽은 것으로 (지역 없는 알림은 안 읽음으로 남김)
