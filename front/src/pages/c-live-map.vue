@@ -8,7 +8,7 @@ import { useApp } from '../stores/app'
 import type { BackendEvent } from '../composables/useBackendEvents'
 import { patchFacility, facilityEvents, appendRiskHistory } from '../services/streamUpdates'
 import { useBackendEvents } from '../composables/useBackendEvents'
-import { riskChartSeries } from '../utils/risk-chart'
+import { riskChartSeries, riskSplitChart } from '../utils/risk-chart'
 import { riskGroup, riskSummaryLabel } from '../services/backendCatalog'
 import { ownsFacility } from '../services/facilityAccess'
 import '../styles/map-weather.css'
@@ -367,6 +367,28 @@ const riskSeries = computed(() =>
   }),
 )
 const riskPoints = computed(() => riskSeries.value.observed)
+// 고객 상세 차트: 관리자 시설 상세처럼 최근 1시간 관측 | 3시간 예측을 고정 비율로 나눠 그린다.
+// '지금'은 가운데보다 살짝 왼쪽(45%). 관리자 지도 패널은 위 riskSeries 를 그대로 쓴다
+const CUSTOMER_CHART = { left: 34, right: 300, top: 22, bottom: 128, pastMs: 3600000, futureMs: 3 * 3600000 }
+const customerRiskSeries = computed(() =>
+  riskSplitChart(riskHistory.value, riskForecast.value, {
+    left: CUSTOMER_CHART.left, right: CUSTOMER_CHART.right, top: CUSTOMER_CHART.top, bottom: CUSTOMER_CHART.bottom,
+    // 고객 화면 관측 기록은 10분 간격이라, 30분 넘게 비었을 때만 선을 끊는다 (기본 5분이면 선이 안 그려짐)
+    now: chartNow.value, split: 0.45, maxGapMs: 30 * 60000,
+  }),
+)
+// 아래 시간 눈금은 정각(10:00, 11:00 …)에만 둔다. 지금 시각은 '지금' 선 위에 따로 표시
+const customerRiskTicks = computed(() => {
+  const { left, right, pastMs, futureMs } = CUSTOMER_CHART
+  const now = chartNow.value, mid = customerRiskSeries.value.mid, hour = 3600000
+  const x = (at: number) =>
+    at <= now ? left + ((at - (now - pastMs)) / pastMs) * (mid - left) : mid + ((at - now) / futureMs) * (right - mid)
+  const format = (at: number) =>
+    new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', hour12: false }).format(at)
+  const hours: { x: number; label: string }[] = []
+  for (let at = Math.ceil((now - pastMs) / hour) * hour; at <= now + futureMs; at += hour) hours.push({ x: x(at), label: format(at) })
+  return { hours, now: format(now) }
+})
 async function fetchRiskForecast(id: string, signal: AbortSignal) {
   try {
     const rows = await request(`${API.underpasses}/${encodeURIComponent(id)}/risk-forecast`, signal)
@@ -2180,82 +2202,69 @@ onBeforeUnmount(() => {
       <section class="route map-detail-trend" aria-label="위험도 추이"
               ><h2 class="trend-title">위험도 추이</h2
               ><svg
-                v-if="riskPoints||riskSeries.forecast"
-                viewBox="-8 -4 316 144"
+                v-if="!customerRiskSeries.empty"
+                viewBox="0 0 316 176"
                 class="risk-history-chart"
                 role="img"
-                aria-label="최근 관측 위험도 추이"
+                aria-label="최근 1시간 관측과 앞으로 3시간 예측 위험 점수"
               >
-                <path d="M20 10V110H280" fill="none" stroke="#c9ced6" />
-                <line
-                  v-if="riskSeries.boundary!==null"
-                  :x1="riskSeries.boundary"
-                  :x2="riskSeries.boundary"
-                  y1="10"
-                  y2="110"
-                  stroke="#c9ced6"
-                  stroke-dasharray="2 3"
-                />
+                <g v-for="score in [0,50,100]" :key="'s'+score">
+                  <line x1="34" x2="300" :y1="customerRiskSeries.y(score)" :y2="customerRiskSeries.y(score)" stroke="currentColor" stroke-opacity=".18" />
+                  <text x="28" :y="customerRiskSeries.y(score)+4" text-anchor="end" font-size="11" fill="currentColor">{{score}}</text>
+                </g>
+                <line :x1="customerRiskSeries.mid" :x2="customerRiskSeries.mid" y1="18" y2="128" stroke="currentColor" />
+                <text :x="customerRiskSeries.mid" y="12" text-anchor="middle" font-size="11" font-weight="700" fill="currentColor">지금 {{customerRiskTicks.now}}</text>
                 <text
-                  v-for="tick in riskSeries.ticks"
-                  :key="tick.x"
+                  v-for="tick in customerRiskTicks.hours"
+                  :key="tick.label"
                   :x="tick.x"
-                  y="126"
-                  :text-anchor="tick===riskSeries.ticks[0]?'start':tick===riskSeries.ticks[riskSeries.ticks.length-1]?'end':'middle'"
+                  y="146"
+                  text-anchor="middle"
                   font-size="11"
                   fill="currentColor"
-                >
-                  {{tick.label}}
-                </text>
-                <circle
-                  v-if="riskSeries.lastObserved"
-                  :cx="riskSeries.lastObserved.x"
-                  :cy="riskSeries.lastObserved.y"
-                  r="3"
-                  fill="#225f9b"
-                >
-                  <title>
-                    {{riskSeries.lastObserved.label}} &#183; {{riskSeries.lastObserved.score}}
-                  </title>
-                </circle>
+                >{{tick.label}}</text>
+                <text :x="(34+customerRiskSeries.mid)/2" y="166" text-anchor="middle" font-size="10" fill="currentColor" fill-opacity=".75">최근 1시간 관측</text>
+                <text :x="(customerRiskSeries.mid+300)/2" y="166" text-anchor="middle" font-size="10" fill="currentColor" fill-opacity=".75">앞으로 3시간 예측</text>
                 <path
-                  v-if="riskSeries.carryPath"
-                  :d="riskSeries.carryPath"
-                  fill="none"
-                  stroke="#225f9b"
-                  stroke-opacity=".5"
-                  stroke-width="2"
-                  stroke-dasharray="2 3"
-                />
-                <path
-                  :d="riskSeries.observedPath"
+                  v-if="customerRiskSeries.observedPath"
+                  :d="customerRiskSeries.observedPath"
                   fill="none"
                   stroke="#225f9b"
                   stroke-width="3"
                   stroke-linejoin="round"
                 />
                 <path
-                  v-if="riskSeries.forecastPath"
-                  :d="riskSeries.forecastPath"
+                  v-if="customerRiskSeries.forecastPath"
+                  :d="customerRiskSeries.forecastPath"
                   fill="none"
                   stroke="#225f9b"
-                  stroke-width="3"
-                  stroke-dasharray="6 4"
+                  stroke-width="2.5"
+                  stroke-opacity=".7"
+                  stroke-dasharray="8 5"
                 />
-                <text x="14" y="15" text-anchor="end" font-size="11" fill="currentColor">100</text>
-                <text x="14" y="113" text-anchor="end" font-size="11" fill="currentColor">0</text></svg
+                <g v-for="p in customerRiskSeries.forecastPoints" :key="'f'+p.x">
+                  <circle :cx="p.x" :cy="p.y" r="3" fill="#225f9b" fill-opacity=".7" />
+                  <text v-if="customerRiskSeries.forecastPoints.length<=6" :x="p.x" :y="p.y-8" text-anchor="middle" font-size="11" fill="currentColor">{{Math.round(p.score)}}</text>
+                </g>
+                <circle
+                  v-if="customerRiskSeries.latest"
+                  :cx="customerRiskSeries.latest.x"
+                  :cy="customerRiskSeries.latest.y"
+                  r="5"
+                  fill="#225f9b"
+                >
+                  <title>지금 &#183; {{Math.round(customerRiskSeries.latest.score)}}점</title>
+                </circle></svg
               ><p
                 v-else
                 class="sub"
                 >{{detailLoading?'관측 정보를 조회 중입니다.':'표시할 관측 정보가 없습니다.'}}</p
-              ><ul v-if="riskPoints||riskSeries.forecast" class="map-detail-chart-legend" aria-label="위험도 추이 범례">
-                <li v-if="riskSeries.observedPath"><span class="map-detail-line" aria-hidden="true"></span>실제 관측</li>
-                <li v-if="riskSeries.forecastPath"><span class="map-detail-line is-forecast" aria-hidden="true"></span>향후 3시간 예측</li>
-                <li v-if="riskSeries.carryPath"><span class="map-detail-line is-held" aria-hidden="true"></span>최근 관측값 유지</li>
+              ><ul v-if="!customerRiskSeries.empty" class="map-detail-chart-legend" aria-label="위험도 추이 범례">
+                <li v-if="customerRiskSeries.observedPath"><span class="map-detail-line" aria-hidden="true"></span>최근 1시간 관측</li>
+                <li v-if="customerRiskSeries.forecastPath"><span class="map-detail-line is-forecast" aria-hidden="true"></span>향후 3시간 예측</li>
               </ul>
-              <p v-if="riskSeries.carryPath" class="sub map-detail-chart-note">관측값 유지 구간은 추가 관측이나 예측이 아닙니다.</p>
               <p v-if="historyError" class="sub map-detail-chart-note" role="status">{{historyError}}</p>
-              <p v-if="forecastError" class="sub map-detail-chart-note">{{forecastError}}{{riskSeries.forecastPath?' 마지막으로 조회한 예측을 표시합니다.':''}}</p></section
+              <p v-if="forecastError" class="sub map-detail-chart-note">{{forecastError}}{{customerRiskSeries.forecastPath?' 마지막으로 조회한 예측을 표시합니다.':''}}</p></section
             >
       <RouterLink v-if="appMap" :to="'/customer-app/screen-6?id='+selected.id"
               >상세 화면 보기 →</RouterLink
