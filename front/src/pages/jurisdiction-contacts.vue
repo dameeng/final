@@ -6,10 +6,10 @@ import UiIcon from '../components/UiIcon.vue'
 import { jurisdictionContacts } from '../data/jurisdictionContacts'
 import type { UiIconName } from '../utils/ui-icons'
 const details: Record<string, { icon: UiIconName; category: string; description: string; tags: string[] }> = {
-  road: { icon: 'route', category: '시설 관리', description: '도로 및 지하차도 시설 관련 사항을 확인하고 관리 기관과 협의하세요.', tags: ['도로 시설', '시설물 점검', '유지보수'] },
-  community: { icon: 'map', category: '행정 지원', description: '지역 상황 공유와 주민 안내 등 관할 행정기관의 협조가 필요할 때 확인하세요.', tags: ['주민 안내', '지역 상황 공유', '행정 협조'] },
-  police: { icon: 'user', category: '현장 협조', description: '현장 교통 상황과 차량 통제 등 경찰 협조가 필요한 사항을 전달하세요.', tags: ['교통 통제', '현장 질서', '안전 협조'] },
-  civilian: { icon: 'tool', category: '민간 협력', description: '현장 지원 및 시설 복구와 관련해 민간 협력 기관과 소통하세요.', tags: ['현장 지원', '장비 협조', '복구 지원'] },
+  road: { icon: 'route', category: '시설 관리', description: '도로·지하차도 시설 관리 사항을 협의하세요.', tags: ['도로 시설', '시설물 점검', '유지보수'] },
+  community: { icon: 'map', category: '행정 지원', description: '주민 안내와 지역 현황 공유를 요청하세요.', tags: ['주민 안내', '지역 상황 공유', '행정 협조'] },
+  police: { icon: 'user', category: '현장 협조', description: '교통 통제와 현장 안전 협조를 요청하세요.', tags: ['교통 통제', '현장 질서', '안전 협조'] },
+  civilian: { icon: 'tool', category: '민간 협력', description: '현장 지원과 시설 복구를 협의하세요.', tags: ['현장 지원', '장비 협조', '복구 지원'] },
 }
 const copyStates = ref<Record<string, string>>({})
 const copyTimers = new Map<string, ReturnType<typeof setTimeout>>()
